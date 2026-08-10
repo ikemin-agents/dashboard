@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- 制作ダッシュボード 本実装（Issue #191）。UI は dashboard/mockup.html 準拠、データは Supabase 実データ。
-     書き込みは RPC 2本（approve_gate / post_review_comment）のみ・素材は非公開バケット review-assets の署名URL。 -->
+     書き込みは RPC（approve_gate＝承認・任意メモ / request_changes＝修正依頼）のみ・素材は非公開バケット review-assets の署名URL。 -->
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -949,7 +949,7 @@ function renderShell(){
     : (state.lastSync ? '最終読込 ' + fmtDT(state.lastSync) : '未読込');
   $('#reloadbtn').classList.toggle('spin', state.busy);
   $('#footer').textContent =
-    `制作ダッシュボード（Issue #191）・データ: Supabase 実データ・承認とコメントは review_events に記録されます`;
+    `制作ダッシュボード（Issue #191）・データ: Supabase 実データ・承認と修正依頼は review_events に記録されます`;
 }
 
 const errBox = msg => `<div class="errbox"><b>読み込みエラー</b><br>${esc(msg)}</div>`;
@@ -1316,14 +1316,14 @@ function reviewPanel(it, gate){
       <div class="assets" data-assets="${esc(key)}" data-ch="${esc(it.channel)}"
            data-seq="${esc(it.seq)}" data-gate="${esc(gate)}">
         <div class="loadbox">素材を読み込み中…</div></div></div>
-    <div class="blk"><h4>コメント</h4>${threadHTML(it.id, gate)}</div>
+    <div class="blk"><h4>レビュー履歴</h4>${threadHTML(it.id, gate)}</div>
     <div class="wbox" data-wbox="${esc(key)}">
-      <textarea class="wta" rows="3" aria-label="コメント本文"
-        placeholder="コメントを入力（Ctrl + Enter で送信）"></textarea>
+      <textarea class="wta" rows="3" aria-label="修正理由・承認メモ"
+        placeholder="修正を依頼する理由を入力（承認する場合は任意のメモとして使えます・Ctrl + Enter で修正を依頼）"></textarea>
       <div class="wmsg" hidden></div>
       <div class="wact">
         <span class="whint">投稿者はログイン中のアカウントとして記録されます</span>
-        <button class="btn" data-act="comment" data-key="${esc(key)}">コメントを送信</button>
+        <button class="btn" data-act="request_changes" data-key="${esc(key)}">修正を依頼</button>
         <button class="btn primary" data-act="approve" data-key="${esc(key)}">${
           esc(GATE_LABEL[gate] || gate)}を承認</button>
       </div></div>`;
@@ -1337,15 +1337,17 @@ function rpcErrText(error, act){
     return 'このアカウントには書き込み権限がありません（ダッシュボードの許可リストを確認してください）';
   if (code === 'P0002' || /video not found/i.test(raw))
     return '対象の動画が見つかりませんでした。再読み込みしてからやり直してください';
+  if (code === '22001' || /too long/i.test(raw))
+    return '本文が長すぎます（4000文字以内で入力してください）';
   if (code === '22023')
-    return /body is empty/i.test(raw) ? 'コメント本文を入力してください'
+    return /body is empty/i.test(raw) ? '修正を依頼する理由を入力してください'
                                       : '対象のゲートが不正です（台本 / 絵コンテ / 完成のいずれか）';
   if (/JWT|token is expired|invalid claim/i.test(raw))
     return 'ログインの有効期限が切れました。再度ログインしてください';
   if (/fetch|network|Failed to send/i.test(raw))
     return '通信に失敗しました。接続を確認して再度お試しください';
   return act === 'approve' ? '承認できませんでした。時間をおいて再度お試しください'
-                           : 'コメントを送信できませんでした。時間をおいて再度お試しください';
+                           : '修正を依頼できませんでした。時間をおいて再度お試しください';
 }
 
 function wboxBusy(box, busy, label){
@@ -1378,20 +1380,20 @@ async function refreshAfterWrite(approved){
   }
 }
 
-async function submitComment(box, key){
+async function submitRequestChanges(box, key){
   if (box.dataset.busy === '1') return;
   const [vid, gate] = key.split('|');
   const ta = box.querySelector('.wta');
   const body = (ta.value || '').trim();
-  if (!body) { wboxMsg(box, 'コメント本文を入力してください', true); ta.focus(); return; }
+  if (!body) { wboxMsg(box, '修正を依頼する理由を入力してください', true); ta.focus(); return; }
   wboxMsg(box, '');
-  wboxBusy(box, true, 'comment');
-  const { error } = await sb.rpc('post_review_comment',
+  wboxBusy(box, true, 'request_changes');
+  const { error } = await sb.rpc('request_changes',
     { p_video_id: Number(vid), p_gate: gate, p_body: body });
-  if (error) { wboxBusy(box, false, 'comment'); wboxMsg(box, rpcErrText(error, 'comment'), true); return; }
+  if (error) { wboxBusy(box, false, 'request_changes'); wboxMsg(box, rpcErrText(error, 'request_changes'), true); return; }
   ta.value = '';
   await refreshAfterWrite(false);
-  toast('review_events に記録しました');
+  toast('修正を依頼しました（review_events に記録）');
 }
 
 async function submitApprove(box, key){
@@ -1401,11 +1403,14 @@ async function submitApprove(box, key){
   const core = store.core[state.ch];
   const it = core ? core.byId.get(vid) : null;
   const gname = GATE_LABEL[gate] || gate;
+  const ta = box.querySelector('.wta');
+  const note = ((ta && ta.value) || '').trim();
 
   const ok = await confirmDialog({
     title: `${gname}ゲートを承認しますか？`,
     bodyHTML: `<p class="cfmline"><b>${esc((it && it.seq) || ('#' + vid))}</b> ${esc((it && it.title) || '')}</p>
-      <p class="cfmline">承認は review_events に記録され、取り消しはダッシュボードからはできません。</p>`,
+      <p class="cfmline">承認は review_events に記録され、取り消しはダッシュボードからはできません。</p>
+      ${note ? `<p class="cfmline">メモ: <b>${esc(note)}</b></p>` : ''}`,
     warn: GATE_CAUTION[gate] || null,
     ok: `${gname}を承認する`
   });
@@ -1413,8 +1418,10 @@ async function submitApprove(box, key){
 
   wboxMsg(box, '');
   wboxBusy(box, true, 'approve');
-  const { data, error } = await sb.rpc('approve_gate', { p_video_id: vid, p_gate: gate });
+  const { data, error } = await sb.rpc('approve_gate',
+    { p_video_id: vid, p_gate: gate, p_note: note || null });
   if (error) { wboxBusy(box, false, 'approve'); wboxMsg(box, rpcErrText(error, 'approve'), true); return; }
+  if (ta) ta.value = '';
   const already = !!(data && data.already_approved);
   await refreshAfterWrite(true);
   toast(already ? `${gname}ゲートは既に承認済みです` : 'review_events に記録しました');
@@ -1474,7 +1481,7 @@ async function renderReview(){
     <div class="pagehead">
       <div class="eyebrow">レビュー</div>
       <h1>${m.icon} ${esc(m.name)}<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${list.length}件</span></h1>
-      <p>${gateNames} の${m.gates.length}ゲート。カードを開くと搬出済みの素材と review_events のスレッドを確認でき、その場でコメント投稿・承認ができます。表示は選択中のチャンネル分のみです。</p>
+      <p>${gateNames} の${m.gates.length}ゲート。カードを開くと搬出済みの素材と review_events の履歴を確認でき、その場で承認・修正依頼ができます。表示は選択中のチャンネル分のみです。</p>
     </div>
     <div class="rvlist">${items}</div>`;
 
@@ -1799,7 +1806,7 @@ document.addEventListener('click', e => {
   const wbtn = e.target.closest('[data-act]');
   if (wbtn) {
     const box = wbtn.closest('[data-wbox]');
-    if (box) (wbtn.dataset.act === 'approve' ? submitApprove : submitComment)(box, wbtn.dataset.key);
+    if (box) (wbtn.dataset.act === 'approve' ? submitApprove : submitRequestChanges)(box, wbtn.dataset.key);
     return;
   }
 
@@ -1870,7 +1877,7 @@ document.addEventListener('change', e => {
 document.addEventListener('keydown', e => {
   if (e.target.classList && e.target.classList.contains('wta') && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     const box = e.target.closest('[data-wbox]');
-    if (box) { e.preventDefault(); submitComment(box, box.dataset.wbox); }
+    if (box) { e.preventDefault(); submitRequestChanges(box, box.dataset.wbox); }
     return;
   }
   if (e.key === 'Escape' && state.detail) { closeDetail(); return; }
