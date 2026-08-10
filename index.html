@@ -1,5 +1,6 @@
 <!doctype html>
-<!-- 制作ダッシュボード 本実装（Issue #191 Phase 1）。UI は dashboard/mockup.html 準拠、データは Supabase 実データ。 -->
+<!-- 制作ダッシュボード 本実装（Issue #191）。UI は dashboard/mockup.html 準拠、データは Supabase 実データ。
+     書き込みは RPC 2本（approve_gate / post_review_comment）のみ・素材は非公開バケット review-assets の署名URL。 -->
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -172,7 +173,6 @@ main{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-
 .note{display:flex; gap:9px; align-items:flex-start; background:var(--surface-2); border:1px solid var(--border-2);
   border-radius:var(--r-md); padding:10px 13px; font-size:var(--fs-sm); color:var(--ink-2); margin-bottom:var(--sp-4)}
 .note b{color:var(--ink); font-weight:650}
-.note.phase2{background:var(--warn-tint); border-color:transparent}
 .loadbox{color:var(--muted); font-size:var(--fs-sm); padding:var(--sp-8); text-align:center;
   border:1px dashed var(--border); border-radius:var(--r-lg)}
 .noitem{color:var(--ink-2); font-size:var(--fs-sm); padding:var(--sp-6); text-align:center;
@@ -395,9 +395,53 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   color:var(--ink); border:1px solid var(--border-2)}
 .resolved{font-size:var(--fs-2xs); color:var(--up); background:var(--good-tint); border-radius:5px;
   padding:1px 8px; margin-top:6px; display:inline-block}
-.disabledbox{display:flex; gap:var(--sp-2); margin-top:var(--sp-3); flex-wrap:wrap; align-items:center;
-  border:1px dashed var(--border); border-radius:var(--r-md); padding:10px 12px; background:var(--surface-2)}
-.disabledbox .lbl{font-size:var(--fs-xs); color:var(--ink-2); margin-right:auto}
+/* ── 書き込み（コメント・承認） ── */
+.wbox{margin-top:var(--sp-3); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:var(--sp-3); background:var(--surface-2); display:grid; gap:var(--sp-2)}
+.wbox .wta{font-family:inherit; font-size:var(--fs-sm); line-height:1.65; width:100%; display:block;
+  border:1px solid var(--border); border-radius:var(--r-sm); padding:9px 11px;
+  background:var(--surface-1); color:var(--ink); resize:vertical; min-height:68px}
+.wbox .wta:disabled{opacity:.6}
+.wact{display:flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap}
+.wact .whint{font-size:var(--fs-2xs); color:var(--muted); margin-right:auto}
+.wmsg{font-size:var(--fs-xs); border-radius:var(--r-sm); padding:7px 11px; line-height:1.6;
+  background:var(--good-tint); color:var(--ink)}
+.wmsg.err{background:var(--crit-tint)}
+
+/* ── レビュー素材（Storage: review-assets） ── */
+.assets{display:grid; gap:var(--sp-2)}
+.asset{border:1px solid var(--border-2); border-radius:var(--r-md); background:var(--surface-2); overflow:hidden}
+.ahead{display:flex; gap:var(--sp-2); align-items:baseline; padding:7px 11px; border-bottom:1px solid var(--border-2)}
+.ahead .anm{font-size:var(--fs-xs); font-weight:680; word-break:break-all}
+.ahead .asz{font-size:var(--fs-2xs); color:var(--muted)}
+.ahead .alink{margin-left:auto; font-size:var(--fs-2xs); color:var(--s1); white-space:nowrap}
+.atext{margin:0; padding:11px 13px; font-size:var(--fs-xs); line-height:1.8; white-space:pre-wrap;
+  word-break:break-word; max-height:340px; overflow:auto; background:var(--surface-1); color:var(--ink)}
+.thumbs{display:grid; grid-template-columns:repeat(auto-fill,minmax(94px,1fr)); gap:var(--sp-2);
+  padding:11px 12px; background:var(--surface-1)}
+.thumb{display:block; text-decoration:none; color:inherit}
+.thumb img{width:100%; aspect-ratio:9/16; object-fit:cover; display:block;
+  border:1px solid var(--border-2); border-radius:var(--r-sm); background:var(--surface-3)}
+.thumb .tnm{display:block; font-size:var(--fs-2xs); color:var(--muted); margin-top:4px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.avid{width:100%; max-width:250px; aspect-ratio:9/16; display:block; margin:11px 12px;
+  border-radius:var(--r-sm); background:#000}
+.afiles{display:grid; gap:6px; padding:10px 12px; font-size:var(--fs-xs); background:var(--surface-1)}
+.afiles a{color:var(--s1); word-break:break-all}
+
+/* ── 確認ダイアログ ── */
+.cfmwrap[hidden]{display:none}
+.cfmwrap{position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:var(--sp-5)}
+.cfmscrim{position:absolute; inset:0; background:rgba(0,0,0,.5)}
+.cfmcard{position:relative; width:min(460px,100%); background:var(--surface-1);
+  border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-5);
+  box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.cfmcard h3{margin:0 0 var(--sp-2); font-size:var(--fs-lg); font-weight:700; line-height:var(--lh-tight)}
+.cfmline{margin:0 0 5px; font-size:var(--fs-sm); color:var(--ink-2); line-height:1.6}
+.cfmline b{color:var(--ink); font-weight:680}
+.cfmwarn{margin-top:var(--sp-3); background:var(--warn-tint); border:1px solid var(--border-2);
+  border-radius:var(--r-md); padding:10px 12px; font-size:var(--fs-sm); color:var(--ink); line-height:1.65}
+.cfmact{display:flex; gap:var(--sp-2); justify-content:flex-end; margin-top:var(--sp-4)}
 
 /* ═══ 稼働 ══════════════════════════════════════════════════════ */
 .now{display:flex; gap:var(--sp-3); align-items:center; flex-wrap:wrap}
@@ -560,10 +604,11 @@ footer{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; co
   <section class="view" id="view-ops"></section>
 </main>
 
-<footer id="footer">制作ダッシュボード（#191 Phase 1・閲覧のみ）</footer>
+<footer id="footer">制作ダッシュボード（#191）</footer>
 </div>
 
 <div id="drawer" class="drawer" hidden></div>
+<div id="cfm" class="cfmwrap" hidden></div>
 <div id="tip" role="status"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
@@ -588,6 +633,17 @@ const GATE_COL = {script:1, storyboard:2, final:4};
 const GATE_COLUMN_FIELD = {script:'approved_script_at', storyboard:'approved_storyboard_at', final:'approved_final_at'};
 const KIND_LABEL = {request_review:'レビュー依頼', comment:'コメント', request_changes:'修正依頼', approve:'承認', reject:'却下'};
 const RESOLUTION_LABEL = {open:'未対応', resolved:'対応済み', wont_fix:'対応しない'};
+
+/* レビュー素材（非公開バケット・パス規約 {channel}/{seq}/{gate}/） */
+const ASSET_BUCKET = 'review-assets';
+const ASSET_TTL   = 3600;                 // 署名URLの有効期限（秒）
+const ASSET_CACHE = 50 * 60 * 1000;       // 期限切れ前に取り直す
+const ASSET_MAX_TEXT = 20000;             // テキストプレビューの上限文字数
+const RE_IMG = /\.(png|jpe?g|webp|gif|avif)$/i;
+const RE_VID = /\.(mp4|mov|webm|m4v)$/i;
+const RE_TXT = /\.(md|txt|srt|vtt|json|csv)$/i;
+/* 承認時の追加注意（課金や不可逆な工程に進むゲート） */
+const GATE_CAUTION = {storyboard:'承認すると映像生成（課金）へ進みます。'};
 
 /* 表示上の7工程（videos.status からの写像） */
 const PSTAGES = [
@@ -679,7 +735,7 @@ const state = {
   stockQ:'', stockGenre:'', stockSort:null, detail:null, open:null, tblOpen:false,
   busy:false, lastSync:null
 };
-const store = { channels:[], accounts:[], reviews:null, core:{}, ops:null, analytics:{} };
+const store = { channels:[], accounts:[], reviews:null, core:{}, ops:null, analytics:{}, assets:{} };
 const resetStockFilters = () => { state.stockFilter=null; state.stockQ=''; state.stockGenre=''; state.stockSort=null; };
 const VIEWS = [
   {key:'stock',     icon:'🗂', label:'在庫'},
@@ -773,6 +829,53 @@ function threadOf(videoId, gate){
   return (store.reviews || []).filter(e => e.video_id === videoId && e.gate === gate);
 }
 
+/* ══ レビュー素材（Storage） ═════════════════════════════════════
+   非公開バケット review-assets。ログイン中のユーザーは Storage の RLS で
+   SELECT できる（ポリシーが無い＝一覧が 0 件なので「素材未搬出」表示になる）。
+   各ファイルは有効期限つき署名URLにしてから表示する。                        */
+const assetPath = (ch, seq, gate) => `${ch}/${seq}/${gate}`;
+const assetKind = name => RE_IMG.test(name) ? 'image'
+  : RE_VID.test(name) ? 'video' : (RE_TXT.test(name) ? 'text' : 'file');
+function fmtSize(b){
+  if (b == null) return '';
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(0) + ' KB';
+  return (b / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+async function loadAssets(ch, seq, gate){
+  const key = assetPath(ch, seq, gate);
+  const hit = store.assets[key];
+  if (hit && Date.now() - hit.at < ASSET_CACHE) return hit;
+
+  const { data, error } = await sb.storage.from(ASSET_BUCKET)
+    .list(key, { limit: 100, sortBy: { column: 'name', order: 'asc' } });
+  if (error) throw new Error(error.message || String(error));
+
+  /* フォルダは id=null、空フォルダ維持用のダミーは除く */
+  const files = (data || []).filter(f => f && f.id && f.name !== '.emptyFolderPlaceholder');
+  const out = await Promise.all(files.map(async f => {
+    const path = `${key}/${f.name}`;
+    const rec = { name:f.name, path, kind:assetKind(f.name),
+                  size:(f.metadata && f.metadata.size) != null ? f.metadata.size : null,
+                  url:null, text:null, err:null };
+    const { data: s } = await sb.storage.from(ASSET_BUCKET).createSignedUrl(path, ASSET_TTL);
+    rec.url = s ? s.signedUrl : null;
+    if (rec.kind === 'text') {
+      const { data: blob, error: dErr } = await sb.storage.from(ASSET_BUCKET).download(path);
+      if (dErr || !blob) rec.err = 'テキストを読み込めませんでした';
+      else {
+        const t = await blob.text();
+        rec.text = t.length > ASSET_MAX_TEXT ? t.slice(0, ASSET_MAX_TEXT) + '\n\n…（以降は省略。別タブで全文を開けます）' : t;
+      }
+    }
+    return rec;
+  }));
+  const res = { files: out, at: Date.now() };
+  store.assets[key] = res;
+  return res;
+}
+
 async function loadOps(){
   if (store.ops) return store.ops;
   const runs = await q(sb.from('agent_runs').select('*').order('started_at', { ascending: false }).limit(20));
@@ -830,7 +933,7 @@ function renderShell(){
     : (state.lastSync ? '最終読込 ' + fmtDT(state.lastSync) : '未読込');
   $('#reloadbtn').classList.toggle('spin', state.busy);
   $('#footer').textContent =
-    `制作ダッシュボード（Issue #191 Phase 1・閲覧のみ）・データ: Supabase 実データ・承認とコメント投稿は Phase 2`;
+    `制作ダッシュボード（Issue #191）・データ: Supabase 実データ・承認とコメントは review_events に記録されます`;
 }
 
 const errBox = msg => `<div class="errbox"><b>読み込みエラー</b><br>${esc(msg)}</div>`;
@@ -1084,8 +1187,7 @@ function detailHTML(it){
   const noteBlk = it.note ? `<div class="dsec"><h4>メモ</h4><div class="hook">${esc(it.note)}</div></div>` : '';
 
   const review = it._rv ? `<div class="dsec" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
-      <h4>レビュー — ${GATE_LABEL[it._rv]}ゲート</h4>${threadHTML(it.id, it._rv)}
-      ${phase2Box()}</div>` : '';
+      <h4>レビュー — ${GATE_LABEL[it._rv]}ゲート</h4>${reviewPanel(it, it._rv)}</div>` : '';
 
   return `<div class="scrim" data-close="1"></div>
     <aside class="dpanel" role="dialog" aria-modal="true" aria-label="${esc(it.title)} の詳細">
@@ -1120,6 +1222,7 @@ function openDetail(vid){
   dr.hidden = false;
   document.body.style.overflow = 'hidden';
   dr.querySelector('.iconbtn')?.focus();
+  mountAllAssets(dr);
 }
 function closeDetail(){
   state.detail = null;
@@ -1128,10 +1231,178 @@ function closeDetail(){
 }
 
 /* ══ ② レビュー ═════════════════════════════════════════════════ */
-const phase2Box = () => `<div class="disabledbox">
-  <span class="lbl">承認・コメントの書き込みは <b>Phase 2 で有効化</b>します（現在は閲覧のみ）。</span>
-  <button class="btn" disabled>コメント</button>
-  <button class="btn" disabled>承認する</button></div>`;
+
+/* ── 素材の描画 ─────────────────────────────────────────────── */
+const NO_ASSET = `<div class="noitem">素材未搬出
+  <span class="s">次回の夜間搬出から格納されます</span></div>`;
+
+function assetHead(f){
+  return `<div class="ahead"><span class="anm">${esc(f.name)}</span>
+    ${f.size != null ? `<span class="asz">${esc(fmtSize(f.size))}</span>` : ''}
+    ${f.url ? `<a class="alink" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">別タブで開く</a>` : ''}</div>`;
+}
+
+function assetsHTML(files){
+  if (!files.length) return NO_ASSET;
+  const imgs = files.filter(f => f.kind === 'image');
+  const rest = files.filter(f => f.kind !== 'image');
+
+  const blocks = rest.map(f => {
+    if (f.kind === 'text') {
+      return `<div class="asset">${assetHead(f)}<pre class="atext">${
+        f.text != null ? esc(f.text) : esc(f.err || '（本文が空です）')}</pre></div>`;
+    }
+    if (f.kind === 'video') {
+      return `<div class="asset">${assetHead(f)}${f.url
+        ? `<video class="avid" controls preload="metadata" playsinline src="${esc(f.url)}"></video>`
+        : `<div class="afiles">この動画の署名URLを取得できませんでした</div>`}</div>`;
+    }
+    return null;
+  }).filter(Boolean);
+
+  const others = rest.filter(f => f.kind === 'file');
+  if (others.length) {
+    blocks.push(`<div class="asset"><div class="afiles">${others.map(f =>
+      f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.name)}</a>${
+        f.size != null ? ` <span class="asz">${esc(fmtSize(f.size))}</span>` : ''}`
+        : esc(f.name)).join('')}</div></div>`);
+  }
+  if (imgs.length) {
+    blocks.unshift(`<div class="asset">
+      <div class="ahead"><span class="anm">画像 ${imgs.length} 点</span>
+        <span class="asz">クリックで原寸表示</span></div>
+      <div class="thumbs">${imgs.map(f => f.url
+        ? `<a class="thumb" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer" title="${esc(f.name)}">
+             <img src="${esc(f.url)}" alt="${esc(f.name)}" loading="lazy"><span class="tnm">${esc(f.name)}</span></a>`
+        : `<span class="thumb"><span class="tnm">${esc(f.name)}</span></span>`).join('')}</div></div>`);
+  }
+  return blocks.join('');
+}
+
+/* data-assets 付きの箱に非同期で素材を流し込む（再描画で箱が消えたら何もしない） */
+async function mountAssets(node){
+  if (!node) return;
+  const { ch, seq, gate } = node.dataset;
+  try {
+    const a = await loadAssets(ch, seq, gate);
+    if (node.isConnected) node.innerHTML = assetsHTML(a.files);
+  } catch (e) {
+    if (node.isConnected) node.innerHTML = `<div class="noitem">素材を読み込めませんでした
+      <span class="s">${esc(e.message || String(e))}</span></div>`;
+  }
+}
+const mountAllAssets = root => (root || document).querySelectorAll('[data-assets]').forEach(mountAssets);
+
+/* ── 書き込み（コメント・承認） ───────────────────────────────── */
+function reviewPanel(it, gate){
+  const key = it.id + '|' + gate;
+  return `<div class="blk"><h4>レビュー素材</h4>
+      <div class="assets" data-assets="${esc(key)}" data-ch="${esc(it.channel)}"
+           data-seq="${esc(it.seq)}" data-gate="${esc(gate)}">
+        <div class="loadbox">素材を読み込み中…</div></div></div>
+    <div class="blk"><h4>コメント</h4>${threadHTML(it.id, gate)}</div>
+    <div class="wbox" data-wbox="${esc(key)}">
+      <textarea class="wta" rows="3" aria-label="コメント本文"
+        placeholder="コメントを入力（Ctrl + Enter で送信）"></textarea>
+      <div class="wmsg" hidden></div>
+      <div class="wact">
+        <span class="whint">投稿者はログイン中のアカウントとして記録されます</span>
+        <button class="btn" data-act="comment" data-key="${esc(key)}">コメントを送信</button>
+        <button class="btn primary" data-act="approve" data-key="${esc(key)}">${
+          esc(GATE_LABEL[gate] || gate)}を承認</button>
+      </div></div>`;
+}
+
+/* RPC の例外はそのまま出さず、SQLSTATE から日本語の案内に置き換える */
+function rpcErrText(error, act){
+  const code = error && error.code;
+  const raw  = String((error && error.message) || '');
+  if (code === '42501' || /permission denied/i.test(raw))
+    return 'このアカウントには書き込み権限がありません（ダッシュボードの許可リストを確認してください）';
+  if (code === 'P0002' || /video not found/i.test(raw))
+    return '対象の動画が見つかりませんでした。再読み込みしてからやり直してください';
+  if (code === '22023')
+    return /body is empty/i.test(raw) ? 'コメント本文を入力してください'
+                                      : '対象のゲートが不正です（台本 / 絵コンテ / 完成のいずれか）';
+  if (/JWT|token is expired|invalid claim/i.test(raw))
+    return 'ログインの有効期限が切れました。再度ログインしてください';
+  if (/fetch|network|Failed to send/i.test(raw))
+    return '通信に失敗しました。接続を確認して再度お試しください';
+  return act === 'approve' ? '承認できませんでした。時間をおいて再度お試しください'
+                           : 'コメントを送信できませんでした。時間をおいて再度お試しください';
+}
+
+function wboxBusy(box, busy, label){
+  box.dataset.busy = busy ? '1' : '0';
+  box.querySelectorAll('button').forEach(b => { b.disabled = busy; });
+  const ta = box.querySelector('.wta'); if (ta) ta.disabled = busy;
+  const btn = label && box.querySelector(`[data-act="${label}"]`);
+  if (btn) {
+    if (busy) { btn.dataset.lbl = btn.textContent; btn.textContent = '送信中…'; }
+    else if (btn.dataset.lbl) { btn.textContent = btn.dataset.lbl; delete btn.dataset.lbl; }
+  }
+}
+function wboxMsg(box, text, isErr){
+  const m = box.querySelector('.wmsg'); if (!m) return;
+  m.className = 'wmsg' + (isErr ? ' err' : '');
+  m.textContent = text || '';
+  m.hidden = !text;
+}
+
+/* 書き込み後は review_events（＋承認ならキャッシュ列）を取り直して描き直す */
+async function refreshAfterWrite(approved){
+  store.reviews = null;
+  store.assets = {};
+  if (approved) { store.core = {}; store.analytics = {}; }
+  const keep = state.detail;
+  await render();
+  if (keep) {
+    const core = store.core[state.ch];
+    if (core && core.byId.get(keep)) openDetail(keep); else closeDetail();
+  }
+}
+
+async function submitComment(box, key){
+  if (box.dataset.busy === '1') return;
+  const [vid, gate] = key.split('|');
+  const ta = box.querySelector('.wta');
+  const body = (ta.value || '').trim();
+  if (!body) { wboxMsg(box, 'コメント本文を入力してください', true); ta.focus(); return; }
+  wboxMsg(box, '');
+  wboxBusy(box, true, 'comment');
+  const { error } = await sb.rpc('post_review_comment',
+    { p_video_id: Number(vid), p_gate: gate, p_body: body });
+  if (error) { wboxBusy(box, false, 'comment'); wboxMsg(box, rpcErrText(error, 'comment'), true); return; }
+  ta.value = '';
+  await refreshAfterWrite(false);
+  toast('review_events に記録しました');
+}
+
+async function submitApprove(box, key){
+  if (box.dataset.busy === '1') return;
+  const [vidS, gate] = key.split('|');
+  const vid = Number(vidS);
+  const core = store.core[state.ch];
+  const it = core ? core.byId.get(vid) : null;
+  const gname = GATE_LABEL[gate] || gate;
+
+  const ok = await confirmDialog({
+    title: `${gname}ゲートを承認しますか？`,
+    bodyHTML: `<p class="cfmline"><b>${esc((it && it.seq) || ('#' + vid))}</b> ${esc((it && it.title) || '')}</p>
+      <p class="cfmline">承認は review_events に記録され、取り消しはダッシュボードからはできません。</p>`,
+    warn: GATE_CAUTION[gate] || null,
+    ok: `${gname}を承認する`
+  });
+  if (!ok) return;
+
+  wboxMsg(box, '');
+  wboxBusy(box, true, 'approve');
+  const { data, error } = await sb.rpc('approve_gate', { p_video_id: vid, p_gate: gate });
+  if (error) { wboxBusy(box, false, 'approve'); wboxMsg(box, rpcErrText(error, 'approve'), true); return; }
+  const already = !!(data && data.already_approved);
+  await refreshAfterWrite(true);
+  toast(already ? `${gname}ゲートは既に承認済みです` : 'review_events に記録しました');
+}
 
 function avatarOf(author){
   const ai = author.startsWith('ai:');
@@ -1178,7 +1449,7 @@ async function renderReview(){
         <span class="wait ${r.wait >= 3 ? 'slow' : ''}">${r.wait >= 3 ? '⏳ ' : ''}待ち ${r.wait == null ? '—' : r.wait + '日'}</span>
         <span class="caret">▸</span>
       </button>
-      <div class="rvbody">${open ? `<div class="blk"><h4>コメント</h4>${threadHTML(r.item.id, r.gate)}</div>${phase2Box()}` : ''}</div>
+      <div class="rvbody">${open ? reviewPanel(r.item, r.gate) : ''}</div>
     </article>`;
   }).join('') : `<div class="noitem">承認待ちはありません
     <span class="s">レビュー依頼（review_events の request_review）が記録されるとここに並びます</span></div>`;
@@ -1187,9 +1458,11 @@ async function renderReview(){
     <div class="pagehead">
       <div class="eyebrow">レビュー</div>
       <h1>${m.icon} ${esc(m.name)}<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${list.length}件</span></h1>
-      <p>${gateNames} の${m.gates.length}ゲート。カードを開くと review_events のスレッドを確認できます（書き込みは Phase 2）。表示は選択中のチャンネル分のみです。</p>
+      <p>${gateNames} の${m.gates.length}ゲート。カードを開くと搬出済みの素材と review_events のスレッドを確認でき、その場でコメント投稿・承認ができます。表示は選択中のチャンネル分のみです。</p>
     </div>
     <div class="rvlist">${items}</div>`;
+
+  mountAllAssets(el);
 }
 
 /* ══ ③ 分析 ════════════════════════════════════════════════════ */
@@ -1444,6 +1717,34 @@ function bindSpark(series, W, H){
   svg.addEventListener('touchend', out);
 }
 
+/* ══ 確認ダイアログ ═════════════════════════════════════════════ */
+function confirmDialog(o){
+  return new Promise(resolve => {
+    const el = $('#cfm');
+    el.innerHTML = `<div class="cfmscrim" data-cfm="0"></div>
+      <div class="cfmcard" role="dialog" aria-modal="true" aria-labelledby="cfmttl">
+        <h3 id="cfmttl">${esc(o.title)}</h3>
+        ${o.bodyHTML || ''}
+        ${o.warn ? `<div class="cfmwarn">⚠ ${esc(o.warn)}</div>` : ''}
+        <div class="cfmact">
+          <button class="btn" data-cfm="0">キャンセル</button>
+          <button class="btn primary" data-cfm="1">${esc(o.ok || 'OK')}</button>
+        </div></div>`;
+    el.hidden = false;
+    const done = v => {
+      el.hidden = true; el.innerHTML = '';
+      el.removeEventListener('click', onClick);
+      document.removeEventListener('keydown', onKey, true);
+      resolve(v);
+    };
+    const onClick = e => { const b = e.target.closest('[data-cfm]'); if (b) done(b.dataset.cfm === '1'); };
+    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+    el.addEventListener('click', onClick);
+    document.addEventListener('keydown', onKey, true);
+    setTimeout(() => el.querySelector('.btn.primary')?.focus(), 0);
+  });
+}
+
 let toastT;
 function toast(msg){
   const t = $('#toast'); t.textContent = msg; t.classList.add('on');
@@ -1469,7 +1770,7 @@ async function render(){
 }
 
 async function reloadAll(){
-  store.reviews = null; store.core = {}; store.ops = null; store.analytics = {};
+  store.reviews = null; store.core = {}; store.ops = null; store.analytics = {}; store.assets = {};
   state.busy = true; renderShell();
   try { await loadBootstrap(); } catch (e) { toast('再読み込みに失敗: ' + e.message); }
   await render();
@@ -1478,6 +1779,14 @@ async function reloadAll(){
 
 /* ══ イベント ═══════════════════════════════════════════════════ */
 document.addEventListener('click', e => {
+  /* 書き込み（コメント・承認）は他のハンドラより先に拾う */
+  const wbtn = e.target.closest('[data-act]');
+  if (wbtn) {
+    const box = wbtn.closest('[data-wbox]');
+    if (box) (wbtn.dataset.act === 'approve' ? submitApprove : submitComment)(box, wbtn.dataset.key);
+    return;
+  }
+
   if (e.target.closest('[data-close]')) { closeDetail(); return; }
 
   const chBtn = e.target.closest('.chtab[data-ch]');
@@ -1543,6 +1852,11 @@ document.addEventListener('change', e => {
   if (e.target.id === 'stockgenre') { state.stockGenre = e.target.value; refreshStockTable(); }
 });
 document.addEventListener('keydown', e => {
+  if (e.target.classList && e.target.classList.contains('wta') && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    const box = e.target.closest('[data-wbox]');
+    if (box) { e.preventDefault(); submitComment(box, box.dataset.wbox); }
+    return;
+  }
   if (e.key === 'Escape' && state.detail) { closeDetail(); return; }
   const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid]');
   if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDetail(row.dataset.vid); }
@@ -1569,7 +1883,8 @@ $('#loginform').addEventListener('submit', async ev => {
 
 async function signOut(){
   await sb.auth.signOut();
-  store.reviews = null; store.core = {}; store.ops = null; store.analytics = {}; store.channels = []; store.accounts = [];
+  store.reviews = null; store.core = {}; store.ops = null; store.analytics = {}; store.assets = {};
+  store.channels = []; store.accounts = [];
   state.user = null;
   showLogin();
 }
