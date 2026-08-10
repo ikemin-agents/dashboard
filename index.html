@@ -4,6 +4,22 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<!-- サプライチェーン/XSS 対策（#191）: 外部スクリプト読込を 'self' に限定し（esm.sh 等を弾く）、
+     データ通信先を Supabase 自プロジェクトに絞る。GitHub Pages は静的配信でレスポンス
+     ヘッダを制御できないため CSP は meta で入れる。
+     ※ frame-ancestors はブラウザ仕様上 <meta> では無効（レスポンスヘッダ限定）で、記載すると
+        コンソールエラーになるだけで防御にもならないため入れない。クリックジャッキング防御は
+        将来ヘッダ配信（X-Frame-Options 等）が可能になった時点で付与する想定。 -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline';
+  connect-src 'self' https://myavyqrzipfrofljmvkp.supabase.co;
+  img-src 'self' data: https://myavyqrzipfrofljmvkp.supabase.co;
+  media-src blob: https://myavyqrzipfrofljmvkp.supabase.co;
+  font-src 'self' data:;
+  base-uri 'none';
+  form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>制作ダッシュボード</title>
 <style>
@@ -613,7 +629,7 @@ footer{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; co
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from './vendor/supabase-js.esm.min.js';
 
 const SUPABASE_URL = 'https://myavyqrzipfrofljmvkp.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_kt1UwIe3IUrpojqMcspieQ_zOopvk_C';
