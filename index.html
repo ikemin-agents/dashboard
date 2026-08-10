@@ -519,7 +519,17 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   max-width:560px; box-shadow:inset 0 0 0 1px var(--border-2)}
 .track .fill{height:100%; background:var(--meter-fill); border-radius:var(--r-pill); min-width:5px}
 .meterblk .cond{font-size:var(--fs-2xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
-.perftbl table{min-width:660px}
+.perftbl table{min-width:820px}
+.substats{display:flex; flex-wrap:wrap; gap:var(--sp-3) var(--sp-6); margin:2px 0 var(--sp-2)}
+.substat{display:flex; flex-direction:column; gap:2px}
+.substat .k{font-size:var(--fs-2xs); color:var(--muted)}
+.substat .v{font-size:1.25rem; font-weight:680; font-variant-numeric:tabular-nums; letter-spacing:-.01em; line-height:1.1}
+.substat .v small{font-size:var(--fs-xs); font-weight:600; color:var(--ink-2)}
+.distwrap{overflow-x:auto; margin-top:var(--sp-2)}
+.dist{min-width:340px}
+.dist svg{display:block}
+.distlegend{display:flex; gap:var(--sp-4); flex-wrap:wrap; font-size:var(--fs-2xs); color:var(--ink-2); margin-top:8px; font-variant-numeric:tabular-nums}
+.distlegend i{display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:-1px; margin-right:5px}
 .tbltoggle{background:transparent; border:none; font-family:inherit; font-size:var(--fs-2xs); color:var(--ink-2);
   cursor:pointer; padding:4px 0; text-decoration:underline; text-underline-offset:3px}
 .minitbl{display:none; margin-top:10px; max-width:300px}
@@ -913,7 +923,7 @@ async function loadAnalytics(ch){
         .eq('media', primary.kpi_media_key).gte('date', since).order('date', { ascending: true }))
     : [];
   const pubs = await q(sb.from('v_publications')
-    .select('id,seq,effective_title,status,views,likes,avg_view_rate_pct,subscribers_gained,published_at,scheduled_at,url,platform,is_primary,channel')
+    .select('id,seq,effective_title,status,views,likes,avg_view_rate_pct,subscribers_gained,hook_awr,end_awr,early_loss_pct,engaged_rate_pct,published_at,scheduled_at,url,platform,is_primary,channel')
     .eq('channel', ch).eq('platform', 'youtube'));
   const primaryPubs = pubs.filter(p => p.is_primary);
   let daily = [];
@@ -1513,6 +1523,46 @@ function sparkline(data, color, W, H, label){
   </svg>`;
 }
 
+/* 分布ヒストグラム: 閾値ラインを引き、到達ビンを good 色・未達ビンを accent で塗る。
+   values は呼び出し側で NULL 除外済み。fmt はエッジ表示の整形関数、unit は単位文字列。 */
+function histogram(values, thr, step, accent, fmt, unit){
+  const dmin = Math.min(...values), dmax = Math.max(...values);
+  const lo = Math.min(thr, Math.floor(dmin / step + 1e-9) * step);
+  const hi = Math.max(thr, Math.ceil(dmax / step - 1e-9) * step);
+  const nb = Math.max(1, Math.round((hi - lo) / step));
+  const bins = new Array(nb).fill(0);
+  values.forEach(v => { let b = Math.floor((v - lo) / step + 1e-9); b = Math.min(nb - 1, Math.max(0, b)); bins[b]++; });
+  const maxc = Math.max(1, ...bins);
+  const W = 40 + nb * 44, H = 150, PL = 8, PR = 8, PT = 22, PB = 26;
+  const plotW = W - PL - PR, plotH = H - PT - PB, x0 = PL, baseY = H - PB, bw = plotW / nb;
+  const X = v => x0 + plotW * ((v - lo) / (hi - lo));
+  const bars = bins.map((c, i) => {
+    if (!c) return '';
+    const bx = x0 + bw * i + 1.5, bwid = Math.max(2, bw - 3);
+    const bh = Math.max(3, plotH * (c / maxc)), by = baseY - bh;
+    const binLo = lo + step * i, hit = binLo >= thr - 1e-9;
+    const col = hit ? 'var(--good)' : accent;
+    return `<g><rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bwid.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" style="fill:${col};opacity:.9"><title>${fmt(binLo)}〜${fmt(binLo + step)}${unit}: ${c}本</title></rect>
+      <text x="${(bx + bwid / 2).toFixed(1)}" y="${(by - 5).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" font-family="system-ui,sans-serif" style="fill:var(--ink-2)">${c}</text></g>`;
+  }).join('');
+  const stride = Math.ceil(nb / 6);
+  let ticks = '';
+  for (let i = 0; i <= nb; i++){
+    const edge = lo + step * i, tx = X(edge);
+    ticks += `<line x1="${tx.toFixed(1)}" y1="${baseY}" x2="${tx.toFixed(1)}" y2="${baseY + 3}" stroke-width="1" vector-effect="non-scaling-stroke" style="stroke:var(--axis)"/>`;
+    if (i % stride === 0 || i === nb)
+      ticks += `<text x="${tx.toFixed(1)}" y="${baseY + 15}" text-anchor="middle" font-size="9" font-family="system-ui,sans-serif" style="fill:var(--muted)">${fmt(edge)}</text>`;
+  }
+  const txr = X(thr);
+  const thrLine = `<line x1="${txr.toFixed(1)}" y1="${PT - 8}" x2="${txr.toFixed(1)}" y2="${baseY}" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" style="stroke:var(--crit)"/>
+    <text x="${txr.toFixed(1)}" y="${(PT - 11)}" text-anchor="middle" font-size="9.5" font-weight="700" font-family="system-ui,sans-serif" style="fill:var(--crit)">${fmt(thr)}${unit}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
+      aria-label="分布ヒストグラム。閾値 ${fmt(thr)}${unit}。${values.length}本。">
+    <line x1="${x0}" y1="${baseY}" x2="${(x0 + plotW).toFixed(1)}" y2="${baseY}" stroke-width="1" vector-effect="non-scaling-stroke" style="stroke:var(--grid)"/>
+    ${bars}${ticks}${thrLine}
+  </svg>`;
+}
+
 let sparkSeries = null;   // {values, labels, unit}
 
 async function renderAnalytics(){
@@ -1585,30 +1635,83 @@ async function renderAnalytics(){
         <div class="noitem">データ蓄積待ち（8/11朝から記録開始）<span class="s">publication_metrics_daily に日次スナップショットが積まれると表示されます</span></div>
       </div>`;
 
-  /* 収益化条件（dental のみ） */
-  let monet = '';
-  if (state.ch === 'dental') {
-    const subsNow = latestSubs || 0;
-    monet = `<div class="card"><div class="sectionhead" style="margin:0 0 var(--sp-2)">
-        <h2>収益化条件の進捗</h2><span class="hint">達成率は2条件のうち低い方</span></div>
-      ${MONETIZE.map(t => {
-        const p1 = Math.min(1, subsNow / t.subs), p2 = Math.min(1, totalViews / t.plays), p = Math.min(p1, p2);
-        return `<div class="meterblk">
-          <div class="mh"><span class="nm">${esc(t.nm)}</span><span class="pc">${(p * 100).toFixed(1)}%</span></div>
-          <div class="track"><div class="fill" style="width:${Math.max(p * 100, 0.6).toFixed(2)}%"></div></div>
-          <div class="cond">登録者 ${nf(subsNow)} / ${nf(t.subs)}（${(p1 * 100).toFixed(1)}%）　・　再生 ${nf(totalViews)} / ${nf(t.plays)}（${(p2 * 100).toFixed(2)}%）</div>
-        </div>`;
-      }).join('')}</div>`;
-  }
+  /* 収益化予実メーター（#72・両チャンネル）: 達成率は2条件のうち低い方
+     現在値は実データ（登録者=daily_kpi 最新・再生=投稿済 views 合計）。 */
+  const subsNow = latestSubs || 0;
+  const monet = `<div class="card"><div class="sectionhead" style="margin:0 0 var(--sp-2)">
+      <h2>収益化の予実</h2><span class="hint">#72 の2条件・達成率は低い方 / 登録者=daily_kpi 最新・再生=投稿済 views 合計</span></div>
+    ${MONETIZE.map(t => {
+      const p1 = Math.min(1, subsNow / t.subs), p2 = Math.min(1, totalViews / t.plays), p = Math.min(p1, p2);
+      return `<div class="meterblk">
+        <div class="mh"><span class="nm">${esc(t.nm)}</span><span class="pc">${(p * 100).toFixed(1)}%</span></div>
+        <div class="track"><div class="fill" style="width:${Math.max(p * 100, 0.6).toFixed(2)}%"></div></div>
+        <div class="cond">登録者 ${nf(subsNow)} / ${nf(t.subs)}（${(p1 * 100).toFixed(1)}%）　・　再生 ${nf(totalViews)} / ${nf(t.plays)}（${(p2 * 100).toFixed(2)}%）</div>
+      </div>`;
+    }).join('')}</div>`;
 
-  const perf = posted.slice().sort((x, y) => new Date(y.published_at || 0) - new Date(x.published_at || 0)).slice(0, 10);
+  /* 完全視聴率（#72 最重要 KPI・70%閾値）: NULL 除外して集計 */
+  const avrGe70 = rates.filter(v => v >= 70).length;
+  const compCard = rates.length ? `<div class="card">
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>完全視聴率（70%目標）</h2>
+        <span class="hint">v_publications.avg_view_rate_pct・NULL除外</span></div>
+      <div class="substats">
+        <div class="substat"><span class="k">平均</span><span class="v">${avgRate.toFixed(1)}<small>%</small></span></div>
+        <div class="substat"><span class="k">70%到達</span><span class="v">${avrGe70}<small>本（${Math.round(avrGe70 / rates.length * 100)}%）</small></span></div>
+        <div class="substat"><span class="k">計測済</span><span class="v">${rates.length}<small>/${posted.length}本</small></span></div>
+      </div>
+      <div class="distwrap"><div class="dist">${histogram(rates, 70, 10, m.accent, v => Math.round(v), '%')}</div></div>
+      <div class="distlegend"><span><i style="background:var(--good)"></i>70%到達</span><span><i style="background:${m.accent}"></i>未達</span><span style="color:var(--crit)">┊ 70%ライン</span></div>
+    </div>` : `<div class="card">
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>完全視聴率（70%目標）</h2><span class="hint">avg_view_rate_pct</span></div>
+      <div class="noitem">完全視聴率のデータがまだありません<span class="s">投稿済 ${posted.length} 本中 計測 0 本。retention 計測が daily-log に載ると集計します</span></div>
+    </div>`;
+
+  /* フック維持率（hook_awr・目標 ≥1.8）: NULL 除外 */
+  const hooks = posted.map(p => p.hook_awr).filter(v => v != null).map(Number);
+  const hookAvg = hooks.length ? hooks.reduce((s, v) => s + v, 0) / hooks.length : null;
+  const hookGe18 = hooks.filter(v => v >= 1.8).length;
+  const hookCard = hooks.length ? `<div class="card">
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>フック維持率（目標 1.8）</h2>
+        <span class="hint">v_publications.hook_awr・冒頭の離脱耐性・NULL除外</span></div>
+      <div class="substats">
+        <div class="substat"><span class="k">平均</span><span class="v">${hookAvg.toFixed(2)}</span></div>
+        <div class="substat"><span class="k">1.8到達</span><span class="v">${hookGe18}<small>本（${Math.round(hookGe18 / hooks.length * 100)}%）</small></span></div>
+        <div class="substat"><span class="k">計測済</span><span class="v">${hooks.length}<small>/${posted.length}本</small></span></div>
+      </div>
+      <div class="distwrap"><div class="dist">${histogram(hooks, 1.8, 0.2, m.accent, v => v.toFixed(1), '')}</div></div>
+      <div class="distlegend"><span><i style="background:var(--good)"></i>1.8到達</span><span><i style="background:${m.accent}"></i>未達</span><span style="color:var(--crit)">┊ 1.8ライン</span></div>
+    </div>` : `<div class="card">
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>フック維持率（目標 1.8）</h2><span class="hint">hook_awr</span></div>
+      <div class="noitem">フック維持率のデータがまだありません<span class="s">投稿済 ${posted.length} 本中 計測 0 本</span></div>
+    </div>`;
+
+  /* 48時間初速（枠のみ・空状態）
+     設計: publication_metrics_daily（pmd）が publication_id×date で積まれたら、各投稿について
+     published_at + 48h に最も近い（date >= 公開+2日 を満たす最初の）pmd スナップショット行を引き、
+     その時点の avg_view_rate_pct / views を集計して「投稿後48h時点で完全視聴率70%↑の割合」を出す。
+     pmd は現状0行のため、蓄積後に有効化する空状態プレースホルダを表示する。 */
+  const velocityCard = `<div class="card">
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>48時間初速</h2><span class="hint">publication_metrics_daily（日次スナップショット）</span></div>
+      <div class="noitem">投稿後48時間の初速（完全視聴率70%↑が目標）はデータ蓄積後に表示<span class="s">publication_metrics_daily に日次スナップショットが2日分たまる明朝以降から。各投稿の公開+48h時点の指標を集計します</span></div>
+    </div>`;
+
+  /* フック型別勝率（プレースホルダのみ・型ラベル未整備） */
+  const hookTypeCard = `<div class="card">
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>フック型別の勝率</h2><span class="hint">準備中</span></div>
+      <div class="noitem">フック型（恐怖 / 疑問 / 意外性）の分類ラベルが未整備のため準備中<span class="s">videos への型付与後に有効化します</span></div>
+    </div>`;
+
+  /* 動画別成績（列強化: 完全視聴率・フック維持率・エンゲージ率を追加） */
+  const perf = posted.slice().sort((x, y) => new Date(y.published_at || 0) - new Date(x.published_at || 0)).slice(0, 12);
   const rows = perf.length ? perf.map(v => `<tr>
       <td class="seq">${esc(v.seq)}</td><td class="ttl">${esc(v.effective_title)}</td>
       <td class="dim">${esc(fmtDate(v.published_at) || '—')}</td>
       <td class="num">${v.views == null ? '—' : nf(v.views)}</td>
       <td class="num">${v.avg_view_rate_pct == null ? '—' : Number(v.avg_view_rate_pct).toFixed(1) + '%'}</td>
+      <td class="num">${v.hook_awr == null ? '—' : Number(v.hook_awr).toFixed(2)}</td>
+      <td class="num">${v.engaged_rate_pct == null ? '—' : Number(v.engaged_rate_pct).toFixed(1) + '%'}</td>
       <td class="num">${v.subscribers_gained == null ? '—' : (v.subscribers_gained > 0 ? '+' : '') + v.subscribers_gained}</td></tr>`).join('')
-    : `<tr class="emptyrow"><td colspan="6">投稿済の動画がありません</td></tr>`;
+    : `<tr class="emptyrow"><td colspan="8">投稿済の動画がありません</td></tr>`;
 
   el.innerHTML = `
     <div class="pagehead">
@@ -1621,13 +1724,17 @@ async function renderAnalytics(){
       ${subsCard}
       ${playsCard}
       ${monet}
+      ${compCard}
+      ${hookCard}
       <div class="card">
-        <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>動画別の成績</h2><span class="hint">公開が新しい順・最大10件</span></div>
+        <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>動画別の成績</h2><span class="hint">公開が新しい順・最大12件・値なしは —</span></div>
         <div class="tblwrap perftbl"><table>
           <thead><tr><th>seq</th><th>タイトル</th><th>公開日</th><th class="num">再生数</th>
-            <th class="num">平均視聴率</th><th class="num">登録者増</th></tr></thead>
+            <th class="num">完全視聴率</th><th class="num">フック維持率</th><th class="num">エンゲージ率</th><th class="num">登録者増</th></tr></thead>
           <tbody>${rows}</tbody></table></div>
       </div>
+      ${velocityCard}
+      ${hookTypeCard}
     </div>`;
   drawSpark();
 }
