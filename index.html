@@ -1695,12 +1695,6 @@ async function renderAnalytics(){
       <div class="noitem">投稿後48時間の初速（完全視聴率70%↑が目標）はデータ蓄積後に表示<span class="s">publication_metrics_daily に日次スナップショットが2日分たまる明朝以降から。各投稿の公開+48h時点の指標を集計します</span></div>
     </div>`;
 
-  /* フック型別勝率（プレースホルダのみ・型ラベル未整備） */
-  const hookTypeCard = `<div class="card">
-      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>フック型別の勝率</h2><span class="hint">準備中</span></div>
-      <div class="noitem">フック型（恐怖 / 疑問 / 意外性）の分類ラベルが未整備のため準備中<span class="s">videos への型付与後に有効化します</span></div>
-    </div>`;
-
   /* 動画別成績（列強化: 完全視聴率・フック維持率・エンゲージ率を追加） */
   const perf = posted.slice().sort((x, y) => new Date(y.published_at || 0) - new Date(x.published_at || 0)).slice(0, 12);
   const rows = perf.length ? perf.map(v => `<tr>
@@ -1734,7 +1728,6 @@ async function renderAnalytics(){
           <tbody>${rows}</tbody></table></div>
       </div>
       ${velocityCard}
-      ${hookTypeCard}
     </div>`;
   drawSpark();
 }
