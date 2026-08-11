@@ -127,7 +127,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .btn:hover{background:var(--surface-3)}
 /* 「コメントする」用（#205 オーナー指定）: 承認（塗り）ほど強調せず、
    素の白ボタンよりは存在感を出す。AI に渡る操作なので AI 側の色（--fix）の淡色 */
-.btn.soft{background:var(--fix-tint); color:var(--fix-ink); border-color:transparent; font-weight:680}
+.btn.soft{background:var(--fix-tint); color:var(--fix-ink); border-color:var(--fix); font-weight:680}
 .btn.soft:hover{background:var(--fix-tint); filter:brightness(.96)}
 .btn.primary{background:var(--s1); border-color:transparent; color:#fff; font-weight:680}
 .btn.primary:hover{filter:brightness(1.08)}
@@ -461,9 +461,9 @@ body.detail-open .chtabs, body.detail-open .nav{display:none}
   .dhead{padding:var(--sp-3) var(--sp-4)}
   /* 下は詰める（#205 オーナー指摘: ボツボタンの下に空白が余る）。
      承認バーが sticky で最後に来るので、その下に余白を残す必要がない */
-  .dbody{padding:var(--sp-3) var(--sp-4) var(--sp-2)}
+  .dbody{padding:var(--sp-3) var(--sp-4) 0}
   .mgrid{grid-template-columns:repeat(2,1fr)}
-  body.detail-open main{padding-bottom:var(--sp-2)}
+  body.detail-open main{padding-bottom:0}
 }
 /* ── スマホ: 詳細も画面端まで（#205）──────────────────────────────
    一覧（.stockcards）と同じく main の左右パディングを消して端から端まで使う。
@@ -667,7 +667,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
    承認・コメントから離した最下段に置き、意図的に目立たせない（赤で塗ると
    かえって押したくなる）。開くまでは地味なアウトラインのボタン1つだけ。
    sticky にはしない＝スクロール中に指の下に来ることがない。 */
-.rjbox{margin-top:var(--sp-8); padding-top:var(--sp-4); border-top:1px dashed var(--border);
+.rjbox{margin-top:var(--sp-4); padding-top:var(--sp-3); border-top:1px dashed var(--border);
   display:grid; gap:var(--sp-2); justify-items:start}
 .rjbox .rjopen{font-size:var(--fs-xs); color:var(--muted); background:transparent;
   border:1px solid var(--border); padding:7px 14px}
@@ -831,7 +831,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
    下の余白はスマホの固定タブバーを避ける最小限だけ残す */
 footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4);
   color:var(--muted); font-size:var(--fs-2xs); border-top:1px solid var(--border-2);
-  letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  letter-spacing:.02em; line-height:1.7}
 
 @media (max-width:980px){
   .kpis{grid-template-columns:repeat(2,1fr)}
@@ -999,7 +999,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/11 23:56';
+const BUILT_AT = '8/12 00:04';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1345,13 +1345,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/11 23:56') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/12 00:04') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/11 23:56') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/12 00:04') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
