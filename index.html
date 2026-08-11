@@ -277,6 +277,36 @@ td.dim{color:var(--muted)}
 .emptyrow td{text-align:center; color:var(--muted); padding:26px; cursor:default}
 .emptyrow:hover td{background:transparent!important}
 
+/* ═══ 在庫カード（スマホ狭幅で表の代わりに表示） ═══════════════════ */
+.stockcards{display:none; grid-template-columns:1fr; gap:var(--sp-2)}
+.scard{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:var(--sp-3); display:grid; gap:8px; cursor:pointer; box-shadow:var(--shadow-1)}
+.scard:hover{background:var(--surface-2)}
+.scard.dropped{opacity:.65}
+.scard-top{display:flex; align-items:center; gap:8px}
+.scard-seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.04em; font-variant-numeric:tabular-nums}
+.scard-days{font-size:var(--fs-2xs); color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; white-space:nowrap}
+.scard-days.slow{color:var(--warn); font-weight:680}
+.scard-ttl{font-size:var(--fs-md); line-height:1.45; font-weight:600}
+.sbadge{justify-self:start; display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-sm);
+  font-weight:700; border-radius:var(--r-pill); padding:4px 13px; border:1px solid transparent; white-space:nowrap}
+.sbadge.work{background:var(--s1-tint); color:var(--s1)}
+.sbadge.rv{background:var(--s2-tint); color:var(--s2)}
+.sbadge.done{background:var(--good-tint); color:var(--up)}
+.sbadge.idea{background:var(--surface-2); color:var(--ink-2); border-color:var(--border-2)}
+.dotrow{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
+.dot{width:22px; height:22px; line-height:22px; text-align:center; border-radius:var(--r-pill);
+  font-size:11px; flex:0 0 auto; font-variant-numeric:normal}
+.dot.done{color:var(--up); background:var(--good-tint); font-weight:700}
+.dot.work{background:var(--s1); color:#fff; font-weight:700}
+.dot.rv{background:var(--s2); color:#fff; font-weight:700}
+.dot.todo{color:var(--axis); background:var(--surface-2)}
+.scard-extra{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
+@media (max-width:640px){
+  .tblwrap.mtx{display:none}
+  .stockcards{display:grid}
+}
+
 /* ═══ 詳細ドロワー ══════════════════════════════════════════════ */
 .drawer[hidden]{display:none}
 .drawer{position:fixed; inset:0; z-index:80}
@@ -433,6 +463,20 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .ahead .alink{margin-left:auto; font-size:var(--fs-2xs); color:var(--s1); white-space:nowrap}
 .atext{margin:0; padding:11px 13px; font-size:var(--fs-xs); line-height:1.8; white-space:pre-wrap;
   word-break:break-word; max-height:340px; overflow:auto; background:var(--surface-1); color:var(--ink)}
+.mdbody{padding:12px 15px; font-size:var(--fs-sm); line-height:1.75; background:var(--surface-1);
+  color:var(--ink); max-height:420px; overflow:auto; overflow-wrap:anywhere}
+.mdbody>*:first-child{margin-top:0}
+.mdbody>*:last-child{margin-bottom:0}
+.mdbody p{margin:0 0 .6em}
+.mdbody .mdh{font-weight:700; line-height:var(--lh-tight); margin:1.1em 0 .45em}
+.mdbody .mdh1{font-size:var(--fs-lg)}
+.mdbody .mdh2{font-size:var(--fs-md); padding-bottom:4px; border-bottom:1px solid var(--border-2)}
+.mdbody .mdh3,.mdbody .mdh4,.mdbody .mdh5,.mdbody .mdh6{font-size:var(--fs-md); color:var(--ink-2)}
+.mdbody ul,.mdbody ol{margin:.35em 0 .75em; padding-left:1.5em}
+.mdbody li{margin:.18em 0}
+.mdbody strong{font-weight:700}
+.mdbody strong.mdtag{color:var(--s1)}
+.mdbody hr{border:none; border-top:1px solid var(--border); margin:1em 0}
 .thumbs{display:grid; grid-template-columns:repeat(auto-fill,minmax(94px,1fr)); gap:var(--sp-2);
   padding:11px 12px; background:var(--surface-1)}
 .thumb{display:block; text-decoration:none; color:inherit}
@@ -708,17 +752,25 @@ const partsOf = (d, opt) => {
   return o;
 };
 const DT_OPT = {year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'};
+/* JST の曜日1文字（日月火水木金土） */
+const jstWD = d => partsOf(d, {weekday:'short'}).weekday;
 function fmtDT(iso){
   if (!iso) return null;
   const d = new Date(iso); if (isNaN(d)) return null;
   const p = partsOf(d, DT_OPT);
-  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
+  return `${p.year}-${p.month}-${p.day}(${jstWD(d)}) ${p.hour}:${p.minute}`;
 }
 function fmtDate(iso){
   if (!iso) return null;
   const d = new Date(iso); if (isNaN(d)) return null;
-  const p = partsOf(d, {year:'numeric', month:'numeric', day:'numeric'});
-  return `${p.year}/${p.month}/${p.day}`;
+  const p = partsOf(d, {year:'numeric', month:'2-digit', day:'2-digit'});
+  return `${p.year}-${p.month}-${p.day}(${jstWD(d)})`;
+}
+function fmtTime(iso){
+  if (!iso) return '';
+  const d = new Date(iso); if (isNaN(d)) return '';
+  const p = partsOf(d, {hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
+  return `${p.hour}:${p.minute}`;
 }
 function fmtMD(iso){
   if (!iso) return '';
@@ -824,7 +876,7 @@ async function loadCore(ch){
     it.plays = r.views;
     it.subs = r.subscribers_gained;
     it.resv = r.pub_status === '予約済' ? fmtDT(r.scheduled_at) : null;
-    it.pub  = fmtDT(r.published_at) || (r.posted_date || null);
+    it.pub  = fmtDT(r.published_at) || fmtDate(r.posted_date);
     return it;
   });
   store.core[ch] = { items, byId: new Map(items.map(i => [i.id, i])) };
@@ -1013,8 +1065,9 @@ function filterChips(base){
 
 function sortRows(rows){
   const s = state.stockSort;
+  /* 既定: レビュー待ち（橙● rv フラグ）を最上部 → 次に滞留日数の降順 */
   if (!s) return rows.sort((a, b) =>
-    SORT_ORDER.indexOf(pKeyOf(a)) - SORT_ORDER.indexOf(pKeyOf(b)) || (b.days || 0) - (a.days || 0));
+    ((b._rv ? 1 : 0) - (a._rv ? 1 : 0)) || (b.days || 0) - (a.days || 0));
   const dir = s.dir === 'asc' ? 1 : -1;
   const val = (o) => s.key === 'genre' ? o.genreLabel : o[s.key];
   return rows.sort((a, b) => {
@@ -1055,7 +1108,46 @@ function matrixTable(base){
     : `<tr class="emptyrow"><td colspan="${7 + PSTAGES.length}">条件に一致する動画はありません</td></tr>`;
 
   return `<div class="tblwrap mtx${rows.length > 14 ? ' tall' : ''}">
-    <table><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+    <table><thead>${head}</thead><tbody>${body}</tbody></table></div>${stockCards(rows)}`;
+}
+
+/* 狭幅（スマホ）用のカード表示。表と同じ rows から描画し CSS で出し分ける */
+function stageBadge(it){
+  if (it.stage === 'dropped') return {cls:'idea', emoji:'⚪', text:'没'};
+  if (it.stage === 'posted')  return {cls:'done', emoji:'🟢', text:'投稿済'};
+  if (it._rv)                 return {cls:'rv',   emoji:'🟠', text:`${GATE_LABEL[it._rv]}レビュー待ち`};
+  if (it.stage === 'idea')    return {cls:'idea', emoji:'⚪', text:'ネタ案'};
+  if (it.stage === 'queue')   return {cls:'work', emoji:'🔵', text:'投稿待ち'};
+  return {cls:'work', emoji:'🔵', text:`${PSTAGES[displayIdx(it)].name}中`};
+}
+function progressDots(it){
+  const cur = displayIdx(it), done = it.stage === 'posted';
+  return `<div class="dotrow" aria-hidden="true">` + PSTAGES.map((s, j) => {
+    let cls = 'todo', gl = '·';
+    if (cur >= 0 && (done || j < cur)) { cls = 'done'; gl = '✓'; }
+    else if (cur >= 0 && j === cur) { cls = it._rv ? 'rv' : 'work'; gl = '●'; }
+    return `<span class="dot ${cls}" title="${esc(s.name)}">${gl}</span>`;
+  }).join('') + `</div>`;
+}
+function stockCards(rows){
+  const body = rows.length ? rows.map(it => {
+    const b = stageBadge(it);
+    const extra = it.stage === 'posted'
+      ? (it.plays != null ? `<span class="sx">▶ ${nf(it.plays)} 回再生</span>` : '')
+      : (it.resv ? `<span class="sx">🗓 ${esc(it.resv)}</span>`
+        : (it.pub ? `<span class="sx">📅 ${esc(it.pub)}</span>` : ''));
+    return `<article class="scard${it.stage === 'dropped' ? ' dropped' : ''}" data-vid="${it.id}" tabindex="0">
+      <div class="scard-top">
+        <span class="scard-seq">${esc(it.seq)}</span>
+        <span class="scard-days${it.days >= 7 ? ' slow' : ''}">${it.days >= 7 ? '⏳ ' : ''}滞留 ${it.days == null ? '—' : it.days + '日'}</span>
+      </div>
+      <span class="sbadge ${b.cls}">${b.emoji} ${esc(b.text)}</span>
+      <div class="scard-ttl">${esc(it.title)}</div>
+      ${progressDots(it)}
+      ${extra ? `<div class="scard-extra">${extra}</div>` : ''}
+    </article>`;
+  }).join('') : `<div class="noitem">条件に一致する動画はありません</div>`;
+  return `<div class="stockcards">${body}</div>`;
 }
 
 const MARK_LEGEND = `<div class="legend2">
@@ -1122,11 +1214,11 @@ async function renderStock(){
     <div class="pagehead">
       <div class="eyebrow">在庫</div>
       <h1>${m.icon} ${esc(m.name)}</h1>
-      <p>仕掛かり ${active}本・没 ${droppedN}本。v_video_stock（videos の status と承認列＋主口の投稿）から集計しています。行をクリックすると詳細が開きます。</p>
+      <p>仕掛かり ${active}本・没 ${droppedN}本。v_video_stock（videos の status と承認列＋主口の投稿）から集計しています。行（スマホはカード）をクリックすると詳細が開きます。</p>
     </div>
     <div class="sectionhead" style="margin-top:0">
       <h2>進捗マトリクス</h2>
-      <span class="hint">既定は投稿に近い工程が上・同一工程内は滞留の長い順</span>
+      <span class="hint">既定はレビュー待ちを最上部・次に滞留の長い順</span>
       <span class="spacer"></span>
       <div class="seg" role="group" aria-label="表示切替">
         <button data-stockview="table" aria-pressed="${isTable}">表</button>
@@ -1198,7 +1290,7 @@ function detailHTML(it){
   const curName = cur < 0 ? '没' : PSTAGES[cur].name;
 
   const metrics = (it.plays != null || it.avg_view_rate_pct != null || it.subs != null) ? `
-    <div class="dsec"><h4>メトリクス${it.measured_date ? `（${esc(it.measured_date)} 計測）` : ''}</h4>
+    <div class="dsec"><h4>メトリクス${it.measured_date ? `（${esc(fmtDate(it.measured_date) || it.measured_date)} 計測）` : ''}</h4>
       <div class="mgrid">
         <div class="m"><div class="k">再生数</div><div class="v">${it.plays == null ? '—' : nf(it.plays)}</div></div>
         <div class="m"><div class="k">平均視聴率</div><div class="v">${it.avg_view_rate_pct == null ? '—' : Number(it.avg_view_rate_pct).toFixed(1) + '%'}</div></div>
@@ -1268,6 +1360,34 @@ function assetHead(f){
     ${f.url ? `<a class="alink" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">別タブで開く</a>` : ''}</div>`;
 }
 
+/* 台本(.md)向けの軽量 Markdown レンダラー。
+   XSS対策: 本文は必ず esc() でエスケープしてから、既知パターンだけをタグ化する
+   （生HTMLは一切通さない）。台本で使う記法（見出し/太字/箇条書き/番号/水平線/【見出し】）に限定。 */
+function mdInline(s){
+  return esc(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(【[^】]+】)/g, '<strong class="mdtag">$1</strong>');
+}
+function mdToHTML(src){
+  const lines = String(src == null ? '' : src).replace(/\r\n?/g, '\n').split('\n');
+  let out = '', list = null;
+  const closeList = () => { if (list) { out += `</${list}>`; list = null; } };
+  for (const raw of lines) {
+    const line = raw.replace(/\s+$/, '');
+    if (!line.trim()) { closeList(); continue; }
+    if (/^\s*([-*_]\s*){3,}$/.test(line)) { closeList(); out += '<hr>'; continue; }
+    let m = /^(#{1,6})\s+(.*)$/.exec(line);
+    if (m) { closeList(); const lv = m[1].length; out += `<h${lv} class="mdh mdh${lv}">${mdInline(m[2])}</h${lv}>`; continue; }
+    m = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+    if (m) { if (list !== 'ol') { closeList(); out += '<ol>'; list = 'ol'; } out += `<li>${mdInline(m[1])}</li>`; continue; }
+    m = /^\s*(?:[-*]\s+|・\s*)(.*)$/.exec(line);
+    if (m) { if (list !== 'ul') { closeList(); out += '<ul>'; list = 'ul'; } out += `<li>${mdInline(m[1])}</li>`; continue; }
+    closeList(); out += `<p>${mdInline(line)}</p>`;
+  }
+  closeList();
+  return out;
+}
+
 function assetsHTML(files){
   if (!files.length) return NO_ASSET;
   const imgs = files.filter(f => f.kind === 'image');
@@ -1275,6 +1395,9 @@ function assetsHTML(files){
 
   const blocks = rest.map(f => {
     if (f.kind === 'text') {
+      if (/\.md$/i.test(f.name) && f.text != null) {
+        return `<div class="asset">${assetHead(f)}<div class="mdbody">${mdToHTML(f.text)}</div></div>`;
+      }
       return `<div class="asset">${assetHead(f)}<pre class="atext">${
         f.text != null ? esc(f.text) : esc(f.err || '（本文が空です）')}</pre></div>`;
     }
@@ -1604,11 +1727,11 @@ async function renderAnalytics(){
     sparkSeries = { values: subsSeries.map(r => r.follower_actual), labels: subsSeries.map(r => fmtMD(r.date + 'T00:00:00+09:00')), unit:'人' };
     const mini = `<div class="tblwrap"><table><thead><tr><th>日付</th><th class="num">登録者</th></tr></thead><tbody>${
       subsSeries.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % Math.max(1, Math.ceil(arr.length / 5)) === 0)
-        .map(r => `<tr><td>${esc(r.date)}</td><td class="num">${nf(r.follower_actual)}</td></tr>`).join('')}</tbody></table></div>`;
+        .map(r => `<tr><td>${esc(fmtDate(r.date) || r.date)}</td><td class="num">${nf(r.follower_actual)}</td></tr>`).join('')}</tbody></table></div>`;
     subsCard = `<div class="card">
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>登録者の推移</h2><span class="hint">daily_kpi（media=${esc(a.mediaKey || '—')}）・直近30日</span></div>
         <div class="spark" id="spark"></div>
-        <div class="sparkcap">${esc(subsSeries[0].date)} <b>${nf(first)}</b> → ${esc(subsSeries[subsSeries.length - 1].date)} <b>${nf(last)}</b>（<span style="color:var(--up);font-weight:700">${last - first >= 0 ? '+' : ''}${nf(last - first)}</span>）</div>
+        <div class="sparkcap">${esc(fmtDate(subsSeries[0].date) || subsSeries[0].date)} <b>${nf(first)}</b> → ${esc(fmtDate(subsSeries[subsSeries.length - 1].date) || subsSeries[subsSeries.length - 1].date)} <b>${nf(last)}</b>（<span style="color:var(--up);font-weight:700">${last - first >= 0 ? '+' : ''}${nf(last - first)}</span>）</div>
         <button class="tbltoggle" id="tbltoggle">${state.tblOpen ? '表を閉じる' : '表で見る'}</button>
         <div class="minitbl ${state.tblOpen ? 'show' : ''}" id="minitbl">${mini}</div>
       </div>`;
@@ -1628,7 +1751,7 @@ async function renderAnalytics(){
     ? `<div class="card">
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>再生数の推移</h2><span class="hint">全投稿の累計合計・直近30日</span></div>
         <div class="tblwrap"><table><thead><tr><th>日付</th><th class="num">累計再生数</th></tr></thead><tbody>${
-          dates.map(d => `<tr><td>${esc(d)}</td><td class="num">${nf(byDate.get(d))}</td></tr>`).join('')}</tbody></table></div>
+          dates.map(d => `<tr><td>${esc(fmtDate(d) || d)}</td><td class="num">${nf(byDate.get(d))}</td></tr>`).join('')}</tbody></table></div>
       </div>`
     : `<div class="card">
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>再生数の推移</h2><span class="hint">全投稿の累計合計・直近30日</span></div>
@@ -1774,7 +1897,7 @@ async function renderOps(){
                     : `<span class="cq">共通</span>`;
       const sev = e.severity === 'error' ? 'bad' : (e.severity === 'warn' ? 'warn' : '');
       const mk = e.severity === 'error' ? '✕' : (e.severity === 'warn' ? '⚠' : '✓');
-      return `<li class="${sev}">${tag}<span class="mk">${mk}</span><span class="tm">${esc(fmtDT(e.at) ? fmtDT(e.at).slice(11) : '')}</span><span class="bd">${esc(e.body)}</span></li>`;
+      return `<li class="${sev}">${tag}<span class="mk">${mk}</span><span class="tm">${esc(fmtTime(e.at))}</span><span class="bd">${esc(e.body)}</span></li>`;
     }).join('');
     return `<article class="run ${cls}">
       <div class="runhead"><span class="when">${esc(fmtDT(r.started_at) || '—')}</span>
@@ -1938,7 +2061,7 @@ document.addEventListener('click', e => {
     refreshStockTable(); return;
   }
 
-  const row = e.target.closest('.mtx tbody tr[data-vid]');
+  const row = e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
   if (row) { openDetail(row.dataset.vid); return; }
 
   const rvHead = e.target.closest('.rvhead');
@@ -1981,7 +2104,7 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (e.key === 'Escape' && state.detail) { closeDetail(); return; }
-  const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid]');
+  const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
   if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDetail(row.dataset.vid); }
 });
 window.addEventListener('scroll', hideTip, { passive: true });
