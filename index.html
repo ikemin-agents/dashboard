@@ -530,6 +530,16 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .mdbody hr{border:none; border-top:1px solid var(--border); margin:1em 0}
 .thumbs{display:grid; grid-template-columns:repeat(auto-fill,minmax(94px,1fr)); gap:var(--sp-2);
   padding:11px 12px; background:var(--surface-1)}
+
+/* ページ画像ビューア（#203）: 絵コンテのように「読む」素材は 94px のサムネでは判読できないので、
+   PDF を捲る感覚に近い縦スクロールの箱にする。箱の中だけがスクロールするので、
+   17ページあってもレビュー履歴や入力欄が下へ押し出されない */
+.pageview{max-height:min(78vh, 980px); overflow-y:auto; overscroll-behavior:contain;
+  background:var(--surface-1); padding:11px 12px; display:grid; gap:var(--sp-3)}
+.pageview figure{margin:0 auto; max-width:1000px; width:100%}
+.pageview img{width:100%; height:auto; display:block; border:1px solid var(--border-2);
+  border-radius:var(--r-sm); background:#111}
+.pageview figcaption{font-size:var(--fs-2xs); color:var(--muted); text-align:right; margin-top:3px}
 .thumb{display:block; text-decoration:none; color:inherit}
 .thumb img{width:100%; aspect-ratio:9/16; object-fit:cover; display:block;
   border:1px solid var(--border-2); border-radius:var(--r-sm); background:var(--surface-3)}
@@ -1580,7 +1590,12 @@ function mdToHTML(src){
 
 function assetsHTML(files){
   if (!files.length) return NO_ASSET;
-  const imgs = files.filter(f => f.kind === 'image');
+  /* `…_p01.jpg` 形式は資料の「ページ」（絵コンテの各ページ等）。サムネ格子ではなく
+     縦スクロールのビューアで見せる（#203） */
+  const pageNo = f => { const m = /_p(\d+)\.(?:jpe?g|png)$/i.exec(f.name); return m ? Number(m[1]) : null; };
+  const pages = files.filter(f => f.kind === 'image' && pageNo(f) != null)
+                     .sort((a, b) => pageNo(a) - pageNo(b));
+  const imgs = files.filter(f => f.kind === 'image' && pageNo(f) == null);
   const rest = files.filter(f => f.kind !== 'image');
 
   const blocks = rest.map(f => {
@@ -1605,6 +1620,16 @@ function assetsHTML(files){
       f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.name)}</a>${
         f.size != null ? ` <span class="asz">${esc(fmtSize(f.size))}</span>` : ''}`
         : esc(f.name)).join('')}</div></div>`);
+  }
+  if (pages.length) {
+    blocks.unshift(`<div class="asset">
+      <div class="ahead"><span class="anm">絵コンテ ${pages.length} ページ</span>
+        <span class="asz">箱の中をスクロール・画像クリックで原寸</span></div>
+      <div class="pageview">${pages.map((f, i) => f.url
+        ? `<figure><a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">
+             <img src="${esc(f.url)}" alt="${esc(f.name)}" loading="lazy" decoding="async"></a>
+           <figcaption>${i + 1} / ${pages.length}</figcaption></figure>`
+        : `<figure><figcaption>${esc(f.name)}（表示できませんでした）</figcaption></figure>`).join('')}</div></div>`);
   }
   if (imgs.length) {
     blocks.unshift(`<div class="asset">
