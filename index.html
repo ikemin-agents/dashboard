@@ -119,7 +119,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 
 /* ═══ ヘッダー ══════════════════════════════════════════════════ */
 .topbar{position:sticky; top:0; z-index:40; background:var(--surface-1); border-bottom:1px solid var(--border)}
-.topbar-in{max-width:1280px; margin:0 auto; padding:var(--sp-3) var(--sp-5) 0}
+.topbar-in{max-width:1360px; margin:0 auto; padding:var(--sp-3) var(--sp-5) 0}
 .brandrow{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap}
 .brand{font-size:var(--fs-lg); font-weight:680; letter-spacing:.005em; line-height:1.2; margin-right:auto}
 /* サブタイトル「YOUTUBE PRODUCTION」は PC/スマホとも非表示（ヘッダーを詰める・#202） */
@@ -161,7 +161,7 @@ body[data-chindep="1"] .chtabs{opacity:.5; pointer-events:none}
 
 /* ═══ ナビ ══════════════════════════════════════════════════════ */
 .nav{background:var(--surface-1); border-top:1px solid var(--border-2)}
-.nav-in{max-width:1280px; margin:0 auto; padding:0 var(--sp-5); display:flex; gap:var(--sp-1)}
+.nav-in{max-width:1360px; margin:0 auto; padding:0 var(--sp-5); display:flex; gap:var(--sp-1)}
 .navbtn{appearance:none; border:none; background:transparent; font-family:inherit; font-size:var(--fs-md);
   color:var(--ink-2); padding:12px 14px 10px; cursor:pointer; border-bottom:2px solid transparent;
   display:inline-flex; align-items:center; gap:7px; transition:color .12s; position:relative}
@@ -172,7 +172,7 @@ body[data-chindep="1"] .chtabs{opacity:.5; pointer-events:none}
   border-radius:var(--r-pill); font-size:var(--fs-2xs); padding:0 6px; font-weight:700; line-height:1.5}
 
 /* ═══ レイアウト ════════════════════════════════════════════════ */
-main{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-width:0}
+main{max-width:1360px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-width:0}
 .view{display:none; min-width:0}
 .view.active{display:block}
 .pagehead{margin-bottom:var(--sp-5)}
@@ -328,7 +328,7 @@ td.dim{color:var(--muted)}
 }
 
 /* ═══ 詳細ビュー（履歴付き全画面遷移・#200） ══════════════════════ */
-.dview{max-width:860px; margin:0 auto; animation:detailin .18s ease-out}
+.dview{max-width:1040px; margin:0 auto; animation:detailin .18s ease-out}
 @keyframes detailin{from{transform:translateY(8px);opacity:.5}to{transform:none;opacity:1}}
 .backbtn{display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-sm);
   border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
@@ -448,6 +448,9 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .cmt .av{width:26px;height:26px;border-radius:var(--r-pill);flex:0 0 auto;display:grid;place-items:center;
   font-size:var(--fs-2xs);font-weight:700;color:#fff}
 .cmt.ai .av{background:var(--stg4)}
+/* AI（ai:*）は Claude のオレンジ放射状シンボル。白丸に載せ、両テーマで丸の縁がわかるよう内側リングを付ける */
+.cmt .av.aiav,.cmt.ai .av.aiav{background:#fff; box-shadow:inset 0 0 0 1px var(--border-2)}
+.cmt .av.aiav .claudeburst{display:block}
 .cmt .bub{background:var(--surface-2); border:1px solid var(--border-2); border-radius:var(--r-md);
   padding:9px 12px; flex:1 1 auto; min-width:0}
 .cmt .who{font-size:var(--fs-2xs); color:var(--muted); margin-bottom:2px;
@@ -613,7 +616,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   width:max-content; max-width:min(430px, calc(100vw - 32px)); box-shadow:0 8px 28px rgba(0,0,0,.28)}
 #toast.on{opacity:1; transform:translate(-50%,0)}
 
-footer{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; color:var(--muted);
+footer{max-width:1360px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; color:var(--muted);
   font-size:var(--fs-2xs); border-top:1px solid var(--border-2); letter-spacing:.02em}
 
 @media (max-width:980px){
@@ -657,6 +660,13 @@ footer{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; co
   .legend2{gap:12px; padding:2px 0; border:none; background:transparent; margin-bottom:var(--sp-2)}
   .legend2 .ex{display:none}
   .legend2 .mark{width:15px; height:15px; line-height:15px; font-size:10px}
+}
+/* ═══ PC（広い画面）だけ本文フォントを少し大きく（#203）
+   root を 16→17px にして rem ベースの --fs-* を一律 +約1px。スマホ層(≤680px)は
+   別メディアクエリで既に確定済み・ここは min-width:681px に隔離するので不変 ═══ */
+@media (min-width:681px){
+  html{font-size:17px}
+  body{font-size:16px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -1691,10 +1701,18 @@ async function submitApprove(box, key){
   toast(already ? `${gname}ゲートは既に承認済みです` : 'review_events に記録しました');
 }
 
+// Claude（Anthropic）ブランドシンボルのインラインSVG。CSPで外部画像不可のため必ずインライン。
+// 12枚の花弁が中心から放射状に広がるオレンジ(#D97757)のバースト。白い丸背景に載せてアバター丸(26px)に収める。
+const CLAUDE_BURST_SVG = '<svg class="claudeburst" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false">'
+  + '<path fill="#D97757" d="M12.00 12.00 Q13.65 6.40 12.00 1.40 Q10.35 6.40 12.00 12.00 Z M12.00 12.00 Q16.23 7.98 17.30 2.82 Q13.37 6.33 12.00 12.00 Z M12.00 12.00 Q17.67 10.63 21.18 6.70 Q16.02 7.77 12.00 12.00 Z M12.00 12.00 Q17.60 13.65 22.60 12.00 Q17.60 10.35 12.00 12.00 Z M12.00 12.00 Q16.02 16.23 21.18 17.30 Q17.67 13.37 12.00 12.00 Z M12.00 12.00 Q13.37 17.67 17.30 21.18 Q16.23 16.02 12.00 12.00 Z M12.00 12.00 Q10.35 17.60 12.00 22.60 Q13.65 17.60 12.00 12.00 Z M12.00 12.00 Q7.77 16.02 6.70 21.18 Q10.63 17.67 12.00 12.00 Z M12.00 12.00 Q6.33 13.37 2.82 17.30 Q7.98 16.23 12.00 12.00 Z M12.00 12.00 Q6.40 10.35 1.40 12.00 Q6.40 13.65 12.00 12.00 Z M12.00 12.00 Q7.98 7.77 2.82 6.70 Q6.33 10.63 12.00 12.00 Z M12.00 12.00 Q10.63 6.33 6.70 2.82 Q7.77 7.98 12.00 12.00 Z"/></svg>';
+
 function avatarOf(author){
-  const ai = author.startsWith('ai:');
-  const init = ai ? 'AI' : (author === 'koike' ? 'ko' : author === 'kohnosuke' ? 'kh' : author.slice(0, 2));
-  const bg = ai ? 'var(--stg4)' : (author === 'koike' ? 'var(--s1)' : 'var(--s2)');
+  // AI（ai:* — ai:backfill / ai:youtube-produce 等）は Claude アイコン、人間はイニシャルのまま（見分け）
+  if (String(author).startsWith('ai:')) {
+    return `<span class="av aiav" role="img" aria-label="Claude">${CLAUDE_BURST_SVG}</span>`;
+  }
+  const init = author === 'koike' ? 'ko' : author === 'kohnosuke' ? 'kh' : author.slice(0, 2);
+  const bg = author === 'koike' ? 'var(--s1)' : 'var(--s2)';
   return `<span class="av" style="background:${bg}">${esc(init)}</span>`;
 }
 function threadHTML(videoId, gate){
