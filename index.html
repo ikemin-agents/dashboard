@@ -535,8 +535,9 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
    PDF を捲る感覚に近い縦スクロールの箱にする。箱の中だけがスクロールするので、
    17ページあってもレビュー履歴や入力欄が下へ押し出されない */
 .pageview{max-height:min(78vh, 980px); overflow-y:auto; overscroll-behavior:contain;
-  background:var(--surface-1); padding:11px 12px; display:grid; gap:var(--sp-3)}
-.pageview figure{margin:0 auto; max-width:1000px; width:100%}
+  background:var(--surface-1); padding:11px 12px; display:grid; gap:var(--sp-3);
+  grid-template-columns:repeat(auto-fill, minmax(280px, 1fr))}
+.pageview figure{margin:0; width:100%}
 .pageview img{width:100%; height:auto; display:block; border:1px solid var(--border-2);
   border-radius:var(--r-sm); background:#111}
 .pageview figcaption{font-size:var(--fs-2xs); color:var(--muted); text-align:right; margin-top:3px}
