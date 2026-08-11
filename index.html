@@ -807,6 +807,13 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   font-size:var(--fs-xs); box-shadow:0 4px 14px rgba(0,0,0,.18); font-variant-numeric:tabular-nums;
   white-space:nowrap; color:var(--ink)}
 #tip.on{opacity:1}
+/* 新版の通知バー（#205）。GitHub Pages の10分キャッシュで古い版を掴んだときに出る */
+#newver{position:fixed; z-index:96; left:50%; bottom:92px; transform:translateX(-50%);
+  display:flex; align-items:center; gap:10px; white-space:nowrap;
+  background:var(--fix); color:#fff; font-size:var(--fs-xs); font-weight:680;
+  padding:9px 14px; border-radius:var(--r-pill); box-shadow:0 8px 28px rgba(0,0,0,.28)}
+#newver button{font-family:inherit; font-size:var(--fs-xs); font-weight:700; cursor:pointer;
+  background:#fff; color:var(--fix); border:none; border-radius:var(--r-pill); padding:5px 12px}
 #toast{position:fixed; z-index:95; left:50%; bottom:92px; transform:translate(-50%,14px);
   background:var(--ink); color:var(--page); border-radius:var(--r-md); padding:12px 20px; font-size:var(--fs-sm);
   opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; text-align:center;
@@ -983,6 +990,9 @@ const PSTAGES = [
 /* AI が作業している状態は【AI】を付け、人間（オーナー）の番には付けない（#205 オーナー指定）。
    接頭辞の有無だけで「誰のボールか」が分かるようにする。色（オレンジ=AI / 青=あなた）と二重化 */
 const AI_TAG = '【AI】';
+/* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
+   フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
+const BUILT_AT = '8/11 23:47';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1319,7 +1329,28 @@ function renderShell(){
     : (state.lastSync ? '最終読込 ' + fmtDT(state.lastSync) : '未読込');
   $('#reloadbtn').classList.toggle('spin', state.busy);
   $('#footer').textContent =
-    `制作ダッシュボード #191 ・ Supabase 実データ`;
+    `制作ダッシュボード #191 ・ Supabase 実データ ・ 更新 ${BUILT_AT}`;
+}
+
+/* ══ 新版の検知（#205）════════════════════════════════════════════
+   GitHub Pages は HTML に Cache-Control: max-age=600 を返すため、デプロイ直後に
+   開くと最大10分は古い版が表示される（プライベートモードでも同じ）。設定では
+   変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
+   比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
+async function checkForUpdate(){
+  if (BUILT_AT === '8/11 23:47') return;          /* ローカルで開いた未デプロイ版 */
+  try {
+    const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
+    if (!res.ok) return;
+    const text = await res.text();
+    const m    = text.match(/const BUILT_AT = '([^']*)'/);
+    if (!m || m[1] === BUILT_AT || m[1] === '8/11 23:47') return;
+    const bar = document.createElement('div');
+    bar.id = 'newver';
+    bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
+    bar.querySelector('button').onclick = () => location.reload();
+    document.body.appendChild(bar);
+  } catch { /* 通信できないときは黙って諦める（本流を止めない） */ }
 }
 
 const errBox = msg => `<div class="errbox"><b>読み込みエラー</b><br>${esc(msg)}</div>`;
@@ -2807,6 +2838,10 @@ sb.auth.onAuthStateChange((event, session) => {
 const { data: { session } } = await sb.auth.getSession();
 if (session && session.user) await showApp(session.user);
 else showLogin();
+
+/* 新版が出ていないか確認する（await しない＝表示を待たせない）。
+   ログイン画面のままでも古い版なら意味がないので、認証状態に関係なく走らせる */
+checkForUpdate();
 </script>
 </body>
 </html>
