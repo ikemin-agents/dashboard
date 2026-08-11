@@ -384,11 +384,9 @@ td.ttl .flags{margin-left:8px}
   main,footer{max-width:100%}
   .stockcards{display:grid; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
     border-top:1px solid var(--border)}
-  /* レビュー一覧も在庫カードと同じ扱い（フル幅リスト行・区切りは細線1本） */
-  .rvlist{gap:0; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
-    border-top:1px solid var(--border)}
-  .rvitem{border-radius:0; border-width:0 0 1px 0; box-shadow:none}
-  .rvhead .chip{display:none}   /* チャンネルは見出しに出ているので行からは省く */
+  /* ⚠️ レビュー（.rvlist/.rvitem）・稼働（.runs/.run）の同等ルールはここには書かない。
+     それらの基本定義がこのブロックより後ろにあり、同じ詳細度なので上書きされてしまう
+     （実際それで角丸・影が残っていた）。スタイルシート末尾の専用ブロックに置く（#205） */
 }
 
 /* ═══ 詳細ビュー（履歴付き全画面遷移・#200） ══════════════════════ */
@@ -872,6 +870,29 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .legend2 .ex{display:none}
   .legend2 .mark{width:15px; height:15px; line-height:15px; font-size:10px}
 }
+/* ═══ スマホ: 在庫・レビュー・稼働の3タブを同じ「左右いっぱいの表」に揃える（#205）
+   基準は在庫カード（.stockcards の行）: 角丸なし・影なし・画面端まで・区切りは細線1本・
+   左端に状態の色帯・行の内側余白は 12px 16px。
+   ⚠️ 置き場所に意味がある: .rvitem / .run の基本定義（角丸・影つきカード）はこの
+      ブロックより前にあり詳細度も同じなので、前方のメディアクエリに書くと後勝ちで
+      上書きされて効かない。必ず基本定義より後ろ＝ここに置くこと ═══ */
+@media (max-width:640px){
+  /* リスト本体: main の左右パディングを打ち消して画面端まで。行間の隙間は無くす */
+  .rvlist,.runs{gap:0; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3))}
+  .rvlist{border-top:1px solid var(--border)}
+  /* 行: カードの角丸・影・左右の枠線を外し、下線1本だけの表の行にする。
+     状態の色帯（.rvitem.is-rv / .run.ok 等）は詳細度が高いので 3px のまま残る */
+  .rvitem,.run{border-radius:0; border-width:0 0 1px 0; box-shadow:none}
+  .rvhead{padding:var(--sp-3) var(--sp-4)}
+  .rvhead .chip{display:none}   /* チャンネルは見出しに出ているので行からは省く */
+  .run{padding:var(--sp-3) var(--sp-4)}
+  /* 稼働タブ: 上の説明バナーと現況も囲みを外し、下の実行ログと地続きの1枚に見せる */
+  .note,.card.now{margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
+    border-radius:0; border-width:0 0 1px 0; box-shadow:none}
+  .note{margin-bottom:0}
+  .card.now{padding:var(--sp-3) var(--sp-4)}
+  .runs{margin-top:0}
+}
 /* ═══ PC（広い画面）だけ本文フォントを少し大きく（#203）
    root を 16→17px にして rem ベースの --fs-* を一律 +約1px。スマホ層(≤680px)は
    別メディアクエリで既に確定済み・ここは min-width:681px に隔離するので不変 ═══ */
@@ -999,7 +1020,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/12 00:04';
+const BUILT_AT = '8/12 00:17';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1345,13 +1366,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/12 00:04') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/12 00:17') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/12 00:04') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/12 00:17') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2257,7 +2278,9 @@ async function renderReview(){
         <span class="caret">›</span>
       </button>
     </article>`;
-  const items = list.length ? list.map(r => rvRow(r, 'rv')).join('')
+  /* 空のときは .rvlist の外に出す（リストは画面端まで伸ばす負マージンを持つので、
+     空状態の囲みまで端に貼り付いてしまうため） */
+  const items = list.length ? `<div class="rvlist">${list.map(r => rvRow(r, 'rv')).join('')}</div>`
     : `<div class="noitem">承認待ちはありません
     <span class="s">レビュー依頼（review_events の request_review）が記録されるとここに並びます</span></div>`;
 
@@ -2267,7 +2290,7 @@ async function renderReview(){
       <h1>${m.icon} ${esc(m.name)}<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${list.length}件</span></h1>
       <p>${gateNames} の${m.gates.length}ゲート。カードを開くと搬出済みの素材と review_events の履歴を確認でき、その場でコメント・承認ができます。表示は選択中のチャンネル分のみです。</p>
     </div>
-    <div class="rvlist">${items}</div>
+    ${items}
     ${chg.length ? `<div class="sectionhead"><h2>${AI_TAG}修正中（AIの対応待ち）${chg.length}件</h2>
         <span class="hint">あなたが出した指摘。夜間の制作エージェントが対応すると自動で消えます</span></div>
       <div class="rvlist">${chg.map(r => rvRow(r, 'rc')).join('')}</div>` : ''}`;
@@ -2559,7 +2582,10 @@ async function renderOps(){
       ${r.summary ? `<div class="runsummary">${esc(r.summary)}</div>` : ''}
       ${laneChips(r.lanes)}
       ${evs.length ? `<ul class="acts">${acts}</ul>` : ''}</article>`;
-  }).join('') : `<div class="noitem">まだ実行記録がありません
+  }).join('') : '';
+  /* 空のときは .runs の外に出す（レビュー一覧と同じ理由・#205） */
+  const runsBlock = ops.runs.length ? `<div class="runs">${runs}</div>`
+    : `<div class="noitem">まだ実行記録がありません
     <span class="s">初回: 毎日 02:00 の stock keeper（PC 起動中のみ実行）</span></div>`;
 
   el.innerHTML = `
@@ -2575,7 +2601,7 @@ async function renderOps(){
       <div><b>${running ? `実行中: ${esc(running.kind)}（${esc(fmtDT(running.started_at) || '')} 開始）` : 'いま進行中のジョブはありません'}</b>
         <div style="font-size:var(--fs-xs);color:var(--ink-2)">次回実行 毎日 02:00 JST・PC 起動中のみ実行</div></div>
     </div>
-    <div class="runs">${runs}</div>`;
+    ${runsBlock}`;
 }
 
 /* ══ ツールチップ ═══════════════════════════════════════════════ */
