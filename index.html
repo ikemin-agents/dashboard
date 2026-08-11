@@ -46,6 +46,9 @@
      濃い青＋縁取り（作業中は塗りつぶし）で見分ける。--done は完了・投稿済・承認済み。 */
   --fix:#1c5cab;  --fix-tint:#e2ecfa;
   --done:#56544f; --done-tint:#e8e6df;
+  /* tint 背景の上に載せる文字色（バッジは枠線を使わないぶん、文字色だけで AA 4.5 を確保する）。
+     --s1 / --s2 そのままだと tint 上で 3.8 / 2.8 しか出ないため、バッジ専用に濃い版を持つ */
+  --s1-ink:#155ba9; --s2-ink:#a33f10;
 
   --meter-track:#e2edfb; --meter-fill:#2a78d6;
   --stg1:#86b6ef; --stg2:#5598e7; --stg3:#2a78d6;
@@ -71,6 +74,7 @@
     --up:#0ca30c;
     --fix:#79b0f2;  --fix-tint:#152437;
     --done:#a8a69e; --done-tint:#2a2a28;
+    --s1-ink:#79b0f2; --s2-ink:#f0946e;
     --meter-track:#12243a; --meter-fill:#3987e5;
     --stg1:#b7d3f6; --stg2:#86b6ef; --stg3:#5598e7;
     --stg4:#2a78d6; --stg5:#256abf; --stg6:#8f8d86;
@@ -89,6 +93,7 @@
   --up:#0ca30c;
   --fix:#79b0f2;  --fix-tint:#152437;
   --done:#a8a69e; --done-tint:#2a2a28;
+  --s1-ink:#79b0f2; --s2-ink:#f0946e;
   --meter-track:#12243a; --meter-fill:#3987e5;
   --stg1:#b7d3f6; --stg2:#86b6ef; --stg3:#5598e7;
   --stg4:#2a78d6; --stg5:#256abf; --stg6:#8f8d86;
@@ -307,13 +312,21 @@ td.dim{color:var(--muted)}
 .mtx tbody tr.st-rv td:first-child{box-shadow:inset 3px 0 0 var(--s2), 1px 0 0 var(--border-2)}
 .mtx tbody tr.st-rc td:first-child,
 .mtx tbody tr.st-open td:first-child{box-shadow:inset 3px 0 0 var(--fix), 1px 0 0 var(--border-2)}
-/* 状態バッジ（一覧の行・カード・詳細で共用） */
-.flags{display:inline-flex; gap:5px; flex-wrap:wrap; vertical-align:1px}
-td.ttl .flags{margin-left:7px}
-.sflag{display:inline-flex; align-items:center; gap:4px; font-size:var(--fs-2xs); font-weight:700;
-  border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap; border:1px solid transparent}
-.sflag.rv{background:var(--s2-tint); color:var(--s2)}
-.sflag.rc,.sflag.open{background:var(--fix-tint); color:var(--fix); border-color:var(--fix)}
+/* ── 状態バッジ（唯一のコンポーネント・#205）────────────────────────
+   在庫の表／在庫カード／レビュー一覧／詳細で同じ .sbadge を使う。状態は「tint 背景＋文字色」
+   だけで表し、枠線・リングは使わない（枠線あり/なしが混ざると同じ行で大きさが揃わないため）。
+   寸法は全種類共通: fs-sm / padding 4px 13px / 角丸ピル / gap 5px。 */
+.sbadges,.flags{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.flags{display:inline-flex; vertical-align:middle}
+td.ttl .flags{margin-left:8px}
+.sbadge{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-sm); font-weight:700;
+  border:none; border-radius:var(--r-pill); padding:4px 13px; white-space:nowrap; line-height:1.35;
+  background:var(--surface-2); color:var(--ink-2)}
+.sbadge.work{background:var(--s1-tint); color:var(--s1-ink)}
+.sbadge.rv{background:var(--s2-tint); color:var(--s2-ink)}
+.sbadge.rc,.sbadge.open{background:var(--fix-tint); color:var(--fix)}
+.sbadge.done{background:var(--done-tint); color:var(--done)}
+.sbadge.idea{background:var(--surface-2); color:var(--ink-2)}
 /* 進捗マトリクスはページ全体でスクロール（内部縦スクロール廃止・#204）。max-height/overflow を外して
    全高表示し、2段の列見出しを position:sticky でサイトヘッダー（.topbar＝トップバー＋ナビ）直下に固定。
    横は PC幅(≥1100px)なら表(min 1060px)が収まるので overflow:visible。収まらない中間幅のみ横コンテナ
@@ -335,20 +348,16 @@ td.ttl .flags{margin-left:7px}
 /* 行頭の色帯＝状態（PC の表と同じ割り当て・#205） */
 .scard.st-rv{box-shadow:inset 3px 0 0 var(--s2)}
 .scard.st-rc,.scard.st-open{box-shadow:inset 3px 0 0 var(--fix)}
-.scard-top{display:flex; align-items:center; gap:8px}
-.scard-seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.04em; font-variant-numeric:tabular-nums}
-.scard-days{font-size:var(--fs-2xs); color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; white-space:nowrap}
+/* 1行目は「seq＋タイトル」（右端に滞留日数）。最初に目に入るのが何の動画かになるよう、
+   バッジ群はタイトルの下＝2行目に置く（#205 オーナー指定）。タイトルが折り返しても
+   滞留日数は align-items:baseline で1行目の右上に残る */
+.scard-top{display:flex; align-items:baseline; gap:8px}
+.scard-seq{flex:0 0 auto; font-size:var(--fs-2xs); font-weight:700; color:var(--muted);
+  letter-spacing:.04em; font-variant-numeric:tabular-nums}
+.scard-days{flex:0 0 auto; margin-left:auto; font-size:var(--fs-2xs); color:var(--muted);
+  font-variant-numeric:tabular-nums; white-space:nowrap}
 .scard-days.slow{color:var(--warn); font-weight:680}
-.scard-ttl{font-size:var(--fs-md); line-height:1.45; font-weight:600}
-.sbadges{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
-.sbadge{justify-self:start; display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-sm);
-  font-weight:700; border-radius:var(--r-pill); padding:4px 13px; border:1px solid transparent; white-space:nowrap}
-.sbadge.work{background:var(--s1-tint); color:var(--s1)}
-.sbadge.rv{background:var(--s2-tint); color:var(--s2)}
-/* 作業中(work)は塗り色のみ、修正依頼中(rc)は同じ青系＋縁取りで見分ける */
-.sbadge.rc{background:var(--fix-tint); color:var(--fix); border-color:var(--fix)}
-.sbadge.done{background:var(--done-tint); color:var(--done)}
-.sbadge.idea{background:var(--surface-2); color:var(--ink-2); border-color:var(--border-2)}
+.scard-ttl{flex:1 1 auto; min-width:0; font-size:var(--fs-md); line-height:1.45; font-weight:600}
 .dotrow{display:grid; grid-template-columns:repeat(7,1fr); gap:3px; align-items:start}
 .pstep{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0}
 .dot{width:22px; height:22px; line-height:22px; text-align:center; border-radius:var(--r-pill);
@@ -365,9 +374,17 @@ td.ttl .flags{margin-left:7px}
 .scard-extra{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
 @media (max-width:640px){
   .tblwrap.mtx{display:none}
-  /* main の左右パディング(var(--sp-3))を打ち消して画面端まで到達させる。行頭に細線1本 */
+  /* main は max-width:94vw（左右3vwの余白）なので、これを外さないと負マージンでも
+     画面端には届かない。スマホでは main/footer を全幅にしたうえで左右パディングを
+     打ち消して、在庫カードもレビュー一覧も端から端まで使う（#205） */
+  main,footer{max-width:100%}
   .stockcards{display:grid; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
     border-top:1px solid var(--border)}
+  /* レビュー一覧も在庫カードと同じ扱い（フル幅リスト行・区切りは細線1本） */
+  .rvlist{gap:0; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
+    border-top:1px solid var(--border)}
+  .rvitem{border-radius:0; border-width:0 0 1px 0; box-shadow:none}
+  .rvhead .chip{display:none}   /* チャンネルは見出しに出ているので行からは省く */
 }
 
 /* ═══ 詳細ビュー（履歴付き全画面遷移・#200） ══════════════════════ */
@@ -405,6 +422,9 @@ td.ttl .flags{margin-left:7px}
 .dhead .seqn{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
 .dhead h3{margin:2px 0 0; font-size:var(--fs-lg); font-weight:700; line-height:var(--lh-tight)}
 .dhead .meta{display:flex; gap:7px; flex-wrap:wrap; margin-top:8px; align-items:center}
+/* 詳細ヘッダーは小さいチップが並ぶ行なので、その行の中で揃うようバッジも同寸法に落とす
+   （「同じ行に並ぶものは同じ大きさ」。一覧の行・カードでは既定サイズのまま） */
+.dhead .meta .sbadge{font-size:var(--fs-2xs); padding:2px 9px; gap:4px}
 .dbody{padding:var(--sp-4) var(--sp-5) var(--sp-8)}
 .dsec{margin-bottom:var(--sp-5)}
 .dsec h4{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
@@ -428,8 +448,8 @@ td.ttl .flags{margin-left:7px}
 /* 詳細のレビュー状態バー（あなたの番／AIの番を1行で明示） */
 .dstate{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:var(--fs-sm);
   border-radius:var(--r-md); padding:8px 12px; margin:0 0 var(--sp-3); line-height:1.55}
-.dstate.rv{background:var(--s2-tint); color:var(--ink); border:1px solid var(--s2)}
-.dstate.rc{background:var(--fix-tint); color:var(--ink); border:1px solid var(--fix)}
+.dstate.rv{background:var(--s2-tint); color:var(--ink)}
+.dstate.rc{background:var(--fix-tint); color:var(--ink)}
 .dstate b{font-weight:700}
 /* 詳細ビュー表示中は一覧ナビ／チャンネルタブを隠して全画面に見せる */
 body.detail-open .chtabs, body.detail-open .nav{display:none}
@@ -501,9 +521,11 @@ tr.dropped td{color:var(--muted)}
 .days.slow{color:var(--ink); background:var(--warn-tint); border-radius:5px; padding:1px 6px}
 .resv{font-size:var(--fs-2xs); background:var(--warn-tint); border-radius:5px; padding:1px 7px;
   color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap}
-.rvflag{font-size:var(--fs-2xs); background:var(--s2-tint); border:1px solid var(--border-2);
-  border-radius:5px; padding:1px 7px; color:var(--s2); font-weight:680; white-space:nowrap}
-.rcflag{font-size:var(--fs-2xs); background:var(--fix-tint); border:1px solid var(--border-2);
+/* カンバンのカードは小さいチップの集合という別の密度なので寸法は据え置き。ただし枠線は使わず
+   tint＋文字色（.resv と同じ作り）に揃える・色は一覧のバッジと同じ割り当て */
+.rvflag{font-size:var(--fs-2xs); background:var(--s2-tint); border:none;
+  border-radius:5px; padding:1px 7px; color:var(--s2-ink); font-weight:680; white-space:nowrap}
+.rcflag{font-size:var(--fs-2xs); background:var(--fix-tint); border:none;
   border-radius:5px; padding:1px 7px; color:var(--fix); font-weight:680; white-space:nowrap}
 .more{font-size:var(--fs-xs); color:var(--ink-2); text-align:center; padding:7px;
   border:1px dashed var(--border); border-radius:var(--r-sm)}
@@ -522,31 +544,38 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 
 /* ═══ レビュー ══════════════════════════════════════════════════ */
 .rvlist{display:grid; gap:var(--sp-2)}
-.rv{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
+.rvitem{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   overflow:hidden; box-shadow:var(--shadow-2); transition:border-color .12s}
-.rv:hover{border-color:var(--axis)}
+.rvitem:hover{border-color:var(--axis)}
 /* 左端の色帯で「あなたの番（オレンジ）／AIの番＝修正依頼中（青）」を分ける（#205） */
-.rv.is-rv{border-left:3px solid var(--s2)}
-.rv.is-rc{border-left:3px solid var(--fix)}
+.rvitem.is-rv{border-left:3px solid var(--s2)}
+.rvitem.is-rc{border-left:3px solid var(--fix)}
+/* 在庫カードと同じ構成（#205）: 1行目=seq＋タイトル（右端に待ち日数）／2行目=状態バッジ。
+   広い画面では flex-wrap で1行に収まり、狭い画面ではバッジが2行目へ落ちる */
 .rvhead{width:100%; text-align:left; background:transparent; border:none; font-family:inherit;
-  padding:14px var(--sp-4); display:flex; gap:var(--sp-3); align-items:center; cursor:pointer; color:inherit}
+  padding:14px var(--sp-4); display:flex; gap:8px var(--sp-3); align-items:center; flex-wrap:wrap;
+  cursor:pointer; color:inherit}
+.rvtop{display:flex; align-items:baseline; gap:10px; flex:1 1 340px; min-width:0}
 .rvhead:hover{background:var(--surface-2)}
 .chip{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-2xs); border-radius:var(--r-pill);
   padding:2px 9px; border:1px solid var(--border); white-space:nowrap}
 .chip .cdot{width:8px;height:8px;border-radius:2px}
-.rvhead .ttl{font-size:var(--fs-md); font-weight:600; flex:1 1 auto; min-width:0; line-height:var(--lh-tight)}
-.rvhead .seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
-.gbadge{font-size:var(--fs-2xs); font-weight:680; border-radius:var(--r-sm); padding:2px 9px; white-space:nowrap;
+.rvhead .ttl{font-size:var(--fs-md); font-weight:600; flex:1 1 auto; min-width:0; line-height:1.45}
+.rvhead .seq{flex:0 0 auto; font-size:var(--fs-2xs); font-weight:700; color:var(--muted);
+  font-variant-numeric:tabular-nums}
+.gbadge{font-size:var(--fs-2xs); font-weight:680; border-radius:var(--r-pill); padding:2px 9px; white-space:nowrap;
   background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
   display:inline-flex; align-items:center; gap:5px}
 .gbadge i{width:8px; height:8px; border-radius:2px; flex:0 0 auto}
 .wait{font-size:var(--fs-xs); color:var(--ink-2); white-space:nowrap; font-variant-numeric:tabular-nums;
   display:inline-flex; align-items:center; gap:4px}
+.rvtop .wait{flex:0 0 auto; margin-left:auto}
+.rvhead .caret{flex:0 0 auto; margin-left:auto}
 .wait.slow{background:var(--warn-tint); border-radius:var(--r-sm); padding:1px 9px; color:var(--ink)}
 .caret{color:var(--muted); font-size:var(--fs-xs); transition:transform .15s}
-.rv.open .caret{transform:rotate(90deg)}
+.rvitem.open .caret{transform:rotate(90deg)}
 .rvbody{display:none; padding:0 var(--sp-4) var(--sp-4); border-top:1px solid var(--border-2)}
-.rv.open .rvbody{display:block}
+.rvitem.open .rvbody{display:block}
 .blk{margin-top:var(--sp-4)}
 .blk h4{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
   text-transform:uppercase; margin:0 0 var(--sp-2)}
@@ -783,11 +812,7 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-6) var(--sp-
   .navbtn .badge{position:absolute; transform:translate(12px,-9px)}
   .kanban{grid-auto-columns:minmax(196px,196px)}
   .tblwrap.tall{max-height:none}
-  .rvhead{flex-wrap:wrap; row-gap:8px; padding:12px var(--sp-3)}
-  .rvhead .chip{order:1} .rvhead .seq{order:2} .rvhead .gbadge{order:3}
-  .rvhead .wait{order:4; margin-left:auto} .rvhead .caret{order:5}
-  .rvhead .ttl{order:6; flex:1 1 100%}
-  .rvhead .sflag{order:7}
+  .rvhead{padding:12px var(--sp-3)}
   #toast{bottom:78px}
   footer{padding-bottom:88px}
 }
@@ -898,7 +923,6 @@ const TINTS   = ['var(--s1-tint)','var(--s2-tint)','var(--stage-bg)','var(--warn
 /* チャンネル別の承認ゲート（DB に列が無いため UI 側の定義。既定は3ゲート） */
 const CH_GATES = {'buzz-zatsugaku':['storyboard','final'], 'dental':['script','storyboard','final']};
 const GATE_LABEL = {script:'台本', storyboard:'絵コンテ', final:'完成'};
-const GATE_SW = {script:'--stg2', storyboard:'--stg3', final:'--stg4'};
 const GATE_COL = {script:1, storyboard:2, final:4};
 const GATE_COLUMN_FIELD = {script:'approved_script_at', storyboard:'approved_storyboard_at', final:'approved_final_at'};
 const KIND_LABEL = {request_review:'提出', comment:'コメント', request_changes:'修正依頼', approve:'承認', reject:'却下'};
@@ -1121,7 +1145,9 @@ function gateList(ch, st){
   const out = [];
   for (const p of gateStatesOf(st).values()) {
     const it = core.byId.get(p.video_id);
-    if (it && !(st === 'changes' && it.stage === 'dropped')) {
+    /* 没にした動画はレビュー待ち・修正依頼のどちらのキューにも出さない
+       （承認/却下を打たずに没にすると request_review が残り、承認待ちとして居座るため・#203） */
+    if (it && it.stage !== 'dropped') {
       out.push({ item: it, gate: p.gate, at: p.at, wait: daysSince(p.at), open: open.get(p.video_id) || 0 });
     }
   }
@@ -1273,13 +1299,17 @@ function displayIdx(it){
   if (rv && GATE_COL[rv] > i) i = GATE_COL[rv];
   return i;
 }
-/* 一覧の行／カードに付ける状態クラス（左端の色帯）と状態バッジ */
+/* 一覧の行／カードに付ける状態クラス（左端の色帯）と状態バッジ。
+   バッジは在庫の表・在庫カード・レビュー一覧・詳細で必ずこの2つの関数から作る（表記も寸法も1か所） */
 const stateCls = it => it._rv ? 'st-rv' : (it._rc ? 'st-rc' : (it._open ? 'st-open' : ''));
+const badgeHTML = b => b ? `<span class="sbadge ${b.cls}">${b.gl} ${esc(b.text)}</span>` : '';
+const stateBadgeOf = it =>
+    it._rv ? {cls:'rv', gl:'●', text:`${GATE_LABEL[it._rv]}レビュー待ち`}
+  : it._rc ? {cls:'rc', gl:'↺', text:`${GATE_LABEL[it._rc]}修正依頼中`} : null;
+const openBadgeHTML = it => it._open
+  ? `<span class="sbadge open" title="あなたの指摘のうち未対応 ${it._open}件">💬 指摘${it._open}件</span>` : '';
 function flagsHTML(it){
-  let h = '';
-  if (it._rv)      h += `<span class="sflag rv">● ${GATE_LABEL[it._rv]}レビュー待ち</span>`;
-  else if (it._rc) h += `<span class="sflag rc">↺ ${GATE_LABEL[it._rc]}修正依頼中</span>`;
-  if (it._open)    h += `<span class="sflag open" title="あなたの指摘のうち未対応 ${it._open}件">💬 指摘${it._open}件</span>`;
+  const h = badgeHTML(stateBadgeOf(it)) + openBadgeHTML(it);
   return h ? `<span class="flags">${h}</span>` : '';
 }
 const pKeyOf = it => it.stage === 'dropped' ? 'dropped' : PSTAGES[displayIdx(it)].key;
@@ -1387,14 +1417,16 @@ function matrixTable(base){
 }
 
 /* 狭幅（スマホ）用のカード表示。表と同じ rows から描画し CSS で出し分ける */
+/* 記号は絵文字を使わず文字グリフにする（バッジの文字色がそのまま乗るので、
+   同じ状態なら在庫カードでもレビュー一覧でも完全に同じ見え方になる） */
 function stageBadge(it){
-  if (it.stage === 'dropped') return {cls:'idea', emoji:'⚪', text:'没'};
-  if (it.stage === 'posted')  return {cls:'done', emoji:'✓',  text:'投稿済'};
-  if (it._rv)                 return {cls:'rv',   emoji:'🟠', text:`${GATE_LABEL[it._rv]}レビュー待ち`};
-  if (it._rc)                 return {cls:'rc',   emoji:'↺',  text:`${GATE_LABEL[it._rc]}修正依頼中`};
-  if (it.stage === 'idea')    return {cls:'idea', emoji:'⚪', text:'ネタ案'};
-  if (it.stage === 'queue')   return {cls:'work', emoji:'🔵', text:'投稿待ち'};
-  return {cls:'work', emoji:'🔵', text:`${PSTAGES[displayIdx(it)].name}中`};
+  if (it.stage === 'dropped') return {cls:'idea', gl:'○', text:'没'};
+  if (it.stage === 'posted')  return {cls:'done', gl:'✓', text:'投稿済'};
+  const st = stateBadgeOf(it);
+  if (st) return st;
+  if (it.stage === 'idea')    return {cls:'idea', gl:'○', text:'ネタ案'};
+  if (it.stage === 'queue')   return {cls:'work', gl:'●', text:'投稿待ち'};
+  return {cls:'work', gl:'●', text:`${PSTAGES[displayIdx(it)].name}中`};
 }
 function progressDots(it){
   const cur = displayIdx(it), done = it.stage === 'posted';
@@ -1419,11 +1451,10 @@ function stockCards(rows){
     return `<article class="scard${it.stage === 'dropped' ? ' dropped' : ''} ${stateCls(it)}" data-vid="${it.id}" tabindex="0">
       <div class="scard-top">
         <span class="scard-seq">${esc(it.seq)}</span>
+        <span class="scard-ttl">${esc(it.title)}</span>
         <span class="scard-days${it.days >= 7 ? ' slow' : ''}">${it.days >= 7 ? '⏳ ' : ''}滞留 ${it.days == null ? '—' : it.days + '日'}</span>
       </div>
-      <div class="sbadges"><span class="sbadge ${b.cls}">${b.emoji} ${esc(b.text)}</span>${
-        it._open ? `<span class="sflag open">💬 指摘${it._open}件</span>` : ''}</div>
-      <div class="scard-ttl">${esc(it.title)}</div>
+      <div class="sbadges">${badgeHTML(b)}${openBadgeHTML(it)}</div>
       ${progressDots(it)}
       ${extra ? `<div class="scard-extra">${extra}</div>` : ''}
     </article>`;
@@ -2061,15 +2092,17 @@ async function renderReview(){
   const list = pendingList(state.ch);
   const chg  = changesList(state.ch);
   const gateNames = m.gates.map(g => GATE_LABEL[g]).join(' / ');
-  const rvRow = (r, st) => `<article class="rv is-${st}" data-vid="${r.item.id}" data-gate="${esc(r.gate)}">
+  /* 行の作りもバッジも在庫カードと同じ（1行目=seq＋タイトル＋待ち日数／2行目=状態バッジ）。
+     バッジは flagsHTML＝在庫と同一のコンポーネントなので、同じ動画なら同じ見え方になる */
+  const rvRow = (r, st) => `<article class="rvitem is-${st}" data-vid="${r.item.id}" data-gate="${esc(r.gate)}">
       <button class="rvhead" aria-label="${esc(r.item.title)} の詳細を開く">
-        <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon}</span>
-        <span class="seq">${esc(r.item.seq)}</span>
-        <span class="ttl">${esc(r.item.title)}</span>
-        ${r.open ? `<span class="sflag open">💬 指摘${r.open}件</span>` : ''}
-        <span class="gbadge"><i style="background:${st === 'rc' ? 'var(--fix)' : `var(${GATE_SW[r.gate] || '--stg3'})`}"></i>${
-          GATE_LABEL[r.gate] || esc(r.gate)}${st === 'rc' ? ' 修正依頼中' : ''}</span>
-        <span class="wait ${r.wait >= 3 ? 'slow' : ''}">${r.wait >= 3 ? '⏳ ' : ''}待ち ${r.wait == null ? '—' : r.wait + '日'}</span>
+        <span class="rvtop">
+          <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon}</span>
+          <span class="seq">${esc(r.item.seq)}</span>
+          <span class="ttl">${esc(r.item.title)}</span>
+          <span class="wait ${r.wait >= 3 ? 'slow' : ''}">${r.wait >= 3 ? '⏳ ' : ''}待ち ${r.wait == null ? '—' : r.wait + '日'}</span>
+        </span>
+        ${flagsHTML(r.item)}
         <span class="caret">›</span>
       </button>
     </article>`;
@@ -2531,7 +2564,7 @@ document.addEventListener('click', e => {
 
   const rvHead = e.target.closest('.rvhead');
   if (rvHead) {
-    const rv = rvHead.closest('.rv');
+    const rv = rvHead.closest('.rvitem');
     pushDetail(rv.dataset.vid, rv.dataset.gate); return;
   }
 
@@ -2570,7 +2603,7 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (e.key === 'Escape' && state.detail) { history.back(); return; }
-  const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid], .rv[data-vid]');
+  const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid], .rvitem[data-vid]');
   if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pushDetail(row.dataset.vid, row.dataset.gate); }
 });
 window.addEventListener('scroll', hideTip, { passive: true });
