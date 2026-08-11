@@ -125,6 +125,10 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
   border:1px solid var(--border); background:var(--surface-2); color:var(--ink); white-space:nowrap;
   transition:background .12s}
 .btn:hover{background:var(--surface-3)}
+/* 「コメントする」用（#205 オーナー指定）: 承認（塗り）ほど強調せず、
+   素の白ボタンよりは存在感を出す。AI に渡る操作なので AI 側の色（--fix）の淡色 */
+.btn.soft{background:var(--fix-tint); color:var(--fix-ink); border-color:transparent; font-weight:680}
+.btn.soft:hover{background:var(--fix-tint); filter:brightness(.96)}
 .btn.primary{background:var(--s1); border-color:transparent; color:#fff; font-weight:680}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn.block{width:100%; padding:11px 17px; font-size:var(--fs-md)}
@@ -455,9 +459,11 @@ td.ttl .flags{margin-left:8px}
 body.detail-open .chtabs, body.detail-open .nav{display:none}
 @media (max-width:680px){
   .dhead{padding:var(--sp-3) var(--sp-4)}
-  .dbody{padding:var(--sp-3) var(--sp-4) var(--sp-6)}
+  /* 下は詰める（#205 オーナー指摘: ボツボタンの下に空白が余る）。
+     承認バーが sticky で最後に来るので、その下に余白を残す必要がない */
+  .dbody{padding:var(--sp-3) var(--sp-4) var(--sp-2)}
   .mgrid{grid-template-columns:repeat(2,1fr)}
-  body.detail-open main{padding-bottom:var(--sp-8)}
+  body.detail-open main{padding-bottom:var(--sp-2)}
 }
 /* ── スマホ: 詳細も画面端まで（#205）──────────────────────────────
    一覧（.stockcards）と同じく main の左右パディングを消して端から端まで使う。
@@ -622,7 +628,8 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   border:1px solid var(--border); border-radius:var(--r-sm); padding:9px 11px;
   background:var(--surface-1); color:var(--ink); resize:vertical; min-height:68px}
 .wbox .wta:disabled{opacity:.6}
-.wact{display:flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap}
+/* ヒントが折り返してもボタンは右端に置く（#205 オーナー指定） */
+.wact{display:flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end}
 .wact .whint{font-size:var(--fs-2xs); color:var(--muted); margin-right:auto}
 .wmsg{font-size:var(--fs-xs); border-radius:var(--r-sm); padding:7px 11px; line-height:1.6;
   background:var(--good-tint); color:var(--ink)}
@@ -992,7 +999,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/11 23:48';
+const BUILT_AT = '8/11 23:56';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1338,13 +1345,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/11 23:48') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/11 23:56') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/11 23:48') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/11 23:56') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -1960,7 +1967,23 @@ function reviewPanel(it, gate){
       <div class="wmsg" data-slot="comment" hidden></div>
       <div class="wact">
         <span class="whint">修正依頼として記録され、夜間の制作エージェントが対応します（投稿者はログイン中のアカウント）</span>
-        <button class="btn" data-act="comment" data-key="${esc(key)}">コメントする</button>
+        <button class="btn soft" data-act="comment" data-key="${esc(key)}">コメントする</button>
+      </div></div>
+    <div class="rjbox" data-rjbox="${esc(key)}">
+      <button class="btn rjopen" data-act="reject-open" data-key="${esc(key)}"
+        aria-expanded="false" aria-controls="${rid}">このネタを没にする</button>
+      <div class="rjpanel" id="${rid}" hidden>
+        <div class="rjwarn">⚠ この動画の制作を止めて<b>ネタごと没</b>にします。表現を直したいだけなら、
+          上のコメント欄で伝えてください。没の取り消しはダッシュボードからはできません。</div>
+        <label class="alb" for="${rid}-reason">没にする理由（必須）</label>
+        <textarea class="rta" id="${rid}-reason" rows="2" aria-label="没にする理由（必須）"
+          placeholder="例: 検証できないネタだった／類似動画が伸びていない"></textarea>
+        <div class="anote">理由は videos.decision_note と review_events に残ります（同じネタの再提案時に参照されます）。</div>
+        <div class="wmsg" data-slot="reject" hidden></div>
+        <div class="aact">
+          <button class="btn" data-act="reject-cancel">キャンセル</button>
+          <button class="btn danger" data-act="reject-confirm" data-key="${esc(key)}" disabled>この理由で没にする</button>
+        </div>
       </div></div>
     <div class="abox" data-abox="${esc(key)}">
       <div class="arow">
@@ -1979,22 +2002,6 @@ function reviewPanel(it, gate){
         <div class="aact">
           <button class="btn" data-act="approve-cancel">キャンセル</button>
           <button class="btn primary" data-act="approve-confirm" data-key="${esc(key)}">この内容で承認する</button>
-        </div>
-      </div></div>
-    <div class="rjbox" data-rjbox="${esc(key)}">
-      <button class="btn rjopen" data-act="reject-open" data-key="${esc(key)}"
-        aria-expanded="false" aria-controls="${rid}">このネタを没にする</button>
-      <div class="rjpanel" id="${rid}" hidden>
-        <div class="rjwarn">⚠ この動画の制作を止めて<b>ネタごと没</b>にします。表現を直したいだけなら、
-          上のコメント欄で伝えてください。没の取り消しはダッシュボードからはできません。</div>
-        <label class="alb" for="${rid}-reason">没にする理由（必須）</label>
-        <textarea class="rta" id="${rid}-reason" rows="2" aria-label="没にする理由（必須）"
-          placeholder="例: 検証できないネタだった／類似動画が伸びていない"></textarea>
-        <div class="anote">理由は videos.decision_note と review_events に残ります（同じネタの再提案時に参照されます）。</div>
-        <div class="wmsg" data-slot="reject" hidden></div>
-        <div class="aact">
-          <button class="btn" data-act="reject-cancel">キャンセル</button>
-          <button class="btn danger" data-act="reject-confirm" data-key="${esc(key)}" disabled>この理由で没にする</button>
         </div>
       </div></div>`;
 }
