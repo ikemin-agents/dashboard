@@ -122,7 +122,8 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .topbar-in{max-width:1280px; margin:0 auto; padding:var(--sp-3) var(--sp-5) 0}
 .brandrow{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap}
 .brand{font-size:var(--fs-lg); font-weight:680; letter-spacing:.005em; line-height:1.2; margin-right:auto}
-.brand small{display:block; font-size:var(--fs-2xs); font-weight:600; color:var(--muted);
+/* サブタイトル「YOUTUBE PRODUCTION」は PC/スマホとも非表示（ヘッダーを詰める・#202） */
+.brand small{display:none; font-size:var(--fs-2xs); font-weight:600; color:var(--muted);
   letter-spacing:.11em; text-transform:uppercase; margin-top:2px}
 .syncchip{display:inline-flex; align-items:center; gap:6px; font-size:var(--fs-xs); color:var(--ink-2);
   border:1px solid var(--border); border-radius:var(--r-pill); padding:3px 11px; background:var(--surface-2)}
@@ -177,10 +178,11 @@ main{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-
 .pagehead{margin-bottom:var(--sp-5)}
 .pagehead h1{font-size:var(--fs-xl); font-weight:700; margin:3px 0 4px; letter-spacing:-.005em;
   line-height:var(--lh-tight); display:flex; align-items:center; gap:9px; flex-wrap:wrap}
-.pagehead p{color:var(--ink-2); font-size:var(--fs-sm); margin:0; max-width:88ch}
+/* 説明サブテキストは全画面（PC/スマホ）で非表示・一覧を上へ（#202） */
+.pagehead p{display:none; color:var(--ink-2); font-size:var(--fs-sm); margin:0; max-width:88ch}
 .sectionhead{display:flex; align-items:baseline; gap:var(--sp-3); margin:var(--sp-8) 0 var(--sp-3); flex-wrap:wrap}
 .sectionhead h2{font-size:var(--fs-md); font-weight:680; margin:0; letter-spacing:.005em}
-.sectionhead .hint{font-size:var(--fs-xs); color:var(--muted)}
+.sectionhead .hint{display:none; font-size:var(--fs-xs); color:var(--muted)}
 .sectionhead .spacer{margin-left:auto}
 .card{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   padding:var(--sp-5); box-shadow:var(--shadow-2); min-width:0}
@@ -241,10 +243,11 @@ td.dim{color:var(--muted)}
 .toolbar .btn{padding:7px 14px; font-size:var(--fs-xs)}
 .hits{font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums; margin-left:auto}
 
-/* 絞り込みの折りたたみ（スマホのみ畳む・PC は常時展開・#201）＋常時見える要約バー */
+/* 絞り込みの折りたたみ（PC・スマホ共通で既定は畳み・#202）＋常時見える要約バー */
 .filterbar{display:flex; align-items:center; gap:var(--sp-2); flex-wrap:wrap; margin:0 0 var(--sp-2)}
-.filterbox{display:block}
-.filtoggle{display:none; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-xs);
+.filterbox{display:none}
+.filterbox.open{display:block}
+.filtoggle{display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-xs);
   border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
   padding:6px 14px; cursor:pointer; transition:background .12s}
 .filtoggle:hover{background:var(--surface-3)}
@@ -622,7 +625,6 @@ footer{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; co
   .topbar-in{padding:10px var(--sp-3) 0}
   .nav-in{padding:0}
   .brand{font-size:var(--fs-md); line-height:1.15}
-  .brand small{display:none}
   .chtabs{margin-top:var(--sp-2)}
   .syncchip{display:none}
   .nav{position:fixed; bottom:0; left:0; right:0; top:auto; border-top:1px solid var(--border);
@@ -642,23 +644,19 @@ footer{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; co
   #toast{bottom:78px}
   footer{padding-bottom:88px}
 }
-/* ═══ スマホ: 上部chrome削減・凡例1行・フィルタ折りたたみ（#201。一覧を上から大きく） ═══ */
+/* ═══ スマホ: 上部chrome削減・凡例1行（#201/#202。一覧を上から大きく）
+   ※ 説明サブテキスト非表示・ブランドサブタイトル非表示・フィルタ折りたたみは
+      base CSS で全画面に適用済み（#202）。ここはスマホ固有の圧縮だけ残す ═══ */
 @media (max-width:640px){
-  /* 追加1: eyebrow/説明サブテキストを畳み、見出しを圧縮して一覧を上へ */
+  /* eyebrow を畳み、見出しを圧縮して一覧を上へ（PC は eyebrow/h1 を残す） */
   .pagehead{margin-bottom:var(--sp-3)}
   .pagehead .eyebrow{display:none}
   .pagehead h1{font-size:var(--fs-lg); margin:0}
-  .pagehead p{display:none}
   .sectionhead{margin-bottom:var(--sp-2)}
-  .sectionhead .hint{display:none}
-  /* 追加2: 工程凡例を1行の極小に（囲みを外し・括弧書きを隠す・マークを縮小） */
+  /* 工程凡例を1行の極小に（囲みを外し・括弧書きを隠す・マークを縮小） */
   .legend2{gap:12px; padding:2px 0; border:none; background:transparent; margin-bottom:var(--sp-2)}
   .legend2 .ex{display:none}
   .legend2 .mark{width:15px; height:15px; line-height:15px; font-size:10px}
-  /* 追加3: フィルタは既定で畳む。要約バー（絞り込みボタン＋条件＋件数）は常時表示 */
-  .filtoggle{display:inline-flex}
-  .filterbox{display:none}
-  .filterbox.open{display:block}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -1289,8 +1287,8 @@ async function renderStock(){
           <button class="btn" id="stockreset">リセット</button>
         </div>
         <div id="stockchips"></div>
-        ${MARK_LEGEND}
       </div>
+      ${MARK_LEGEND}
       <div id="stocktable"></div>` : kanbanView(items, state.ch)}`;
 
   if (isTable) refreshStockTable();
