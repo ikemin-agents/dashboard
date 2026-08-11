@@ -1164,11 +1164,25 @@ function filterChips(base){
   }).join('')}</div>`;
 }
 
+/* 既定の並び順（#203・2026-08-11 オーナー指定）
+   ① レビュー待ち（あなたが動く番）→ ② 進行中 → ③ 投稿済み・予約中 → ④ ネタ案
+   ネタ案は着手前で見るものが無いので最後に沈める。グループ内は ③ だけ「投稿日時の新しい順」
+   （これから公開される予約が上・過去の投稿が下）、それ以外は滞留日数の降順（待たせている順）。 */
+const SORT_GROUP = it => it._rv ? 0 : it.stage === 'posted' ? 2 : it.stage === 'idea' ? 3 : 1;
+const publishTS = it => {
+  const d = it.published_at || it.scheduled_at || it.posted_date;
+  const t = d ? new Date(d).getTime() : NaN;
+  return Number.isNaN(t) ? -Infinity : t;      /* 日時が無い行は最後尾へ */
+};
+
 function sortRows(rows){
   const s = state.stockSort;
-  /* 既定: レビュー待ち（橙● rv フラグ）を最上部 → 次に滞留日数の降順 */
-  if (!s) return rows.sort((a, b) =>
-    ((b._rv ? 1 : 0) - (a._rv ? 1 : 0)) || (b.days || 0) - (a.days || 0));
+  if (!s) return rows.sort((a, b) => {
+    const ga = SORT_GROUP(a), gb = SORT_GROUP(b);
+    if (ga !== gb) return ga - gb;
+    if (ga === 2) return publishTS(b) - publishTS(a);
+    return (b.days || 0) - (a.days || 0);
+  });
   const dir = s.dir === 'asc' ? 1 : -1;
   const val = (o) => s.key === 'genre' ? o.genreLabel : o[s.key];
   return rows.sort((a, b) => {
