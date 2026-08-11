@@ -119,7 +119,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 
 /* ═══ ヘッダー ══════════════════════════════════════════════════ */
 .topbar{position:sticky; top:0; z-index:40; background:var(--surface-1); border-bottom:1px solid var(--border)}
-.topbar-in{max-width:1360px; margin:0 auto; padding:var(--sp-3) var(--sp-5) 0}
+.topbar-in{max-width:1680px; margin:0 auto; padding:var(--sp-3) var(--sp-5) 0}
 .brandrow{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap}
 .brand{font-size:var(--fs-lg); font-weight:680; letter-spacing:.005em; line-height:1.2; margin-right:auto}
 /* サブタイトル「YOUTUBE PRODUCTION」は PC/スマホとも非表示（ヘッダーを詰める・#202） */
@@ -161,7 +161,7 @@ body[data-chindep="1"] .chtabs{opacity:.5; pointer-events:none}
 
 /* ═══ ナビ ══════════════════════════════════════════════════════ */
 .nav{background:var(--surface-1); border-top:1px solid var(--border-2)}
-.nav-in{max-width:1360px; margin:0 auto; padding:0 var(--sp-5); display:flex; gap:var(--sp-1)}
+.nav-in{max-width:1680px; margin:0 auto; padding:0 var(--sp-5); display:flex; gap:var(--sp-1)}
 .navbtn{appearance:none; border:none; background:transparent; font-family:inherit; font-size:var(--fs-md);
   color:var(--ink-2); padding:12px 14px 10px; cursor:pointer; border-bottom:2px solid transparent;
   display:inline-flex; align-items:center; gap:7px; transition:color .12s; position:relative}
@@ -172,7 +172,7 @@ body[data-chindep="1"] .chtabs{opacity:.5; pointer-events:none}
   border-radius:var(--r-pill); font-size:var(--fs-2xs); padding:0 6px; font-weight:700; line-height:1.5}
 
 /* ═══ レイアウト ════════════════════════════════════════════════ */
-main{max-width:1360px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-width:0}
+main{max-width:1680px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-width:0}
 .view{display:none; min-width:0}
 .view.active{display:block}
 .pagehead{margin-bottom:var(--sp-5)}
@@ -336,7 +336,20 @@ td.dim{color:var(--muted)}
 }
 
 /* ═══ 詳細ビュー（履歴付き全画面遷移・#200） ══════════════════════ */
-.dview{max-width:1040px; margin:0 auto; animation:detailin .18s ease-out}
+.dview{max-width:1560px; margin:0 auto; animation:detailin .18s ease-out}
+
+/* ═══ 詳細を広い画面で2カラムに（#203）
+   左＝メタ情報（フック／工程タイムライン／メトリクス／メモ）・右＝レビュー（素材＋履歴＋入力）。
+   横幅を「1行を長くする」のではなく「情報を並べる」ことに使う。本文の行長は .cmt .txt の
+   max-width で 74ch に抑える（読み物は45〜75文字/行を超えると視線の戻りで読みにくくなる） ═══ */
+@media (min-width:1240px){
+  /* レビュー中の動画だけ2カラム（レビュー節が無い動画は従来どおり1カラムで詰める） */
+  .dbody:has(.dsec-review){display:grid; grid-template-columns:minmax(300px,380px) minmax(0,1fr);
+    gap:var(--sp-6) var(--sp-8); align-items:start}
+  .dbody > .dsec{grid-column:1}
+  .dbody > .dsec-review{grid-column:2; grid-row:1 / span 99;
+    border-top:none!important; padding-top:0!important; margin-bottom:0}
+}
 @keyframes detailin{from{transform:translateY(8px);opacity:.5}to{transform:none;opacity:1}}
 .backbtn{display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-sm);
   border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
@@ -465,7 +478,8 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .cmt .who{font-size:var(--fs-2xs); color:var(--muted); margin-bottom:2px;
   display:flex; gap:6px; align-items:center; flex-wrap:wrap}
 .cmt .who b{color:var(--ink-2); font-weight:680}
-.cmt .txt{font-size:var(--fs-sm); line-height:1.65; white-space:pre-wrap; word-break:break-word}
+.cmt .txt{font-size:var(--fs-md); line-height:1.75; white-space:pre-wrap; word-break:break-word;
+  max-width:74ch}
 .kindchip{font-size:var(--fs-2xs); border-radius:5px; padding:0 7px; border:1px solid var(--border-2);
   background:var(--surface-1); color:var(--ink-2)}
 .kindchip.approve{background:var(--good-tint); color:var(--up); border-color:transparent; font-weight:680}
@@ -625,7 +639,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   width:max-content; max-width:min(430px, calc(100vw - 32px)); box-shadow:0 8px 28px rgba(0,0,0,.28)}
 #toast.on{opacity:1; transform:translate(-50%,0)}
 
-footer{max-width:1360px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; color:var(--muted);
+footer{max-width:1680px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; color:var(--muted);
   font-size:var(--fs-2xs); border-top:1px solid var(--border-2); letter-spacing:.02em}
 
 @media (max-width:980px){
@@ -676,6 +690,12 @@ footer{max-width:1360px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; co
 @media (min-width:681px){
   html{font-size:17px}
   body{font-size:16px}
+}
+/* 広い画面ではもう一段上げる（#203・2026-08-11 オーナー要望）。--sp-* は px なので
+   余白は変わらず文字だけがスケールする */
+@media (min-width:1240px){
+  html{font-size:18px}
+  body{font-size:17px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -1375,7 +1395,7 @@ function detailHTML(it){
 
   const noteBlk = it.note ? `<div class="dsec"><h4>メモ</h4><div class="hook">${esc(it.note)}</div></div>` : '';
 
-  const review = it._rv ? `<div class="dsec" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
+  const review = it._rv ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
       <h4>レビュー — ${GATE_LABEL[it._rv]}ゲート</h4>${reviewPanel(it, it._rv)}</div>` : '';
 
   return `<div class="dview">
