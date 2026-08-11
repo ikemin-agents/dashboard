@@ -294,33 +294,38 @@ td.dim{color:var(--muted)}
 .sbadge.rv{background:var(--s2-tint); color:var(--s2)}
 .sbadge.done{background:var(--good-tint); color:var(--up)}
 .sbadge.idea{background:var(--surface-2); color:var(--ink-2); border-color:var(--border-2)}
-.dotrow{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
+.dotrow{display:grid; grid-template-columns:repeat(7,1fr); gap:3px; align-items:start}
+.pstep{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0}
 .dot{width:22px; height:22px; line-height:22px; text-align:center; border-radius:var(--r-pill);
   font-size:11px; flex:0 0 auto; font-variant-numeric:normal}
 .dot.done{color:var(--up); background:var(--good-tint); font-weight:700}
 .dot.work{background:var(--s1); color:#fff; font-weight:700}
 .dot.rv{background:var(--s2); color:#fff; font-weight:700}
 .dot.todo{color:var(--axis); background:var(--surface-2)}
+.plbl{font-size:9px; line-height:1.15; color:var(--muted); text-align:center; white-space:nowrap;
+  letter-spacing:-.03em; max-width:100%; overflow:hidden; text-overflow:ellipsis}
+.plbl.cur{color:var(--ink); font-weight:700}
 .scard-extra{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
 @media (max-width:640px){
   .tblwrap.mtx{display:none}
   .stockcards{display:grid}
 }
 
-/* ═══ 詳細ドロワー ══════════════════════════════════════════════ */
-.drawer[hidden]{display:none}
-.drawer{position:fixed; inset:0; z-index:80}
-.scrim{position:absolute; inset:0; background:rgba(0,0,0,.45)}
-.dpanel{position:absolute; top:0; right:0; height:100%; width:min(600px,94vw); display:flex;
-  flex-direction:column; background:var(--surface-1); border-left:1px solid var(--border);
-  box-shadow:-14px 0 44px rgba(0,0,0,.28); animation:slidein .18s ease-out}
-@keyframes slidein{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}
+/* ═══ 詳細ビュー（履歴付き全画面遷移・#200） ══════════════════════ */
+.dview{max-width:860px; margin:0 auto; animation:detailin .18s ease-out}
+@keyframes detailin{from{transform:translateY(8px);opacity:.5}to{transform:none;opacity:1}}
+.backbtn{display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-sm);
+  border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
+  padding:8px 16px; cursor:pointer; margin-bottom:var(--sp-4); transition:background .12s}
+.backbtn:hover{background:var(--surface-3)}
+.dcard{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
+  overflow:hidden; box-shadow:var(--shadow-2)}
 .dhead{display:flex; align-items:flex-start; gap:var(--sp-3); padding:var(--sp-4) var(--sp-5);
   border-bottom:1px solid var(--border); background:var(--surface-1)}
 .dhead .seqn{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
 .dhead h3{margin:2px 0 0; font-size:var(--fs-lg); font-weight:700; line-height:var(--lh-tight)}
 .dhead .meta{display:flex; gap:7px; flex-wrap:wrap; margin-top:8px; align-items:center}
-.dbody{padding:var(--sp-4) var(--sp-5) var(--sp-8); overflow-y:auto; flex:1 1 auto}
+.dbody{padding:var(--sp-4) var(--sp-5) var(--sp-8)}
 .dsec{margin-bottom:var(--sp-5)}
 .dsec h4{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
   text-transform:uppercase; margin:0 0 var(--sp-2)}
@@ -339,12 +344,13 @@ td.dim{color:var(--muted)}
 .mgrid .m .v{font-size:var(--fs-lg); font-weight:700; font-variant-numeric:tabular-nums; line-height:1.3}
 .ytlink{display:inline-block; margin-top:var(--sp-2); font-size:var(--fs-xs); color:var(--s1);
   word-break:break-all}
+/* 詳細ビュー表示中は一覧ナビ／チャンネルタブを隠して全画面に見せる */
+body.detail-open .chtabs, body.detail-open .nav{display:none}
 @media (max-width:680px){
-  .dpanel{width:100%; border-left:none; animation:sheetin .2s ease-out}
-  @keyframes sheetin{from{transform:translateY(22px);opacity:.5}to{transform:none;opacity:1}}
   .dhead{padding:var(--sp-3) var(--sp-4)}
-  .dbody{padding:var(--sp-3) var(--sp-4) var(--sp-8)}
+  .dbody{padding:var(--sp-3) var(--sp-4) var(--sp-6)}
   .mgrid{grid-template-columns:repeat(2,1fr)}
+  body.detail-open main{padding-bottom:var(--sp-8)}
 }
 tr.dropped td{color:var(--muted)}
 
@@ -672,12 +678,12 @@ footer{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; co
   <section class="view" id="view-review"></section>
   <section class="view" id="view-analytics"></section>
   <section class="view" id="view-ops"></section>
+  <section class="view" id="view-detail"></section>
 </main>
 
 <footer id="footer">制作ダッシュボード（#191）</footer>
 </div>
 
-<div id="drawer" class="drawer" hidden></div>
 <div id="cfm" class="cfmwrap" hidden></div>
 <div id="tip" role="status"></div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -715,15 +721,15 @@ const RE_TXT = /\.(md|txt|srt|vtt|json|csv)$/i;
 /* 承認時の追加注意（課金や不可逆な工程に進むゲート） */
 const GATE_CAUTION = {storyboard:'承認すると映像生成（課金）へ進みます。'};
 
-/* 表示上の7工程（videos.status からの写像） */
+/* 表示上の7工程（videos.status からの写像）。short=在庫カードのドット下ラベル用の短縮名 */
 const PSTAGES = [
-  {key:'idea',   name:'ネタ案'},
-  {key:'script', name:'台本'},
-  {key:'board',  name:'絵コンテ'},
-  {key:'video',  name:'映像'},
-  {key:'edit',   name:'編集'},
-  {key:'queue',  name:'投稿待ち'},
-  {key:'posted', name:'投稿済'}
+  {key:'idea',   name:'ネタ案',   short:'案'},
+  {key:'script', name:'台本',     short:'台本'},
+  {key:'board',  name:'絵コンテ', short:'絵コンテ'},
+  {key:'video',  name:'映像',     short:'映像'},
+  {key:'edit',   name:'編集',     short:'編集'},
+  {key:'queue',  name:'投稿待ち', short:'待ち'},
+  {key:'posted', name:'投稿済',   short:'済'}
 ];
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
@@ -1004,7 +1010,14 @@ function renderShell(){
   const v = VIEWS.find(x => x.key === state.view);
   document.body.dataset.chindep = v && v.chIndep ? '1' : '0';
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  $('#view-' + state.view).classList.add('active');
+  /* 詳細ビューが開いている間は #view-detail を優先表示（一覧は隠す） */
+  if (state.detail != null) {
+    $('#view-detail').classList.add('active');
+    document.body.classList.add('detail-open');
+  } else {
+    $('#view-' + state.view).classList.add('active');
+    document.body.classList.remove('detail-open');
+  }
 
   $('#syncdot').className = 'syncdot' + (state.busy ? ' busy' : '');
   $('#synctext').textContent = state.busy ? '読み込み中…'
@@ -1122,11 +1135,13 @@ function stageBadge(it){
 }
 function progressDots(it){
   const cur = displayIdx(it), done = it.stage === 'posted';
-  return `<div class="dotrow" aria-hidden="true">` + PSTAGES.map((s, j) => {
+  return `<div class="dotrow" role="img" aria-label="工程 ${esc(cur < 0 ? '没' : PSTAGES[cur].name)}">` + PSTAGES.map((s, j) => {
     let cls = 'todo', gl = '·';
     if (cur >= 0 && (done || j < cur)) { cls = 'done'; gl = '✓'; }
     else if (cur >= 0 && j === cur) { cls = it._rv ? 'rv' : 'work'; gl = '●'; }
-    return `<span class="dot ${cls}" title="${esc(s.name)}">${gl}</span>`;
+    const here = cur >= 0 && j === cur;
+    return `<span class="pstep"><span class="dot ${cls}" title="${esc(s.name)}">${gl}</span>` +
+      `<span class="plbl${here ? ' cur' : ''}">${esc(s.short)}</span></span>`;
   }).join('') + `</div>`;
 }
 function stockCards(rows){
@@ -1307,8 +1322,9 @@ function detailHTML(it){
   const review = it._rv ? `<div class="dsec" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
       <h4>レビュー — ${GATE_LABEL[it._rv]}ゲート</h4>${reviewPanel(it, it._rv)}</div>` : '';
 
-  return `<div class="scrim" data-close="1"></div>
-    <aside class="dpanel" role="dialog" aria-modal="true" aria-label="${esc(it.title)} の詳細">
+  return `<div class="dview">
+    <button class="backbtn" data-close="1" aria-label="一覧に戻る">← 一覧に戻る</button>
+    <article class="dcard" role="region" aria-label="${esc(it.title)} の詳細">
       <div class="dhead">
         <div style="flex:1 1 auto;min-width:0">
           <div class="seqn">${esc(it.seq)}</div>
@@ -1328,25 +1344,104 @@ function detailHTML(it){
           <div style="font-size:var(--fs-2xs);color:var(--muted);margin-top:6px">日付は承認ゲート・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
         ${metrics}${dropped}${noteBlk}${review}
       </div>
-    </aside>`;
+    </article>
+  </div>`;
 }
 
-function openDetail(vid){
+/* ── 履歴付き詳細ビュー（#200）───────────────────────────────────
+   在庫カード／レビュー項目クリックで #view-detail を全画面表示し history.pushState で
+   履歴を積む。ブラウザの戻る（popstate）／画面内「戻る」ボタン（data-close→history.back）で
+   一覧へ戻り、開いた時点のスクロール位置を復元する。URL は同一パス上のハッシュ #detail/… のみ。 */
+const BASE_URL = () => location.pathname + location.search;
+let _returnScroll = null;
+
+/* 詳細ビューを実際に描画する（履歴は積まない・再描画や popstate から共用） */
+function openDetail(vid, gate){
   const core = store.core[state.ch]; if (!core) return;
   const it = core.byId.get(Number(vid)); if (!it) return;
+  /* 入口（在庫／レビュー）に依らずレビューパネルが出るよう、保留ゲートを都度算出 */
+  let rv = null;
+  for (const p of pendingMap().values()) if (p.video_id === it.id) { rv = p.gate; break; }
+  it._rv = it.stage === 'dropped' ? null : rv;
+
   state.detail = it.id;
-  const dr = $('#drawer');
-  dr.innerHTML = detailHTML(it);
-  dr.hidden = false;
-  document.body.style.overflow = 'hidden';
-  dr.querySelector('.iconbtn')?.focus();
-  mountAllAssets(dr);
-}
-function closeDetail(){
-  state.detail = null;
-  const dr = $('#drawer'); dr.hidden = true; dr.innerHTML = '';
+  const dv = $('#view-detail');
+  dv.innerHTML = detailHTML(it);
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  dv.classList.add('active');
+  document.body.classList.add('detail-open');
   document.body.style.overflow = '';
+  window.scrollTo(0, 0);
+  dv.querySelector('.backbtn')?.focus();
+  mountAllAssets(dv);
 }
+
+/* 一覧へ戻す（履歴は操作しない）。scrollY 指定があればそこへ、無ければ開いた時点へ復元 */
+function closeDetail(scrollY){
+  const wasOpen = state.detail != null;
+  state.detail = null;
+  const dv = $('#view-detail');
+  dv.classList.remove('active');
+  dv.innerHTML = '';
+  document.body.classList.remove('detail-open');
+  document.body.style.overflow = '';
+  $('#view-' + state.view)?.classList.add('active');
+  if (wasOpen) {
+    const y = (scrollY != null) ? scrollY : _returnScroll;
+    if (y != null) requestAnimationFrame(() => window.scrollTo(0, y));
+  }
+  _returnScroll = null;
+}
+
+/* クリック起点：現在のスクロールを一覧履歴に刻んでから詳細をプッシュ */
+function pushDetail(vid, gate){
+  const core = store.core[state.ch]; if (!core) return;
+  const it = core.byId.get(Number(vid)); if (!it) return;
+  _returnScroll = window.scrollY;
+  const base = history.state || {};
+  history.replaceState(Object.assign({}, base, { view: state.view, ch: state.ch, scrollY: _returnScroll }), '', BASE_URL());
+  const hash = `#detail/${encodeURIComponent(state.ch)}/${encodeURIComponent(it.seq)}` +
+    (gate ? '/' + encodeURIComponent(gate) : '');
+  history.pushState({ detail: it.id, ch: state.ch, gate: gate || null, view: state.view }, '', hash);
+  openDetail(it.id, gate);
+}
+
+function parseHash(){
+  const m = /^#detail\/([^/]+)\/([^/]+)(?:\/([^/]+))?$/.exec(location.hash || '');
+  if (!m) return null;
+  return { ch: decodeURIComponent(m[1]), seq: decodeURIComponent(m[2]),
+           gate: m[3] ? decodeURIComponent(m[3]) : null };
+}
+
+/* 直リロード／ディープリンク（#detail/…）で開いたときの初期ルーティング。
+   無効なハッシュはトップ（一覧）へ落とす。back で一覧へ戻れるよう履歴を [一覧, 詳細] に整える。 */
+async function applyInitialRoute(){
+  const r = parseHash();
+  if (!r) return;
+  if (!store.channels.some(c => c.slug === r.ch)) { history.replaceState({}, '', BASE_URL()); return; }
+  try {
+    if (r.ch !== state.ch) { state.ch = r.ch; await render(); }
+    else await loadCore(state.ch);
+  } catch { history.replaceState({}, '', BASE_URL()); return; }
+  const core = store.core[state.ch];
+  const it = core && core.items.find(i => String(i.seq) === r.seq);
+  if (!it) { history.replaceState({}, '', BASE_URL()); return; }
+  history.replaceState({ view: state.view, ch: state.ch, scrollY: 0 }, '', BASE_URL());
+  history.pushState({ detail: it.id, ch: state.ch, gate: r.gate, view: state.view }, '',
+    `#detail/${encodeURIComponent(state.ch)}/${encodeURIComponent(it.seq)}${r.gate ? '/' + encodeURIComponent(r.gate) : ''}`);
+  _returnScroll = 0;
+  openDetail(it.id, r.gate);
+}
+
+window.addEventListener('popstate', e => {
+  const st = e.state || {};
+  const core = store.core[state.ch];
+  if (st.detail != null && st.ch === state.ch && core && core.byId.get(st.detail)) {
+    openDetail(st.detail, st.gate);
+  } else {
+    closeDetail(st.scrollY);
+  }
+});
 
 /* ══ ② レビュー ═════════════════════════════════════════════════ */
 
@@ -1595,17 +1690,15 @@ async function renderReview(){
   const list = pendingList(state.ch);
   const gateNames = m.gates.map(g => GATE_LABEL[g]).join(' / ');
   const items = list.length ? list.map(r => {
-    const id = r.item.id + '-' + r.gate, open = state.open === id;
-    return `<article class="rv ${open ? 'open' : ''}" data-rv="${esc(id)}">
-      <button class="rvhead" aria-expanded="${open}">
+    return `<article class="rv" data-vid="${r.item.id}" data-gate="${esc(r.gate)}">
+      <button class="rvhead" aria-label="${esc(r.item.title)} の詳細を開く">
         <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon}</span>
         <span class="seq">${esc(r.item.seq)}</span>
         <span class="ttl">${esc(r.item.title)}</span>
         <span class="gbadge"><i style="background:var(${GATE_SW[r.gate] || '--stg3'})"></i>${GATE_LABEL[r.gate] || esc(r.gate)}</span>
         <span class="wait ${r.wait >= 3 ? 'slow' : ''}">${r.wait >= 3 ? '⏳ ' : ''}待ち ${r.wait == null ? '—' : r.wait + '日'}</span>
-        <span class="caret">▸</span>
+        <span class="caret">›</span>
       </button>
-      <div class="rvbody">${open ? reviewPanel(r.item, r.gate) : ''}</div>
     </article>`;
   }).join('') : `<div class="noitem">承認待ちはありません
     <span class="s">レビュー依頼（review_events の request_review）が記録されるとここに並びます</span></div>`;
@@ -1617,8 +1710,6 @@ async function renderReview(){
       <p>${gateNames} の${m.gates.length}ゲート。カードを開くと搬出済みの素材と review_events の履歴を確認でき、その場で承認・修正依頼ができます。表示は選択中のチャンネル分のみです。</p>
     </div>
     <div class="rvlist">${items}</div>`;
-
-  mountAllAssets(el);
 }
 
 /* ══ ③ 分析 ════════════════════════════════════════════════════ */
@@ -2033,7 +2124,8 @@ document.addEventListener('click', e => {
     return;
   }
 
-  if (e.target.closest('[data-close]')) { closeDetail(); return; }
+  /* 詳細内の「戻る／閉じる」は履歴を戻す（popstate で一覧へ復帰・経路を一本化） */
+  if (e.target.closest('[data-close]')) { history.back(); return; }
 
   const chBtn = e.target.closest('.chtab[data-ch]');
   if (chBtn) { state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters(); render(); return; }
@@ -2062,12 +2154,12 @@ document.addEventListener('click', e => {
   }
 
   const row = e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
-  if (row) { openDetail(row.dataset.vid); return; }
+  if (row) { pushDetail(row.dataset.vid); return; }
 
   const rvHead = e.target.closest('.rvhead');
   if (rvHead) {
-    const id = rvHead.closest('.rv').dataset.rv;
-    state.open = state.open === id ? null : id; renderReview(); return;
+    const rv = rvHead.closest('.rv');
+    pushDetail(rv.dataset.vid, rv.dataset.gate); return;
   }
 
   if (e.target.closest('#tbltoggle')) {
@@ -2103,9 +2195,9 @@ document.addEventListener('keydown', e => {
     if (box) { e.preventDefault(); submitRequestChanges(box, box.dataset.wbox); }
     return;
   }
-  if (e.key === 'Escape' && state.detail) { closeDetail(); return; }
-  const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
-  if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDetail(row.dataset.vid); }
+  if (e.key === 'Escape' && state.detail) { history.back(); return; }
+  const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid], .rv[data-vid]');
+  if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pushDetail(row.dataset.vid, row.dataset.gate); }
 });
 window.addEventListener('scroll', hideTip, { passive: true });
 let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(drawSpark, 120); });
@@ -2145,6 +2237,7 @@ function showLogin(){
   $('#login').hidden = false;
   $('#menupop').hidden = true;
   closeDetail();
+  if (location.hash) history.replaceState({}, '', location.pathname + location.search);
   document.title = '制作ダッシュボード — ログイン';
 }
 
@@ -2168,6 +2261,8 @@ async function showApp(user){
     return;
   }
   await render();
+  /* #detail/… 付きで直接開かれた場合は該当詳細へ（無効ならトップに落ちる） */
+  await applyInitialRoute();
 }
 
 sb.auth.onAuthStateChange((event, session) => {
