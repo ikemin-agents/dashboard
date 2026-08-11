@@ -235,11 +235,21 @@ td.dim{color:var(--muted)}
   background:var(--surface-1); color:var(--ink); min-width:0}
 .toolbar input[type="search"]{flex:0 1 250px}
 .toolbar select{flex:0 0 auto}
-.toolbar .cond{font-size:var(--fs-2xs); color:var(--ink-2); display:inline-flex; align-items:center;
+.cond{font-size:var(--fs-2xs); color:var(--ink-2); display:inline-flex; align-items:center;
   gap:6px; flex-wrap:wrap}
-.toolbar .cond b{color:var(--ink); font-weight:680}
+.cond b{color:var(--ink); font-weight:680}
 .toolbar .btn{padding:7px 14px; font-size:var(--fs-xs)}
 .hits{font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums; margin-left:auto}
+
+/* 絞り込みの折りたたみ（スマホのみ畳む・PC は常時展開・#201）＋常時見える要約バー */
+.filterbar{display:flex; align-items:center; gap:var(--sp-2); flex-wrap:wrap; margin:0 0 var(--sp-2)}
+.filterbox{display:block}
+.filtoggle{display:none; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-xs);
+  border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
+  padding:6px 14px; cursor:pointer; transition:background .12s}
+.filtoggle:hover{background:var(--surface-3)}
+.filtoggle .fcaret{font-size:10px; transition:transform .15s}
+.filtoggle[aria-expanded="true"] .fcaret{transform:rotate(180deg)}
 
 .legend2{display:flex; gap:var(--sp-4); flex-wrap:wrap; font-size:var(--fs-2xs); color:var(--ink-2);
   align-items:center; margin:0 0 var(--sp-2); padding:7px 12px; border-radius:var(--r-md);
@@ -278,9 +288,10 @@ td.dim{color:var(--muted)}
 .emptyrow:hover td{background:transparent!important}
 
 /* ═══ 在庫カード（スマホ狭幅で表の代わりに表示） ═══════════════════ */
-.stockcards{display:none; grid-template-columns:1fr; gap:var(--sp-2)}
-.scard{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-md);
-  padding:var(--sp-3); display:grid; gap:8px; cursor:pointer; box-shadow:var(--shadow-1)}
+/* フル幅リスト行（LINE/メール風・端から端まで。カード枠/影/角丸/隙間なし・区切りは細線1本） */
+.stockcards{display:none; grid-template-columns:1fr}
+.scard{background:var(--surface-1); border-bottom:1px solid var(--border);
+  padding:var(--sp-3) var(--sp-4); display:grid; gap:8px; cursor:pointer}
 .scard:hover{background:var(--surface-2)}
 .scard.dropped{opacity:.65}
 .scard-top{display:flex; align-items:center; gap:8px}
@@ -308,7 +319,9 @@ td.dim{color:var(--muted)}
 .scard-extra{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
 @media (max-width:640px){
   .tblwrap.mtx{display:none}
-  .stockcards{display:grid}
+  /* main の左右パディング(var(--sp-3))を打ち消して画面端まで到達させる。行頭に細線1本 */
+  .stockcards{display:grid; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
+    border-top:1px solid var(--border)}
 }
 
 /* ═══ 詳細ビュー（履歴付き全画面遷移・#200） ══════════════════════ */
@@ -608,7 +621,9 @@ footer{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; co
   main{padding:var(--sp-4) var(--sp-3) 104px}
   .topbar-in{padding:10px var(--sp-3) 0}
   .nav-in{padding:0}
-  .brand{font-size:var(--fs-md)}
+  .brand{font-size:var(--fs-md); line-height:1.15}
+  .brand small{display:none}
+  .chtabs{margin-top:var(--sp-2)}
   .syncchip{display:none}
   .nav{position:fixed; bottom:0; left:0; right:0; top:auto; border-top:1px solid var(--border);
     border-bottom:none; background:var(--surface-1); z-index:50; padding-bottom:env(safe-area-inset-bottom)}
@@ -626,6 +641,24 @@ footer{max-width:1280px; margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; co
   .rvhead .ttl{order:6; flex:1 1 100%}
   #toast{bottom:78px}
   footer{padding-bottom:88px}
+}
+/* ═══ スマホ: 上部chrome削減・凡例1行・フィルタ折りたたみ（#201。一覧を上から大きく） ═══ */
+@media (max-width:640px){
+  /* 追加1: eyebrow/説明サブテキストを畳み、見出しを圧縮して一覧を上へ */
+  .pagehead{margin-bottom:var(--sp-3)}
+  .pagehead .eyebrow{display:none}
+  .pagehead h1{font-size:var(--fs-lg); margin:0}
+  .pagehead p{display:none}
+  .sectionhead{margin-bottom:var(--sp-2)}
+  .sectionhead .hint{display:none}
+  /* 追加2: 工程凡例を1行の極小に（囲みを外し・括弧書きを隠す・マークを縮小） */
+  .legend2{gap:12px; padding:2px 0; border:none; background:transparent; margin-bottom:var(--sp-2)}
+  .legend2 .ex{display:none}
+  .legend2 .mark{width:15px; height:15px; line-height:15px; font-size:10px}
+  /* 追加3: フィルタは既定で畳む。要約バー（絞り込みボタン＋条件＋件数）は常時表示 */
+  .filtoggle{display:inline-flex}
+  .filterbox{display:none}
+  .filterbox.open{display:block}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -817,7 +850,7 @@ async function q(builder){
 const state = {
   user:null, ch:null, view:'stock', stockView:'table', stockFilter:null,
   stockQ:'', stockGenre:'', stockSort:null, detail:null, open:null, tblOpen:false,
-  busy:false, lastSync:null
+  filtersOpen:false, busy:false, lastSync:null
 };
 const store = { channels:[], accounts:[], reviews:null, core:{}, ops:null, analytics:{}, assets:{} };
 const resetStockFilters = () => { state.stockFilter=null; state.stockQ=''; state.stockGenre=''; state.stockSort=null; };
@@ -1168,8 +1201,8 @@ function stockCards(rows){
 const MARK_LEGEND = `<div class="legend2">
   <b>工程</b>
   <span class="lg"><span class="mark done">✓</span>完了</span>
-  <span class="lg"><span class="mark work">●</span>作業中（自動工程が進行中）</span>
-  <span class="lg"><span class="mark rv">●</span>レビュー待ち（承認が必要）</span>
+  <span class="lg"><span class="mark work">●</span>作業中<span class="ex">（自動工程が進行中）</span></span>
+  <span class="lg"><span class="mark rv">●</span>レビュー待ち<span class="ex">（承認が必要）</span></span>
   <span class="lg"><span class="mark todo">·</span>未到達</span></div>`;
 
 function gateChips(it, slug){
@@ -1241,18 +1274,23 @@ async function renderStock(){
       </div>
     </div>
     ${isTable ? `
-      <div class="toolbar">
-        <input type="search" id="stockq" placeholder="SEQ・タイトルで検索" aria-label="SEQ・タイトルで検索" value="${esc(state.stockQ)}">
-        <select id="stockgenre" aria-label="ジャンルで絞り込み">
-          <option value="">ジャンル: すべて</option>
-          ${genres.map(g => `<option value="${esc(g)}" ${state.stockGenre === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
-        </select>
-        <button class="btn" id="stockreset">リセット</button>
+      <div class="filterbar">
+        <button class="filtoggle" id="filtoggle" aria-expanded="${state.filtersOpen}" aria-controls="filterbox">絞り込み <span class="fcaret">▾</span></button>
         <span class="cond" id="stockcond"></span>
         <span class="hits" id="stockhits"></span>
       </div>
-      <div id="stockchips"></div>
-      ${MARK_LEGEND}
+      <div class="filterbox${state.filtersOpen ? ' open' : ''}" id="filterbox">
+        <div class="toolbar">
+          <input type="search" id="stockq" placeholder="SEQ・タイトルで検索" aria-label="SEQ・タイトルで検索" value="${esc(state.stockQ)}">
+          <select id="stockgenre" aria-label="ジャンルで絞り込み">
+            <option value="">ジャンル: すべて</option>
+            ${genres.map(g => `<option value="${esc(g)}" ${state.stockGenre === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
+          </select>
+          <button class="btn" id="stockreset">リセット</button>
+        </div>
+        <div id="stockchips"></div>
+        ${MARK_LEGEND}
+      </div>
       <div id="stocktable"></div>` : kanbanView(items, state.ch)}`;
 
   if (isTable) refreshStockTable();
@@ -2135,6 +2173,14 @@ document.addEventListener('click', e => {
 
   const segBtn = e.target.closest('[data-stockview]');
   if (segBtn) { state.stockView = segBtn.dataset.stockview; renderStock(); return; }
+
+  const filT = e.target.closest('#filtoggle');
+  if (filT) {
+    state.filtersOpen = !state.filtersOpen;
+    $('#filterbox').classList.toggle('open', state.filtersOpen);
+    filT.setAttribute('aria-expanded', String(state.filtersOpen));
+    return;
+  }
 
   const chipBtn = e.target.closest('.chipf:not([disabled])');
   if (chipBtn) {
