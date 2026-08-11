@@ -813,8 +813,11 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   width:max-content; max-width:min(430px, calc(100vw - 32px)); box-shadow:0 8px 28px rgba(0,0,0,.28)}
 #toast.on{opacity:1; transform:translate(-50%,0)}
 
-footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-6) var(--sp-5) 48px; color:var(--muted);
-  font-size:var(--fs-2xs); border-top:1px solid var(--border-2); letter-spacing:.02em}
+/* フッターは1行に収める（#205 オーナー指摘: やけに長い・空白が多い）。
+   下の余白はスマホの固定タブバーを避ける最小限だけ残す */
+footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4);
+  color:var(--muted); font-size:var(--fs-2xs); border-top:1px solid var(--border-2);
+  letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
 @media (max-width:980px){
   .kpis{grid-template-columns:repeat(2,1fr)}
@@ -839,7 +842,7 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-6) var(--sp-
   .tblwrap.tall{max-height:none}
   .rvhead{padding:12px var(--sp-3)}
   #toast{bottom:78px}
-  footer{padding-bottom:88px}
+  footer{padding-bottom:72px}   /* 固定タブバー(≈64px)を避ける最小限 */
 }
 /* ═══ スマホ: 上部chrome削減・凡例1行（#201/#202。一覧を上から大きく）
    ※ 説明サブテキスト非表示・ブランドサブタイトル非表示・フィルタ折りたたみは
@@ -1316,7 +1319,7 @@ function renderShell(){
     : (state.lastSync ? '最終読込 ' + fmtDT(state.lastSync) : '未読込');
   $('#reloadbtn').classList.toggle('spin', state.busy);
   $('#footer').textContent =
-    `制作ダッシュボード（Issue #191）・データ: Supabase 実データ・承認と修正依頼は review_events に記録されます`;
+    `制作ダッシュボード #191 ・ Supabase 実データ`;
 }
 
 const errBox = msg => `<div class="errbox"><b>読み込みエラー</b><br>${esc(msg)}</div>`;
