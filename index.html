@@ -40,9 +40,16 @@
   --crit:#d03b3b; --crit-tint:#faeaea;
   --up:#006300;
 
+  /* 状態の色づかい（#205）: あなたの対応が必要=目立つ（--s2 オレンジ／--crit）／
+     AI側の対応待ち=中間（青系）／終わった=沈む（--done グレー）。
+     --fix は「あなたの指摘をAIが直している最中」＝作業中(--s1)と同じ青系だが、
+     濃い青＋縁取り（作業中は塗りつぶし）で見分ける。--done は完了・投稿済・承認済み。 */
+  --fix:#1c5cab;  --fix-tint:#e2ecfa;
+  --done:#56544f; --done-tint:#e8e6df;
+
   --meter-track:#e2edfb; --meter-fill:#2a78d6;
   --stg1:#86b6ef; --stg2:#5598e7; --stg3:#2a78d6;
-  --stg4:#256abf; --stg5:#1c5cab; --stg6:#104281;
+  --stg4:#256abf; --stg5:#1c5cab; --stg6:#8a8880;
   --stage-bg:#f3f7fd; --stage-bg-h:#e8f0fb; --stage-line:#d3e1f4;
 
   --fs-2xs:.6875rem; --fs-xs:.75rem; --fs-sm:.8125rem; --fs-md:.875rem;
@@ -62,9 +69,11 @@
     --s2:#d95926; --s2-tint:#34201a;
     --good-tint:#122b12; --warn-tint:#33290f; --crit-tint:#331616;
     --up:#0ca30c;
+    --fix:#79b0f2;  --fix-tint:#152437;
+    --done:#a8a69e; --done-tint:#2a2a28;
     --meter-track:#12243a; --meter-fill:#3987e5;
     --stg1:#b7d3f6; --stg2:#86b6ef; --stg3:#5598e7;
-    --stg4:#2a78d6; --stg5:#256abf; --stg6:#184f95;
+    --stg4:#2a78d6; --stg5:#256abf; --stg6:#8f8d86;
     --stage-bg:#141a23; --stage-bg-h:#1c2531; --stage-line:#26313f;
   }
 }
@@ -78,9 +87,11 @@
   --s2:#d95926; --s2-tint:#34201a;
   --good-tint:#122b12; --warn-tint:#33290f; --crit-tint:#331616;
   --up:#0ca30c;
+  --fix:#79b0f2;  --fix-tint:#152437;
+  --done:#a8a69e; --done-tint:#2a2a28;
   --meter-track:#12243a; --meter-fill:#3987e5;
   --stg1:#b7d3f6; --stg2:#86b6ef; --stg3:#5598e7;
-  --stg4:#2a78d6; --stg5:#256abf; --stg6:#184f95;
+  --stg4:#2a78d6; --stg5:#256abf; --stg6:#8f8d86;
   --stage-bg:#141a23; --stage-bg-h:#1c2531; --stage-line:#26313f;
 }
 
@@ -274,9 +285,13 @@ td.dim{color:var(--muted)}
 .mtx thead th.pad{background:var(--surface-2); padding:5px 0}
 .mark{display:inline-block; width:19px; height:19px; line-height:19px; border-radius:var(--r-pill);
   font-size:11px; text-align:center; font-variant-numeric:normal}
-.mark.done{color:var(--up); background:var(--good-tint); font-weight:700}
+/* 完了は沈める（グレー）・作業中は塗りつぶしの青・レビュー待ちは最も目立たせる（塗りオレンジ）・
+   修正依頼中は同じ青系だが濃い青の縁取り（塗りにしないのは「あなたの番ではない」ため）・#205 */
+.mark.done{color:var(--done); background:var(--done-tint); font-weight:700}
 .mark.work{background:var(--s1); color:#fff; font-weight:700}
 .mark.rv{background:var(--s2); color:#fff; font-weight:700}
+.mark.rc{color:var(--fix); background:var(--fix-tint); font-weight:700;
+  box-shadow:inset 0 0 0 1.5px var(--fix)}
 .mark.todo{color:var(--axis)}
 .mtx tr.dropped td{color:var(--muted)}
 .mtx tbody tr{cursor:pointer}
@@ -287,6 +302,18 @@ td.dim{color:var(--muted)}
   background:var(--surface-1); box-shadow:1px 0 0 var(--border-2)}
 .mtx thead th:first-child{background:var(--surface-2); z-index:3}
 .mtx tbody tr:hover td:first-child{background:var(--surface-2)}
+/* 行の左端に状態の色帯（#205）。一覧に戻ったとき「どれが自分の番／どれがコメント済みか」を
+   スクロールしながら色だけで拾えるようにする。sticky 1列目の区切り影と重ねて出す */
+.mtx tbody tr.st-rv td:first-child{box-shadow:inset 3px 0 0 var(--s2), 1px 0 0 var(--border-2)}
+.mtx tbody tr.st-rc td:first-child,
+.mtx tbody tr.st-open td:first-child{box-shadow:inset 3px 0 0 var(--fix), 1px 0 0 var(--border-2)}
+/* 状態バッジ（一覧の行・カード・詳細で共用） */
+.flags{display:inline-flex; gap:5px; flex-wrap:wrap; vertical-align:1px}
+td.ttl .flags{margin-left:7px}
+.sflag{display:inline-flex; align-items:center; gap:4px; font-size:var(--fs-2xs); font-weight:700;
+  border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap; border:1px solid transparent}
+.sflag.rv{background:var(--s2-tint); color:var(--s2)}
+.sflag.rc,.sflag.open{background:var(--fix-tint); color:var(--fix); border-color:var(--fix)}
 /* 進捗マトリクスはページ全体でスクロール（内部縦スクロール廃止・#204）。max-height/overflow を外して
    全高表示し、2段の列見出しを position:sticky でサイトヘッダー（.topbar＝トップバー＋ナビ）直下に固定。
    横は PC幅(≥1100px)なら表(min 1060px)が収まるので overflow:visible。収まらない中間幅のみ横コンテナ
@@ -305,24 +332,32 @@ td.dim{color:var(--muted)}
   padding:var(--sp-3) var(--sp-4); display:grid; gap:8px; cursor:pointer}
 .scard:hover{background:var(--surface-2)}
 .scard.dropped{opacity:.65}
+/* 行頭の色帯＝状態（PC の表と同じ割り当て・#205） */
+.scard.st-rv{box-shadow:inset 3px 0 0 var(--s2)}
+.scard.st-rc,.scard.st-open{box-shadow:inset 3px 0 0 var(--fix)}
 .scard-top{display:flex; align-items:center; gap:8px}
 .scard-seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.04em; font-variant-numeric:tabular-nums}
 .scard-days{font-size:var(--fs-2xs); color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; white-space:nowrap}
 .scard-days.slow{color:var(--warn); font-weight:680}
 .scard-ttl{font-size:var(--fs-md); line-height:1.45; font-weight:600}
+.sbadges{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
 .sbadge{justify-self:start; display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-sm);
   font-weight:700; border-radius:var(--r-pill); padding:4px 13px; border:1px solid transparent; white-space:nowrap}
 .sbadge.work{background:var(--s1-tint); color:var(--s1)}
 .sbadge.rv{background:var(--s2-tint); color:var(--s2)}
-.sbadge.done{background:var(--good-tint); color:var(--up)}
+/* 作業中(work)は塗り色のみ、修正依頼中(rc)は同じ青系＋縁取りで見分ける */
+.sbadge.rc{background:var(--fix-tint); color:var(--fix); border-color:var(--fix)}
+.sbadge.done{background:var(--done-tint); color:var(--done)}
 .sbadge.idea{background:var(--surface-2); color:var(--ink-2); border-color:var(--border-2)}
 .dotrow{display:grid; grid-template-columns:repeat(7,1fr); gap:3px; align-items:start}
 .pstep{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0}
 .dot{width:22px; height:22px; line-height:22px; text-align:center; border-radius:var(--r-pill);
   font-size:11px; flex:0 0 auto; font-variant-numeric:normal}
-.dot.done{color:var(--up); background:var(--good-tint); font-weight:700}
+.dot.done{color:var(--done); background:var(--done-tint); font-weight:700}
 .dot.work{background:var(--s1); color:#fff; font-weight:700}
 .dot.rv{background:var(--s2); color:#fff; font-weight:700}
+.dot.rc{color:var(--fix); background:var(--fix-tint); font-weight:700;
+  box-shadow:inset 0 0 0 1.5px var(--fix)}
 .dot.todo{color:var(--axis); background:var(--surface-2)}
 .plbl{font-size:9px; line-height:1.15; color:var(--muted); text-align:center; white-space:nowrap;
   letter-spacing:-.03em; max-width:100%; overflow:hidden; text-overflow:ellipsis}
@@ -359,10 +394,14 @@ td.dim{color:var(--muted)}
   border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
   padding:8px 16px; cursor:pointer; margin-bottom:var(--sp-4); transition:background .12s}
 .backbtn:hover{background:var(--surface-3)}
+/* overflow:hidden は付けない（#205）: 祖先がスクロールコンテナになると子孫の position:sticky が
+   ビューポートに貼り付かなくなり、承認バーのスクロール追従が死ぬ。角の処理は .dhead 側の
+   border-radius で行う（.dbody 側は背景を持たないのでカードの角丸をはみ出さない） */
 .dcard{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
-  overflow:hidden; box-shadow:var(--shadow-2)}
+  box-shadow:var(--shadow-2)}
 .dhead{display:flex; align-items:flex-start; gap:var(--sp-3); padding:var(--sp-4) var(--sp-5);
-  border-bottom:1px solid var(--border); background:var(--surface-1)}
+  border-bottom:1px solid var(--border); background:var(--surface-1);
+  border-radius:var(--r-lg) var(--r-lg) 0 0}
 .dhead .seqn{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
 .dhead h3{margin:2px 0 0; font-size:var(--fs-lg); font-weight:700; line-height:var(--lh-tight)}
 .dhead .meta{display:flex; gap:7px; flex-wrap:wrap; margin-top:8px; align-items:center}
@@ -385,6 +424,13 @@ td.dim{color:var(--muted)}
 .mgrid .m .v{font-size:var(--fs-lg); font-weight:700; font-variant-numeric:tabular-nums; line-height:1.3}
 .ytlink{display:inline-block; margin-top:var(--sp-2); font-size:var(--fs-xs); color:var(--s1);
   word-break:break-all}
+.dhint{font-size:var(--fs-2xs); color:var(--muted); margin-top:6px}
+/* 詳細のレビュー状態バー（あなたの番／AIの番を1行で明示） */
+.dstate{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:var(--fs-sm);
+  border-radius:var(--r-md); padding:8px 12px; margin:0 0 var(--sp-3); line-height:1.55}
+.dstate.rv{background:var(--s2-tint); color:var(--ink); border:1px solid var(--s2)}
+.dstate.rc{background:var(--fix-tint); color:var(--ink); border:1px solid var(--fix)}
+.dstate b{font-weight:700}
 /* 詳細ビュー表示中は一覧ナビ／チャンネルタブを隠して全画面に見せる */
 body.detail-open .chtabs, body.detail-open .nav{display:none}
 @media (max-width:680px){
@@ -392,6 +438,37 @@ body.detail-open .chtabs, body.detail-open .nav{display:none}
   .dbody{padding:var(--sp-3) var(--sp-4) var(--sp-6)}
   .mgrid{grid-template-columns:repeat(2,1fr)}
   body.detail-open main{padding-bottom:var(--sp-8)}
+}
+/* ── スマホ: 詳細も画面端まで（#205）──────────────────────────────
+   一覧（.stockcards）と同じく main の左右パディングを消して端から端まで使う。
+   カード／囲みは左右の枠線と角丸を落として全幅に伸ばし、地の文だけ縁に貼り付かないよう
+   最小の内側パディング（--dpad）を残す。 */
+@media (max-width:640px){
+  :root{--dpad:11px}
+  /* main は max-width:94vw（左右3vwの余白）なので、詳細表示中だけ解除しないと端に届かない */
+  body.detail-open main{max-width:none; padding-left:0; padding-right:0}
+  .dview{max-width:none}
+  .backbtn{margin-left:var(--dpad)}
+  .dcard{border-radius:0; border-left-width:0; border-right-width:0}
+  .dhead{padding-left:var(--dpad); padding-right:var(--dpad)}
+  .dbody{padding-left:0; padding-right:0}
+  .dbody .hook,.dbody .asset,.dbody .wbox,.dbody .abox,
+  .dbody .noitem,.dbody .loadbox,.dbody .dstate{
+    border-radius:0; border-left-width:0; border-right-width:0}
+  .dbody .dsec>h4,.dbody .blk>h4,.dbody .tl .row,.dbody .dhint,
+  .dbody .ytlink,.dbody .thread,.dbody .dstate{
+    padding-left:var(--dpad); padding-right:var(--dpad)}
+  .dbody .mgrid .m{border-radius:0}
+  .dcard,.dhead{border-radius:0}
+  /* 承認は画面下端のバー（#205）。畳んでいる間は「1行ぶん」に収めて素材が読める高さを残し、
+     押したときだけメモ欄と注意書きが上に開く（＝2段階は維持） */
+  .dbody .abox{bottom:0; margin-top:var(--sp-5); padding:10px var(--dpad);
+    padding-bottom:calc(10px + env(safe-area-inset-bottom));
+    border-bottom-width:0; max-height:min(72vh, 560px);
+    box-shadow:0 -7px 20px rgba(0,0,0,.20)}
+  .dbody .abox .ainfo{display:none}
+  .dbody .abox .arow>[data-act="approve-open"]{flex:1 1 100%; padding-top:11px; padding-bottom:11px}
+  .dbody .abox .apanel{border-top:none; padding-top:0}
 }
 tr.dropped td{color:var(--muted)}
 
@@ -419,13 +496,15 @@ tr.dropped td{color:var(--muted)}
 .vcard .meta{display:flex; flex-wrap:wrap; gap:4px; align-items:center}
 .gate{font-size:var(--fs-2xs); border-radius:5px; padding:1px 6px; border:1px solid var(--border);
   color:var(--muted); white-space:nowrap}
-.gate.on{background:var(--good-tint); border-color:transparent; color:var(--up); font-weight:680}
+.gate.on{background:var(--done-tint); border-color:transparent; color:var(--done); font-weight:680}
 .days{font-size:var(--fs-2xs); color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; white-space:nowrap}
 .days.slow{color:var(--ink); background:var(--warn-tint); border-radius:5px; padding:1px 6px}
 .resv{font-size:var(--fs-2xs); background:var(--warn-tint); border-radius:5px; padding:1px 7px;
   color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap}
-.rvflag{font-size:var(--fs-2xs); background:var(--s1-tint); border:1px solid var(--border-2);
-  border-radius:5px; padding:1px 7px; color:var(--ink); white-space:nowrap}
+.rvflag{font-size:var(--fs-2xs); background:var(--s2-tint); border:1px solid var(--border-2);
+  border-radius:5px; padding:1px 7px; color:var(--s2); font-weight:680; white-space:nowrap}
+.rcflag{font-size:var(--fs-2xs); background:var(--fix-tint); border:1px solid var(--border-2);
+  border-radius:5px; padding:1px 7px; color:var(--fix); font-weight:680; white-space:nowrap}
 .more{font-size:var(--fs-xs); color:var(--ink-2); text-align:center; padding:7px;
   border:1px dashed var(--border); border-radius:var(--r-sm)}
 .empty{font-size:var(--fs-xs); color:var(--muted); text-align:center; padding:16px 6px}
@@ -446,6 +525,9 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .rv{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   overflow:hidden; box-shadow:var(--shadow-2); transition:border-color .12s}
 .rv:hover{border-color:var(--axis)}
+/* 左端の色帯で「あなたの番（オレンジ）／AIの番＝修正依頼中（青）」を分ける（#205） */
+.rv.is-rv{border-left:3px solid var(--s2)}
+.rv.is-rc{border-left:3px solid var(--fix)}
 .rvhead{width:100%; text-align:left; background:transparent; border:none; font-family:inherit;
   padding:14px var(--sp-4); display:flex; gap:var(--sp-3); align-items:center; cursor:pointer; color:inherit}
 .rvhead:hover{background:var(--surface-2)}
@@ -485,16 +567,26 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .cmt .txt{font-size:var(--fs-md); line-height:1.75; white-space:pre-wrap; word-break:break-word}
 .kindchip{font-size:var(--fs-2xs); border-radius:5px; padding:0 7px; border:1px solid var(--border-2);
   background:var(--surface-1); color:var(--ink-2)}
-.kindchip.approve{background:var(--good-tint); color:var(--up); border-color:transparent; font-weight:680}
-.kindchip.request_changes,.kindchip.reject{background:var(--crit-tint); color:var(--crit); border-color:transparent; font-weight:680}
+/* 承認＝終わったイベントなので沈める。修正依頼はAI対応待ちの --fix、却下だけ --crit を残す */
+.kindchip.approve{background:var(--done-tint); color:var(--done); border-color:transparent; font-weight:680}
+.kindchip.request_changes{background:var(--fix-tint); color:var(--fix); border-color:transparent; font-weight:680}
+.kindchip.reject{background:var(--crit-tint); color:var(--crit); border-color:transparent; font-weight:680}
 .kindchip.request_review{background:var(--s2-tint); color:var(--ink); border-color:transparent}
 .aichip{font-size:var(--fs-2xs); border-radius:5px; padding:0 7px; background:var(--s1-tint);
   color:var(--ink); border:1px solid var(--border-2)}
-.resolved{font-size:var(--fs-2xs); color:var(--up); background:var(--good-tint); border-radius:5px;
-  padding:1px 8px; margin-top:6px; display:inline-block; white-space:pre-wrap; word-break:break-word}
-/* ── 書き込み（コメント・承認） ── */
+/* 指摘の対応状況: 未対応（open）は目立たせ、対応済み／対応しないは沈める */
+.resolved{font-size:var(--fs-2xs); border-radius:5px; padding:1px 8px; margin-top:6px;
+  display:inline-block; white-space:pre-wrap; word-break:break-word; font-weight:680}
+.resolved.open{color:var(--fix); background:var(--fix-tint); box-shadow:inset 0 0 0 1px var(--fix)}
+.resolved.closed{color:var(--done); background:var(--done-tint)}
+/* ── 書き込み: コメントと承認は別ブロック（#205）────────────────────
+   誤タップ防止のため「テキストエリア＋コメントする」と「承認」を完全に分ける。
+   承認は 1段目（承認ボタン）→ 2段目（メモ欄＋注意書き＋確定ボタン）の2段階で、
+   1タップでは絶対に確定しない。 */
 .wbox{margin-top:var(--sp-3); border:1px solid var(--border); border-radius:var(--r-md);
   padding:var(--sp-3); background:var(--surface-2); display:grid; gap:var(--sp-2)}
+.wbox .wh{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
+  text-transform:uppercase; margin:0}
 .wbox .wta{font-family:inherit; font-size:var(--fs-sm); line-height:1.65; width:100%; display:block;
   border:1px solid var(--border); border-radius:var(--r-sm); padding:9px 11px;
   background:var(--surface-1); color:var(--ink); resize:vertical; min-height:68px}
@@ -504,6 +596,34 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .wmsg{font-size:var(--fs-xs); border-radius:var(--r-sm); padding:7px 11px; line-height:1.6;
   background:var(--good-tint); color:var(--ink)}
 .wmsg.err{background:var(--crit-tint)}
+
+/* 承認ブロックはレビュー節の下端にスクロール追従させる（#205 オーナー要望）。
+   絵コンテや素材を最後までスクロールしたその場で承認できる。コメント欄は追従させない
+   （常時出すと素材が読めなくなるため）。追従で指の届く位置に来るぶん誤タップ耐性が要るので、
+   1段目（このボタン）→ 2段目（メモ＋注意＋確定）の2段階は維持する。 */
+.abox{position:sticky; bottom:var(--sp-3); z-index:30;
+  max-height:calc(100vh - 92px); overflow-y:auto; overscroll-behavior:contain;
+  margin-top:var(--sp-6); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:var(--sp-4); background:var(--surface-1); display:grid; gap:var(--sp-2); justify-items:start;
+  box-shadow:var(--shadow-2), 0 -2px 14px rgba(0,0,0,.10)}
+/* 畳んでいる間は1行のバー（追従中に画面を覆わないため）。開くと下にメモ欄が伸びる */
+.abox .arow{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; width:100%}
+.abox .ainfo{display:grid; gap:1px; margin-right:auto; min-width:0}
+.abox .ahd{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
+  text-transform:uppercase}
+.abox .atx{margin:0; font-size:var(--fs-sm); color:var(--ink-2); line-height:1.5}
+.abox .apanel{display:grid; gap:var(--sp-2); width:100%; margin-top:2px;
+  border-top:1px dashed var(--border); padding-top:var(--sp-3)}
+.abox .acaution{background:var(--warn-tint); border:1px solid var(--border-2); border-radius:var(--r-md);
+  padding:10px 12px; font-size:var(--fs-sm); color:var(--ink); line-height:1.65}
+.abox .alb{font-size:var(--fs-2xs); color:var(--muted); font-weight:700; letter-spacing:.07em;
+  text-transform:uppercase}
+.abox .ata{font-family:inherit; font-size:var(--fs-sm); line-height:1.65; width:100%; display:block;
+  border:1px solid var(--border); border-radius:var(--r-sm); padding:9px 11px;
+  background:var(--surface-1); color:var(--ink); resize:vertical; min-height:52px}
+.abox .ata:disabled{opacity:.6}
+.abox .anote{font-size:var(--fs-2xs); color:var(--muted); line-height:1.55}
+.abox .aact{display:flex; gap:var(--sp-2); justify-content:flex-end; flex-wrap:wrap}
 
 /* ── レビュー素材（Storage: review-assets） ── */
 .assets{display:grid; gap:var(--sp-2)}
@@ -551,20 +671,6 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .afiles{display:grid; gap:6px; padding:10px 12px; font-size:var(--fs-xs); background:var(--surface-1)}
 .afiles a{color:var(--s1); word-break:break-all}
 
-/* ── 確認ダイアログ ── */
-.cfmwrap[hidden]{display:none}
-.cfmwrap{position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:var(--sp-5)}
-.cfmscrim{position:absolute; inset:0; background:rgba(0,0,0,.5)}
-.cfmcard{position:relative; width:min(460px,100%); background:var(--surface-1);
-  border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-5);
-  box-shadow:0 18px 50px rgba(0,0,0,.35)}
-.cfmcard h3{margin:0 0 var(--sp-2); font-size:var(--fs-lg); font-weight:700; line-height:var(--lh-tight)}
-.cfmline{margin:0 0 5px; font-size:var(--fs-sm); color:var(--ink-2); line-height:1.6}
-.cfmline b{color:var(--ink); font-weight:680}
-.cfmwarn{margin-top:var(--sp-3); background:var(--warn-tint); border:1px solid var(--border-2);
-  border-radius:var(--r-md); padding:10px 12px; font-size:var(--fs-sm); color:var(--ink); line-height:1.65}
-.cfmact{display:flex; gap:var(--sp-2); justify-content:flex-end; margin-top:var(--sp-4)}
-
 /* ═══ 稼働 ══════════════════════════════════════════════════════ */
 .now{display:flex; gap:var(--sp-3); align-items:center; flex-wrap:wrap}
 .pulse{width:10px;height:10px;border-radius:var(--r-pill);background:var(--muted);flex:0 0 auto}
@@ -573,7 +679,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .run{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   padding:var(--sp-4); box-shadow:var(--shadow-2)}
 .run.err{border-left:3px solid var(--crit)}
-.run.ok{border-left:3px solid var(--good)}
+.run.ok{border-left:3px solid var(--done)}
 .run.run-{border-left:3px solid var(--axis)}
 .runhead{display:flex; gap:var(--sp-3); align-items:center; flex-wrap:wrap; margin-bottom:10px}
 .runhead .when{font-size:var(--fs-md); font-weight:680; font-variant-numeric:tabular-nums}
@@ -582,7 +688,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   border-radius:5px; padding:1px 8px; background:var(--surface-2)}
 .stat{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-2xs); font-weight:700;
   border-radius:var(--r-sm); padding:2px 10px; margin-left:auto}
-.stat.ok{background:var(--good-tint); color:var(--up)}
+.stat.ok{background:var(--done-tint); color:var(--done)}
 .stat.err{background:var(--crit-tint); color:var(--crit)}
 .stat.run{background:var(--surface-2); color:var(--ink-2)}
 .runsummary{font-size:var(--fs-sm); color:var(--ink-2); margin-bottom:8px; white-space:pre-wrap}
@@ -681,6 +787,7 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-6) var(--sp-
   .rvhead .chip{order:1} .rvhead .seq{order:2} .rvhead .gbadge{order:3}
   .rvhead .wait{order:4; margin-left:auto} .rvhead .caret{order:5}
   .rvhead .ttl{order:6; flex:1 1 100%}
+  .rvhead .sflag{order:7}
   #toast{bottom:78px}
   footer{padding-bottom:88px}
 }
@@ -772,7 +879,6 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-6) var(--sp-
 <footer id="footer">制作ダッシュボード（#191）</footer>
 </div>
 
-<div id="cfm" class="cfmwrap" hidden></div>
 <div id="tip" role="status"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
@@ -977,25 +1083,66 @@ async function loadCore(ch){
   return store.core[ch];
 }
 
-/* レビュー待ち = request_review の後に同 video×gate の approve/reject が無いもの */
-function pendingMap(){
+/* ── ゲートの状態（#205）─────────────────────────────────────────
+   video×gate ごとに「最後に状態を決めたイベント」で決まる2状態。
+     review  = レビュー待ち（AIが提出済み・あなたの番）
+     changes = 修正依頼中（あなたが修正依頼を出した・AIの番）
+   approve / reject が来たら解消。判定は毎回 review_events から作り直す＝
+   夜間 stock keeper が resolution_status を閉じれば UI 側は何もせず追随する。 */
+function gateStateMap(){
   const m = new Map();
   for (const e of (store.reviews || [])) {
     const k = e.video_id + '|' + e.gate;
-    if (e.kind === 'request_review') m.set(k, { video_id:e.video_id, gate:e.gate, at:e.created_at });
+    if (e.kind === 'request_review')       m.set(k, { video_id:e.video_id, gate:e.gate, st:'review',  at:e.created_at });
+    else if (e.kind === 'request_changes') m.set(k, { video_id:e.video_id, gate:e.gate, st:'changes', at:e.created_at });
     else if (e.kind === 'approve' || e.kind === 'reject') m.delete(k);
   }
   return m;
 }
-function pendingList(ch){
+const gateStatesOf = st => {
+  const m = new Map();
+  for (const [k, v] of gateStateMap()) if (v.st === st) m.set(k, v);
+  return m;
+};
+/* レビュー待ち = request_review の後に同 video×gate の修正依頼／approve／reject が無いもの */
+const pendingMap = () => gateStatesOf('review');
+/* 未対応の指摘（review_events.resolution_status='open'）を video 単位で数える */
+function openCountMap(){
+  const m = new Map();
+  for (const e of (store.reviews || [])) {
+    if (e.resolution_status === 'open') m.set(e.video_id, (m.get(e.video_id) || 0) + 1);
+  }
+  return m;
+}
+function gateList(ch, st){
   const core = store.core[ch];
   if (!core) return [];
+  const open = openCountMap();
   const out = [];
-  for (const p of pendingMap().values()) {
+  for (const p of gateStatesOf(st).values()) {
     const it = core.byId.get(p.video_id);
-    if (it) out.push({ item: it, gate: p.gate, at: p.at, wait: daysSince(p.at) });
+    if (it && !(st === 'changes' && it.stage === 'dropped')) {
+      out.push({ item: it, gate: p.gate, at: p.at, wait: daysSince(p.at), open: open.get(p.video_id) || 0 });
+    }
   }
   return out.sort((a, b) => new Date(a.at) - new Date(b.at));
+}
+const pendingList = ch => gateList(ch, 'review');
+const changesList = ch => gateList(ch, 'changes');
+
+/* 一覧・詳細が使う状態注釈を DB の現値から付け直す（UI 側に状態は持たない）。
+   _rv=レビュー待ちのゲート / _rc=修正依頼中のゲート / _open=未対応の指摘件数 */
+function annotate(items){
+  const rv = new Map(), rc = new Map();
+  for (const p of gateStateMap().values()) (p.st === 'review' ? rv : rc).set(p.video_id, p.gate);
+  const open = openCountMap();
+  items.forEach(it => {
+    const drop = it.stage === 'dropped';
+    it._rv   = drop ? null : (rv.get(it.id) || null);
+    it._rc   = drop ? null : (rc.get(it.id) || null);
+    it._open = drop ? 0    : (open.get(it.id) || 0);
+  });
+  return items;
 }
 function threadOf(videoId, gate){
   return (store.reviews || []).filter(e => e.video_id === videoId && e.gate === gate);
@@ -1122,9 +1269,18 @@ const loading = () => `<div class="loadbox">読み込み中…</div>`;
 function displayIdx(it){
   if (it.stage === 'dropped') return -1;
   let i = Math.max(0, PSTAGES.findIndex(s => s.key === it.stage));
-  const rv = it._rv;
+  const rv = it._rv || it._rc;          /* 修正依頼中もそのゲートの工程で止まっている */
   if (rv && GATE_COL[rv] > i) i = GATE_COL[rv];
   return i;
+}
+/* 一覧の行／カードに付ける状態クラス（左端の色帯）と状態バッジ */
+const stateCls = it => it._rv ? 'st-rv' : (it._rc ? 'st-rc' : (it._open ? 'st-open' : ''));
+function flagsHTML(it){
+  let h = '';
+  if (it._rv)      h += `<span class="sflag rv">● ${GATE_LABEL[it._rv]}レビュー待ち</span>`;
+  else if (it._rc) h += `<span class="sflag rc">↺ ${GATE_LABEL[it._rc]}修正依頼中</span>`;
+  if (it._open)    h += `<span class="sflag open" title="あなたの指摘のうち未対応 ${it._open}件">💬 指摘${it._open}件</span>`;
+  return h ? `<span class="flags">${h}</span>` : '';
 }
 const pKeyOf = it => it.stage === 'dropped' ? 'dropped' : PSTAGES[displayIdx(it)].key;
 
@@ -1136,8 +1292,9 @@ function progressCells(it){
     if (cur < 0) { cls = 'todo'; gl = '·'; tt = `${s.name}（没）`; }
     else if (done || j < cur) { cls = 'done'; gl = '✓'; tt = `${s.name} 完了`; }
     else if (j === cur) {
-      cls = it._rv ? 'rv' : 'work'; gl = '●';
-      tt = it._rv ? `${s.name} レビュー待ち（${GATE_LABEL[it._rv]}承認）` : `${s.name} 作業中`;
+      if (it._rv)      { cls = 'rv'; gl = '●'; tt = `${s.name} レビュー待ち（${GATE_LABEL[it._rv]}承認）`; }
+      else if (it._rc) { cls = 'rc'; gl = '↺'; tt = `${s.name} 修正依頼中（${GATE_LABEL[it._rc]}・AIが対応）`; }
+      else             { cls = 'work'; gl = '●'; tt = `${s.name} 作業中`; }
     }
     return `<td class="st${pos}"><span class="mark ${cls}" title="${esc(tt)}">${gl}</span></td>`;
   }).join('');
@@ -1164,11 +1321,13 @@ function filterChips(base){
   }).join('')}</div>`;
 }
 
-/* 既定の並び順（#203・2026-08-11 オーナー指定）
-   ① レビュー待ち（あなたが動く番）→ ② 進行中 → ③ 投稿済み・予約中 → ④ ネタ案
-   ネタ案は着手前で見るものが無いので最後に沈める。グループ内は ③ だけ「投稿日時の新しい順」
+/* 既定の並び順（#203・2026-08-11 オーナー指定 / #205 で修正依頼中を追加）
+   ① レビュー待ち（あなたが動く番）→ ② 修正依頼中（あなたの指摘をAIが対応中）→ ③ 進行中
+   → ④ 投稿済み・予約中 → ⑤ ネタ案
+   ネタ案は着手前で見るものが無いので最後に沈める。グループ内は ④ だけ「投稿日時の新しい順」
    （これから公開される予約が上・過去の投稿が下）、それ以外は滞留日数の降順（待たせている順）。 */
-const SORT_GROUP = it => it._rv ? 0 : it.stage === 'posted' ? 2 : it.stage === 'idea' ? 3 : 1;
+const SORT_GROUP = it => it._rv ? 0 : it._rc ? 1
+  : it.stage === 'posted' ? 3 : it.stage === 'idea' ? 4 : 2;
 const publishTS = it => {
   const d = it.published_at || it.scheduled_at || it.posted_date;
   const t = d ? new Date(d).getTime() : NaN;
@@ -1180,7 +1339,7 @@ function sortRows(rows){
   if (!s) return rows.sort((a, b) => {
     const ga = SORT_GROUP(a), gb = SORT_GROUP(b);
     if (ga !== gb) return ga - gb;
-    if (ga === 2) return publishTS(b) - publishTS(a);
+    if (ga === 3) return publishTS(b) - publishTS(a);
     return (b.days || 0) - (a.days || 0);
   });
   const dir = s.dir === 'asc' ? 1 : -1;
@@ -1211,9 +1370,10 @@ function matrixTable(base){
       PSTAGES.map((s, j) => `<th class="st${j === 0 ? ' first' : (j === PSTAGES.length - 1 ? ' last' : '')}">${s.name}</th>`).join('')
     }${th('days', ' num')}<th>投稿日時</th>${th('plays', ' num')}${th('subs', ' num')}</tr>`;
 
-  const body = rows.length ? rows.map(it => `<tr data-vid="${it.id}" tabindex="0" class="${it.stage === 'dropped' ? 'dropped' : ''}">
+  const body = rows.length ? rows.map(it => `<tr data-vid="${it.id}" tabindex="0" class="${
+      (it.stage === 'dropped' ? 'dropped ' : '') + stateCls(it)}">
       <td class="seq">${esc(it.seq)}</td>
-      <td class="ttl">${esc(it.title)}</td>
+      <td class="ttl">${esc(it.title)}${flagsHTML(it)}</td>
       <td><span class="genre">${esc(it.genreLabel)}</span></td>
       ${progressCells(it)}
       <td class="num">${it.days == null ? '—' : it.days + '日'}</td>
@@ -1229,8 +1389,9 @@ function matrixTable(base){
 /* 狭幅（スマホ）用のカード表示。表と同じ rows から描画し CSS で出し分ける */
 function stageBadge(it){
   if (it.stage === 'dropped') return {cls:'idea', emoji:'⚪', text:'没'};
-  if (it.stage === 'posted')  return {cls:'done', emoji:'🟢', text:'投稿済'};
+  if (it.stage === 'posted')  return {cls:'done', emoji:'✓',  text:'投稿済'};
   if (it._rv)                 return {cls:'rv',   emoji:'🟠', text:`${GATE_LABEL[it._rv]}レビュー待ち`};
+  if (it._rc)                 return {cls:'rc',   emoji:'↺',  text:`${GATE_LABEL[it._rc]}修正依頼中`};
   if (it.stage === 'idea')    return {cls:'idea', emoji:'⚪', text:'ネタ案'};
   if (it.stage === 'queue')   return {cls:'work', emoji:'🔵', text:'投稿待ち'};
   return {cls:'work', emoji:'🔵', text:`${PSTAGES[displayIdx(it)].name}中`};
@@ -1240,7 +1401,9 @@ function progressDots(it){
   return `<div class="dotrow" role="img" aria-label="工程 ${esc(cur < 0 ? '没' : PSTAGES[cur].name)}">` + PSTAGES.map((s, j) => {
     let cls = 'todo', gl = '·';
     if (cur >= 0 && (done || j < cur)) { cls = 'done'; gl = '✓'; }
-    else if (cur >= 0 && j === cur) { cls = it._rv ? 'rv' : 'work'; gl = '●'; }
+    else if (cur >= 0 && j === cur) {
+      cls = it._rv ? 'rv' : (it._rc ? 'rc' : 'work'); gl = it._rc && !it._rv ? '↺' : '●';
+    }
     const here = cur >= 0 && j === cur;
     return `<span class="pstep"><span class="dot ${cls}" title="${esc(s.name)}">${gl}</span>` +
       `<span class="plbl${here ? ' cur' : ''}">${esc(s.short)}</span></span>`;
@@ -1253,12 +1416,13 @@ function stockCards(rows){
       ? (it.plays != null ? `<span class="sx">▶ ${nf(it.plays)} 回再生</span>` : '')
       : (it.resv ? `<span class="sx">🗓 ${esc(it.resv)}</span>`
         : (it.pub ? `<span class="sx">📅 ${esc(it.pub)}</span>` : ''));
-    return `<article class="scard${it.stage === 'dropped' ? ' dropped' : ''}" data-vid="${it.id}" tabindex="0">
+    return `<article class="scard${it.stage === 'dropped' ? ' dropped' : ''} ${stateCls(it)}" data-vid="${it.id}" tabindex="0">
       <div class="scard-top">
         <span class="scard-seq">${esc(it.seq)}</span>
         <span class="scard-days${it.days >= 7 ? ' slow' : ''}">${it.days >= 7 ? '⏳ ' : ''}滞留 ${it.days == null ? '—' : it.days + '日'}</span>
       </div>
-      <span class="sbadge ${b.cls}">${b.emoji} ${esc(b.text)}</span>
+      <div class="sbadges"><span class="sbadge ${b.cls}">${b.emoji} ${esc(b.text)}</span>${
+        it._open ? `<span class="sflag open">💬 指摘${it._open}件</span>` : ''}</div>
       <div class="scard-ttl">${esc(it.title)}</div>
       ${progressDots(it)}
       ${extra ? `<div class="scard-extra">${extra}</div>` : ''}
@@ -1271,7 +1435,8 @@ const MARK_LEGEND = `<div class="legend2">
   <b>工程</b>
   <span class="lg"><span class="mark done">✓</span>完了</span>
   <span class="lg"><span class="mark work">●</span>作業中<span class="ex">（自動工程が進行中）</span></span>
-  <span class="lg"><span class="mark rv">●</span>レビュー待ち<span class="ex">（承認が必要）</span></span>
+  <span class="lg"><span class="mark rv">●</span>レビュー待ち<span class="ex">（あなたの承認が必要）</span></span>
+  <span class="lg"><span class="mark rc">↺</span>修正依頼中<span class="ex">（あなたの指摘をAIが対応中）</span></span>
   <span class="lg"><span class="mark todo">·</span>未到達</span></div>`;
 
 function gateChips(it, slug){
@@ -1292,7 +1457,9 @@ function kanbanView(items, slug){
               <span class="days ${c.days >= 7 ? 'slow' : ''}">${c.days >= 7 ? '⏳ ' : ''}滞留 ${c.days == null ? '—' : c.days + '日'}</span></div>
             <div class="ttl">${esc(c.title)}</div>
             <div class="meta">${gateChips(c, slug)}${c.resv ? `<span class="resv">🗓 ${esc(c.resv.slice(5))}</span>` : ''}${
-              c._rv ? `<span class="rvflag">RV中: ${GATE_LABEL[c._rv]}</span>` : ''}</div>
+              c._rv ? `<span class="rvflag">● レビュー待ち: ${GATE_LABEL[c._rv]}</span>` : ''}${
+              c._rc ? `<span class="rcflag">↺ 修正依頼中: ${GATE_LABEL[c._rc]}</span>` : ''}${
+              c._open ? `<span class="rcflag">💬 指摘${c._open}件</span>` : ''}</div>
           </article>`).join('') + (rest > 0 ? `<div class="more">＋${rest}件</div>` : '');
     return `<div class="col">
       <div class="colhead"><span class="sw" style="background:var(${s.sw});margin:0"></span>
@@ -1316,12 +1483,7 @@ async function renderStock(){
   try { core = await loadCore(state.ch); }
   catch (e) { el.innerHTML = errBox(e.message); return; }
 
-  const pend = pendingMap();
-  const pendByVideo = new Map();
-  for (const p of pend.values()) pendByVideo.set(p.video_id, p.gate);
-  core.items.forEach(it => { it._rv = it.stage === 'dropped' ? null : (pendByVideo.get(it.id) || null); });
-
-  const items = core.items;
+  const items = annotate(core.items);
   const active = items.filter(i => i.stage !== 'dropped').length;
   const droppedN = items.length - active;
   const isTable = state.stockView === 'table';
@@ -1335,7 +1497,7 @@ async function renderStock(){
     </div>
     <div class="sectionhead" style="margin-top:0">
       <h2>進捗マトリクス</h2>
-      <span class="hint">既定はレビュー待ちを最上部・次に滞留の長い順</span>
+      <span class="hint">既定はレビュー待ち → 修正依頼中 → 滞留の長い順</span>
       <span class="spacer"></span>
       <div class="seg" role="group" aria-label="表示切替">
         <button data-stockview="table" aria-pressed="${isTable}">表</button>
@@ -1408,11 +1570,12 @@ function timelineRows(it){
       mk = 'done'; cls = '';
       dt = fmtDate(stamp[j]) || '—';
     } else if (j === cur) {
-      mk = it._rv ? 'rv' : 'work'; cls = '';
+      mk = it._rv ? 'rv' : (it._rc ? 'rc' : 'work'); cls = '';
       const since = fmtDate(it.status_changed_at);
-      dt = (it._rv ? 'レビュー待ち' : '進行中') + (since ? `（${since}〜）` : '');
+      dt = (it._rv ? 'レビュー待ち' : it._rc ? '修正依頼中' : '進行中') + (since ? `（${since}〜）` : '');
     }
-    return `<div class="row${cls}"><span class="mark ${mk}">${mk === 'done' ? '✓' : (mk === 'todo' ? '·' : '●')}</span>
+    return `<div class="row${cls}"><span class="mark ${mk}">${
+      mk === 'done' ? '✓' : (mk === 'todo' ? '·' : (mk === 'rc' ? '↺' : '●'))}</span>
       <span class="nm">${s.name}</span><span class="dt">${esc(dt)}</span></div>`;
   }).join('');
 }
@@ -1436,8 +1599,14 @@ function detailHTML(it){
 
   const noteBlk = it.note ? `<div class="dsec dsec-note"><h4>メモ</h4><div class="hook">${esc(sentenceWrap(it.note))}</div></div>` : '';
 
-  const review = it._rv ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
-      <h4>レビュー — ${GATE_LABEL[it._rv]}ゲート</h4>${reviewPanel(it, it._rv)}</div>` : '';
+  /* 修正依頼中（AIの番）でもレビュー節は出す。素材・履歴を見て追加コメントや承認ができる */
+  const rvGate = it._rv || it._rc;
+  const stateBar = it._rv
+    ? `<div class="dstate rv">🟠 <b>あなたの承認待ち</b>です。素材を確認してコメント／承認してください。</div>`
+    : (it._rc ? `<div class="dstate rc">↺ <b>修正依頼中</b>（AIが対応します）。${
+        it._open ? `未対応の指摘 <b>${it._open}件</b>。` : ''}夜間の制作エージェントが対応すると自動で解消されます。</div>` : '');
+  const review = rvGate ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
+      <h4>レビュー — ${GATE_LABEL[rvGate]}ゲート</h4>${stateBar}${reviewPanel(it, rvGate)}</div>` : '';
 
   return `<div class="dview">
     <button class="backbtn" data-close="1" aria-label="一覧に戻る">← 一覧に戻る</button>
@@ -1449,8 +1618,10 @@ function detailHTML(it){
           <div class="meta">
             <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(m.name)}</span>
             <span class="genre">${esc(it.genreLabel)}</span>
-            <span class="gbadge"><i style="background:${it._rv ? 'var(--s2)' : 'var(--s1)'}"></i>${curName}</span>
+            <span class="gbadge"><i style="background:${it._rv ? 'var(--s2)' : it._rc ? 'var(--fix)'
+              : (it.stage === 'posted' || it.stage === 'dropped') ? 'var(--done)' : 'var(--s1)'}"></i>${curName}</span>
             <span class="wait">滞留 ${it.days == null ? '—' : it.days + '日'}</span>
+            ${flagsHTML(it)}
           </div>
         </div>
         <button class="iconbtn" data-close="1" aria-label="閉じる">✕</button>
@@ -1460,7 +1631,7 @@ function detailHTML(it){
         <div class="dcol-meta">
           <div class="dsec"><h4>フック</h4><div class="hook">${esc(it.hook || '（未設定）')}</div></div>
           <div class="dsec"><h4>工程タイムライン</h4><div class="tl">${timelineRows(it)}</div>
-            <div style="font-size:var(--fs-2xs);color:var(--muted);margin-top:6px">日付は承認ゲート・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
+            <div class="dhint">日付は承認ゲート・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
           ${metrics}
         </div>${review}
       </div>
@@ -1480,9 +1651,7 @@ function openDetail(vid, gate){
   const core = store.core[state.ch]; if (!core) return;
   const it = core.byId.get(Number(vid)); if (!it) return;
   /* 入口（在庫／レビュー）に依らずレビューパネルが出るよう、保留ゲートを都度算出 */
-  let rv = null;
-  for (const p of pendingMap().values()) if (p.video_id === it.id) { rv = p.gate; break; }
-  it._rv = it.stage === 'dropped' ? null : rv;
+  annotate([it]);
 
   state.detail = it.id;
   const dv = $('#view-detail');
@@ -1672,23 +1841,47 @@ async function mountAssets(node){
 }
 const mountAllAssets = root => (root || document).querySelectorAll('[data-assets]').forEach(mountAssets);
 
-/* ── 書き込み（コメント・承認） ───────────────────────────────── */
+/* ── 書き込み（コメント・承認）─────────────────────────────────
+   誤タップ防止（#205）: コメント欄と承認は別ブロック。コメント欄からは承認できず、
+   承認は「承認ボタン → メモ欄と注意書きが開く → 確定ボタン」の2段階でしか通らない。 */
 function reviewPanel(it, gate){
   const key = it.id + '|' + gate;
+  const gname = GATE_LABEL[gate] || gate;
+  const caution = GATE_CAUTION[gate] || null;
+  const pid = `ap-${it.id}-${gate}`;
   return `<div class="blk"><h4>レビュー素材</h4>
       <div class="assets" data-assets="${esc(key)}" data-ch="${esc(it.channel)}"
            data-seq="${esc(it.seq)}" data-gate="${esc(gate)}">
         <div class="loadbox">素材を読み込み中…</div></div></div>
     <div class="blk"><h4>レビュー履歴</h4>${threadHTML(it.id, gate)}</div>
     <div class="wbox" data-wbox="${esc(key)}">
-      <textarea class="wta" rows="3" aria-label="修正理由・承認メモ"
-        placeholder="修正を依頼する理由を入力（承認する場合は任意のメモとして使えます・Ctrl + Enter で修正を依頼）"></textarea>
-      <div class="wmsg" hidden></div>
+      <h4 class="wh">コメント</h4>
+      <textarea class="wta" rows="3" aria-label="コメント"
+        placeholder="直してほしい点・気づいたことを入力（Ctrl + Enter で送信）"></textarea>
+      <div class="wmsg" data-slot="comment" hidden></div>
       <div class="wact">
-        <span class="whint">投稿者はログイン中のアカウントとして記録されます</span>
-        <button class="btn" data-act="request_changes" data-key="${esc(key)}">修正を依頼</button>
-        <button class="btn primary" data-act="approve" data-key="${esc(key)}">${
-          esc(GATE_LABEL[gate] || gate)}を承認</button>
+        <span class="whint">修正依頼として記録され、夜間の制作エージェントが対応します（投稿者はログイン中のアカウント）</span>
+        <button class="btn" data-act="comment" data-key="${esc(key)}">コメントする</button>
+      </div></div>
+    <div class="abox" data-abox="${esc(key)}">
+      <div class="arow">
+        <span class="ainfo"><span class="ahd">承認</span>
+          <span class="atx">${esc(gname)}ゲートを承認すると、この工程は完了して次へ進みます。</span></span>
+        <button class="btn primary" data-act="approve-open" data-key="${esc(key)}"
+          aria-expanded="false" aria-controls="${pid}">${esc(gname)}を承認…</button>
+      </div>
+      <div class="apanel" id="${pid}" hidden>
+        ${caution ? `<div class="acaution">⚠ ${esc(caution)}</div>` : ''}
+        <label class="alb" for="${pid}-note">承認メモ（任意）</label>
+        <textarea class="ata" id="${pid}-note" rows="2" aria-label="承認メモ（任意）"
+          placeholder="残したいメモがあれば入力（空欄のままでも承認できます）"></textarea>
+        <div class="anote">承認は review_events に記録され、ダッシュボードからは取り消せません。</div>
+        <div class="wmsg" data-slot="approve" hidden></div>
+        <div class="aact">
+          <button class="btn" data-act="approve-cancel">キャンセル</button>
+          <button class="btn primary" data-act="approve-confirm" data-key="${esc(key)}">${
+            esc(gname)}を承認する</button>
+        </div>
       </div></div>`;
 }
 
@@ -1703,31 +1896,73 @@ function rpcErrText(error, act){
   if (code === '22001' || /too long/i.test(raw))
     return '本文が長すぎます（4000文字以内で入力してください）';
   if (code === '22023')
-    return /body is empty/i.test(raw) ? '修正を依頼する理由を入力してください'
+    return /body is empty/i.test(raw) ? 'コメントを入力してください'
                                       : '対象のゲートが不正です（台本 / 絵コンテ / 完成のいずれか）';
   if (/JWT|token is expired|invalid claim/i.test(raw))
     return 'ログインの有効期限が切れました。再度ログインしてください';
   if (/fetch|network|Failed to send/i.test(raw))
     return '通信に失敗しました。接続を確認して再度お試しください';
   return act === 'approve' ? '承認できませんでした。時間をおいて再度お試しください'
-                           : '修正を依頼できませんでした。時間をおいて再度お試しください';
+                           : 'コメントを送信できませんでした。時間をおいて再度お試しください';
 }
 
+/* コメント欄（.wbox）と承認欄（.abox）は別ブロックだが二重送信ガードは両方まとめてかける */
+function writeGroup(box){
+  const p = box.parentElement;
+  const found = p ? [...p.querySelectorAll('[data-wbox],[data-abox]')] : [];
+  return found.length ? found : [box];
+}
 function wboxBusy(box, busy, label){
-  box.dataset.busy = busy ? '1' : '0';
-  box.querySelectorAll('button').forEach(b => { b.disabled = busy; });
-  const ta = box.querySelector('.wta'); if (ta) ta.disabled = busy;
-  const btn = label && box.querySelector(`[data-act="${label}"]`);
+  const boxes = writeGroup(box);
+  boxes.forEach(b => {
+    b.dataset.busy = busy ? '1' : '0';
+    b.querySelectorAll('button').forEach(btn => { btn.disabled = busy; });
+    b.querySelectorAll('.wta,.ata').forEach(ta => { ta.disabled = busy; });
+  });
+  const btn = label && boxes.map(b => b.querySelector(`[data-act="${label}"]`)).find(Boolean);
   if (btn) {
     if (busy) { btn.dataset.lbl = btn.textContent; btn.textContent = '送信中…'; }
     else if (btn.dataset.lbl) { btn.textContent = btn.dataset.lbl; delete btn.dataset.lbl; }
   }
 }
-function wboxMsg(box, text, isErr){
-  const m = box.querySelector('.wmsg'); if (!m) return;
+function wboxMsg(box, text, isErr, slot){
+  const key = slot || 'comment';
+  const boxes = writeGroup(box);
+  boxes.forEach(b => b.querySelectorAll('.wmsg').forEach(m => {
+    if (m.dataset.slot !== key) { m.textContent = ''; m.hidden = true; }
+  }));
+  const m = boxes.map(b => b.querySelector(`.wmsg[data-slot="${key}"]`)).find(Boolean);
+  if (!m) return;
   m.className = 'wmsg' + (isErr ? ' err' : '');
   m.textContent = text || '';
   m.hidden = !text;
+}
+
+/* 承認の2段階目を開く／閉じる。1段目のボタンは開いている間は隠して、押し先を1つに絞る */
+function openApprovePanel(box){
+  if (box.dataset.busy === '1') return;
+  const panel = box.querySelector('.apanel'), btn = box.querySelector('[data-act="approve-open"]');
+  if (!panel) return;
+  wboxMsg(box, '', false, 'approve');
+  panel.hidden = false;
+  if (btn) { btn.hidden = true; btn.setAttribute('aria-expanded', 'true'); }
+  panel.querySelector('.ata')?.focus();
+  /* sticky は「はみ出したぶんだけ上へ」しか動けず、レビュー節の先頭が画面内にある間は
+     開いたパネルの下端（確定ボタン）が画面外に残る。足りないぶんだけスクロールして全部見せる */
+  requestAnimationFrame(() => {
+    const over = box.getBoundingClientRect().bottom - window.innerHeight;
+    if (over > 0) window.scrollBy({ top: over + 6, behavior: 'smooth' });
+  });
+}
+function closeApprovePanel(box){
+  if (box.dataset.busy === '1') return;
+  const panel = box.querySelector('.apanel'), btn = box.querySelector('[data-act="approve-open"]');
+  if (panel) {
+    panel.hidden = true;
+    const ta = panel.querySelector('.ata'); if (ta) ta.value = '';
+  }
+  wboxMsg(box, '', false, 'approve');
+  if (btn) { btn.hidden = false; btn.setAttribute('aria-expanded', 'false'); btn.focus(); }
 }
 
 /* 書き込み後は review_events（＋承認ならキャッシュ列）を取り直して描き直す */
@@ -1743,51 +1978,43 @@ async function refreshAfterWrite(approved){
   }
 }
 
-async function submitRequestChanges(box, key){
+/* コメント（RPC は従来どおり request_changes。指摘は resolution_status='open' で記録される） */
+async function submitComment(box, key){
   if (box.dataset.busy === '1') return;
   const [vid, gate] = key.split('|');
   const ta = box.querySelector('.wta');
-  const body = (ta.value || '').trim();
-  if (!body) { wboxMsg(box, '修正を依頼する理由を入力してください', true); ta.focus(); return; }
-  wboxMsg(box, '');
-  wboxBusy(box, true, 'request_changes');
+  const body = ((ta && ta.value) || '').trim();
+  if (!body) { wboxMsg(box, 'コメントを入力してください', true, 'comment'); if (ta) ta.focus(); return; }
+  wboxMsg(box, '', false, 'comment');
+  wboxBusy(box, true, 'comment');
   const { error } = await sb.rpc('request_changes',
     { p_video_id: Number(vid), p_gate: gate, p_body: body });
-  if (error) { wboxBusy(box, false, 'request_changes'); wboxMsg(box, rpcErrText(error, 'request_changes'), true); return; }
+  if (error) { wboxBusy(box, false, 'comment'); wboxMsg(box, rpcErrText(error, 'comment'), true, 'comment'); return; }
   ta.value = '';
   await refreshAfterWrite(false);
-  toast('修正を依頼しました（review_events に記録）');
+  toast('コメントを送信しました（修正依頼として review_events に記録）');
 }
 
+/* 承認の2段階目（確定）。パネルが開いていないときは絶対に実行しない＝1タップでは通らない */
 async function submitApprove(box, key){
   if (box.dataset.busy === '1') return;
+  const panel = box.querySelector('.apanel');
+  if (!panel || panel.hidden) return;
   const [vidS, gate] = key.split('|');
   const vid = Number(vidS);
-  const core = store.core[state.ch];
-  const it = core ? core.byId.get(vid) : null;
   const gname = GATE_LABEL[gate] || gate;
-  const ta = box.querySelector('.wta');
+  const ta = panel.querySelector('.ata');
   const note = ((ta && ta.value) || '').trim();
 
-  const ok = await confirmDialog({
-    title: `${gname}ゲートを承認しますか？`,
-    bodyHTML: `<p class="cfmline"><b>${esc((it && it.seq) || ('#' + vid))}</b> ${esc((it && it.title) || '')}</p>
-      <p class="cfmline">承認は review_events に記録され、取り消しはダッシュボードからはできません。</p>
-      ${note ? `<p class="cfmline">メモ: <b>${esc(note)}</b></p>` : ''}`,
-    warn: GATE_CAUTION[gate] || null,
-    ok: `${gname}を承認する`
-  });
-  if (!ok) return;
-
-  wboxMsg(box, '');
-  wboxBusy(box, true, 'approve');
+  wboxMsg(box, '', false, 'approve');
+  wboxBusy(box, true, 'approve-confirm');
   const { data, error } = await sb.rpc('approve_gate',
     { p_video_id: vid, p_gate: gate, p_note: note || null });
-  if (error) { wboxBusy(box, false, 'approve'); wboxMsg(box, rpcErrText(error, 'approve'), true); return; }
+  if (error) { wboxBusy(box, false, 'approve-confirm'); wboxMsg(box, rpcErrText(error, 'approve'), true, 'approve'); return; }
   if (ta) ta.value = '';
   const already = !!(data && data.already_approved);
   await refreshAfterWrite(true);
-  toast(already ? `${gname}ゲートは既に承認済みです` : 'review_events に記録しました');
+  toast(already ? `${gname}ゲートは既に承認済みです` : `${gname}を承認しました（review_events に記録）`);
 }
 
 // Claude（Anthropic）公式アイコン画像（角丸オレンジ背景＋白バースト・WebP）。オーナー提供画像を
@@ -1814,7 +2041,8 @@ function threadHTML(videoId, gate){
         <span>${esc(fmtDT(e.created_at) || '')}</span>
         ${e.score != null ? `<span class="kindchip">score ${esc(e.score)}</span>` : ''}</div>
       <div class="txt">${esc(e.body || '')}</div>
-      ${e.resolution_status ? `<span class="resolved">${e.resolution_status === 'open' ? '⏳' : '✓'} ${
+      ${e.resolution_status ? `<span class="resolved ${e.resolution_status === 'open' ? 'open' : 'closed'}">${
+        e.resolution_status === 'open' ? '⏳' : '✓'} ${
         RESOLUTION_LABEL[e.resolution_status] || esc(e.resolution_status)}${
         e.resolution_note ? '：' + esc(e.resolution_note) : ''}</span>` : ''}
     </div></div>`;
@@ -1829,29 +2057,36 @@ async function renderReview(){
   try { await loadCore(state.ch); }
   catch (e) { el.innerHTML = errBox(e.message); return; }
 
+  annotate(store.core[state.ch].items);
   const list = pendingList(state.ch);
+  const chg  = changesList(state.ch);
   const gateNames = m.gates.map(g => GATE_LABEL[g]).join(' / ');
-  const items = list.length ? list.map(r => {
-    return `<article class="rv" data-vid="${r.item.id}" data-gate="${esc(r.gate)}">
+  const rvRow = (r, st) => `<article class="rv is-${st}" data-vid="${r.item.id}" data-gate="${esc(r.gate)}">
       <button class="rvhead" aria-label="${esc(r.item.title)} の詳細を開く">
         <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon}</span>
         <span class="seq">${esc(r.item.seq)}</span>
         <span class="ttl">${esc(r.item.title)}</span>
-        <span class="gbadge"><i style="background:var(${GATE_SW[r.gate] || '--stg3'})"></i>${GATE_LABEL[r.gate] || esc(r.gate)}</span>
+        ${r.open ? `<span class="sflag open">💬 指摘${r.open}件</span>` : ''}
+        <span class="gbadge"><i style="background:${st === 'rc' ? 'var(--fix)' : `var(${GATE_SW[r.gate] || '--stg3'})`}"></i>${
+          GATE_LABEL[r.gate] || esc(r.gate)}${st === 'rc' ? ' 修正依頼中' : ''}</span>
         <span class="wait ${r.wait >= 3 ? 'slow' : ''}">${r.wait >= 3 ? '⏳ ' : ''}待ち ${r.wait == null ? '—' : r.wait + '日'}</span>
         <span class="caret">›</span>
       </button>
     </article>`;
-  }).join('') : `<div class="noitem">承認待ちはありません
+  const items = list.length ? list.map(r => rvRow(r, 'rv')).join('')
+    : `<div class="noitem">承認待ちはありません
     <span class="s">レビュー依頼（review_events の request_review）が記録されるとここに並びます</span></div>`;
 
   el.innerHTML = `
     <div class="pagehead">
       <div class="eyebrow">レビュー</div>
       <h1>${m.icon} ${esc(m.name)}<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${list.length}件</span></h1>
-      <p>${gateNames} の${m.gates.length}ゲート。カードを開くと搬出済みの素材と review_events の履歴を確認でき、その場で承認・修正依頼ができます。表示は選択中のチャンネル分のみです。</p>
+      <p>${gateNames} の${m.gates.length}ゲート。カードを開くと搬出済みの素材と review_events の履歴を確認でき、その場でコメント・承認ができます。表示は選択中のチャンネル分のみです。</p>
     </div>
-    <div class="rvlist">${items}</div>`;
+    <div class="rvlist">${items}</div>
+    ${chg.length ? `<div class="sectionhead"><h2>修正依頼中（AIの対応待ち）${chg.length}件</h2>
+        <span class="hint">あなたが出した指摘。夜間の制作エージェントが対応すると自動で消えます</span></div>
+      <div class="rvlist">${chg.map(r => rvRow(r, 'rc')).join('')}</div>` : ''}`;
 }
 
 /* ══ ③ 分析 ════════════════════════════════════════════════════ */
@@ -2196,34 +2431,6 @@ function bindSpark(series, W, H){
   svg.addEventListener('touchend', out);
 }
 
-/* ══ 確認ダイアログ ═════════════════════════════════════════════ */
-function confirmDialog(o){
-  return new Promise(resolve => {
-    const el = $('#cfm');
-    el.innerHTML = `<div class="cfmscrim" data-cfm="0"></div>
-      <div class="cfmcard" role="dialog" aria-modal="true" aria-labelledby="cfmttl">
-        <h3 id="cfmttl">${esc(o.title)}</h3>
-        ${o.bodyHTML || ''}
-        ${o.warn ? `<div class="cfmwarn">⚠ ${esc(o.warn)}</div>` : ''}
-        <div class="cfmact">
-          <button class="btn" data-cfm="0">キャンセル</button>
-          <button class="btn primary" data-cfm="1">${esc(o.ok || 'OK')}</button>
-        </div></div>`;
-    el.hidden = false;
-    const done = v => {
-      el.hidden = true; el.innerHTML = '';
-      el.removeEventListener('click', onClick);
-      document.removeEventListener('keydown', onKey, true);
-      resolve(v);
-    };
-    const onClick = e => { const b = e.target.closest('[data-cfm]'); if (b) done(b.dataset.cfm === '1'); };
-    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
-    el.addEventListener('click', onClick);
-    document.addEventListener('keydown', onKey, true);
-    setTimeout(() => el.querySelector('.btn.primary')?.focus(), 0);
-  });
-}
-
 let toastT;
 function toast(msg){
   const t = $('#toast'); t.textContent = msg; t.classList.add('on');
@@ -2271,8 +2478,14 @@ document.addEventListener('click', e => {
   /* 書き込み（コメント・承認）は他のハンドラより先に拾う */
   const wbtn = e.target.closest('[data-act]');
   if (wbtn) {
-    const box = wbtn.closest('[data-wbox]');
-    if (box) (wbtn.dataset.act === 'approve' ? submitApprove : submitRequestChanges)(box, wbtn.dataset.key);
+    const box = wbtn.closest('[data-wbox],[data-abox]');
+    if (box) {
+      const act = wbtn.dataset.act;
+      if (act === 'comment')              submitComment(box, wbtn.dataset.key);
+      else if (act === 'approve-open')    openApprovePanel(box);
+      else if (act === 'approve-cancel')  closeApprovePanel(box);
+      else if (act === 'approve-confirm') submitApprove(box, wbtn.dataset.key);
+    }
     return;
   }
 
@@ -2350,9 +2563,10 @@ document.addEventListener('change', e => {
   if (e.target.id === 'stockgenre') { state.stockGenre = e.target.value; refreshStockTable(); }
 });
 document.addEventListener('keydown', e => {
+  /* Ctrl + Enter はコメント欄だけ。承認メモ（.ata）では発火させない（誤送信防止・#205） */
   if (e.target.classList && e.target.classList.contains('wta') && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     const box = e.target.closest('[data-wbox]');
-    if (box) { e.preventDefault(); submitRequestChanges(box, box.dataset.wbox); }
+    if (box) { e.preventDefault(); submitComment(box, box.dataset.wbox); }
     return;
   }
   if (e.key === 'Escape' && state.detail) { history.back(); return; }
