@@ -474,7 +474,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .aichip{font-size:var(--fs-2xs); border-radius:5px; padding:0 7px; background:var(--s1-tint);
   color:var(--ink); border:1px solid var(--border-2)}
 .resolved{font-size:var(--fs-2xs); color:var(--up); background:var(--good-tint); border-radius:5px;
-  padding:1px 8px; margin-top:6px; display:inline-block}
+  padding:1px 8px; margin-top:6px; display:inline-block; white-space:pre-wrap; word-break:break-word}
 /* ── 書き込み（コメント・承認） ── */
 .wbox{margin-top:var(--sp-3); border:1px solid var(--border); border-radius:var(--r-md);
   padding:var(--sp-3); background:var(--surface-2); display:grid; gap:var(--sp-2)}
@@ -757,7 +757,7 @@ const GATE_LABEL = {script:'台本', storyboard:'絵コンテ', final:'完成'};
 const GATE_SW = {script:'--stg2', storyboard:'--stg3', final:'--stg4'};
 const GATE_COL = {script:1, storyboard:2, final:4};
 const GATE_COLUMN_FIELD = {script:'approved_script_at', storyboard:'approved_storyboard_at', final:'approved_final_at'};
-const KIND_LABEL = {request_review:'レビュー依頼', comment:'コメント', request_changes:'修正依頼', approve:'承認', reject:'却下'};
+const KIND_LABEL = {request_review:'提出', comment:'コメント', request_changes:'修正依頼', approve:'承認', reject:'却下'};
 const RESOLUTION_LABEL = {open:'未対応', resolved:'対応済み', wont_fix:'対応しない'};
 
 /* レビュー素材（非公開バケット・パス規約 {channel}/{seq}/{gate}/） */
@@ -1730,7 +1730,7 @@ function threadHTML(videoId, gate){
   return `<div class="thread">${evs.map(e => {
     const ai = String(e.author).startsWith('ai:');
     return `<div class="cmt ${ai ? 'ai' : ''}">${avatarOf(e.author)}<div class="bub">
-      <div class="who"><b>${esc(e.author)}</b>${ai ? '<span class="aichip">AIレビュー</span>' : ''}
+      <div class="who"><b>${ai ? '【AI】' + esc(String(e.author).slice(3)) : esc(e.author)}</b>
         <span class="kindchip ${esc(e.kind)}">${KIND_LABEL[e.kind] || esc(e.kind)}</span>
         <span>${esc(fmtDT(e.created_at) || '')}</span>
         ${e.score != null ? `<span class="kindchip">score ${esc(e.score)}</span>` : ''}</div>
