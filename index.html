@@ -343,12 +343,12 @@ td.dim{color:var(--muted)}
    横幅を「1行を長くする」のではなく「情報を並べる」ことに使う。本文の行長は .cmt .txt の
    max-width で 74ch に抑える（読み物は45〜75文字/行を超えると視線の戻りで読みにくくなる） ═══ */
 @media (min-width:1240px){
-  /* レビュー中の動画だけ2カラム（レビュー節が無い動画は従来どおり1カラムで詰める） */
+  /* レビュー中の動画だけ2カラム（レビュー節が無い動画は従来どおり1カラムで詰める）。
+     行スパンではなく「左列を1つのラッパにまとめて2要素を横に並べる」形にする
+     （grid-row の span で伸ばすと空の暗黙行ぶんカード下部が大きく空く） */
   .dbody:has(.dsec-review){display:grid; grid-template-columns:minmax(300px,380px) minmax(0,1fr);
-    gap:var(--sp-6) var(--sp-8); align-items:start}
-  .dbody > .dsec{grid-column:1}
-  .dbody > .dsec-review{grid-column:2; grid-row:1 / span 99;
-    border-top:none!important; padding-top:0!important; margin-bottom:0}
+    gap:var(--sp-8); align-items:start}
+  .dbody:has(.dsec-review) > .dsec-review{border-top:none!important; padding-top:0!important; margin-bottom:0}
 }
 @keyframes detailin{from{transform:translateY(8px);opacity:.5}to{transform:none;opacity:1}}
 .backbtn{display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-sm);
@@ -1415,10 +1415,12 @@ function detailHTML(it){
         <button class="iconbtn" data-close="1" aria-label="閉じる">✕</button>
       </div>
       <div class="dbody">
-        <div class="dsec"><h4>フック</h4><div class="hook">${esc(it.hook || '（未設定）')}</div></div>
-        <div class="dsec"><h4>工程タイムライン</h4><div class="tl">${timelineRows(it)}</div>
-          <div style="font-size:var(--fs-2xs);color:var(--muted);margin-top:6px">日付は承認ゲート・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
-        ${metrics}${dropped}${noteBlk}${review}
+        <div class="dcol-meta">
+          <div class="dsec"><h4>フック</h4><div class="hook">${esc(it.hook || '（未設定）')}</div></div>
+          <div class="dsec"><h4>工程タイムライン</h4><div class="tl">${timelineRows(it)}</div>
+            <div style="font-size:var(--fs-2xs);color:var(--muted);margin-top:6px">日付は承認ゲート・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
+          ${metrics}${dropped}${noteBlk}
+        </div>${review}
       </div>
     </article>
   </div>`;
