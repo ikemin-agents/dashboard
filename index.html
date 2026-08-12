@@ -283,13 +283,18 @@ td.dim{color:var(--muted)}
 .mtx table{min-width:1060px}
 .mtx th.st,.mtx td.st{width:40px; text-align:center; padding-left:2px; padding-right:2px;
   background:var(--stage-bg)}
-.mtx thead th.st{letter-spacing:0; text-transform:none; font-size:10px; color:var(--ink-2);
+/* 工程の列見出しは 10px では読めない（オーナー指摘 #206）ので本文並みの 12.5px にする。
+   7列ぶんの幅は 1文字ずつ詰める（letter-spacing:-.02em）＋左右パディング 2px で吸収し、
+   横スクロールを出さない。最長は「絵コンテ」「投稿待ち」の4文字＝約 52px。 */
+.mtx thead th.st{letter-spacing:-.02em; text-transform:none; font-size:12.5px; color:var(--ink);
   background:var(--stage-bg-h); font-weight:700}
 .mtx th.st.first,.mtx td.st.first{border-left:1px solid var(--stage-line)}
 .mtx th.st.last,.mtx td.st.last{border-right:1px solid var(--stage-line)}
 .mtx tbody tr:hover td.st{background:var(--stage-bg-h)}
+/* 列グループ名も 10px では読めないので 11.5px（下の工程名 12.5px より一段小さく階層を保つ）。
+   colspan=7（合計 約295px）に対して2文字なので幅の圧迫はない */
 .mtx thead th.grp{background:var(--stage-bg-h); text-align:center; color:var(--ink);
-  letter-spacing:.14em; font-size:10px; border-left:1px solid var(--stage-line);
+  letter-spacing:.14em; font-size:11.5px; border-left:1px solid var(--stage-line);
   border-right:1px solid var(--stage-line); padding:5px 0}
 .mtx thead th.pad{background:var(--surface-2); padding:5px 0}
 .mark{display:inline-block; width:19px; height:19px; line-height:19px; border-radius:var(--r-pill);
@@ -1020,7 +1025,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/12 12:50';
+const BUILT_AT = '8/12 22:36';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1379,13 +1384,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/12 12:50') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/12 22:36') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/12 12:50') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/12 22:36') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -1418,6 +1423,10 @@ function flagsHTML(it){
   const h = badgeHTML(stateBadgeOf(it)) + openBadgeHTML(it);
   return h ? `<span class="flags">${h}</span>` : '';
 }
+/* 一覧の行に付けるバッジ一式（#206）。進行中（【AI】台本作成中 等）も含む stageBadge を使うので、
+   PC の表とスマホの在庫カードで必ず同じバッジが出る（表だけ無印の行ができない）。
+   生成は badgeHTML / openBadgeHTML の2つだけを通す＝表記も寸法も1か所のまま。 */
+const rowFlagsHTML = it => `<span class="flags">${badgeHTML(stageBadge(it))}${openBadgeHTML(it)}</span>`;
 const pKeyOf = it => it.stage === 'dropped' ? 'dropped' : PSTAGES[displayIdx(it)].key;
 
 function progressCells(it){
@@ -1509,7 +1518,7 @@ function matrixTable(base){
   const body = rows.length ? rows.map(it => `<tr data-vid="${it.id}" tabindex="0" class="${
       (it.stage === 'dropped' ? 'dropped ' : '') + stateCls(it)}">
       <td class="seq">${esc(it.seq)}</td>
-      <td class="ttl">${esc(it.title)}${flagsHTML(it)}</td>
+      <td class="ttl">${esc(it.title)}${rowFlagsHTML(it)}</td>
       <td><span class="genre">${esc(it.genreLabel)}</span></td>
       ${progressCells(it)}
       <td class="num">${it.days == null ? '—' : it.days + '日'}</td>
