@@ -1054,7 +1054,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/12 23:11';
+const BUILT_AT = '8/12 23:42';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1228,13 +1228,31 @@ async function loadCore(ch){
      changes = 【AI】修正中（あなたがコメントを出した・AIの番）
    approve / reject が来たら解消。判定は毎回 review_events から作り直す＝
    夜間 stock keeper が resolution_status を閉じれば UI 側は何もせず追随する。 */
+/* 状態を決めるイベント（これ以外の kind は現在の状態に影響しない） */
+const STATE_KINDS = ['request_review', 'request_changes', 'approve', 'reject'];
+/* a のほうが b より新しいか。同時刻なら id の大きい方を後とみなす（連番のため） */
+const evNewer = (a, b) => {
+  const ta = +new Date(a.created_at), tb = +new Date(b.created_at);
+  return ta !== tb ? ta > tb : (a.id || 0) > (b.id || 0);
+};
+/* video×gate ごとの現在の状態。
+   **配列の並び順に依存しない**（#215 Phase 1・2026-08-12）: 以前は store.reviews を頭から
+   舐めて「最後に出てきたイベント」を現在の状態としていたため、取得クエリの .order() が
+   唯一の順序保証になっていた。そこを触ると *エラーを出さずに古い状態を表示し続ける* という
+   気づきにくい壊れ方をするので、created_at の比較で最新を選ぶ方式に変えた。 */
 function gateStateMap(){
-  const m = new Map();
+  const last = new Map();
   for (const e of (store.reviews || [])) {
+    if (!STATE_KINDS.includes(e.kind)) continue;
     const k = e.video_id + '|' + e.gate;
+    const prev = last.get(k);
+    if (!prev || evNewer(e, prev)) last.set(k, e);
+  }
+  const m = new Map();
+  for (const [k, e] of last) {
+    /* approve / reject が最新なら状態は解消済み＝Map に入れない */
     if (e.kind === 'request_review')       m.set(k, { video_id:e.video_id, gate:e.gate, st:'review',  at:e.created_at });
     else if (e.kind === 'request_changes') m.set(k, { video_id:e.video_id, gate:e.gate, st:'changes', at:e.created_at });
-    else if (e.kind === 'approve' || e.kind === 'reject') m.delete(k);
   }
   return m;
 }
@@ -1416,13 +1434,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/12 23:11') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/12 23:42') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/12 23:11') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/12 23:42') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
