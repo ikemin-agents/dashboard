@@ -1020,7 +1020,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/12 00:17';
+const BUILT_AT = '8/12 12:50';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1105,7 +1105,7 @@ async function q(builder){
 
 /* ══ 状態 ═══════════════════════════════════════════════════════ */
 const state = {
-  user:null, ch:null, view:'stock', stockView:'table', stockFilter:null,
+  user:null, me:null, ch:null, view:'stock', stockView:'table', stockFilter:null,
   stockQ:'', stockGenre:'', stockSort:null, detail:null, open:null, tblOpen:false,
   filtersOpen:false, busy:false, lastSync:null
 };
@@ -1115,8 +1115,17 @@ const VIEWS = [
   {key:'stock',     icon:'🗂', label:'在庫'},
   {key:'review',    icon:'📝', label:'レビュー', badge:() => pendingList(state.ch).length},
   {key:'analytics', icon:'📈', label:'分析'},
-  {key:'ops',       icon:'🌙', label:'稼働', chIndep:true}
+  /* 稼働（夜間ジョブ）はチャンネル横断の運用ログ。全チャンネル可のユーザーだけに出す */
+  {key:'ops',       icon:'🌙', label:'稼働', chIndep:true, fullOnly:true}
 ];
+/* ── 権限（#208）─────────────────────────────────────────────────
+   state.me は dashboard_me() RPC の戻り値（{display_name, channels, full_access}）。
+   ⚠️ ここでの出し分けは UX のためだけで、防御ではない。実際の遮断は RLS と
+      承認系 RPC がサーバ側で行う（許可外チャンネルは 0 行・書き込みは 42501）。
+   RPC が取れなかったとき（旧DB・通信失敗）は全チャンネル可として扱う。制限あり
+   ユーザーがこの経路に落ちても、見えるのは RLS で 0 行になった空の画面だけ。 */
+const fullAccess = () => !state.me || state.me.full_access !== false;
+const visibleViews = () => VIEWS.filter(v => !v.fullOnly || fullAccess());
 const chMeta = slug => {
   const i = store.channels.findIndex(c => c.slug === slug);
   return { icon: CH_ICON[slug] || '🎬', accent: ACCENTS[i % ACCENTS.length] || 'var(--s1)',
@@ -1328,19 +1337,23 @@ async function loadAnalytics(ch){
 
 /* ══ シェル ═════════════════════════════════════════════════════ */
 function renderShell(){
+  /* 見えないビューを選んだ状態が残らないようにする（権限が変わった場合の保険・#208） */
+  const views = visibleViews();
+  if (!views.some(v => v.key === state.view)) state.view = views[0].key;
+
   $('#chtabs').innerHTML = store.channels.map(c => {
     const m = chMeta(c.slug), on = state.ch === c.slug;
     return `<button class="chtab" role="tab" aria-selected="${on}" data-ch="${esc(c.slug)}" style="--chac:${m.accent}">
       <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(c.name)}</button>`;
   }).join('') || `<span class="chtab" aria-hidden="true">チャンネルなし</span>`;
 
-  $('#nav').innerHTML = VIEWS.map(v => {
+  $('#nav').innerHTML = views.map(v => {
     const on = state.view === v.key, n = v.badge ? v.badge() : 0;
     return `<button class="navbtn" role="tab" aria-selected="${on}" data-view="${v.key}">
       <span class="ni" aria-hidden="true">${v.icon}</span>${v.label}${n ? `<span class="badge">${n}</span>` : ''}</button>`;
   }).join('');
 
-  const v = VIEWS.find(x => x.key === state.view);
+  const v = views.find(x => x.key === state.view);
   document.body.dataset.chindep = v && v.chIndep ? '1' : '0';
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   /* 詳細ビューが開いている間は #view-detail を優先表示（一覧は隠す） */
@@ -1366,13 +1379,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/12 00:17') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/12 12:50') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/12 00:17') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/12 12:50') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2818,7 +2831,7 @@ async function signOut(){
   await sb.auth.signOut();
   store.reviews = null; store.core = {}; store.ops = null; store.analytics = {}; store.assets = {};
   store.channels = []; store.accounts = [];
-  state.user = null;
+  state.user = null; state.me = null; state.ch = null; state.view = 'stock';
   showLogin();
 }
 
@@ -2847,11 +2860,23 @@ async function showApp(user){
   $('#app').hidden = false;
   document.title = '制作ダッシュボード';
   state.busy = true; renderShell();
-  /* 表示名の正本は dashboard_users.display_name（RPC）。未適用ならメール由来の推定を使う */
+  /* 表示名と許可チャンネルの正本は dashboard_users（RPC dashboard_me・#208）。
+     取れなければ表示名だけの旧RPC → それも駄目ならメール由来の推定にフォールバックする。
+     ここで得る権限はタブの出し分け（UX）に使うだけで、遮断は RLS / RPC が行う。 */
+  state.me = null;
   try {
-    const { data } = await sb.rpc('dashboard_display_name');
-    if (data) setDisplayName(String(data));
-  } catch (_) { /* フォールバック済み */ }
+    const { data } = await sb.rpc('dashboard_me');
+    if (data) {
+      state.me = data;
+      if (data.display_name) setDisplayName(String(data.display_name));
+    }
+  } catch (_) { /* 024 未適用の DB ではここに来る */ }
+  if (!state.me) {
+    try {
+      const { data } = await sb.rpc('dashboard_display_name');
+      if (data) setDisplayName(String(data));
+    } catch (_) { /* フォールバック済み */ }
+  }
   try { await loadBootstrap(); }
   catch (e) {
     state.busy = false; renderShell();
