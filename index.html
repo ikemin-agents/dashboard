@@ -589,6 +589,25 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .blk{margin-top:var(--sp-4)}
 .blk h4{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
   text-transform:uppercase; margin:0 0 var(--sp-2)}
+/* ── レビュー履歴（常設セクション・折りたたみ・#207）──────────────────
+   details/summary で JS 無しに開閉する。見出しは他の .dsec h4 と同じ体裁に揃え、
+   ▸ の向きだけで開閉が分かるようにする。基本定義（.dsec h4）より後ろに置くこと */
+.dsec-history{border:1px solid var(--border-2); border-radius:var(--r-md);
+  background:var(--surface-1); padding:var(--sp-3)}
+.dsum{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
+  text-transform:uppercase; display:flex; align-items:center; gap:7px; cursor:pointer;
+  list-style:none; -webkit-user-select:none; user-select:none}
+.dsum::-webkit-details-marker{display:none}
+.dsum::before{content:'▸'; font-size:11px; color:var(--ink-2); line-height:1;
+  transition:transform .15s}
+.dsec-history[open]>.dsum::before{transform:rotate(90deg)}
+.dsum:hover{color:var(--ink-2)}
+.dsum:focus-visible{outline:2px solid var(--s1); outline-offset:3px; border-radius:var(--r-sm)}
+.dsum .n{letter-spacing:.03em; color:var(--ink-2); font-weight:700}
+.dsec-history[open]>.dsum{margin-bottom:var(--sp-3)}
+/* どのゲート（台本／絵コンテ／完成）の発言かを1本の時系列の中で見分ける印 */
+.gatechip{font-size:var(--fs-2xs); border-radius:5px; padding:0 7px; font-weight:680;
+  border:1px solid var(--border-2); background:var(--surface-1); color:var(--ink-2)}
 .thread{display:grid; gap:var(--sp-2)}
 .cmt{display:flex; gap:9px}
 .cmt .av{width:26px;height:26px;border-radius:var(--r-pill);flex:0 0 auto;display:grid;place-items:center;
@@ -898,6 +917,16 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .card.now{padding:var(--sp-3) var(--sp-4)}
   .runs{margin-top:0}
 }
+/* ═══ スマホ: レビュー履歴も詳細の他ブロックと同じ「端まで1枚」に揃える（#207）
+   ⚠️ .dsec-history の基本定義（枠線・角丸・内側余白）はスタイルシートの前方にあり
+      詳細度も同じなので、詳細ビューのスマホ用ブロック（max-width:640px・前方）ではなく
+      必ずここ＝基本定義より後ろに置く。中身の .thread は既存の共通ルールで
+      左右 --dpad が付くため、囲み側の左右パディングは 0 にして二重にしない ═══ */
+@media (max-width:640px){
+  .dbody .dsec-history{border-radius:0; border-left-width:0; border-right-width:0;
+    padding-left:0; padding-right:0}
+  .dbody .dsec-history>.dsum{padding-left:var(--dpad); padding-right:var(--dpad)}
+}
 /* ═══ PC（広い画面）だけ本文フォントを少し大きく（#203）
    root を 16→17px にして rem ベースの --fs-* を一律 +約1px。スマホ層(≤680px)は
    別メディアクエリで既に確定済み・ここは min-width:681px に隔離するので不変 ═══ */
@@ -1025,7 +1054,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/12 22:36';
+const BUILT_AT = '8/12 23:11';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1256,8 +1285,11 @@ function annotate(items){
   });
   return items;
 }
-function threadOf(videoId, gate){
-  return (store.reviews || []).filter(e => e.video_id === videoId && e.gate === gate);
+/* レビュー記録はゲートで切らず動画単位で持つ（#207）。台本→絵コンテ→完成を1本の時系列で
+   読ませるため。どのゲートの発言かは表示側でチップにして示す。 */
+function threadOf(videoId){
+  return (store.reviews || []).filter(e => e.video_id === videoId)
+    .slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 }
 
 /* ══ レビュー素材（Storage） ═════════════════════════════════════
@@ -1384,13 +1416,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/12 22:36') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/12 23:11') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/12 22:36') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/12 23:11') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -1755,6 +1787,17 @@ function detailHTML(it){
   const review = rvGate ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
       <h4>レビュー — ${GATE_LABEL[rvGate]}ゲート</h4>${stateBar}${reviewPanel(it, rvGate)}</div>` : '';
 
+  /* ── レビュー履歴は常設（#207）────────────────────────────────────
+     承認するとゲート状態（_rv/_rc）が消えてレビュー節ごと閉じるため、履歴だけは
+     レビュー節の外に出して「記録が1件でもあれば必ず出す」。全ゲートを時系列1本で読ませる。
+     開閉: 議論中（承認待ち／【AI】修正中）は開いた状態・それ以外は畳んで件数だけ見せる。
+     素材・コメント欄・承認/没ブロックは従来どおり rvGate があるときだけ（ここには出さない）。 */
+  const evs = threadOf(it.id);
+  const history = evs.length ? `<details class="dsec dsec-history"${rvGate ? ' open' : ''}>
+      <summary class="dsum">レビュー履歴<span class="n">（${evs.length}件）</span></summary>
+      <div class="dsum-body">${threadHTML(it.id)}</div>
+    </details>` : '';
+
   return `<div class="dview">
     <button class="backbtn" data-close="1" aria-label="一覧に戻る">← 一覧に戻る</button>
     <article class="dcard" role="region" aria-label="${esc(it.title)} の詳細">
@@ -1779,7 +1822,7 @@ function detailHTML(it){
           <div class="dsec"><h4>フック</h4><div class="hook">${esc(it.hook || '（未設定）')}</div></div>
           <div class="dsec"><h4>工程タイムライン</h4><div class="tl">${timelineRows(it)}</div>
             <div class="dhint">日付は承認ゲート・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
-          ${metrics}
+          ${metrics}${history}
         </div>${review}
       </div>
     </article>
@@ -2002,7 +2045,6 @@ function reviewPanel(it, gate){
       <div class="assets" data-assets="${esc(key)}" data-ch="${esc(it.channel)}"
            data-seq="${esc(it.seq)}" data-gate="${esc(gate)}">
         <div class="loadbox">素材を読み込み中…</div></div></div>
-    <div class="blk"><h4>レビュー履歴</h4>${threadHTML(it.id, gate)}</div>
     <div class="wbox" data-wbox="${esc(key)}">
       <h4 class="wh">コメント</h4>
       <textarea class="wta" rows="3" aria-label="コメント"
@@ -2255,13 +2297,14 @@ function avatarOf(author){
   const bg = author === 'koike' ? 'var(--s1)' : 'var(--s2)';
   return `<span class="av" style="background:${bg}">${esc(init)}</span>`;
 }
-function threadHTML(videoId, gate){
-  const evs = threadOf(videoId, gate);
-  if (!evs.length) return `<div class="noitem">この動画・ゲートのレビュー記録はまだありません</div>`;
+function threadHTML(videoId){
+  const evs = threadOf(videoId);
+  if (!evs.length) return `<div class="noitem">この動画のレビュー記録はまだありません</div>`;
   return `<div class="thread">${evs.map(e => {
     const ai = String(e.author).startsWith('ai:');
     return `<div class="cmt ${ai ? 'ai' : ''}">${avatarOf(e.author)}<div class="bub">
       <div class="who"><b>${ai ? '【AI】' + esc(String(e.author).slice(3)) : esc(e.author)}</b>
+        <span class="gatechip">${esc(GATE_LABEL[e.gate] || e.gate || '—')}</span>
         <span class="kindchip ${esc(e.kind)}">${KIND_LABEL[e.kind] || esc(e.kind)}</span>
         <span>${esc(fmtDT(e.created_at) || '')}</span>
         ${e.score != null ? `<span class="kindchip">score ${esc(e.score)}</span>` : ''}</div>
