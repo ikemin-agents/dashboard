@@ -775,6 +775,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .run{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   padding:var(--sp-4); box-shadow:var(--shadow-2)}
 .run.err{border-left:3px solid var(--crit)}
+.run.warn{border-left:3px solid var(--warn)}
 .run.ok{border-left:3px solid var(--done)}
 .run.run-{border-left:3px solid var(--axis)}
 .runhead{display:flex; gap:var(--sp-3); align-items:center; flex-wrap:wrap; margin-bottom:10px}
@@ -785,6 +786,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .stat{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-2xs); font-weight:700;
   border-radius:var(--r-sm); padding:2px 10px; margin-left:auto}
 .stat.ok{background:var(--done-tint); color:var(--done)}
+.stat.warn{background:var(--warn-tint); color:var(--ink)}
 .stat.err{background:var(--crit-tint); color:var(--crit)}
 .stat.run{background:var(--surface-2); color:var(--ink-2)}
 .runsummary{font-size:var(--fs-sm); color:var(--ink-2); margin-bottom:8px; white-space:pre-wrap}
@@ -1072,7 +1074,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/13 19:10';
+const BUILT_AT = '8/14 21:50';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1452,13 +1454,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/13 19:10') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/14 21:50') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/13 19:10') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/14 21:50') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2670,6 +2672,10 @@ function drawSpark(){
 }
 
 /* ══ ④ 稼働 ════════════════════════════════════════════════════ */
+/* ok=null（＝閉じられていない）のまま この時間を超えた行は「中断疑い」として赤で出す。
+   正規の最長ランは stock keeper の 02:00→06:00 打ち切り＝4時間なので 5時間で線を引く（#219） */
+const STALE_RUN_MS = 5 * 60 * 60 * 1000;
+
 function laneChips(lanes){
   if (!lanes || typeof lanes !== 'object') return '';
   return Object.keys(lanes).map(slug => {
@@ -2692,9 +2698,16 @@ async function renderOps(){
   const running = ops.runs.find(r => !r.finished_at);
   const runs = ops.runs.length ? ops.runs.map(r => {
     const evs = ops.events.filter(e => e.run_id === r.id);
-    const cls = r.ok === true ? 'ok' : (r.ok === false ? 'err' : 'run-');
-    const statCls = r.ok === true ? 'ok' : (r.ok === false ? 'err' : 'run');
-    const statTxt = r.ok === true ? '✓ 正常終了' : (r.ok === false ? '✕ エラー' : '● 実行中');
+    /* 4状態（#219）: エラー / 中断疑い（実行中のまま5時間超）/ 実行中 / 注意あり（summary の ⚠）/ 正常終了。
+       ok は「技術的に完走したか」だけを表すので、業務上の注意は ⚠ 行で拾う（_common/agent-runs.md） */
+    const stale = r.ok == null && r.started_at
+      && (Date.now() - new Date(r.started_at).getTime()) > STALE_RUN_MS;
+    const warn = r.ok === true && String(r.summary || '').includes('⚠');
+    const bad = r.ok === false || stale;
+    const cls = bad ? 'err' : (r.ok === true ? (warn ? 'warn' : 'ok') : 'run-');
+    const statCls = bad ? 'err' : (r.ok === true ? (warn ? 'warn' : 'ok') : 'run');
+    const statTxt = r.ok === false ? '✕ エラー'
+      : (stale ? '✕ 中断疑い' : (r.ok === true ? (warn ? '⚠ 注意あり' : '✓ 正常終了') : '● 実行中'));
     const dur = durText(r.started_at, r.finished_at);
     const acts = evs.map(e => {
       const m = e.channel ? chMeta(e.channel) : null;
