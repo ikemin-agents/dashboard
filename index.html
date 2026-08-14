@@ -274,6 +274,13 @@ td.dim{color:var(--muted)}
 .filtoggle .fcaret{font-size:10px; transition:transform .15s}
 .filtoggle[aria-expanded="true"] .fcaret{transform:rotate(180deg)}
 
+/* ページ送り（#215 Phase 2）。100件を超えたときだけ出る */
+.pager{display:flex; align-items:center; justify-content:center; gap:var(--sp-3);
+  margin:var(--sp-4) 0 0; flex-wrap:wrap}
+.pager .btn{padding:7px 14px; font-size:var(--fs-xs)}
+.pginfo{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
+.pginfo .pgtot{color:var(--muted)}
+
 .legend2{display:flex; gap:var(--sp-4); flex-wrap:wrap; font-size:var(--fs-2xs); color:var(--ink-2);
   align-items:center; margin:0 0 var(--sp-2); padding:7px 12px; border-radius:var(--r-md);
   background:var(--stage-bg); border:1px solid var(--stage-line)}
@@ -1074,7 +1081,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/14 21:50';
+const BUILT_AT = '8/15 01:38';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1160,11 +1167,27 @@ async function q(builder){
 /* ══ 状態 ═══════════════════════════════════════════════════════ */
 const state = {
   user:null, me:null, ch:null, view:'stock', stockView:'table', stockFilter:null,
-  stockQ:'', stockGenre:'', stockSort:null, detail:null, open:null, tblOpen:false,
+  stockQ:'', stockGenre:'', stockSort:null, stockPage:0, detail:null, open:null, tblOpen:false,
   filtersOpen:false, busy:false, lastSync:null
 };
-const store = { channels:[], accounts:[], reviews:null, core:{}, ops:null, analytics:{}, assets:{} };
-const resetStockFilters = () => { state.stockFilter=null; state.stockQ=''; state.stockGenre=''; state.stockSort=null; };
+/* ── キャッシュの持ち方（#215 Phase 2）──────────────────────────────
+   core    = 表に出している1ページぶん（100件）。絞り込み・並べ替え・ページを
+             変えるたびに DB から取り直す（キーが変わったら破棄）
+   facets  = 絞り込みUIの母数（工程チップの件数・ジャンル候補）。チャンネル全行の
+             短い3列だけ
+   pending = 承認待ち／【AI】修正中の行（レビュータブと左ナビのバッジ）
+   board   = カンバン表示用のチャンネル全行（盤面は絞り込みが効かない全体表示）
+   threads = 動画ごとのレビュー記録。詳細を開いた動画のぶんだけ貯める
+   byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため） */
+const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
+                board:{}, threads:{}, ops:null, analytics:{}, assets:{} };
+const clearVideoCaches = () => {
+  store.byId = new Map();
+  store.core = {}; store.facets = {}; store.pending = {}; store.board = {}; store.threads = {};
+};
+const resetStockFilters = () => {
+  state.stockFilter=null; state.stockQ=''; state.stockGenre=''; state.stockSort=null; state.stockPage=0;
+};
 const VIEWS = [
   {key:'stock',     icon:'🗂', label:'在庫'},
   {key:'review',    icon:'📝', label:'レビュー', badge:() => pendingList(state.ch).length},
@@ -1203,43 +1226,149 @@ async function loadBootstrap(){
   }
 }
 
-async function loadReviews(){
-  if (store.reviews) return;
-  store.reviews = await q(sb.from('review_events')
-    .select('id,video_id,gate,author,kind,body,score,resolution_status,resolved_by,resolution_note,resolved_at,created_at')
-    .order('created_at', { ascending: true }).limit(3000));
+/* ── 一覧は v_dashboard_list（M027）から1ページぶんだけ取る（#215 Phase 2）──
+   並べ替え・ゲートの現在状態・未対応の指摘件数は DB 側で計算済み。並び順を DB に
+   置いてあるので、ページングしても「承認待ち（あなたの番）」は必ず1ページ目に来る。 */
+const PAGE_SIZE = 100;
+
+/* 列見出しクリックの並べ替え → ビューの列。
+   滞留日数（days）は status_changed_at の裏返しなので向きを反転して渡す。 */
+const SORT_DB = {
+  seq:{col:'seq'}, title:{col:'title'}, genre:{col:'genre_label'},
+  days:{col:'status_changed_at', invert:true},
+  plays:{col:'views'}, subs:{col:'subscribers_gained'}
+};
+/* LIKE のワイルドカードを打ち消す（seq に _ を含んでいても素直に部分一致する） */
+const likeEsc = s => String(s).toLowerCase().replace(/[\\%_]/g, '\\$&');
+
+/* 絞り込み条件つきのクエリ。条件は全部 DB 側に渡す＝2ページ目以降の動画も
+   検索・絞り込みの対象になる（手元の100件だけを絞ると取りこぼす）。 */
+function listQuery(ch, opts){
+  let qb = sb.from('v_dashboard_list').select('*', opts).eq('channel', ch);
+  const qs = state.stockQ.trim();
+  if (qs) qb = qb.ilike('search_text', '%' + likeEsc(qs) + '%');
+  if (state.stockGenre) qb = qb.eq('genre_label', state.stockGenre);
+  if (state.stockFilter) qb = qb.eq('stage_key', state.stockFilter);
+  else                   qb = qb.neq('stage_key', 'dropped');   /* 既定では没を混ぜない */
+  return qb;
+}
+/* 並べ替え。最後に必ず id を足すのはページ境界の重複・取りこぼし防止（全順序にする）。 */
+function listOrder(qb){
+  const s = state.stockSort;
+  if (!s) return qb.order('sort_rank').order('sort_key2', { nullsFirst:false }).order('id');
+  const m = SORT_DB[s.key] || SORT_DB.seq;
+  const asc = s.dir === 'asc';
+  /* 値が無い行は「いちばん小さい」扱い（旧 JS が null を -1 とみなしていたのと同じ） */
+  return qb.order(m.col, { ascending: m.invert ? !asc : asc, nullsFirst: asc }).order('id');
 }
 
-function stageOf(r){
-  switch (r.status) {
-    case '案':        return 'idea';
-    case '台本作成中': return 'script';
-    case '素材制作中': return r.approved_storyboard_at ? 'video' : 'board';
-    case '編集中':     return 'edit';
-    case '投稿待ち':   return 'queue';
-    case '投稿済':     return 'posted';
-    case '没':        return 'dropped';
-    default:          return 'idea';
+function mapRow(r){
+  const it = Object.assign({}, r);
+  it.genreLabel = r.genre_label;
+  it.stage = r.stage;
+  it.days = daysSince(r.status_changed_at);
+  it.plays = r.views;
+  it.subs = r.subscribers_gained;
+  it.resv = r.pub_status === '予約済' ? fmtDT(r.scheduled_at) : null;
+  it.pub  = fmtDT(r.published_at) || fmtDate(r.posted_date);
+  /* 一覧の状態バッジ・指摘件数はビューの値をそのまま使う（review_events は読まない） */
+  it._rv   = r.rv_gate || null;
+  it._rc   = r.rc_gate || null;
+  it._open = r.open_feedback_count || 0;
+  store.byId.set(it.id, it);
+  return it;
+}
+
+async function loadCore(ch, retried){
+  const key = [ch, state.stockQ.trim(), state.stockGenre, state.stockFilter || '',
+               state.stockSort ? state.stockSort.key + ':' + state.stockSort.dir : '',
+               state.stockPage].join('|');
+  const hit = store.core[ch];
+  if (hit && hit.key === key) return hit;
+  const from = state.stockPage * PAGE_SIZE;
+  const { data, error, count } = await listOrder(listQuery(ch, { count:'exact' }))
+    .range(from, from + PAGE_SIZE - 1);
+  if (error) throw new Error(error.message || String(error));
+  const items = (data || []).map(mapRow);
+  const total = count == null ? items.length : count;
+  /* 絞り込みを変えて最終ページが消えたときは、いちばん後ろのページへ寄せて取り直す */
+  if (!items.length && total > 0 && state.stockPage > 0 && !retried) {
+    state.stockPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+    return loadCore(ch, true);
   }
+  store.core[ch] = { items, byId: new Map(items.map(i => [i.id, i])),
+                     key, page: state.stockPage, from, total };
+  return store.core[ch];
 }
 
-async function loadCore(ch){
-  await loadReviews();
-  if (store.core[ch]) return store.core[ch];
-  const rows = await q(sb.from('v_video_stock').select('*').eq('channel', ch));
-  const items = rows.map(r => {
-    const it = Object.assign({}, r);
-    it.genreLabel = r.genre || '未分類';
-    it.stage = stageOf(r);
-    it.days = daysSince(r.status_changed_at);
-    it.plays = r.views;
-    it.subs = r.subscribers_gained;
-    it.resv = r.pub_status === '予約済' ? fmtDT(r.scheduled_at) : null;
-    it.pub  = fmtDT(r.published_at) || fmtDate(r.posted_date);
-    return it;
-  });
-  store.core[ch] = { items, byId: new Map(items.map(i => [i.id, i])) };
-  return store.core[ch];
+/* 絞り込みUIの母数（工程チップの件数・ジャンル候補）。1動画あたり短い3列だけを
+   チャンネル全行ぶん取る。ページを送っても数字が動かないようにするための問い合わせで、
+   一覧本体（重い行）とは別経路。 */
+async function loadFacets(ch){
+  if (store.facets[ch]) return store.facets[ch];
+  store.facets[ch] = await q(sb.from('v_dashboard_list')
+    .select('stage_key,genre_label,search_text').eq('channel', ch));
+  return store.facets[ch];
+}
+
+/* 承認待ち・【AI】修正中の一覧（レビュータブ＋左ナビのバッジ）。
+   ページングとは独立に「状態を持つ行」だけを引く＝在庫が増えても件数は増えない。
+   1本の動画で複数ゲートが同時に状態を持つ場合も取りこぼさないよう、ゲート別の
+   状態列（script_state / storyboard_state / final_state）から行を展開する。 */
+async function loadPending(ch){
+  if (store.pending[ch]) return store.pending[ch];
+  const items = (await q(sb.from('v_dashboard_list').select('*')
+    .eq('channel', ch).eq('has_gate_state', true))).map(mapRow);
+  const rv = [], rc = [];
+  for (const it of items) {
+    for (const g of ['script', 'storyboard', 'final']) {
+      const st = it[g + '_state'];
+      if (!st) continue;
+      const at = it[g + '_state_at'];
+      (st === 'review' ? rv : rc).push({ item: it, gate: g, at, wait: daysSince(at), open: it._open });
+    }
+  }
+  const byAt = (a, b) => new Date(a.at) - new Date(b.at);
+  store.pending[ch] = { rv: rv.sort(byAt), rc: rc.sort(byAt) };
+  return store.pending[ch];
+}
+const pendingList = ch => ((store.pending[ch] || {}).rv) || [];
+const changesList = ch => ((store.pending[ch] || {}).rc) || [];
+
+/* カンバンは盤面全体（各列の件数と滞留上位）を見せる表示で、絞り込みもページングも
+   持たない。表（既定）とは別にチャンネル全行を取る。 */
+async function loadBoard(ch){
+  if (store.board[ch]) return store.board[ch];
+  store.board[ch] = (await q(sb.from('v_dashboard_list').select('*').eq('channel', ch)
+    .order('sort_rank').order('sort_key2', { nullsFirst:false }).order('id'))).map(mapRow);
+  return store.board[ch];
+}
+
+/* 一覧に載っていない動画（別ページ・レビュータブ経由・ディープリンク）も開けるよう、
+   索引に無ければ1行だけ取りに行く */
+async function loadItem(id){
+  const hit = store.byId.get(id);
+  if (hit) return hit;
+  const rows = await q(sb.from('v_dashboard_list').select('*').eq('id', id).limit(1));
+  return rows.length ? mapRow(rows[0]) : null;
+}
+async function loadItemBySeq(ch, seq){
+  for (const it of store.byId.values()) {
+    if (it.channel === ch && String(it.seq) === String(seq)) return it;
+  }
+  const rows = await q(sb.from('v_dashboard_list').select('*')
+    .eq('channel', ch).eq('seq', seq).limit(1));
+  return rows.length ? mapRow(rows[0]) : null;
+}
+
+/* レビュー記録は「開いた動画のぶんだけ」取る（#215 Phase 2）。全件先読み（旧
+   loadReviews の .limit(3000)）をやめたので、件数が増えても上限に静かに当たらない。 */
+async function loadThread(videoId){
+  if (store.threads[videoId]) return store.threads[videoId];
+  store.threads[videoId] = await q(sb.from('review_events')
+    .select('id,video_id,gate,author,kind,body,score,resolution_status,resolved_by,resolution_note,resolved_at,created_at')
+    .eq('video_id', videoId).order('created_at', { ascending: true }));
+  return store.threads[videoId];
 }
 
 /* ── ゲートの状態（#205）─────────────────────────────────────────
@@ -1255,14 +1384,15 @@ const evNewer = (a, b) => {
   const ta = +new Date(a.created_at), tb = +new Date(b.created_at);
   return ta !== tb ? ta > tb : (a.id || 0) > (b.id || 0);
 };
-/* video×gate ごとの現在の状態。
-   **配列の並び順に依存しない**（#215 Phase 1・2026-08-12）: 以前は store.reviews を頭から
-   舐めて「最後に出てきたイベント」を現在の状態としていたため、取得クエリの .order() が
+/* video×gate ごとの現在の状態。引数は「その動画のレビュー記録」（#215 Phase 2 で
+   全件配列から動画単位に縮小した。一覧側の状態はビュー M027 が同じ規則で計算する）。
+   **配列の並び順に依存しない**（#215 Phase 1・2026-08-12）: 以前は頭から舐めて
+   「最後に出てきたイベント」を現在の状態としていたため、取得クエリの .order() が
    唯一の順序保証になっていた。そこを触ると *エラーを出さずに古い状態を表示し続ける* という
    気づきにくい壊れ方をするので、created_at の比較で最新を選ぶ方式に変えた。 */
-function gateStateMap(){
+function gateStateMap(events){
   const last = new Map();
-  for (const e of (store.reviews || [])) {
+  for (const e of (events || [])) {
     if (!STATE_KINDS.includes(e.kind)) continue;
     const k = e.video_id + '|' + e.gate;
     const prev = last.get(k);
@@ -1276,58 +1406,25 @@ function gateStateMap(){
   }
   return m;
 }
-const gateStatesOf = st => {
-  const m = new Map();
-  for (const [k, v] of gateStateMap()) if (v.st === st) m.set(k, v);
-  return m;
-};
-/* 承認待ち = request_review の後に同 video×gate のコメント／approve／reject が無いもの */
-const pendingMap = () => gateStatesOf('review');
-/* 未対応の指摘（review_events.resolution_status='open'）を video 単位で数える */
-function openCountMap(){
-  const m = new Map();
-  for (const e of (store.reviews || [])) {
-    if (e.resolution_status === 'open') m.set(e.video_id, (m.get(e.video_id) || 0) + 1);
-  }
-  return m;
-}
-function gateList(ch, st){
-  const core = store.core[ch];
-  if (!core) return [];
-  const open = openCountMap();
-  const out = [];
-  for (const p of gateStatesOf(st).values()) {
-    const it = core.byId.get(p.video_id);
-    /* 没にした動画はレビュー待ち・修正依頼のどちらのキューにも出さない
-       （承認/却下を打たずに没にすると request_review が残り、承認待ちとして居座るため・#203） */
-    if (it && it.stage !== 'dropped') {
-      out.push({ item: it, gate: p.gate, at: p.at, wait: daysSince(p.at), open: open.get(p.video_id) || 0 });
-    }
-  }
-  return out.sort((a, b) => new Date(a.at) - new Date(b.at));
-}
-const pendingList = ch => gateList(ch, 'review');
-const changesList = ch => gateList(ch, 'changes');
 
-/* 一覧・詳細が使う状態注釈を DB の現値から付け直す（UI 側に状態は持たない）。
-   _rv=承認待ちのゲート / _rc=【AI】修正中のゲート / _open=未対応の指摘件数 */
-function annotate(items){
-  const rv = new Map(), rc = new Map();
-  for (const p of gateStateMap().values()) (p.st === 'review' ? rv : rc).set(p.video_id, p.gate);
-  const open = openCountMap();
-  items.forEach(it => {
-    const drop = it.stage === 'dropped';
-    it._rv   = drop ? null : (rv.get(it.id) || null);
-    it._rc   = drop ? null : (rc.get(it.id) || null);
-    it._open = drop ? 0    : (open.get(it.id) || 0);
-  });
-  return items;
+/* 詳細ビュー用の状態注釈。一覧の _rv/_rc/_open はビュー（M027）由来だが、詳細は
+   開いた瞬間にその動画のレビュー記録を取り直すので、そちらで上書きする（判定規則は
+   ビューと同じ）。_rv=承認待ちのゲート / _rc=【AI】修正中のゲート / _open=未対応の指摘件数。
+   没にした動画はどちらのキューにも出さない（#203） */
+function annotate(it, events){
+  let rv = null, rc = null;
+  for (const p of gateStateMap(events).values()) { if (p.st === 'review') rv = p.gate; else rc = p.gate; }
+  const drop = it.stage === 'dropped';
+  it._rv   = drop ? null : rv;
+  it._rc   = drop ? null : rc;
+  it._open = drop ? 0 : (events || []).filter(e => e.resolution_status === 'open').length;
+  return it;
 }
 /* レビュー記録はゲートで切らず動画単位で持つ（#207）。台本→絵コンテ→完成を1本の時系列で
    読ませるため。どのゲートの発言かは表示側でチップにして示す。 */
 function threadOf(videoId){
-  return (store.reviews || []).filter(e => e.video_id === videoId)
-    .slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  return (store.threads[videoId] || []).slice()
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 }
 
 /* ══ レビュー素材（Storage） ═════════════════════════════════════
@@ -1454,13 +1551,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/14 21:50') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/15 01:38') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/14 21:50') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/15 01:38') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -1515,20 +1612,22 @@ function progressCells(it){
   }).join('');
 }
 
-function baseFiltered(items){
+/* 工程チップの件数は「チャンネル全体（検索・ジャンル絞り込みを反映）」で数える。
+   表示中の100件だけで数えると、ページを送るたびに数字が動いてしまう。
+   母数は facets（stage_key / genre_label / search_text の3列だけ）から作る。 */
+function filterChips(facets){
   const qs = state.stockQ.trim().toLowerCase(), g = state.stockGenre;
-  const ok = it => (!qs || String(it.seq).toLowerCase().includes(qs) || String(it.title).toLowerCase().includes(qs))
-                && (!g || it.genreLabel === g);
-  return { active: items.filter(it => it.stage !== 'dropped').filter(ok),
-           dropped: items.filter(it => it.stage === 'dropped').filter(ok) };
-}
-
-function filterChips(base){
+  const rows = (facets || []).filter(f =>
+    (!qs || String(f.search_text || '').includes(qs)) && (!g || f.genre_label === g));
   const cnt = {};
-  base.active.forEach(it => { const k = pKeyOf(it); cnt[k] = (cnt[k] || 0) + 1; });
-  const all = [{key:null, name:'すべて', n:base.active.length}]
+  let dropped = 0;
+  rows.forEach(f => {
+    if (f.stage_key === 'dropped') dropped++;
+    else cnt[f.stage_key] = (cnt[f.stage_key] || 0) + 1;
+  });
+  const all = [{key:null, name:'すべて', n:rows.length - dropped}]
     .concat(PSTAGES.map(s => ({key:s.key, name:s.name, n:cnt[s.key] || 0})))
-    .concat([{key:'dropped', name:'没', n:base.dropped.length}]);
+    .concat([{key:'dropped', name:'没', n:dropped}]);
   return `<div class="chips" role="group" aria-label="工程で絞り込み">${all.map(c => {
     const on = state.stockFilter === c.key, dis = c.key && !c.n ? ' disabled' : '';
     return `<button class="chipf" data-filter="${c.key === null ? '' : c.key}" aria-pressed="${on}"${dis}>${
@@ -1540,37 +1639,14 @@ function filterChips(base){
    ① 承認待ち（あなたが動く番）→ ② 【AI】修正中（あなたの指摘をAIが対応中）→ ③ 進行中
    → ④ 投稿済み・予約中 → ⑤ ネタ案
    ネタ案は着手前で見るものが無いので最後に沈める。グループ内は ④ だけ「投稿日時の新しい順」
-   （これから公開される予約が上・過去の投稿が下）、それ以外は滞留日数の降順（待たせている順）。 */
-const SORT_GROUP = it => it._rv ? 0 : it._rc ? 1
-  : it.stage === 'posted' ? 3 : it.stage === 'idea' ? 4 : 2;
-const publishTS = it => {
-  const d = it.published_at || it.scheduled_at || it.posted_date;
-  const t = d ? new Date(d).getTime() : NaN;
-  return Number.isNaN(t) ? -Infinity : t;      /* 日時が無い行は最後尾へ */
-};
+   （これから公開される予約が上・過去の投稿が下）、それ以外は滞留日数の降順（待たせている順）。
+   ⚠️ この並べ替えは **DB 側（v_dashboard_list の sort_rank / sort_key2・M027）** にある
+      （#215 Phase 2）。手元で並べ替えると「先に100件取ってから並べる」ことになり、
+      承認待ちの動画が2ページ目に隠れて見逃す。列見出しクリックの並べ替えも同じ理由で
+      DB へ渡している（listOrder / SORT_DB）。 */
 
-function sortRows(rows){
-  const s = state.stockSort;
-  if (!s) return rows.sort((a, b) => {
-    const ga = SORT_GROUP(a), gb = SORT_GROUP(b);
-    if (ga !== gb) return ga - gb;
-    if (ga === 3) return publishTS(b) - publishTS(a);
-    return (b.days || 0) - (a.days || 0);
-  });
-  const dir = s.dir === 'asc' ? 1 : -1;
-  const val = (o) => s.key === 'genre' ? o.genreLabel : o[s.key];
-  return rows.sort((a, b) => {
-    let x = val(a), y = val(b);
-    if (s.key === 'plays' || s.key === 'subs' || s.key === 'days') { x = x == null ? -1 : x; y = y == null ? -1 : y; }
-    if (typeof x === 'string' || typeof y === 'string') return String(x).localeCompare(String(y), 'ja') * dir;
-    return (x - y) * dir;
-  });
-}
-
-function matrixTable(base){
-  const rows = sortRows((state.stockFilter === 'dropped' ? base.dropped
-    : state.stockFilter ? base.active.filter(it => pKeyOf(it) === state.stockFilter)
-    : base.active).slice());
+function matrixTable(core){
+  const rows = core.items;         /* 絞り込み・並べ替え・ページ切りは DB 側で済んでいる */
 
   const th = (k, extra = '') => {
     const s = state.stockSort, on = s && s.key === k;
@@ -1691,26 +1767,42 @@ function kanbanView(items, slug){
     </details>`;
 }
 
+/* ページ送り（#215 Phase 2）。並び順は DB 側（sort_rank）で付けているので、
+   1ページ目に必ず「承認待ち（あなたの番）」が来る。 */
+function pagerHTML(core){
+  const pages = Math.max(1, Math.ceil(core.total / PAGE_SIZE));
+  if (pages <= 1) return '';
+  const p = core.page;
+  return `<div class="pager">
+    <button class="btn" id="pgprev"${p <= 0 ? ' disabled' : ''}>← 前へ</button>
+    <span class="pginfo">${p + 1} / ${pages} ページ<span class="pgtot">（全 ${nf(core.total)}件）</span></span>
+    <button class="btn" id="pgnext"${p >= pages - 1 ? ' disabled' : ''}>次へ →</button>
+  </div>`;
+}
+
 async function renderStock(){
   const el = $('#view-stock');
   if (!state.ch) { el.innerHTML = `<div class="noitem">動画チャンネルがありません</div>`; return; }
   const m = chMeta(state.ch);
-  if (!store.core[state.ch]) { el.innerHTML = loading(); }
-  let core;
-  try { core = await loadCore(state.ch); }
-  catch (e) { el.innerHTML = errBox(e.message); return; }
-
-  const items = annotate(core.items);
-  const active = items.filter(i => i.stage !== 'dropped').length;
-  const droppedN = items.length - active;
   const isTable = state.stockView === 'table';
-  const genres = [...new Set(items.filter(i => i.stage !== 'dropped').map(i => i.genreLabel))].sort((a, b) => a.localeCompare(b, 'ja'));
+  if (!store.facets[state.ch]) { el.innerHTML = loading(); }
+  let facets, boardItems;
+  try {
+    facets = await loadFacets(state.ch);
+    await loadPending(state.ch);                       /* 左ナビの承認待ちバッジ用 */
+    if (!isTable) boardItems = await loadBoard(state.ch);
+  } catch (e) { el.innerHTML = errBox(e.message); return; }
+
+  const droppedN = facets.filter(f => f.stage_key === 'dropped').length;
+  const active = facets.length - droppedN;
+  const genres = [...new Set(facets.filter(f => f.stage_key !== 'dropped').map(f => f.genre_label))]
+    .sort((a, b) => a.localeCompare(b, 'ja'));
 
   el.innerHTML = `
     <div class="pagehead">
       <div class="eyebrow">在庫</div>
       <h1>${m.icon} ${esc(m.name)}</h1>
-      <p>仕掛かり ${active}本・没 ${droppedN}本。v_video_stock（videos の status と承認列＋主口の投稿）から集計しています。行（スマホはカード）をクリックすると詳細が開きます。</p>
+      <p>仕掛かり ${active}本・没 ${droppedN}本。v_dashboard_list（videos の status と承認列＋主口の投稿＋レビューの現在状態）から集計しています。表は ${PAGE_SIZE} 件ずつ表示し、承認待ちが必ず1ページ目に来る順に並べています。行（スマホはカード）をクリックすると詳細が開きます。</p>
     </div>
     <div class="sectionhead" style="margin-top:0">
       <h2>進捗マトリクス</h2>
@@ -1739,17 +1831,20 @@ async function renderStock(){
         <div id="stockchips"></div>
       </div>
       ${MARK_LEGEND}
-      <div id="stocktable"></div>` : kanbanView(items, state.ch)}`;
+      <div id="stocktable">${loading()}</div>` : kanbanView(boardItems, state.ch)}`;
 
-  if (isTable) refreshStockTable();
+  if (isTable) await refreshStockTable();
 }
 
-function refreshStockTable(){
-  const core = store.core[state.ch];
-  if (!core || !$('#stocktable')) return;
-  const base = baseFiltered(core.items);
-  $('#stockchips').innerHTML = filterChips(base);
-  $('#stocktable').innerHTML = matrixTable(base);
+async function refreshStockTable(){
+  if (!$('#stocktable')) return;
+  let core;
+  try { core = await loadCore(state.ch); }
+  catch (e) { $('#stocktable').innerHTML = errBox(e.message); return; }
+  if (!$('#stocktable')) return;                     /* 待っている間に画面が変わった */
+
+  $('#stockchips').innerHTML = filterChips(store.facets[state.ch]);
+  $('#stocktable').innerHTML = matrixTable(core) + pagerHTML(core);
 
   const conds = [];
   if (state.stockFilter) {
@@ -1760,7 +1855,9 @@ function refreshStockTable(){
   if (state.stockQ.trim()) conds.push(`検索=<b>${esc(state.stockQ.trim())}</b>`);
   if (state.stockSort) conds.push(`並び=<b>${SORT_LABEL[state.stockSort.key]} ${state.stockSort.dir === 'asc' ? '昇順' : '降順'}</b>`);
   $('#stockcond').innerHTML = conds.length ? '絞り込み中: ' + conds.join(' ・ ') : '';
-  $('#stockhits').textContent = `${$('#stocktable').querySelectorAll('tbody tr[data-vid]').length} 件表示`;
+  $('#stockhits').textContent = core.total
+    ? `全 ${core.total} 件中 ${core.from + 1}–${core.from + core.items.length} 件を表示`
+    : '0 件';
   syncStickyOffsets();
 }
 
@@ -1874,20 +1971,31 @@ function detailHTML(it){
 const BASE_URL = () => location.pathname + location.search;
 let _returnScroll = null;
 
-/* 詳細ビューを実際に描画する（履歴は積まない・再描画や popstate から共用） */
-function openDetail(vid, gate){
-  const core = store.core[state.ch]; if (!core) return;
-  const it = core.byId.get(Number(vid)); if (!it) return;
-  /* 入口（在庫／レビュー）に依らずレビューパネルが出るよう、保留ゲートを都度算出 */
-  annotate([it]);
-
-  state.detail = it.id;
+/* 詳細ビューを実際に描画する（履歴は積まない・再描画や popstate から共用）。
+   一覧に載っていない動画（別ページ・ディープリンク）でも開けるよう、動画1行と
+   その動画のレビュー記録をここで取りに行く（#215 Phase 2 で非同期になった）。 */
+async function openDetail(vid, gate){
+  const id = Number(vid);
   const dv = $('#view-detail');
-  dv.innerHTML = detailHTML(it);
+  state.detail = id;
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   dv.classList.add('active');
   document.body.classList.add('detail-open');
   document.body.style.overflow = '';
+  if (!store.threads[id] || !store.byId.get(id)) dv.innerHTML = loading();
+
+  let it, evs;
+  try {
+    it = await loadItem(id);
+    if (it) evs = await loadThread(id);
+  } catch (e) { dv.innerHTML = errBox(e.message); return; }
+  if (!it) { closeDetail(); return; }
+  if (state.detail !== id) return;             /* 待っている間に別の動画へ移った */
+
+  /* 入口（在庫／レビュー）に依らずレビューパネルが出るよう、保留ゲートを都度算出 */
+  annotate(it, evs);
+
+  dv.innerHTML = detailHTML(it);
   window.scrollTo(0, 0);
   dv.querySelector('.backbtn')?.focus();
   mountAllAssets(dv);
@@ -1911,16 +2019,18 @@ function closeDetail(scrollY){
 }
 
 /* クリック起点：現在のスクロールを一覧履歴に刻んでから詳細をプッシュ */
-function pushDetail(vid, gate){
-  const core = store.core[state.ch]; if (!core) return;
-  const it = core.byId.get(Number(vid)); if (!it) return;
-  _returnScroll = window.scrollY;
+async function pushDetail(vid, gate){
+  const y = window.scrollY;
+  let it;
+  try { it = await loadItem(Number(vid)); } catch { return; }
+  if (!it) return;
+  _returnScroll = y;
   const base = history.state || {};
   history.replaceState(Object.assign({}, base, { view: state.view, ch: state.ch, scrollY: _returnScroll }), '', BASE_URL());
   const hash = `#detail/${encodeURIComponent(state.ch)}/${encodeURIComponent(it.seq)}` +
     (gate ? '/' + encodeURIComponent(gate) : '');
   history.pushState({ detail: it.id, ch: state.ch, gate: gate || null, view: state.view }, '', hash);
-  openDetail(it.id, gate);
+  await openDetail(it.id, gate);
 }
 
 function parseHash(){
@@ -1936,28 +2046,25 @@ async function applyInitialRoute(){
   const r = parseHash();
   if (!r) return;
   if (!store.channels.some(c => c.slug === r.ch)) { history.replaceState({}, '', BASE_URL()); return; }
+  let it;
   try {
     if (r.ch !== state.ch) { state.ch = r.ch; await render(); }
-    else await loadCore(state.ch);
+    /* 一覧のページに載っていない seq でも開けるよう、DB から直接1行引く */
+    it = await loadItemBySeq(state.ch, r.seq);
   } catch { history.replaceState({}, '', BASE_URL()); return; }
-  const core = store.core[state.ch];
-  const it = core && core.items.find(i => String(i.seq) === r.seq);
   if (!it) { history.replaceState({}, '', BASE_URL()); return; }
   history.replaceState({ view: state.view, ch: state.ch, scrollY: 0 }, '', BASE_URL());
   history.pushState({ detail: it.id, ch: state.ch, gate: r.gate, view: state.view }, '',
     `#detail/${encodeURIComponent(state.ch)}/${encodeURIComponent(it.seq)}${r.gate ? '/' + encodeURIComponent(r.gate) : ''}`);
   _returnScroll = 0;
-  openDetail(it.id, r.gate);
+  await openDetail(it.id, r.gate);
 }
 
 window.addEventListener('popstate', e => {
   const st = e.state || {};
-  const core = store.core[state.ch];
-  if (st.detail != null && st.ch === state.ch && core && core.byId.get(st.detail)) {
-    openDetail(st.detail, st.gate);
-  } else {
-    closeDetail(st.scrollY);
-  }
+  /* 一覧に載っていない動画でも openDetail が1行取りに行く（開けなければ閉じる） */
+  if (st.detail != null && st.ch === state.ch) openDetail(st.detail, st.gate);
+  else closeDetail(st.scrollY);
 });
 
 /* ══ ② レビュー ═════════════════════════════════════════════════ */
@@ -2276,17 +2383,16 @@ function closeRejectPanel(box){
   if (btn) { btn.hidden = false; btn.setAttribute('aria-expanded', 'false'); btn.focus(); }
 }
 
-/* 書き込み後は review_events（＋承認ならキャッシュ列）を取り直して描き直す */
+/* 書き込み後は取り直して描き直す。一覧の状態バッジ・並び順・指摘件数は
+   v_dashboard_list（M027）が review_events から作っているので、コメント1件でも
+   一覧が変わりうる＝動画側のキャッシュはまとめて捨てる（#215 Phase 2）。 */
 async function refreshAfterWrite(approved){
-  store.reviews = null;
+  clearVideoCaches();
   store.assets = {};
-  if (approved) { store.core = {}; store.analytics = {}; }
+  if (approved) store.analytics = {};
   const keep = state.detail;
   await render();
-  if (keep) {
-    const core = store.core[state.ch];
-    if (core && core.byId.get(keep)) openDetail(keep); else closeDetail();
-  }
+  if (keep) await openDetail(keep);     /* 開けなければ openDetail が閉じる */
 }
 
 /* コメント（RPC は従来どおり request_changes。指摘は resolution_status='open' で記録される） */
@@ -2388,11 +2494,11 @@ async function renderReview(){
   const el = $('#view-review');
   if (!state.ch) { el.innerHTML = `<div class="noitem">動画チャンネルがありません</div>`; return; }
   const m = chMeta(state.ch);
-  if (!store.core[state.ch]) el.innerHTML = loading();
-  try { await loadCore(state.ch); }
+  if (!store.pending[state.ch]) el.innerHTML = loading();
+  /* 一覧のページングとは独立。「状態を持つ行」だけを引く専用クエリ（#215 Phase 2） */
+  try { await loadPending(state.ch); }
   catch (e) { el.innerHTML = errBox(e.message); return; }
 
-  annotate(store.core[state.ch].items);
   const list = pendingList(state.ch);
   const chg  = changesList(state.ch);
   const gateNames = m.gates.map(g => GATE_LABEL[g]).join(' / ');
@@ -2819,7 +2925,7 @@ async function render(){
 }
 
 async function reloadAll(){
-  store.reviews = null; store.core = {}; store.ops = null; store.analytics = {}; store.assets = {};
+  clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {};
   state.busy = true; renderShell();
   try { await loadBootstrap(); } catch (e) { toast('再読み込みに失敗: ' + e.message); }
   await render();
@@ -2869,6 +2975,7 @@ document.addEventListener('click', e => {
   if (chipBtn) {
     const k = chipBtn.dataset.filter || null;
     state.stockFilter = (state.stockFilter === k) ? null : k;
+    state.stockPage = 0;                 /* 条件を変えたら1ページ目から */
     refreshStockTable(); return;
   }
   if (e.target.closest('#stockreset')) { resetStockFilters(); renderStock(); return; }
@@ -2879,7 +2986,21 @@ document.addEventListener('click', e => {
     state.stockSort = (s && s.key === k)
       ? (s.dir === 'asc' ? { key: k, dir: 'desc' } : null)
       : { key: k, dir: 'asc' };
+    state.stockPage = 0;
     refreshStockTable(); return;
+  }
+
+  /* ページ送り（#215 Phase 2）。並べ替えは DB 側なので、ページを跨いでも順番は正しい */
+  if (e.target.closest('#pgprev')) {
+    if (state.stockPage > 0) { state.stockPage--; refreshStockTable(); window.scrollTo({ top: 0 }); }
+    return;
+  }
+  if (e.target.closest('#pgnext')) {
+    const c = store.core[state.ch];
+    if (c && (state.stockPage + 1) * PAGE_SIZE < c.total) {
+      state.stockPage++; refreshStockTable(); window.scrollTo({ top: 0 });
+    }
+    return;
   }
 
   const row = e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
@@ -2912,8 +3033,15 @@ document.addEventListener('click', e => {
   if (e.target.closest('#logoutbtn')) { signOut(); return; }
   if (!e.target.closest('.usermenu')) { $('#menupop').hidden = true; $('#userbtn')?.setAttribute('aria-expanded', 'false'); }
 });
+/* 検索は DB へ問い合わせるので、打鍵ごとには投げない（打ち終わりを少し待つ） */
+let stockQTimer = null;
 document.addEventListener('input', e => {
-  if (e.target.id === 'stockq') { state.stockQ = e.target.value; refreshStockTable(); return; }
+  if (e.target.id === 'stockq') {
+    state.stockQ = e.target.value; state.stockPage = 0;
+    clearTimeout(stockQTimer);
+    stockQTimer = setTimeout(refreshStockTable, 250);
+    return;
+  }
   /* 没の確定ボタンは理由が入るまで押せない（#205） */
   if (e.target.classList && e.target.classList.contains('rta')) {
     const box = e.target.closest('[data-rjbox]');
@@ -2921,7 +3049,9 @@ document.addEventListener('input', e => {
   }
 });
 document.addEventListener('change', e => {
-  if (e.target.id === 'stockgenre') { state.stockGenre = e.target.value; refreshStockTable(); }
+  if (e.target.id === 'stockgenre') {
+    state.stockGenre = e.target.value; state.stockPage = 0; refreshStockTable();
+  }
 });
 document.addEventListener('keydown', e => {
   /* Ctrl + Enter はコメント欄だけ。承認メモ（.ata）では発火させない（誤送信防止・#205） */
@@ -2959,9 +3089,9 @@ $('#loginform').addEventListener('submit', async ev => {
 
 async function signOut(){
   await sb.auth.signOut();
-  store.reviews = null; store.core = {}; store.ops = null; store.analytics = {}; store.assets = {};
+  clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {};
   store.channels = []; store.accounts = [];
-  state.user = null; state.me = null; state.ch = null; state.view = 'stock';
+  state.user = null; state.me = null; state.ch = null; state.view = 'stock'; state.stockPage = 0;
   showLogin();
 }
 
