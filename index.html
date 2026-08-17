@@ -814,6 +814,47 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .acts .cq{font-size:var(--fs-2xs); flex:0 0 auto; border-radius:5px; padding:0 6px;
   border:1px solid var(--border-2); color:var(--ink-2)}
 
+/* ═══ システム（#249）══════════════════════════════════════════
+   定時タスクの時刻表とフローマップ。表は2列（時刻／内容）に絞り、説明文だけ折り返す。
+   3列以上にするとスマホで横スクロールが要る＝「スマホで開いて時刻を確かめる」用途に
+   合わないため（在庫の表と違い、ここは絞り込みも並べ替えもしない読み物）。 */
+.ovgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:var(--sp-3)}
+.ovit{display:grid; gap:2px; padding:10px 12px; background:var(--surface-2);
+  border:1px solid var(--border-2); border-radius:var(--r-md); min-width:0}
+.ovit .k{font-size:var(--fs-2xs); color:var(--muted); font-weight:700; letter-spacing:.07em;
+  text-transform:uppercase}
+.ovit .v{font-size:var(--fs-sm); font-weight:650; line-height:1.4; overflow-wrap:anywhere}
+.ovit .n{font-size:var(--fs-2xs); color:var(--ink-2); line-height:1.5; overflow-wrap:anywhere}
+
+.syslegend{display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4); margin:0 0 var(--sp-3);
+  font-size:var(--fs-2xs); color:var(--ink-2)}
+.syslegend .lg{display:inline-flex; align-items:center; gap:7px}
+.runner{display:inline-flex; align-items:center; font-size:var(--fs-2xs); font-weight:700;
+  border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap; line-height:1.6}
+.runner.routine{background:var(--s1-tint); color:var(--s1-ink)}
+.runner.task{background:var(--done-tint); color:var(--done)}
+.runner.poller{background:var(--fix-tint); color:var(--fix-ink)}
+.sysflag{display:inline-flex; align-items:center; font-size:var(--fs-2xs); font-weight:700;
+  border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap; line-height:1.6;
+  background:var(--warn-tint); color:var(--ink)}
+
+.systbl table{min-width:0}
+.systbl th.when,.systbl td.when{white-space:nowrap; width:1%; font-weight:680;
+  font-variant-numeric:tabular-nums; vertical-align:top; padding-top:11px}
+.systbl td.what{white-space:normal; line-height:1.45; min-width:180px; padding-top:10px; padding-bottom:11px}
+.systbl td.what .nm{font-weight:650; margin-right:7px}
+.systbl td.what .runner,.systbl td.what .sysflag{vertical-align:1px; margin-right:5px}
+.systbl td.what .ds{display:block; color:var(--ink-2); font-size:var(--fs-xs); margin-top:3px}
+.systbl td.what .mt{display:block; color:var(--muted); font-size:var(--fs-2xs); margin-top:3px}
+.systbl tr.off{opacity:.5}
+.sysnotes{margin:var(--sp-3) 0 0; padding-left:1.25em; font-size:var(--fs-2xs); color:var(--ink-2); line-height:1.7}
+
+/* フローマップ（sandbox iframe）。中身は自前のCSSを持つ1枚ページで、内部で縦にも横にも
+   スクロールする。親の高さは画面に合わせて決め打ちする（sandbox で allow-same-origin を
+   付けていないので、中身の高さを測って合わせることはできない・付ける気も無い） */
+.flowframe{display:block; width:100%; height:min(76vh, 900px); min-height:380px; border:none;
+  border-radius:var(--r-md); background:var(--surface-1)}
+
 /* ═══ 分析 ══════════════════════════════════════════════════════ */
 .kpis{display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:var(--sp-2)}
 .kpi{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
@@ -890,7 +931,9 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .syncchip{display:none}
   .nav{position:fixed; bottom:0; left:0; right:0; top:auto; border-top:1px solid var(--border);
     border-bottom:none; background:var(--surface-1); z-index:50; padding-bottom:env(safe-area-inset-bottom)}
-  .nav-in{display:grid; grid-template-columns:repeat(4,1fr)}
+  /* タブ数は権限で変わる（制限ありユーザーは「稼働」が出ない・#208 / #249 でシステムが増えた）。
+     固定列数にすると人によって右端が余る／はみ出すので、あるぶんだけ等分する */
+  .nav-in{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr)}
   .navbtn{flex-direction:column; gap:3px; font-size:var(--fs-2xs); padding:9px 2px 8px; border-bottom:none;
     border-top:2px solid transparent; justify-content:center}
   .navbtn[aria-selected="true"]{border-bottom-color:transparent; border-top-color:var(--ink)}
@@ -1022,6 +1065,7 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   <section class="view" id="view-review"></section>
   <section class="view" id="view-analytics"></section>
   <section class="view" id="view-ops"></section>
+  <section class="view" id="view-system"></section>
   <section class="view" id="view-detail"></section>
 </main>
 
@@ -1081,7 +1125,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/15 01:38';
+const BUILT_AT = '8/17 12:28';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1180,7 +1224,7 @@ const state = {
    threads = 動画ごとのレビュー記録。詳細を開いた動画のぶんだけ貯める
    byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため） */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
-                board:{}, threads:{}, ops:null, analytics:{}, assets:{} };
+                board:{}, threads:{}, ops:null, analytics:{}, assets:{}, system:null };
 const clearVideoCaches = () => {
   store.byId = new Map();
   store.core = {}; store.facets = {}; store.pending = {}; store.board = {}; store.threads = {};
@@ -1193,7 +1237,11 @@ const VIEWS = [
   {key:'review',    icon:'📝', label:'レビュー', badge:() => pendingList(state.ch).length},
   {key:'analytics', icon:'📈', label:'分析'},
   /* 稼働（夜間ジョブ）はチャンネル横断の運用ログ。全チャンネル可のユーザーだけに出す */
-  {key:'ops',       icon:'🌙', label:'稼働', chIndep:true, fullOnly:true}
+  {key:'ops',       icon:'🌙', label:'稼働', chIndep:true, fullOnly:true},
+  /* システム（#249）＝定時タスクの時刻表とフローマップ。チャンネル横断の運用情報だが、
+     稼働（agent_runs）と違い共同運営者にも見せてよいので fullOnly にはしない（M029 の
+     RLS も「ダッシュボード利用者なら誰でも読める」で揃えてある）。 */
+  {key:'system',    icon:'⚙️', label:'システム', chIndep:true}
 ];
 /* ── 権限（#208）─────────────────────────────────────────────────
    state.me は dashboard_me() RPC の戻り値（{display_name, channels, full_access}）。
@@ -1486,6 +1534,19 @@ async function loadOps(){
   return store.ops;
 }
 
+/* システムビュー（#249）の表示素材。system_docs（M029）は3行しかないチャンネル横断の
+   表で、中身はリポジトリ内の正本（オーナー用/flow-map.html・routines-backup の
+   scheduled-tasks.json）を dashboard/sync-system-docs.py が写したもの。
+   ⚠️ 公開 GitHub Pages の静的HTMLには埋めない＝ログイン後にここで初めて取りに行く。 */
+async function loadSystem(){
+  if (store.system) return store.system;
+  const rows = await q(sb.from('system_docs').select('key,title,format,content,updated_at'));
+  const by = {};
+  for (const r of rows) by[r.key] = r;
+  store.system = by;
+  return store.system;
+}
+
 async function loadAnalytics(ch){
   if (store.analytics[ch]) return store.analytics[ch];
   const primary = store.accounts.find(a => a.channel === ch && a.platform === 'youtube' && a.is_primary);
@@ -1551,13 +1612,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/15 01:38') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/17 12:28') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/15 01:38') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/17 12:28') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2853,6 +2914,111 @@ async function renderOps(){
     ${runsBlock}`;
 }
 
+/* ══ ⑤ システム ════════════════════════════════════════════════ */
+/* system_docs（M029）の3件を描くだけの画面。中身の正本はリポジトリ側にあり、ここは
+   同期スクリプト（dashboard/sync-system-docs.py）が入れた写しを表示する。
+   JSON は「画面が描きやすい形」で入っている前提だが、壊れていても画面ごと落とさない
+   （parse に失敗した文書だけ「読めません」に差し替える）。 */
+const RUNNER_CLS = {routine:'routine', task:'task', poller:'poller'};
+
+function parseDoc(doc){
+  if (!doc) return null;
+  try { return JSON.parse(doc.content); } catch { return null; }
+}
+const syncHint = '同期: python dashboard/sync-system-docs.py';
+const notSynced = what => `<div class="noitem">${esc(what)}がまだ同期されていません
+    <span class="s">${esc(syncHint)}</span></div>`;
+
+function overviewCard(doc){
+  const d = parseDoc(doc);
+  if (!d || !Array.isArray(d.items)) return '';
+  return `<div class="card sysover">
+    <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>${esc(doc.title || 'いまの構成')}</h2>
+      <span class="hint">${esc(fmtDT(doc.updated_at) || '')} 同期</span></div>
+    <div class="ovgrid">${d.items.map(it => `<div class="ovit">
+      <span class="k">${esc(it.label)}</span>
+      <span class="v">${esc(it.value)}</span>
+      ${it.note ? `<span class="n">${esc(it.note)}</span>` : ''}</div>`).join('')}</div></div>`;
+}
+
+function scheduleCard(doc){
+  const d = parseDoc(doc);
+  if (!d || !Array.isArray(d.entries)) return notSynced('スケジュール');
+
+  const runnerLabel = {};
+  (d.runners || []).forEach(r => { runnerLabel[r.key] = r.label; });
+
+  const rows = d.entries.map(e => {
+    const meta = [runnerLabel[e.runner] || e.runner, e.model && e.model !== '（既定）' ? e.model : null]
+      .filter(Boolean).join(' ・ ');
+    const off = e.enabled === false;
+    return `<tr${off ? ' class="off"' : ''}>
+      <td class="when">${esc(e.when || '—')}</td>
+      <td class="what">
+        <span class="nm">${esc(e.name || e.id)}</span>
+        <span class="runner ${RUNNER_CLS[e.runner] || 'routine'}">${esc(runnerLabel[e.runner] || e.runner)}</span>
+        ${e.status && e.status !== '運用中' ? `<span class="sysflag">${esc(e.status)}</span>` : ''}
+        ${e.description ? `<span class="ds">${esc(e.description)}</span>` : ''}
+        <span class="mt">${esc(meta)}</span></td></tr>`;
+  }).join('') || `<tr class="emptyrow"><td colspan="2">登録された定時タスクがありません</td></tr>`;
+
+  const legend = (d.runners || []).map(r =>
+    `<span class="lg"><span class="runner ${RUNNER_CLS[r.key] || 'routine'}">${esc(r.label)}</span>${esc(r.note || '')}</span>`).join('');
+  const notes = (d.notes || []).map(n => `<li>${esc(n)}</li>`).join('');
+
+  return `<div class="card">
+    <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>${esc(doc.title || '定時タスク')}</h2>
+      <span class="hint">${esc(d.timezone || '')}・${esc(fmtDT(doc.updated_at) || '')} 同期</span></div>
+    ${legend ? `<div class="syslegend">${legend}</div>` : ''}
+    <div class="tblwrap systbl"><table>
+      <thead><tr><th class="when">時刻</th><th>内容</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    ${notes ? `<ul class="sysnotes">${notes}</ul>` : ''}</div>`;
+}
+
+/* フローマップは オーナー用/flow-map.html の全文。自前の CSS を持つ1枚のページなので
+   ダッシュボードの中へ素で流し込むとスタイルが混ざる。sandbox 付き iframe に srcdoc で
+   隔離する（sandbox に allow-* を1つも付けない＝スクリプト実行も同一オリジンも無し。
+   flow-map は静的HTMLなので描画に支障はない）。
+   ⚠️ srcdoc は CSP の default-src 'none' 下でも描ける（about:srcdoc は親の CSP を継承する。
+      Edge/Chromium で実測確認 2026-08-17）。frame-src を足す必要は無い。
+   テーマは iframe 内へ伝わらない（prefers-color-scheme は OS 設定を見る）ので、
+   いま表示中のテーマを data-theme として被せる。flow-map 側に :root[data-theme] の
+   定義があるので、これでダッシュボードのテーマ切り替えに追従する。 */
+function flowMapCard(doc){
+  if (!doc) return notSynced('フローマップ');
+  const cur = document.documentElement.dataset.theme;
+  const theme = cur ? cur : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const srcdoc = `<!doctype html><html lang="ja" data-theme="${theme}">${doc.content}</html>`;
+  return `<div class="card">
+    <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>${esc(doc.title || 'フローマップ')}</h2>
+      <span class="hint">オーナー用/flow-map.html・${esc(fmtDT(doc.updated_at) || '')} 同期</span></div>
+    <iframe class="flowframe" sandbox title="自動化フローマップ" srcdoc="${esc(srcdoc)}"></iframe></div>`;
+}
+
+async function renderSystem(){
+  const el = $('#view-system');
+  if (!store.system) el.innerHTML = loading();
+  let docs;
+  try { docs = await loadSystem(); }
+  catch (e) { el.innerHTML = errBox(e.message); return; }
+
+  el.innerHTML = `
+    <div class="pagehead">
+      <div class="eyebrow">システム</div>
+      <h1>⚙️ 構成とスケジュール</h1>
+      <p>system_docs（M029）の内容。ログインした人だけが見られます（公開ページには載りません）。</p>
+    </div>
+    <div class="note"><span>🌐</span><div><b>この画面は全チャンネル共通です。</b>
+      上のチャンネルタブの選択は反映されません。中身はリポジトリ側の正本を写したもので、
+      更新は同期スクリプト（${esc(syncHint)}）を実行したときだけ入れ替わります。</div></div>
+    <div class="stack">
+      ${overviewCard(docs['system-overview'])}
+      ${scheduleCard(docs['schedule'])}
+      ${flowMapCard(docs['flow-map'])}
+    </div>`;
+}
+
 /* ══ ツールチップ ═══════════════════════════════════════════════ */
 const tip = $('#tip');
 function showTip(html, x, y){
@@ -2914,6 +3080,7 @@ async function render(){
     else if (state.view === 'review')    await renderReview();
     else if (state.view === 'analytics') await renderAnalytics();
     else if (state.view === 'ops')       await renderOps();
+    else if (state.view === 'system')    await renderSystem();
     state.lastSync = new Date().toISOString();
   } catch (e) {
     $('#view-' + state.view).innerHTML = errBox(e.message);
@@ -2925,7 +3092,7 @@ async function render(){
 }
 
 async function reloadAll(){
-  clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {};
+  clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {}; store.system = null;
   state.busy = true; renderShell();
   try { await loadBootstrap(); } catch (e) { toast('再読み込みに失敗: ' + e.message); }
   await render();
@@ -3089,7 +3256,7 @@ $('#loginform').addEventListener('submit', async ev => {
 
 async function signOut(){
   await sb.auth.signOut();
-  clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {};
+  clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {}; store.system = null;
   store.channels = []; store.accounts = [];
   state.user = null; state.me = null; state.ch = null; state.view = 'stock'; state.stockPage = 0;
   showLogin();
