@@ -855,19 +855,23 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   border-radius:var(--r-md); background:var(--fix-tint); color:var(--fix-ink); font-size:var(--fs-2xs)}
 .tlband .tlpin{flex:0 0 auto}
 .tlpins{position:relative}
-.tlrow{position:absolute; display:flex; align-items:center; gap:5px; white-space:nowrap}
+.tlrow{position:absolute; z-index:1; display:flex; align-items:center; gap:5px; white-space:nowrap}
 .tlrow.off{opacity:.5}
 .tlname{font-size:10.5px; font-weight:600; color:var(--ink-2)}
-/* 領域タグ（表の見出しと同じ分類を軸でも分かるように・色は表の chgroup とは別扱いで
-   YouTube=緑／X=オレンジ／他=グレーの3色固定。runner色（丸バッジ）とは別の意味なので
-   混同しないよう小さく別形状（角丸の四角）にする */
-.tlchan{display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
-  height:14px; padding:0 4px; border-radius:4px; font-size:8.5px; font-weight:800;
-  letter-spacing:.02em; color:var(--ink)}
-.tlchan.youtube{background:var(--good-tint)}
-.tlchan.x{background:var(--s2-tint)}
-.tlchan.other{background:var(--surface-3)}
-.tlpin{width:22px; height:22px; line-height:22px; text-align:center; flex:0 0 auto;
+/* 領域の帯（表の chgroup と同じ分類を軸でも縦位置と背景色で分かるようにする・色タグは
+   分かりにくいとの指摘で廃止・8/18）。帯は表と同じ並び（YouTube→X→その他）を上から
+   出す・pointer-events:none でクリック/ホバーの邪魔をしない。 */
+.tlchband{position:absolute; left:0; right:0; border-radius:var(--r-sm); pointer-events:none}
+.tlchband.youtube{background:var(--good-tint)}
+.tlchband.x{background:var(--s2-tint)}
+.tlchband.other{background:var(--surface-3)}
+.tlchbandlabel{position:absolute; left:7px; top:5px; font-size:9px; font-weight:800;
+  letter-spacing:.03em; color:var(--ink-2)}
+/* display を明示しないと <span> は inline のままで width/height が無視される
+   （.tlrow の中は flex item 化されるので偶然効いていたが、表の <td> 直下では
+   文字幅だけの細い帯になっていた・オーナー指摘 8/18「周りの色が小さい」の原因）。 */
+.tlpin{display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; flex:0 0 auto;
   border-radius:var(--r-pill); font-size:11px; font-weight:700; font-variant-numeric:normal; cursor:default}
 .tlpin.routine{background:var(--s1); color:#fff}
 .tlpin.poller{background:var(--fix); color:#fff}
@@ -1183,7 +1187,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/18 20:01';
+const BUILT_AT = '8/18 23:00';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1670,13 +1674,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/18 20:01') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/18 23:00') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/18 20:01') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/18 23:00') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2981,17 +2985,18 @@ const RUNNER_CLS = {routine:'routine', task:'task', poller:'poller'};
 // 表の領域分け見出し。このダッシュボードの主目的（YouTube制作）を先頭にする
 const CHANNEL_ORDER = ['youtube', 'x', 'other'];
 const CHANNEL_LABEL = {youtube: 'YouTube制作', x: 'X運用', other: 'その他・共通基盤'};
-// 時間軸は表の見出しほど幅が無いので、同じ分類を2〜3文字の色つきタグで出す
-const CHANNEL_CLS = {youtube: 'youtube', x: 'x', other: 'other'};
-const CHANNEL_TAG = {youtube: 'YT', x: 'X', other: '他'};
 
 /* 時間軸の並べ方: entries は既にバックエンド側で時系列ソート済みなので、その順番に
-   ①②③…と採番するだけ（軸の丸バッジと表の1列目が同じ番号になる）。軸には丸バッジに
-   加えてタスク名も出すため、時刻の近さに関わらず1件=1段（lane=時系列での通し番号）
-   にして名前同士が重ならないようにする（重なり回避のための間引きはしない）。 */
+   ①②③…と採番するだけ（軸の丸バッジと表の1列目が同じ番号になる）。
+   分類（YouTube/X/その他）は色つきの小さなタグではなく、帯（背景色の帯）を分類ごとに
+   分けて縦位置そのもので表す（オーナー指摘: タグは分かりにくい・8/18）。帯の中では
+   1件=1段にして名前同士が重ならないようにする（重なり回避のための間引きはしない）。
+   帯は表と同じ並び（YouTube制作→X運用→その他）を上から出す。 */
 const TL_HOUR_TICKS = Array.from({length: 25}, (_, i) => i);   // 0時〜24時の1時間刻み
 const TL_ROW_H = 28;
 const TL_PIN = 22;
+const TL_BAND_PAD = 8;
+const TL_BAND_GAP = 10;
 
 function timeToMinutes(hhmm){
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || '').trim());
@@ -3002,15 +3007,37 @@ function buildTimelinePins(entries, numOf){
   const raw = [];
   entries.forEach(e => {
     if (!e.time) return;
+    const channel = CHANNEL_ORDER.includes(e.channel) ? e.channel : 'other';
     // parse_cron は同一cronが複数時刻にマッチすると "06:00 / 06:30" のように束ねて返す
     String(e.time).split('/').forEach(part => {
       const min = timeToMinutes(part);
-      if (min != null) raw.push({e, min, num: numOf.get(e)});
+      if (min != null) raw.push({e, min, num: numOf.get(e), channel});
     });
   });
   raw.sort((a, b) => a.min - b.min);
-  raw.forEach((p, i) => { p.lane = i; });
-  return {pins: raw, laneCount: raw.length || 1};
+
+  // 段は帯（チャンネル）ごとに独立して振る＝同じ帯の中だけ重なりを避ければよい
+  const laneCounters = {};
+  raw.forEach(p => {
+    p.lane = laneCounters[p.channel] || 0;
+    laneCounters[p.channel] = p.lane + 1;
+  });
+
+  // 帯は軸線に近い側（下）から積む。読み順を表と同じ「YouTube→X→その他」を上にしたいので
+  // 逆順（その他→X→YouTube）に積む。該当タスクが無い帯は作らない（高さ0で場所を取らない）。
+  const bandLayout = {};
+  let cursor = 0;
+  [...CHANNEL_ORDER].reverse().forEach(ch => {
+    const laneCount = laneCounters[ch] || 0;
+    if (!laneCount) return;
+    const innerH = (laneCount - 1) * TL_ROW_H + TL_PIN;
+    const bandH = innerH + TL_BAND_PAD * 2;
+    bandLayout[ch] = {bottom: cursor, height: bandH, innerBottom: cursor + TL_BAND_PAD};
+    cursor += bandH + TL_BAND_GAP;
+  });
+  const totalHeight = Math.max(TL_PIN, cursor - TL_BAND_GAP);
+
+  return {pins: raw, bandLayout, totalHeight};
 }
 
 function parseDoc(doc){
@@ -3044,25 +3071,32 @@ function scheduleCard(doc){
   const numOf = new Map();
   d.entries.forEach((e, i) => numOf.set(e, i + 1));
 
-  const {pins, laneCount} = buildTimelinePins(d.entries, numOf);
+  const {pins, bandLayout, totalHeight} = buildTimelinePins(d.entries, numOf);
   const bandEntries = d.entries.filter(e => !e.time && e.interval_min);
 
   const pinsHtml = pins.map(p => {
     const cls = RUNNER_CLS[p.e.runner] || 'routine';
-    const chCls = CHANNEL_CLS[p.e.channel] || 'other';
     const off = p.e.enabled === false;
     const title = p.e.title_ja || p.e.name || p.e.id;
     const leftPct = p.min / 1440 * 100;
     const flip = leftPct > 50;   // 時刻が後半(50%超)は名前を左へ伸ばし、右端でのはみ出しを防ぐ
-    const bottom = p.lane * TL_ROW_H;
+    const L = bandLayout[p.channel];
+    const bottom = (L ? L.innerBottom : 0) + p.lane * TL_ROW_H;
     const tip = `${p.e.when || ''}　${title}（${esc(p.e.name || p.e.id)}）`;
     const badge = `<span class="tlpin ${cls}" title="${esc(tip)}">${p.num}</span>`;
-    const chan = `<span class="tlchan ${chCls}">${esc(CHANNEL_TAG[p.e.channel] || '他')}</span>`;
     const label = `<span class="tlname">${esc(title)}</span>`;
     const pos = flip ? `right:calc(${(100 - leftPct).toFixed(2)}% - 11px)` : `left:calc(${leftPct.toFixed(2)}% - 11px)`;
-    const body = flip ? label + chan + badge : badge + chan + label;
+    const body = flip ? label + badge : badge + label;
     return `<span class="tlrow${off ? ' off' : ''}" style="${pos}; bottom:${bottom}px">${body}</span>
       <i class="tlstem${off ? ' off' : ''}" style="left:${leftPct.toFixed(2)}%; height:${bottom}px"></i>`;
+  }).join('');
+
+  // 分類は色タグではなく帯（背景色）＋縦位置そのもので表す。帯は表と同じ並びを上から。
+  const chBandsHtml = CHANNEL_ORDER.map(ch => {
+    const L = bandLayout[ch];
+    if (!L) return '';
+    return `<div class="tlchband ${ch}" style="bottom:${L.bottom}px; height:${L.height}px">
+      <span class="tlchbandlabel">${esc(CHANNEL_LABEL[ch] || ch)}</span></div>`;
   }).join('');
 
   const ticksHtml = TL_HOUR_TICKS.map(h =>
@@ -3077,7 +3111,7 @@ function scheduleCard(doc){
 
   const timelineHtml = `<div class="tlouter"><div class="timeline">
     ${bandHtml}
-    <div class="tlpins" style="height:${laneCount * TL_ROW_H + TL_PIN + 4}px">${pinsHtml}</div>
+    <div class="tlpins" style="height:${totalHeight}px">${chBandsHtml}${pinsHtml}</div>
     <div class="tlaxis">${ticksHtml}</div>
     <div class="tlaxistitle">時刻（24時間・当日）</div>
   </div></div>`;
