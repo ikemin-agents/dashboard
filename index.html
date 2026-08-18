@@ -849,9 +849,6 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
    .tlpins の高さが伸びる。.tlstem が軸線から段の高さまでの目印線。.tlrow は時刻の
    左半分なら丸バッジ→名前の順（右に伸びる）、右半分なら名前→丸バッジの順（左に伸びる）
    にして、右端で名前が画面外にはみ出しにくくする。 */
-.tlband{display:flex; align-items:center; gap:9px; margin:0 0 10px; padding:5px 10px;
-  border-radius:var(--r-md); background:var(--fix-tint); color:var(--fix-ink); font-size:var(--fs-2xs)}
-.tlband .tlpin{flex:0 0 auto}
 /* 左に固定表示の帯カード＋右にスクロールする時間軸、の2カラム（オーナー指摘: 帯の中の
    小さい文字ラベルは読みにくい・8/18。横スクロールしてもカードは常に見える）。 */
 .tltrack{display:flex; align-items:flex-start; gap:10px; margin-bottom:var(--sp-4)}
@@ -876,6 +873,14 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .tlchband.youtube{background:var(--good-tint)}
 .tlchband.x{background:var(--s2-tint)}
 .tlchband.other{background:var(--surface-3)}
+/* 常時稼働（5分間隔など・特定の時刻を持たないタスク）は該当する帯の一番上に黒帯として
+   全幅で出す。他の帯配色（tint）と違いテーマに関係なく常に黒＝「点ではなく常時」を
+   一目で区別させる意図（オーナー指摘: バナーではなく帯の中に置きたい・8/18）。 */
+.tlalways{position:absolute; left:0; right:0; z-index:1; display:flex; align-items:center;
+  gap:9px; padding:0 10px; border-radius:var(--r-sm); background:#18120f; color:#fff}
+.tlalways .tlpin{flex:0 0 auto}
+.tlalways span:last-child{font-size:var(--fs-2xs); font-weight:600; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
 /* display を明示しないと <span> は inline のままで width/height が無視される
    （.tlrow の中は flex item 化されるので偶然効いていたが、表の <td> 直下では
    文字幅だけの細い帯になっていた・オーナー指摘 8/18「周りの色が小さい」の原因）。 */
@@ -1196,7 +1201,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/18 23:41';
+const BUILT_AT = '8/18 23:58';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1683,13 +1688,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/18 23:41') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/18 23:58') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/18 23:41') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/18 23:58') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3006,6 +3011,7 @@ const TL_ROW_H = 28;
 const TL_PIN = 22;
 const TL_BAND_PAD = 8;
 const TL_BAND_GAP = 10;
+const TL_ALWAYS_H = 26;   // 常時稼働（5分間隔など）の黒帯1本ぶんの高さ
 
 function timeToMinutes(hhmm){
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || '').trim());
@@ -3014,14 +3020,18 @@ function timeToMinutes(hhmm){
 
 function buildTimelinePins(entries, numOf){
   const raw = [];
+  const alwaysOnByChannel = {};   // 特定の時刻を持たない常時稼働タスク（例: 5分間隔ポーラー）
   entries.forEach(e => {
-    if (!e.time) return;
     const channel = CHANNEL_ORDER.includes(e.channel) ? e.channel : 'other';
-    // parse_cron は同一cronが複数時刻にマッチすると "06:00 / 06:30" のように束ねて返す
-    String(e.time).split('/').forEach(part => {
-      const min = timeToMinutes(part);
-      if (min != null) raw.push({e, min, num: numOf.get(e), channel});
-    });
+    if (e.time) {
+      // parse_cron は同一cronが複数時刻にマッチすると "06:00 / 06:30" のように束ねて返す
+      String(e.time).split('/').forEach(part => {
+        const min = timeToMinutes(part);
+        if (min != null) raw.push({e, min, num: numOf.get(e), channel});
+      });
+    } else if (e.interval_min) {
+      (alwaysOnByChannel[channel] = alwaysOnByChannel[channel] || []).push({e, num: numOf.get(e)});
+    }
   });
   raw.sort((a, b) => a.min - b.min);
 
@@ -3034,19 +3044,29 @@ function buildTimelinePins(entries, numOf){
 
   // 帯は軸線に近い側（下）から積む。読み順を表と同じ「YouTube→X→その他」を上にしたいので
   // 逆順（その他→X→YouTube）に積む。該当タスクが無い帯は作らない（高さ0で場所を取らない）。
+  // 常時稼働タスクがある帯は、通常のピンの上にさらに黒帯ぶんの高さを足す
+  // （bottom基準: pad→通常ピン→隙間→常時稼働の黒帯→pad の順に積む）。
   const bandLayout = {};
   let cursor = 0;
   [...CHANNEL_ORDER].reverse().forEach(ch => {
     const laneCount = laneCounters[ch] || 0;
-    if (!laneCount) return;
-    const innerH = (laneCount - 1) * TL_ROW_H + TL_PIN;
+    const always = alwaysOnByChannel[ch] || [];
+    if (!laneCount && !always.length) return;
+    const pinsInnerH = laneCount > 0 ? (laneCount - 1) * TL_ROW_H + TL_PIN : 0;
+    const alwaysInnerH = always.length ? always.length * TL_ALWAYS_H + (always.length - 1) * 4 : 0;
+    const midGap = (laneCount > 0 && always.length) ? TL_BAND_PAD : 0;
+    const innerH = pinsInnerH + midGap + alwaysInnerH;
     const bandH = innerH + TL_BAND_PAD * 2;
-    bandLayout[ch] = {bottom: cursor, height: bandH, innerBottom: cursor + TL_BAND_PAD};
+    bandLayout[ch] = {
+      bottom: cursor, height: bandH,
+      innerBottom: cursor + TL_BAND_PAD,
+      alwaysBottom: cursor + TL_BAND_PAD + pinsInnerH + midGap,
+    };
     cursor += bandH + TL_BAND_GAP;
   });
   const totalHeight = Math.max(TL_PIN, cursor - TL_BAND_GAP);
 
-  return {pins: raw, bandLayout, totalHeight};
+  return {pins: raw, alwaysOnByChannel, bandLayout, totalHeight};
 }
 
 function parseDoc(doc){
@@ -3080,8 +3100,7 @@ function scheduleCard(doc){
   const numOf = new Map();
   d.entries.forEach((e, i) => numOf.set(e, i + 1));
 
-  const {pins, bandLayout, totalHeight} = buildTimelinePins(d.entries, numOf);
-  const bandEntries = d.entries.filter(e => !e.time && e.interval_min);
+  const {pins, alwaysOnByChannel, bandLayout, totalHeight} = buildTimelinePins(d.entries, numOf);
 
   const pinsHtml = pins.map(p => {
     const cls = RUNNER_CLS[p.e.runner] || 'routine';
@@ -3119,20 +3138,27 @@ function scheduleCard(doc){
   const ticksHtml = TL_HOUR_TICKS.map(h =>
     `<div class="tltick" style="left:${(h / 24 * 100).toFixed(2)}%"><i></i><b>${h}</b></div>`).join('');
 
-  const bandHtml = bandEntries.map(e => {
-    const cls = RUNNER_CLS[e.runner] || 'routine';
-    const title = e.title_ja || e.name || e.id;
-    const ch = CHANNEL_ORDER.includes(e.channel) ? e.channel : 'other';
-    return `<div class="tlband"><span class="tlpin ${cls}" title="${esc((e.when || '') + '　' + (e.name || e.id))}">${numOf.get(e)}</span>
-      <span>${esc(e.when || '')}で常時稼働・${esc(title)}（${esc(CHANNEL_LABEL[ch] || ch)}）</span></div>`;
+  // 常時稼働（5分間隔など）は特定の時刻を持たないので点は打たず、該当する帯の一番上に
+  // 黒帯として全幅で出す（オーナー指摘: 独立したバナーではなく帯の中に置きたい・8/18）。
+  const alwaysHtml = CHANNEL_ORDER.map(ch => {
+    const L = bandLayout[ch];
+    const list = alwaysOnByChannel[ch] || [];
+    if (!L || !list.length) return '';
+    return list.map((a, i) => {
+      const title = a.e.title_ja || a.e.name || a.e.id;
+      const bottom = L.alwaysBottom + i * (TL_ALWAYS_H + 4);
+      const tip = `${a.e.when || ''}　${title}（${esc(a.e.name || a.e.id)}）`;
+      return `<div class="tlalways" style="bottom:${bottom}px; height:${TL_ALWAYS_H}px">
+        <span class="tlpin poller" title="${esc(tip)}">${a.num}</span>
+        <span>${esc(a.e.when || '')}で常時稼働・${esc(title)}</span></div>`;
+    }).join('');
   }).join('');
 
   const timelineHtml = `
-    ${bandHtml}
     <div class="tltrack">
       <div class="tlsidebar" style="height:${totalHeight}px">${sidebarHtml}</div>
       <div class="tlouter"><div class="timeline">
-        <div class="tlpins" style="height:${totalHeight}px">${chBandsHtml}${pinsHtml}</div>
+        <div class="tlpins" style="height:${totalHeight}px">${chBandsHtml}${alwaysHtml}${pinsHtml}</div>
         <div class="tlaxis">${ticksHtml}</div>
         <div class="tlaxistitle">時刻（24時間・当日）</div>
       </div></div>
