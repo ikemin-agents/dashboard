@@ -877,7 +877,10 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 
 .systbl table{min-width:0}
 .systbl th.no,.systbl td.no{white-space:nowrap; width:1%; text-align:center; vertical-align:top;
-  padding-top:9px; padding-right:0}
+  padding-top:11px; padding-right:0}
+/* 軸の丸バッジ(22px)は日中ずらっと並ぶので小さくしておく必要があるが、表は1行の余白が
+   広いので大きくして読みやすくする（オーナー指摘: 数字が小さすぎて読めない・8/18） */
+.systbl td.no .tlpin{width:27px; height:27px; line-height:27px; font-size:13px}
 .systbl th.when,.systbl td.when{white-space:nowrap; width:1%; font-weight:680;
   font-variant-numeric:tabular-nums; vertical-align:top; padding-top:11px}
 .systbl td.what{white-space:normal; line-height:1.45; min-width:180px; padding-top:10px; padding-bottom:11px}
@@ -886,6 +889,12 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .systbl td.what .ds{display:block; color:var(--ink-2); font-size:var(--fs-xs); margin-top:3px}
 .systbl td.what .mt{display:block; color:var(--muted); font-size:var(--fs-2xs); margin-top:3px}
 .systbl tr.off{opacity:.5}
+/* 領域見出し行（YouTube制作／X運用／その他・共通基盤）。進捗マトリクスの列グループ見出し
+   （.legend2 等）と同じ stage-bg トーンを使い、既存の「グループの区切り」語彙に揃える。 */
+.systbl tr.chgroup td{background:var(--stage-bg); color:var(--ink); font-weight:700;
+  font-size:var(--fs-xs); letter-spacing:.03em; padding:7px 14px; border-bottom:1px solid var(--stage-line)}
+.systbl tr.chgroup:hover td{background:var(--stage-bg)}
+.systbl tr.chgroup:first-child td{border-top:none}
 .sysnotes{margin:var(--sp-3) 0 0; padding-left:1.25em; font-size:var(--fs-2xs); color:var(--ink-2); line-height:1.7}
 
 /* フローマップ（sandbox iframe）。中身は自前のCSSを持つ1枚ページで、内部で縦にも横にも
@@ -1164,7 +1173,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/18 19:35';
+const BUILT_AT = '8/18 19:47';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1651,13 +1660,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/18 19:35') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/18 19:47') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/18 19:35') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/18 19:47') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2959,6 +2968,9 @@ async function renderOps(){
    JSON は「画面が描きやすい形」で入っている前提だが、壊れていても画面ごと落とさない
    （parse に失敗した文書だけ「読めません」に差し替える）。 */
 const RUNNER_CLS = {routine:'routine', task:'task', poller:'poller'};
+// 表の領域分け見出し。このダッシュボードの主目的（YouTube制作）を先頭にする
+const CHANNEL_ORDER = ['youtube', 'x', 'other'];
+const CHANNEL_LABEL = {youtube: 'YouTube制作', x: 'X運用', other: 'その他・共通基盤'};
 
 /* 時間軸の並べ方: entries は既にバックエンド側で時系列ソート済みなので、その順番に
    ①②③…と採番するだけ（軸の丸バッジと表の1列目が同じ番号になる）。軸には丸バッジに
@@ -3052,7 +3064,9 @@ function scheduleCard(doc){
     <div class="tlaxistitle">時刻（24時間・当日）</div>
   </div></div>`;
 
-  const rows = d.entries.map(e => {
+  // 表は「どの領域(YouTube制作／X運用／その他)の仕事か」で区切って読めるようにする。
+  // 各領域の中は entries の時系列順のまま（採番はグループ化の前後で変わらない）。
+  const rowHtml = e => {
     const meta = [runnerLabel[e.runner] || e.runner, e.model && e.model !== '（既定）' ? e.model : null]
       .filter(Boolean).join(' ・ ');
     const off = e.enabled === false;
@@ -3066,6 +3080,11 @@ function scheduleCard(doc){
         ${e.status && e.status !== '運用中' ? `<span class="sysflag">${esc(e.status)}</span>` : ''}
         ${e.description ? `<span class="ds">${esc(e.description)}</span>` : ''}
         <span class="mt">${esc(meta)}</span></td></tr>`;
+  };
+  const rows = CHANNEL_ORDER.map(ch => {
+    const group = d.entries.filter(e => (e.channel || 'other') === ch);
+    if (!group.length) return '';
+    return `<tr class="chgroup"><td colspan="3">${esc(CHANNEL_LABEL[ch] || ch)}</td></tr>${group.map(rowHtml).join('')}`;
   }).join('') || `<tr class="emptyrow"><td colspan="3">登録された定時タスクがありません</td></tr>`;
 
   const legend = (d.runners || []).map(r =>
