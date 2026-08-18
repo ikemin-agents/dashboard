@@ -850,7 +850,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
    左半分なら丸バッジ→名前の順（右に伸びる）、右半分なら名前→丸バッジの順（左に伸びる）
    にして、右端で名前が画面外にはみ出しにくくする。 */
 .tlouter{overflow-x:auto; margin-bottom:var(--sp-4); -webkit-overflow-scrolling:touch}
-.timeline{position:relative; min-width:760px; padding:0 14px 40px}
+.timeline{position:relative; min-width:760px; padding:0 14px 66px}
 .tlband{display:flex; align-items:center; gap:9px; margin:0 0 8px; padding:5px 10px;
   border-radius:var(--r-md); background:var(--fix-tint); color:var(--fix-ink); font-size:var(--fs-2xs)}
 .tlband .tlpin{flex:0 0 auto}
@@ -869,7 +869,11 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .tltick{position:absolute; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center}
 .tltick i{width:1px; height:5px; background:var(--axis)}
 .tltick b{margin-top:4px; font-weight:400; font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums}
-.tlaxistitle{margin-top:6px; font-size:var(--fs-2xs); color:var(--muted); text-align:center}
+/* .tltick の数字は .tlaxis(高さ1px)の外に絶対配置ではみ出す（目盛り線5px+隙間4px+文字
+   ぶんで軸線から約22px下まで実際には描かれる）。.tlaxistitle は通常フローで .tlaxis の
+   直後に来るため、margin-top はその実際のはみ出し分より大きく取らないと目盛りの数字と
+   重なる（実例: 2026-08-18 margin-top:6px で重なって読めなくなった不具合の修正）。 */
+.tlaxistitle{margin-top:36px; font-size:var(--fs-2xs); color:var(--muted); text-align:center}
 
 .systbl table{min-width:0}
 .systbl th.no,.systbl td.no{white-space:nowrap; width:1%; text-align:center; vertical-align:top;
@@ -1160,7 +1164,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/18 18:18';
+const BUILT_AT = '8/18 19:35';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1647,13 +1651,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/18 18:18') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/18 19:35') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/18 18:18') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/18 19:35') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3074,7 +3078,7 @@ function scheduleCard(doc){
     ${legend ? `<div class="syslegend">${legend}</div>` : ''}
     ${timelineHtml}
     <div class="tblwrap systbl"><table>
-      <thead><tr><th class="no">#</th><th class="when">時刻</th><th>内容</th></tr></thead>
+      <thead><tr><th class="no"></th><th class="when">時刻</th><th>内容</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
     ${notes ? `<ul class="sysnotes">${notes}</ul>` : ''}</div>`;
 }
