@@ -849,24 +849,33 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
    .tlpins の高さが伸びる。.tlstem が軸線から段の高さまでの目印線。.tlrow は時刻の
    左半分なら丸バッジ→名前の順（右に伸びる）、右半分なら名前→丸バッジの順（左に伸びる）
    にして、右端で名前が画面外にはみ出しにくくする。 */
-.tlouter{overflow-x:auto; margin-bottom:var(--sp-4); -webkit-overflow-scrolling:touch}
-.timeline{position:relative; min-width:760px; padding:0 14px 66px}
-.tlband{display:flex; align-items:center; gap:9px; margin:0 0 8px; padding:5px 10px;
+.tlband{display:flex; align-items:center; gap:9px; margin:0 0 10px; padding:5px 10px;
   border-radius:var(--r-md); background:var(--fix-tint); color:var(--fix-ink); font-size:var(--fs-2xs)}
 .tlband .tlpin{flex:0 0 auto}
+/* 左に固定表示の帯カード＋右にスクロールする時間軸、の2カラム（オーナー指摘: 帯の中の
+   小さい文字ラベルは読みにくい・8/18。横スクロールしてもカードは常に見える）。 */
+.tltrack{display:flex; align-items:flex-start; gap:10px; margin-bottom:var(--sp-4)}
+.tlsidebar{position:relative; flex:0 0 150px; width:150px}
+.tlcard{position:absolute; left:0; right:0; display:flex; flex-direction:column;
+  justify-content:center; gap:3px; padding:0 13px; border-radius:var(--r-md); box-shadow:var(--shadow-1)}
+.tlcard.youtube{background:var(--good-tint)}
+.tlcard.x{background:var(--s2-tint)}
+.tlcard.other{background:var(--surface-3)}
+.tlcardtitle{font-size:var(--fs-sm); font-weight:700; color:var(--ink); line-height:1.3}
+.tlcardcount{font-size:var(--fs-2xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
+.tlouter{flex:1 1 auto; min-width:0; overflow-x:auto; -webkit-overflow-scrolling:touch}
+.timeline{position:relative; min-width:680px; padding:0 14px 66px}
 .tlpins{position:relative}
 .tlrow{position:absolute; z-index:1; display:flex; align-items:center; gap:5px; white-space:nowrap}
 .tlrow.off{opacity:.5}
 .tlname{font-size:10.5px; font-weight:600; color:var(--ink-2)}
-/* 領域の帯（表の chgroup と同じ分類を軸でも縦位置と背景色で分かるようにする・色タグは
-   分かりにくいとの指摘で廃止・8/18）。帯は表と同じ並び（YouTube→X→その他）を上から
-   出す・pointer-events:none でクリック/ホバーの邪魔をしない。 */
+/* 領域の帯本体は左のカードと同じ配色の背景だけ（ラベルはカード側に出すのでここには
+   置かない）。帯は表と同じ並び（YouTube→X→その他）を上から出す・pointer-events:none
+   でクリック/ホバーの邪魔をしない。 */
 .tlchband{position:absolute; left:0; right:0; border-radius:var(--r-sm); pointer-events:none}
 .tlchband.youtube{background:var(--good-tint)}
 .tlchband.x{background:var(--s2-tint)}
 .tlchband.other{background:var(--surface-3)}
-.tlchbandlabel{position:absolute; left:7px; top:5px; font-size:9px; font-weight:800;
-  letter-spacing:.03em; color:var(--ink-2)}
 /* display を明示しないと <span> は inline のままで width/height が無視される
    （.tlrow の中は flex item 化されるので偶然効いていたが、表の <td> 直下では
    文字幅だけの細い帯になっていた・オーナー指摘 8/18「周りの色が小さい」の原因）。 */
@@ -1187,7 +1196,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/18 23:00';
+const BUILT_AT = '8/18 23:20';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1674,13 +1683,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/18 23:00') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/18 23:20') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/18 23:00') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/18 23:20') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2985,6 +2994,7 @@ const RUNNER_CLS = {routine:'routine', task:'task', poller:'poller'};
 // 表の領域分け見出し。このダッシュボードの主目的（YouTube制作）を先頭にする
 const CHANNEL_ORDER = ['youtube', 'x', 'other'];
 const CHANNEL_LABEL = {youtube: 'YouTube制作', x: 'X運用', other: 'その他・共通基盤'};
+const CHANNEL_ICON = {youtube: '🎬', x: '✕', other: '⚙️'};
 
 /* 時間軸の並べ方: entries は既にバックエンド側で時系列ソート済みなので、その順番に
    ①②③…と採番するだけ（軸の丸バッジと表の1列目が同じ番号になる）。
@@ -3091,12 +3101,20 @@ function scheduleCard(doc){
       <i class="tlstem${off ? ' off' : ''}" style="left:${leftPct.toFixed(2)}%; height:${bottom}px"></i>`;
   }).join('');
 
-  // 分類は色タグではなく帯（背景色）＋縦位置そのもので表す。帯は表と同じ並びを上から。
+  // 分類は帯（背景色）＋縦位置そのもので表す。ラベルは帯の中の小さい文字ではなく、
+  // 左に固定表示するカードにする（横スクロールしても常に見える・オーナー指摘 8/18）。
   const chBandsHtml = CHANNEL_ORDER.map(ch => {
     const L = bandLayout[ch];
+    return L ? `<div class="tlchband ${ch}" style="bottom:${L.bottom}px; height:${L.height}px"></div>` : '';
+  }).join('');
+
+  const sidebarHtml = CHANNEL_ORDER.map(ch => {
+    const L = bandLayout[ch];
     if (!L) return '';
-    return `<div class="tlchband ${ch}" style="bottom:${L.bottom}px; height:${L.height}px">
-      <span class="tlchbandlabel">${esc(CHANNEL_LABEL[ch] || ch)}</span></div>`;
+    const count = d.entries.filter(e => (CHANNEL_ORDER.includes(e.channel) ? e.channel : 'other') === ch).length;
+    return `<div class="tlcard ${ch}" style="bottom:${L.bottom}px; height:${L.height}px">
+      <span class="tlcardtitle">${esc(CHANNEL_ICON[ch] || '')} ${esc(CHANNEL_LABEL[ch] || ch)}</span>
+      <span class="tlcardcount">${count}件</span></div>`;
   }).join('');
 
   const ticksHtml = TL_HOUR_TICKS.map(h =>
@@ -3109,12 +3127,16 @@ function scheduleCard(doc){
       <span>${esc(e.when || '')}で常時稼働・${esc(title)}</span></div>`;
   }).join('');
 
-  const timelineHtml = `<div class="tlouter"><div class="timeline">
+  const timelineHtml = `
     ${bandHtml}
-    <div class="tlpins" style="height:${totalHeight}px">${chBandsHtml}${pinsHtml}</div>
-    <div class="tlaxis">${ticksHtml}</div>
-    <div class="tlaxistitle">時刻（24時間・当日）</div>
-  </div></div>`;
+    <div class="tltrack">
+      <div class="tlsidebar" style="height:${totalHeight}px">${sidebarHtml}</div>
+      <div class="tlouter"><div class="timeline">
+        <div class="tlpins" style="height:${totalHeight}px">${chBandsHtml}${pinsHtml}</div>
+        <div class="tlaxis">${ticksHtml}</div>
+        <div class="tlaxistitle">時刻（24時間・当日）</div>
+      </div></div>
+    </div>`;
 
   // 表は「どの領域(YouTube制作／X運用／その他)の仕事か」で区切って読めるようにする。
   // 各領域の中は entries の時系列順のまま（採番はグループ化の前後で変わらない）。
