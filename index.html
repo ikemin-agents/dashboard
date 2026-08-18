@@ -815,14 +815,15 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   border:1px solid var(--border-2); color:var(--ink-2)}
 
 /* ═══ システム（#249）══════════════════════════════════════════
-   定時タスクは「1日のどこで動くか」を上段の時間軸（横=0〜24時、丸バッジ=番号）で見せ、
-   下段の表で詳細（実行主体・説明）を読む2段構成。軸の丸バッジと表1列目の丸バッジは
-   同じ番号・同じ色で対応する（色の意味は上の凡例）。時刻が近い項目は軸の上で段を
-   分けて重ならないようにする（buildTimelinePins・段の高さ=LANE_ROW）。5分間隔で
-   常時稼働するもの（ポーラー）は特定の時刻を持たないので軸には点を打たず、軸の上に
-   帯（.tlband）として出す。時間軸だけは狭い画面で横スクロールを許容する
-   （丸バッジが重ならない下限幅=640px。旧2列表の「横スクロール無し」方針は詳細の表
-   側で引き続き守る＝表の列は番号・時刻とも幅1%に固定し、本文だけ折り返す）。 */
+   定時タスクは「1日のどこで動くか」を上段の時間軸（横=0〜24時、1時間刻みの目盛り）で
+   見せ、下段の表で詳細（実行主体・説明）を読む2段構成。軸の丸バッジと表1列目の丸バッジ
+   は同じ番号・同じ色で対応する（色の意味は上の凡例）。軸には番号だけでなくタスク名も
+   添える（buildTimelinePins が時刻順に1件=1段を割り当てるので、名前が重なる心配がない
+   ＝同じ段を共有させない）。丸バッジの右（時刻が後半＝50%超のものは左）にタスク名を
+   出し、軸の中央付近で名前同士が交差しないようにする。5分間隔で常時稼働するもの
+   （ポーラー）は特定の時刻を持たないので軸には点を打たず、軸の上に帯（.tlband）として
+   出す。時間軸だけは狭い画面で横スクロールを許容する（旧2列表の「横スクロール無し」
+   方針は詳細の表側で引き続き守る＝表の列は番号・時刻とも幅1%に固定し、本文だけ折り返す）。 */
 .ovgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:var(--sp-3)}
 .ovit{display:grid; gap:2px; padding:10px 12px; background:var(--surface-2);
   border:1px solid var(--border-2); border-radius:var(--r-md); min-width:0}
@@ -844,27 +845,31 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   background:var(--warn-tint); color:var(--ink)}
 
 /* 時間軸。丸バッジ(.tlpin)の色は .runner と同じ割り当て（青=ルーチン／枠線=タスク
-   スケジューラ／橙=ポーラー）。.tlpin-wrap は bottom:0 で軸線に底を揃え、段が上がる
-   ほど .tlstem を伸ばして丸バッジを押し上げる（同じ段=時刻が近いもの同士の重なり回避）。 */
+   スケジューラ／橙=ポーラー）。1件=1段（.tlrow の bottom で高さを決める）で、段の数だけ
+   .tlpins の高さが伸びる。.tlstem が軸線から段の高さまでの目印線。.tlrow は時刻の
+   左半分なら丸バッジ→名前の順（右に伸びる）、右半分なら名前→丸バッジの順（左に伸びる）
+   にして、右端で名前が画面外にはみ出しにくくする。 */
 .tlouter{overflow-x:auto; margin-bottom:var(--sp-4); -webkit-overflow-scrolling:touch}
-.timeline{position:relative; min-width:640px; padding:0 14px 26px}
+.timeline{position:relative; min-width:760px; padding:0 14px 40px}
 .tlband{display:flex; align-items:center; gap:9px; margin:0 0 8px; padding:5px 10px;
   border-radius:var(--r-md); background:var(--fix-tint); color:var(--fix-ink); font-size:var(--fs-2xs)}
 .tlband .tlpin{flex:0 0 auto}
 .tlpins{position:relative}
-.tlpin-wrap{position:absolute; bottom:0; transform:translateX(-50%);
-  display:flex; flex-direction:column; align-items:center}
-.tlpin-wrap.off{opacity:.5}
+.tlrow{position:absolute; display:flex; align-items:center; gap:5px; white-space:nowrap}
+.tlrow.off{opacity:.5}
+.tlname{font-size:10.5px; font-weight:600; color:var(--ink-2)}
 .tlpin{width:22px; height:22px; line-height:22px; text-align:center; flex:0 0 auto;
   border-radius:var(--r-pill); font-size:11px; font-weight:700; font-variant-numeric:normal; cursor:default}
 .tlpin.routine{background:var(--s1); color:#fff}
 .tlpin.poller{background:var(--fix); color:#fff}
 .tlpin.task{background:var(--done-tint); color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--done)}
-.tlstem{width:1px; flex:0 0 auto; background:var(--border-2)}
+.tlstem{position:absolute; bottom:0; width:1px; background:var(--border-2); transform:translateX(-50%)}
+.tlstem.off{opacity:.5}
 .tlaxis{position:relative; height:1px; background:var(--grid); margin-top:6px}
 .tltick{position:absolute; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center}
 .tltick i{width:1px; height:5px; background:var(--axis)}
 .tltick b{margin-top:4px; font-weight:400; font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums}
+.tlaxistitle{margin-top:6px; font-size:var(--fs-2xs); color:var(--muted); text-align:center}
 
 .systbl table{min-width:0}
 .systbl th.no,.systbl td.no{white-space:nowrap; width:1%; text-align:center; vertical-align:top;
@@ -1155,7 +1160,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/18 18:04';
+const BUILT_AT = '8/18 18:18';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1642,13 +1647,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/18 18:04') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/18 18:18') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/18 18:04') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/18 18:18') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2952,12 +2957,11 @@ async function renderOps(){
 const RUNNER_CLS = {routine:'routine', task:'task', poller:'poller'};
 
 /* 時間軸の並べ方: entries は既にバックエンド側で時系列ソート済みなので、その順番に
-   ①②③…と採番するだけ（軸の丸バッジと表の1列目が同じ番号になる）。
-   時刻が LANE_GAP_MIN 分より近い項目は同じ段に置かない（貪欲法で最初に空く段へ）。
-   640px（.timeline の最小幅）でも丸バッジ(22px)同士が重ならない値として 70 分にしてある。 */
-const TL_HOUR_TICKS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
-const TL_LANE_GAP_MIN = 70;
-const TL_LANE_ROW = 26;
+   ①②③…と採番するだけ（軸の丸バッジと表の1列目が同じ番号になる）。軸には丸バッジに
+   加えてタスク名も出すため、時刻の近さに関わらず1件=1段（lane=時系列での通し番号）
+   にして名前同士が重ならないようにする（重なり回避のための間引きはしない）。 */
+const TL_HOUR_TICKS = Array.from({length: 25}, (_, i) => i);   // 0時〜24時の1時間刻み
+const TL_ROW_H = 28;
 const TL_PIN = 22;
 
 function timeToMinutes(hhmm){
@@ -2976,14 +2980,8 @@ function buildTimelinePins(entries, numOf){
     });
   });
   raw.sort((a, b) => a.min - b.min);
-  const laneLast = [];
-  raw.forEach(p => {
-    let lane = laneLast.findIndex(last => p.min - last >= TL_LANE_GAP_MIN);
-    if (lane === -1){ lane = laneLast.length; laneLast.push(p.min); }
-    else laneLast[lane] = p.min;
-    p.lane = lane;
-  });
-  return {pins: raw, laneCount: laneLast.length || 1};
+  raw.forEach((p, i) => { p.lane = i; });
+  return {pins: raw, laneCount: raw.length || 1};
 }
 
 function parseDoc(doc){
@@ -3023,10 +3021,15 @@ function scheduleCard(doc){
   const pinsHtml = pins.map(p => {
     const cls = RUNNER_CLS[p.e.runner] || 'routine';
     const off = p.e.enabled === false;
-    const tip = `${p.e.when || ''}　${p.e.name || p.e.id}`;
-    return `<div class="tlpin-wrap${off ? ' off' : ''}" style="left:${(p.min / 1440 * 100).toFixed(2)}%">
-      <span class="tlpin ${cls}" title="${esc(tip)}">${p.num}</span>
-      <i class="tlstem" style="height:${p.lane * TL_LANE_ROW}px"></i></div>`;
+    const name = p.e.name || p.e.id;
+    const leftPct = p.min / 1440 * 100;
+    const flip = leftPct > 50;   // 時刻が後半(50%超)は名前を左へ伸ばし、右端でのはみ出しを防ぐ
+    const bottom = p.lane * TL_ROW_H;
+    const badge = `<span class="tlpin ${cls}" title="${esc((p.e.when || '') + '　' + name)}">${p.num}</span>`;
+    const label = `<span class="tlname">${esc(name)}</span>`;
+    const pos = flip ? `right:calc(${(100 - leftPct).toFixed(2)}% - 11px)` : `left:calc(${leftPct.toFixed(2)}% - 11px)`;
+    return `<span class="tlrow${off ? ' off' : ''}" style="${pos}; bottom:${bottom}px">${flip ? label + badge : badge + label}</span>
+      <i class="tlstem${off ? ' off' : ''}" style="left:${leftPct.toFixed(2)}%; height:${bottom}px"></i>`;
   }).join('');
 
   const ticksHtml = TL_HOUR_TICKS.map(h =>
@@ -3040,8 +3043,9 @@ function scheduleCard(doc){
 
   const timelineHtml = `<div class="tlouter"><div class="timeline">
     ${bandHtml}
-    <div class="tlpins" style="height:${laneCount * TL_LANE_ROW + TL_PIN + 4}px">${pinsHtml}</div>
+    <div class="tlpins" style="height:${laneCount * TL_ROW_H + TL_PIN + 4}px">${pinsHtml}</div>
     <div class="tlaxis">${ticksHtml}</div>
+    <div class="tlaxistitle">時刻（24時間・当日）</div>
   </div></div>`;
 
   const rows = d.entries.map(e => {
