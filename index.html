@@ -815,9 +815,14 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   border:1px solid var(--border-2); color:var(--ink-2)}
 
 /* ═══ システム（#249）══════════════════════════════════════════
-   定時タスクの時刻表とフローマップ。表は2列（時刻／内容）に絞り、説明文だけ折り返す。
-   3列以上にするとスマホで横スクロールが要る＝「スマホで開いて時刻を確かめる」用途に
-   合わないため（在庫の表と違い、ここは絞り込みも並べ替えもしない読み物）。 */
+   定時タスクは「1日のどこで動くか」を上段の時間軸（横=0〜24時、丸バッジ=番号）で見せ、
+   下段の表で詳細（実行主体・説明）を読む2段構成。軸の丸バッジと表1列目の丸バッジは
+   同じ番号・同じ色で対応する（色の意味は上の凡例）。時刻が近い項目は軸の上で段を
+   分けて重ならないようにする（buildTimelinePins・段の高さ=LANE_ROW）。5分間隔で
+   常時稼働するもの（ポーラー）は特定の時刻を持たないので軸には点を打たず、軸の上に
+   帯（.tlband）として出す。時間軸だけは狭い画面で横スクロールを許容する
+   （丸バッジが重ならない下限幅=640px。旧2列表の「横スクロール無し」方針は詳細の表
+   側で引き続き守る＝表の列は番号・時刻とも幅1%に固定し、本文だけ折り返す）。 */
 .ovgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:var(--sp-3)}
 .ovit{display:grid; gap:2px; padding:10px 12px; background:var(--surface-2);
   border:1px solid var(--border-2); border-radius:var(--r-md); min-width:0}
@@ -838,7 +843,32 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap; line-height:1.6;
   background:var(--warn-tint); color:var(--ink)}
 
+/* 時間軸。丸バッジ(.tlpin)の色は .runner と同じ割り当て（青=ルーチン／枠線=タスク
+   スケジューラ／橙=ポーラー）。.tlpin-wrap は bottom:0 で軸線に底を揃え、段が上がる
+   ほど .tlstem を伸ばして丸バッジを押し上げる（同じ段=時刻が近いもの同士の重なり回避）。 */
+.tlouter{overflow-x:auto; margin-bottom:var(--sp-4); -webkit-overflow-scrolling:touch}
+.timeline{position:relative; min-width:640px; padding:0 14px 26px}
+.tlband{display:flex; align-items:center; gap:9px; margin:0 0 8px; padding:5px 10px;
+  border-radius:var(--r-md); background:var(--fix-tint); color:var(--fix-ink); font-size:var(--fs-2xs)}
+.tlband .tlpin{flex:0 0 auto}
+.tlpins{position:relative}
+.tlpin-wrap{position:absolute; bottom:0; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center}
+.tlpin-wrap.off{opacity:.5}
+.tlpin{width:22px; height:22px; line-height:22px; text-align:center; flex:0 0 auto;
+  border-radius:var(--r-pill); font-size:11px; font-weight:700; font-variant-numeric:normal; cursor:default}
+.tlpin.routine{background:var(--s1); color:#fff}
+.tlpin.poller{background:var(--fix); color:#fff}
+.tlpin.task{background:var(--done-tint); color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--done)}
+.tlstem{width:1px; flex:0 0 auto; background:var(--border-2)}
+.tlaxis{position:relative; height:1px; background:var(--grid); margin-top:6px}
+.tltick{position:absolute; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center}
+.tltick i{width:1px; height:5px; background:var(--axis)}
+.tltick b{margin-top:4px; font-weight:400; font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums}
+
 .systbl table{min-width:0}
+.systbl th.no,.systbl td.no{white-space:nowrap; width:1%; text-align:center; vertical-align:top;
+  padding-top:9px; padding-right:0}
 .systbl th.when,.systbl td.when{white-space:nowrap; width:1%; font-weight:680;
   font-variant-numeric:tabular-nums; vertical-align:top; padding-top:11px}
 .systbl td.what{white-space:normal; line-height:1.45; min-width:180px; padding-top:10px; padding-bottom:11px}
@@ -1125,7 +1155,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/17 12:28';
+const BUILT_AT = '8/18 18:04';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1612,13 +1642,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/17 12:28') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/18 18:04') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/17 12:28') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/18 18:04') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2921,6 +2951,41 @@ async function renderOps(){
    （parse に失敗した文書だけ「読めません」に差し替える）。 */
 const RUNNER_CLS = {routine:'routine', task:'task', poller:'poller'};
 
+/* 時間軸の並べ方: entries は既にバックエンド側で時系列ソート済みなので、その順番に
+   ①②③…と採番するだけ（軸の丸バッジと表の1列目が同じ番号になる）。
+   時刻が LANE_GAP_MIN 分より近い項目は同じ段に置かない（貪欲法で最初に空く段へ）。
+   640px（.timeline の最小幅）でも丸バッジ(22px)同士が重ならない値として 70 分にしてある。 */
+const TL_HOUR_TICKS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
+const TL_LANE_GAP_MIN = 70;
+const TL_LANE_ROW = 26;
+const TL_PIN = 22;
+
+function timeToMinutes(hhmm){
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || '').trim());
+  return m ? (+m[1]) * 60 + (+m[2]) : null;
+}
+
+function buildTimelinePins(entries, numOf){
+  const raw = [];
+  entries.forEach(e => {
+    if (!e.time) return;
+    // parse_cron は同一cronが複数時刻にマッチすると "06:00 / 06:30" のように束ねて返す
+    String(e.time).split('/').forEach(part => {
+      const min = timeToMinutes(part);
+      if (min != null) raw.push({e, min, num: numOf.get(e)});
+    });
+  });
+  raw.sort((a, b) => a.min - b.min);
+  const laneLast = [];
+  raw.forEach(p => {
+    let lane = laneLast.findIndex(last => p.min - last >= TL_LANE_GAP_MIN);
+    if (lane === -1){ lane = laneLast.length; laneLast.push(p.min); }
+    else laneLast[lane] = p.min;
+    p.lane = lane;
+  });
+  return {pins: raw, laneCount: laneLast.length || 1};
+}
+
 function parseDoc(doc){
   if (!doc) return null;
   try { return JSON.parse(doc.content); } catch { return null; }
@@ -2948,19 +3013,52 @@ function scheduleCard(doc){
   const runnerLabel = {};
   (d.runners || []).forEach(r => { runnerLabel[r.key] = r.label; });
 
+  // 番号は entries の並び順（=バックエンドで時系列ソート済み）にそのまま採番する
+  const numOf = new Map();
+  d.entries.forEach((e, i) => numOf.set(e, i + 1));
+
+  const {pins, laneCount} = buildTimelinePins(d.entries, numOf);
+  const bandEntries = d.entries.filter(e => !e.time && e.interval_min);
+
+  const pinsHtml = pins.map(p => {
+    const cls = RUNNER_CLS[p.e.runner] || 'routine';
+    const off = p.e.enabled === false;
+    const tip = `${p.e.when || ''}　${p.e.name || p.e.id}`;
+    return `<div class="tlpin-wrap${off ? ' off' : ''}" style="left:${(p.min / 1440 * 100).toFixed(2)}%">
+      <span class="tlpin ${cls}" title="${esc(tip)}">${p.num}</span>
+      <i class="tlstem" style="height:${p.lane * TL_LANE_ROW}px"></i></div>`;
+  }).join('');
+
+  const ticksHtml = TL_HOUR_TICKS.map(h =>
+    `<div class="tltick" style="left:${(h / 24 * 100).toFixed(2)}%"><i></i><b>${h}</b></div>`).join('');
+
+  const bandHtml = bandEntries.map(e => {
+    const cls = RUNNER_CLS[e.runner] || 'routine';
+    return `<div class="tlband"><span class="tlpin ${cls}" title="${esc((e.when || '') + '　' + (e.name || e.id))}">${numOf.get(e)}</span>
+      <span>${esc(e.when || '')}で常時稼働・${esc(e.name || e.id)}</span></div>`;
+  }).join('');
+
+  const timelineHtml = `<div class="tlouter"><div class="timeline">
+    ${bandHtml}
+    <div class="tlpins" style="height:${laneCount * TL_LANE_ROW + TL_PIN + 4}px">${pinsHtml}</div>
+    <div class="tlaxis">${ticksHtml}</div>
+  </div></div>`;
+
   const rows = d.entries.map(e => {
     const meta = [runnerLabel[e.runner] || e.runner, e.model && e.model !== '（既定）' ? e.model : null]
       .filter(Boolean).join(' ・ ');
     const off = e.enabled === false;
+    const cls = RUNNER_CLS[e.runner] || 'routine';
     return `<tr${off ? ' class="off"' : ''}>
+      <td class="no"><span class="tlpin ${cls}">${numOf.get(e)}</span></td>
       <td class="when">${esc(e.when || '—')}</td>
       <td class="what">
         <span class="nm">${esc(e.name || e.id)}</span>
-        <span class="runner ${RUNNER_CLS[e.runner] || 'routine'}">${esc(runnerLabel[e.runner] || e.runner)}</span>
+        <span class="runner ${cls}">${esc(runnerLabel[e.runner] || e.runner)}</span>
         ${e.status && e.status !== '運用中' ? `<span class="sysflag">${esc(e.status)}</span>` : ''}
         ${e.description ? `<span class="ds">${esc(e.description)}</span>` : ''}
         <span class="mt">${esc(meta)}</span></td></tr>`;
-  }).join('') || `<tr class="emptyrow"><td colspan="2">登録された定時タスクがありません</td></tr>`;
+  }).join('') || `<tr class="emptyrow"><td colspan="3">登録された定時タスクがありません</td></tr>`;
 
   const legend = (d.runners || []).map(r =>
     `<span class="lg"><span class="runner ${RUNNER_CLS[r.key] || 'routine'}">${esc(r.label)}</span>${esc(r.note || '')}</span>`).join('');
@@ -2970,8 +3068,9 @@ function scheduleCard(doc){
     <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>${esc(doc.title || '定時タスク')}</h2>
       <span class="hint">${esc(d.timezone || '')}・${esc(fmtDT(doc.updated_at) || '')} 同期</span></div>
     ${legend ? `<div class="syslegend">${legend}</div>` : ''}
+    ${timelineHtml}
     <div class="tblwrap systbl"><table>
-      <thead><tr><th class="when">時刻</th><th>内容</th></tr></thead>
+      <thead><tr><th class="no">#</th><th class="when">時刻</th><th>内容</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
     ${notes ? `<ul class="sysnotes">${notes}</ul>` : ''}</div>`;
 }
