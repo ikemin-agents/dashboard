@@ -1196,7 +1196,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/18 23:30';
+const BUILT_AT = '8/18 23:41';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1683,13 +1683,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/18 23:30') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/18 23:41') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/18 23:30') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/18 23:41') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3112,7 +3112,7 @@ function scheduleCard(doc){
     if (!L) return '';
     const count = d.entries.filter(e => (CHANNEL_ORDER.includes(e.channel) ? e.channel : 'other') === ch).length;
     return `<div class="tlcard ${ch}" style="bottom:${L.bottom}px; height:${L.height}px">
-      <span class="tlcardtitle">${esc(CHANNEL_ICON[ch] || '')} ${esc(CHANNEL_LABEL[ch] || ch)}</span>
+      <span class="tlcardtitle">${esc(CHANNEL_LABEL[ch] || ch)}</span>
       <span class="tlcardcount">${count}件</span></div>`;
   }).join('');
 
