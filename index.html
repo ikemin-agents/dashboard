@@ -1196,7 +1196,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/18 23:20';
+const BUILT_AT = '8/18 23:30';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1683,13 +1683,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/18 23:20') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/18 23:30') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/18 23:20') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/18 23:30') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2994,7 +2994,6 @@ const RUNNER_CLS = {routine:'routine', task:'task', poller:'poller'};
 // 表の領域分け見出し。このダッシュボードの主目的（YouTube制作）を先頭にする
 const CHANNEL_ORDER = ['youtube', 'x', 'other'];
 const CHANNEL_LABEL = {youtube: 'YouTube制作', x: 'X運用', other: 'その他・共通基盤'};
-const CHANNEL_ICON = {youtube: '🎬', x: '✕', other: '⚙️'};
 
 /* 時間軸の並べ方: entries は既にバックエンド側で時系列ソート済みなので、その順番に
    ①②③…と採番するだけ（軸の丸バッジと表の1列目が同じ番号になる）。
@@ -3123,8 +3122,9 @@ function scheduleCard(doc){
   const bandHtml = bandEntries.map(e => {
     const cls = RUNNER_CLS[e.runner] || 'routine';
     const title = e.title_ja || e.name || e.id;
+    const ch = CHANNEL_ORDER.includes(e.channel) ? e.channel : 'other';
     return `<div class="tlband"><span class="tlpin ${cls}" title="${esc((e.when || '') + '　' + (e.name || e.id))}">${numOf.get(e)}</span>
-      <span>${esc(e.when || '')}で常時稼働・${esc(title)}</span></div>`;
+      <span>${esc(e.when || '')}で常時稼働・${esc(title)}（${esc(CHANNEL_LABEL[ch] || ch)}）</span></div>`;
   }).join('');
 
   const timelineHtml = `
