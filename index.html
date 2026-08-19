@@ -1296,7 +1296,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 00:17';
+const BUILT_AT = '8/20 00:25';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1844,13 +1844,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 00:17') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 00:25') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 00:17') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 00:25') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3573,9 +3573,34 @@ function genfarmCard(gf){
     <p class="gfnote">数字は発注台帳（generation_jobs）そのもの。完了時刻は「1件ずつ順に処理される」
       前提の概算です。同じ内容をパソコンから見るには
       <code>python 00-config/tools/genfarm-status/genfarm_status.py</code>。
-      ${gf.at ? `${esc(gfClock(gf.at))} 時点` : ''}</p>
+      ${gf.at ? `${esc(gfClock(gf.at))} 時点・この画面を開いている間は1分ごとに自動更新` : ''}</p>
   </section>`;
 }
+
+/* ── gen-farm カードの自動更新（オーナー指定 2026-08-20: 1分おき・見ている間だけ）──────
+   条件を絞って無駄打ちしない: システムタブを開いていて、かつブラウザのタブが手前に
+   ある間だけ取りに行く（裏に回している間は止める。戻ってきたら即1回取り直す）。
+   描き直すのはカードの中だけ（#gfslot）＝ページ全体を再描画しないのでスクロール位置も動かない。 */
+const GF_AUTO_MS = 60000;
+let gfTimer = null;
+function stopGenfarmAuto(){ if (gfTimer) { clearInterval(gfTimer); gfTimer = null; } }
+function startGenfarmAuto(){
+  stopGenfarmAuto();
+  gfTimer = setInterval(refreshGenfarmCard, GF_AUTO_MS);
+}
+async function refreshGenfarmCard(){
+  const slot = $('#gfslot');
+  /* 画面が変わった／タブが裏に回った／ログアウトした ならこの回は何もしない */
+  if (!slot || state.view !== 'system' || document.hidden || !state.user) return;
+  let gf;
+  try { gf = await loadGenfarm(true); }
+  catch (_) { return; }                 /* 一時的に読めなくても前の表示を残す */
+  if (!$('#gfslot') || state.view !== 'system') return;   /* 待っている間に画面が変わった */
+  $('#gfslot').innerHTML = genfarmCard(gf);
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && state.view === 'system') refreshGenfarmCard();
+});
 
 async function renderSystem(){
   const el = $('#view-system');
@@ -3599,15 +3624,17 @@ async function renderSystem(){
       上のチャンネルタブの選択は反映されません。gen-farm 以外の中身はリポジトリ側の正本を写したもので、
       更新は同期スクリプト（${esc(syncHint)}）を実行したときだけ入れ替わります。</div></div>
     <div class="stack">
-      ${gf && !gf.error ? genfarmCard(gf)
+      <div id="gfslot">${gf && !gf.error ? genfarmCard(gf)
         : `<section class="card gfcard"><h2>🖥 gen-farm（実家の生成機）のいま</h2>
             <div class="noitem">待ち行列を読み込めませんでした
-            <span class="s">${esc((gf && gf.error) || '')}</span></div></section>`}
+            <span class="s">${esc((gf && gf.error) || '')}</span></div></section>`}</div>
       ${overviewCard(docs['system-overview'])}
       ${linksCard()}
       ${scheduleCard(docs['schedule'])}
       ${glossaryCard(docs['glossary'])}
     </div>`;
+
+  startGenfarmAuto();   /* この画面を開いている間だけ1分ごとに gen-farm を取り直す */
 }
 
 /* ══ ツールチップ ═══════════════════════════════════════════════ */
@@ -3665,6 +3692,7 @@ function syncStickyOffsets(){
 
 async function render(){
   renderShell();
+  stopGenfarmAuto();          /* 画面を離れたら gen-farm の自動更新は止める（開いた画面が付け直す） */
   state.busy = true; renderShell();
   try {
     if (state.view === 'stock')          await renderStock();
@@ -3871,6 +3899,7 @@ function showLogin(){
   $('#app').hidden = true;
   $('#login').hidden = false;
   $('#menupop').hidden = true;
+  stopGenfarmAuto();
   closeDetail();
   if (location.hash) history.replaceState({}, '', location.pathname + location.search);
   document.title = '制作ダッシュボード — ログイン';
