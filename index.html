@@ -843,6 +843,11 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .glit .a{display:inline-block; margin-top:3px; font-size:var(--fs-2xs); color:var(--muted);
   overflow-wrap:anywhere}
 
+/* リンク集の行。用語集の行組み（.glit）を流用しつつ、指で押せる高さを確保する */
+a.syslink{display:block; text-decoration:none; color:inherit; padding:12px 4px; border-radius:var(--r-sm)}
+a.syslink:hover{background:var(--surface-2)}
+a.syslink .t{color:var(--accent, var(--ink))}
+
 .syslegend{display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4); margin:0 0 var(--sp-3);
   font-size:var(--fs-2xs); color:var(--ink-2)}
 .syslegend .lg{display:inline-flex; align-items:center; gap:7px}
@@ -1207,7 +1212,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/19 11:43';
+const BUILT_AT = '8/19 11:48';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1695,13 +1700,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/19 11:43') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/19 11:48') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/19 11:43') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/19 11:48') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3096,6 +3101,41 @@ function overviewCard(doc){
       ${it.note ? `<span class="n">${esc(it.note)}</span>` : ''}</div>`).join('')}</div></div>`;
 }
 
+/* 外部リンク集。スマホから GitHub の課題ボード等へ1タップで飛ぶための入口
+   （アプリが入っていればアプリ側で開く）。中身は静的なのでコード内に持つ。 */
+const SYS_LINKS = [
+  {group:'課題ボード（GitHub Projects）', items:[
+    {label:'課題管理', url:'https://github.com/orgs/ikemin-agents/projects/1/views/2',
+     note:'SNS自動化タスクの本体。バグ・作業・改善'},
+    {label:'リサーチ', url:'https://github.com/orgs/ikemin-agents/projects/1/views/3',
+     note:'調査・検討中のテーマ'},
+    {label:'秘書タスク', url:'https://github.com/orgs/ikemin-agents/projects/1/views/5',
+     note:'生活・家まわり'},
+  ]},
+  {group:'課題一覧（リポジトリ）', items:[
+    {label:'未対応の課題', url:'https://github.com/ikemin-agents/sns-automation/issues',
+     note:'未クローズの課題を新しい順に'},
+    {label:'自分に割り当て', url:'https://github.com/issues/assigned',
+     note:'全リポ横断で自分宛のもの'},
+  ]},
+];
+
+function linksCard(){
+  return `<div class="card">
+    <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>リンク集</h2>
+      <span class="hint">スマホから1タップ</span></div>
+    <div class="note"><span>📱</span><div>GitHub アプリを入れているスマホでは、
+      タップするとアプリ側で開きます。ホーム画面に置きたいときはブラウザの共有 →
+      「ホーム画面に追加」。</div></div>
+    ${SYS_LINKS.map(g => `<div class="glgroup">
+      <h3>${esc(g.group)}</h3>
+      ${g.items.map(it => `<a class="glit syslink" href="${esc(it.url)}"
+          target="_blank" rel="noopener noreferrer">
+        <div class="t">${esc(it.label)} ↗</div>
+        <div class="m">${esc(it.note)}</div></a>`).join('')}
+    </div>`).join('')}</div>`;
+}
+
 function glossaryCard(doc){
   const d = parseDoc(doc);
   if (!d || !Array.isArray(d.groups)) return '';
@@ -3244,6 +3284,7 @@ async function renderSystem(){
       更新は同期スクリプト（${esc(syncHint)}）を実行したときだけ入れ替わります。</div></div>
     <div class="stack">
       ${overviewCard(docs['system-overview'])}
+      ${linksCard()}
       ${scheduleCard(docs['schedule'])}
       ${glossaryCard(docs['glossary'])}
     </div>`;
