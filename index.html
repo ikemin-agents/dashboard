@@ -167,7 +167,13 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .iconbtn.spin{animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.chtabs{display:flex; gap:var(--sp-1); margin-top:var(--sp-3); overflow-x:auto; scrollbar-width:none}
+/* チャンネルタブ（左）＋チャンネル共通の画面（右）を1行に並べる。共通側は右端に寄せる */
+.chrow{display:flex; align-items:flex-end; gap:var(--sp-3); margin-top:var(--sp-3)}
+.chtabs{display:flex; gap:var(--sp-1); overflow-x:auto; scrollbar-width:none; min-width:0}
+.systabs{display:flex; gap:var(--sp-1); margin-left:auto; flex:0 0 auto}
+/* 共通画面（稼働・システム）は広い画面では上の行にだけ出す。下のナビ側は隠しておき、
+   スマホ（≤640px）で逆に切り替える */
+.navbtn.indep{display:none}
 .chtabs::-webkit-scrollbar{display:none}
 .chtab{flex:0 0 auto; display:inline-flex; align-items:center; gap:7px;
   border:1px solid transparent; border-bottom:none; background:transparent; color:var(--ink-2);
@@ -178,6 +184,9 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chtab[aria-selected="true"]{background:var(--surface-2); color:var(--ink); font-weight:650;
   border-color:var(--border-2); box-shadow:inset 0 2px 0 0 var(--chac)}
 body[data-chindep="1"] .chtabs{opacity:.5; pointer-events:none}
+/* 共通画面のタブはチャンネルタブと同じ見た目だが、選択中の色帯だけ中立色にする
+   （チャンネルの色ではないので） */
+.chtab.sys[aria-selected="true"]{box-shadow:inset 0 2px 0 0 var(--ink-2)}
 
 /* ═══ ナビ ══════════════════════════════════════════════════════ */
 .nav{background:var(--surface-1); border-top:1px solid var(--border-2)}
@@ -489,7 +498,7 @@ td.ttl .flags{margin-left:8px}
 .dstate.rc{background:var(--fix-tint); color:var(--ink)}
 .dstate b{font-weight:700}
 /* 詳細ビュー表示中は一覧ナビ／チャンネルタブを隠して全画面に見せる */
-body.detail-open .chtabs, body.detail-open .nav{display:none}
+body.detail-open .chrow, body.detail-open .nav{display:none}
 @media (max-width:680px){
   .dhead{padding:var(--sp-3) var(--sp-4)}
   /* 下は詰める（#205 オーナー指摘: ボツボタンの下に空白が余る）。
@@ -874,6 +883,42 @@ a.syslink{display:block; text-decoration:none; color:inherit; padding:12px 4px; 
 a.syslink:hover{background:var(--surface-2)}
 a.syslink .t{color:var(--accent, var(--ink))}
 
+/* ── gen-farm のいま（システムタブの先頭）──────────────────────────────
+   1行目に「いま何が起きているか」を大きく1文で、その下に数字3つ、さらに下に待ち行列。 */
+.gfhead{display:flex; gap:9px; align-items:center; font-size:var(--fs-lg); font-weight:700;
+  border-radius:var(--r-md); padding:12px 14px; margin-bottom:var(--sp-3); line-height:1.45}
+.gfhead .mk{flex:0 0 auto}
+.gfhead.run{background:var(--s1-tint); color:var(--ink)}
+.gfhead.ok{background:var(--done-tint); color:var(--ink-2)}
+.gfhead.warn{background:var(--warn-tint); color:var(--ink)}
+.gfhead.bad{background:var(--crit-tint); color:var(--ink)}
+.gfmetrics{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-2); margin-bottom:var(--sp-3)}
+.gfm{background:var(--surface-2); border:1px solid var(--border-2); border-radius:var(--r-md); padding:10px 12px}
+.gfm .k{font-size:var(--fs-2xs); color:var(--muted)}
+.gfm .v{font-size:var(--fs-xl); font-weight:700; font-variant-numeric:tabular-nums; line-height:1.25}
+.gfm .s{font-size:var(--fs-2xs); color:var(--ink-2)}
+.gfjobs{display:grid; border-top:1px solid var(--border-2)}
+.gfjob{display:flex; gap:10px; align-items:baseline; padding:8px 2px;
+  border-bottom:1px solid var(--border-2); font-size:var(--fs-sm)}
+.gfjob .st{flex:0 0 auto; font-size:var(--fs-2xs); font-weight:700; border-radius:var(--r-pill);
+  padding:1px 9px; background:var(--surface-2); color:var(--ink-2); white-space:nowrap}
+.gfjob.is-in_flight .st{background:var(--s1-tint); color:var(--s1-ink)}
+.gfjob.is-done .st{background:var(--warn-tint); color:var(--ink)}
+.gfjob .wt{flex:1 1 auto; min-width:0; overflow-wrap:anywhere}
+.gfjob .tm{flex:0 0 auto; color:var(--ink-2); font-size:var(--fs-xs); white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.gfmore{padding:8px 2px; font-size:var(--fs-2xs); color:var(--muted)}
+.gfnote{margin:var(--sp-3) 0 0; font-size:var(--fs-2xs); color:var(--muted); line-height:1.75}
+.gfnote code{background:var(--surface-2); border-radius:4px; padding:1px 5px; font-size:.95em}
+@media (max-width:640px){
+  .gfmetrics{grid-template-columns:1fr; gap:0}
+  .gfm{border-radius:0; border-width:0 0 1px 0; display:flex; align-items:baseline; gap:10px}
+  .gfm .v{font-size:var(--fs-lg)}
+  .gfm .s{margin-left:auto; text-align:right}
+  .gfjob{flex-wrap:wrap; gap:6px 10px}
+  .gfjob .tm{margin-left:auto}
+}
+
 .syslegend{display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4); margin:0 0 var(--sp-3);
   font-size:var(--fs-2xs); color:var(--ink-2)}
 .syslegend .lg{display:inline-flex; align-items:center; gap:7px}
@@ -1042,7 +1087,11 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .topbar-in{padding:10px var(--sp-3) 0}
   .nav-in{padding:0}
   .brand{font-size:var(--fs-md); line-height:1.15}
-  .chtabs{margin-top:var(--sp-2)}
+  .chrow{margin-top:var(--sp-2); gap:var(--sp-2)}
+  /* 狭い画面では上の行はチャンネルだけに使い、共通画面（稼働・システム）は
+     下の固定タブバーへ戻す（チャンネル名が読めなくなるため） */
+  .systabs{display:none}
+  .navbtn.indep{display:inline-flex}
   .syncchip{display:none}
   .nav{position:fixed; bottom:0; left:0; right:0; top:auto; border-top:1px solid var(--border);
     border-bottom:none; background:var(--surface-1); z-index:50; padding-bottom:env(safe-area-inset-bottom)}
@@ -1172,7 +1221,13 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
         </div>
       </span>
     </div>
-    <div class="chtabs" id="chtabs" role="tablist" aria-label="チャンネル"></div>
+    <!-- チャンネルタブの右に、チャンネルに依存しない画面（稼働・システム）を並べる。
+         別の入れ物にしてあるのは、チャンネル横断の画面を開いている間 .chtabs は
+         「選べない（＝関係ない）」ものとして沈むため。同じ入れ物だと自分自身も押せなくなる。 -->
+    <div class="chrow">
+      <div class="chtabs" id="chtabs" role="tablist" aria-label="チャンネル"></div>
+      <div class="systabs" id="systabs" role="tablist" aria-label="チャンネル共通の画面"></div>
+    </div>
   </div>
   <nav class="nav"><div class="nav-in" id="nav" role="tablist" aria-label="画面"></div></nav>
 </header>
@@ -1241,7 +1296,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/19 23:41';
+const BUILT_AT = '8/20 00:10';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1355,7 +1410,7 @@ function loadUI(){
    threads = 動画ごとのレビュー記録。詳細を開いた動画のぶんだけ貯める
    byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため） */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
-                board:{}, threads:{}, ops:null, analytics:{}, assets:{}, system:null };
+                board:{}, threads:{}, ops:null, analytics:{}, assets:{}, system:null, genfarm:null };
 const clearVideoCaches = () => {
   store.byId = new Map();
   store.core = {}; store.facets = {}; store.pending = {}; store.board = {}; store.threads = {};
@@ -1686,6 +1741,35 @@ async function loadSystem(){
   return store.system;
 }
 
+/* ── gen-farm（実家の GPU 生成機）の待ち行列（M033）──────────────────────────
+   数字の正本は generation_jobs（発注台帳）。コマンドラインの genfarm-status
+   （00-config/tools/genfarm-status/）と同じ表・同じ数え方を読む＝二重管理を作らない。
+   引くのは2本だけ:
+     open   … まだ手元に無いジョブ（materialized_at が空 かつ 発注中／実行中／生成済み）
+     recent … 見込み時間の較正に使う直近の実測（終わったジョブの所要時間）
+   30秒だけキャッシュする（システムタブを開き直すたびに叩かないため）。 */
+const GF_OPEN_STATUS = ['submitting', 'in_flight', 'done'];
+const GF_KIND_LABEL = {h3_video:'H3映像', flux_image:'FLUX画像', unknown:'不明'};
+const GF_STATUS_LABEL = {submitting:'発注中', in_flight:'実行中', done:'生成済み・未回収'};
+const GF_FALLBACK_SEC = {h3_video:223, flux_image:76, unknown:200};
+const GF_STALE_DONE_MIN = 10;      /* 「生成済み・未回収」が続くと詰まりを疑う分数 */
+const GF_TTL_MS = 30000;
+
+async function loadGenfarm(force){
+  if (!force && store.genfarm && Date.now() - store.genfarm.at < GF_TTL_MS) return store.genfarm;
+  const [open, recent] = await Promise.all([
+    q(sb.from('generation_jobs')
+        .select('id,kind,channel,episode_seq,artifact_key,status,purpose,source,submitted_at,started_at,estimated_sec')
+        .is('materialized_at', null).in('status', GF_OPEN_STATUS)
+        .order('submitted_at', { ascending: true }).limit(200)),
+    q(sb.from('generation_jobs').select('kind,estimated_sec,started_at,finished_at')
+        .not('finished_at', 'is', null).not('started_at', 'is', null)
+        .order('finished_at', { ascending: false }).limit(150))
+  ]);
+  store.genfarm = { open, recent, at: Date.now() };
+  return store.genfarm;
+}
+
 async function loadAnalytics(ch){
   if (store.analytics[ch]) return store.analytics[ch];
   const primary = store.accounts.find(a => a.channel === ch && a.platform === 'youtube' && a.is_primary);
@@ -1719,9 +1803,18 @@ function renderShell(){
       <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(c.name)}</button>`;
   }).join('') || `<span class="chtab" aria-hidden="true">チャンネルなし</span>`;
 
+  /* チャンネルに依存しない画面（稼働・システム）はチャンネルタブの右へ（オーナー要望 2026-08-19）。
+     下のナビはそのチャンネルの中の画面（制作・分析）だけにして、2つの軸を混ぜない。
+     ⚠️ スマホだけは逆にする: 画面が狭いとチャンネル名が読めなくなるので、共通画面は
+     従来どおり下の固定タブバーに置く。両方に描いて CSS で出し分ける（画面幅の判定を
+     JS に持たせると回転・リサイズのたびに描き直しが要るため）。 */
+  $('#systabs').innerHTML = views.filter(v => v.chIndep).map(v =>
+    `<button class="chtab sys" role="tab" aria-selected="${state.view === v.key}" data-view="${v.key}">
+      <span class="cdot" style="background:var(--axis)"></span>${v.icon} ${v.label}</button>`).join('');
+
   $('#nav').innerHTML = views.map(v => {
     const on = state.view === v.key, n = v.badge ? v.badge() : 0;
-    return `<button class="navbtn" role="tab" aria-selected="${on}" data-view="${v.key}">
+    return `<button class="navbtn${v.chIndep ? ' indep' : ''}" role="tab" aria-selected="${on}" data-view="${v.key}">
       <span class="ni" aria-hidden="true">${v.icon}</span>${v.label}${n ? `<span class="badge">${n}</span>` : ''}</button>`;
   }).join('');
 
@@ -1751,13 +1844,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/19 23:41') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 00:10') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/19 23:41') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 00:10') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3364,23 +3457,152 @@ function scheduleCard(doc){
     ${notes ? `<ul class="sysnotes">${notes}</ul>` : ''}</div>`;
 }
 
+/* ══ gen-farm のいま（システムタブの先頭・オーナー要望 2026-08-19）══════════════
+   「実家の生成機に何本たまっていて、いつ終わるか」を1枚で見せる。数え方は
+   コマンドラインの genfarm-status（00-config/tools/genfarm-status/）と同じ:
+     ・待ち行列＝まだ手元に無いジョブ（materialized_at が空／発注中・実行中・生成済み）
+     ・完了見込み＝1件ずつ順に処理される前提で、残り時間を積み上げた概算
+     ・「生成済み・未回収」が10分以上続いていたら詰まりを疑う（2026-08-19 の障害と同じ形）
+   見込み時間は、発注時に記録した見込み秒（estimated_sec）が近い実測で較正する。
+   実測が無い種類は既定値（H3映像 223秒／FLUX画像 76秒）に落とす。 */
+const GF_MAX_SANE_SEC = 6 * 3600;
+function gfEstimator(recent){
+  const byKind = {}, calib = {};
+  (recent || []).forEach(m => {
+    const dur = (new Date(m.finished_at) - new Date(m.started_at)) / 1000;
+    if (!(dur > 0 && dur < GF_MAX_SANE_SEC)) return;
+    const k = m.kind || 'unknown';
+    (byKind[k] = byKind[k] || []).push(dur);
+    const e = Number(m.estimated_sec);
+    if (e > 0) (calib[k] = calib[k] || []).push([e, dur]);
+  });
+  const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+  return (kind, hint) => {
+    const pairs = calib[kind] || [];
+    if (hint > 0 && pairs.length) {
+      const same = pairs.filter(p => Math.abs(p[0] - hint) <= hint * 0.10).map(p => p[1]);
+      if (same.length) return mean(same);
+      const near = pairs.reduce((b, p) => Math.abs(p[0] - hint) < Math.abs(b[0] - hint) ? p : b);
+      return mean(pairs.filter(p => p[0] === near[0]).map(p => p[1])) * hint / near[0];
+    }
+    if ((byKind[kind] || []).length) return mean(byKind[kind]);
+    return hint > 0 ? hint : (GF_FALLBACK_SEC[kind] || 200);
+  };
+}
+function gfState(gf){
+  const est = gfEstimator(gf.recent), now = Date.now();
+  let cursor = 0;
+  const jobs = (gf.open || []).map(r => {
+    const kind = r.kind || 'unknown';
+    const hint = Number(r.estimated_sec) || 0;
+    const e = est(kind, hint);
+    /* 実行中なのに開始時刻が記録されていないジョブがある（発注直後に走り出した場合）。
+       その場合は発注時刻からの経過で代用する＝「—経過」と出さない */
+    const from = r.started_at || (r.status === 'in_flight' ? r.submitted_at : null);
+    const elapsed = from ? (now - new Date(from)) / 1000 : null;
+    const remaining = r.status === 'done' ? 0
+      : (r.status === 'in_flight' && elapsed != null) ? Math.max(0, e - elapsed) : e;
+    cursor += remaining;
+    return { r, kind, status: r.status, est: e, elapsed, remaining,
+             age: (now - new Date(r.submitted_at)) / 1000,
+             eta: r.status === 'done' ? null : now + cursor * 1000 };
+  });
+  return { jobs, now,
+    running: jobs.filter(j => j.status === 'in_flight'),
+    waiting: jobs.filter(j => j.status === 'submitting'),
+    stale:   jobs.filter(j => j.status === 'done'),
+    allDoneAt: cursor > 0 ? now + cursor * 1000 : null };
+}
+/* 秒 → 「3分20秒」「1時間5分」。1分未満は秒だけ（進行中の経過が動いて見える） */
+function gfDur(sec){
+  if (sec == null || !isFinite(sec)) return '—';
+  const s = Math.max(0, Math.round(sec));
+  if (s < 60) return `${s}秒`;
+  const m = Math.round(s / 60);
+  return m < 60 ? `${m}分` : `${Math.floor(m / 60)}時間${m % 60}分`;
+}
+const gfClock = ms => ms == null ? '—' : fmtTime(new Date(ms).toISOString());
+function gfWhat(j){
+  const ep = j.r.episode_seq ? `${j.r.episode_seq} ` : '';
+  const what = j.r.artifact_key || j.r.purpose || '';
+  return `${ep}${GF_KIND_LABEL[j.kind] || j.kind}${what ? `（${what}）` : ''}`;
+}
+
+function genfarmCard(gf){
+  const s = gfState(gf);
+  const stuck = s.stale.filter(j => j.age > GF_STALE_DONE_MIN * 60);
+  /* いちばん大きく出す1行。詰まりの疑い＞制作中＞順番待ち＞空き の順で強い方を出す */
+  const head = stuck.length
+    ? {cls:'bad', mark:'⚠', text:`生成は終わっているのに手元に降りてきていません（${stuck.length}件）`}
+    : s.running.length
+      ? {cls:'run', mark:'●', text:`制作中 — ${esc(gfWhat(s.running[0]))}`}
+      : s.waiting.length
+        ? {cls:'warn', mark:'●', text:`${s.waiting.length}件が順番待ち（まだ動き出していません）`}
+        : {cls:'ok', mark:'✓', text:'空いています（待ちはありません）'};
+
+  /* 見込みより長く走っているとき「残り0秒」を出さない（終わりそうに見えてしまうため） */
+  const overdue = s.running.some(j => j.remaining <= 0);
+  const tiles = [
+    {k:'実行中', v:s.running.length, s:s.running.length ? gfDur(s.running[0].elapsed) + '経過' : '—'},
+    {k:'順番待ち', v:s.waiting.length,
+     s:s.allDoneAt ? `全部終わるのは ${gfClock(s.allDoneAt)} ごろ`
+       : overdue ? '見込み時間を超えて実行中' : '—'},
+    {k:'生成済み・未回収', v:s.stale.length,
+     s:stuck.length ? `${gfDur(Math.max(...stuck.map(j => j.age)))}以上そのまま` : (s.stale.length ? '回収待ち' : '—')}
+  ].map(t => `<div class="gfm"><div class="k">${esc(t.k)}</div><div class="v">${t.v}</div>
+      <div class="s">${esc(t.s)}</div></div>`).join('');
+
+  const rows = s.jobs.slice(0, 10).map(j => `<div class="gfjob is-${esc(j.status)}">
+      <span class="st">${esc(GF_STATUS_LABEL[j.status] || j.status)}</span>
+      <span class="wt">${esc(gfWhat(j))}</span>
+      <span class="tm">${j.status === 'in_flight'
+        ? `${gfDur(j.elapsed)}経過・${j.remaining > 0 ? `残り${gfDur(j.remaining)}` : '見込み超過'}`
+        : j.status === 'done' ? `${gfDur(j.age)}前に完成` : `${gfClock(j.eta)}ごろ`}</span>
+    </div>`).join('');
+  const more = s.jobs.length > 10 ? `<div class="gfmore">ほか ${s.jobs.length - 10}件</div>` : '';
+
+  return `<section class="card gfcard">
+    <h2>🖥 gen-farm（実家の生成機）のいま</h2>
+    <div class="gfhead ${head.cls}"><span class="mk">${head.mark}</span><span>${head.text}</span></div>
+    <div class="gfmetrics">${tiles}</div>
+    ${s.jobs.length ? `<div class="gfjobs">${rows}${more}</div>`
+      : `<div class="noitem">待っている生成はありません</div>`}
+    ${stuck.length ? `<div class="note"><span>⚠</span><div>生成機の中では出来上がっているのに、
+      手元のパソコンへ降りてきていません。<b>その動画の生成スクリプトを実行し直す</b>と回収されます
+      （2026-08-19 に同じ形の詰まりが起きています）。</div></div>` : ''}
+    <p class="gfnote">数字は発注台帳（generation_jobs）そのもの。完了時刻は「1件ずつ順に処理される」
+      前提の概算です。同じ内容をパソコンから見るには
+      <code>python 00-config/tools/genfarm-status/genfarm_status.py</code>。
+      ${gf.at ? `${esc(gfClock(gf.at))} 時点` : ''}</p>
+  </section>`;
+}
+
 async function renderSystem(){
   const el = $('#view-system');
   if (!store.system) el.innerHTML = loading();
   let docs;
   try { docs = await loadSystem(); }
   catch (e) { el.innerHTML = errBox(e.message); return; }
+  /* gen-farm の待ち行列は「いまの状態」なので、読めなくても画面は出す（カードだけ落とす） */
+  let gf = null;
+  try { gf = await loadGenfarm(); }
+  catch (e) { gf = { error: e.message }; }
 
   el.innerHTML = `
     <div class="pagehead">
       <div class="eyebrow">システム</div>
       <h1>⚙️ 構成とスケジュール</h1>
-      <p>system_docs（M029）の内容。ログインした人だけが見られます（公開ページには載りません）。</p>
+      <p>いちばん上は gen-farm のいまの待ち行列（generation_jobs の実データ）。その下は
+        system_docs（M029）の写しです。ログインした人だけが見られます（公開ページには載りません）。</p>
     </div>
     <div class="note"><span>🌐</span><div><b>この画面は全チャンネル共通です。</b>
-      上のチャンネルタブの選択は反映されません。中身はリポジトリ側の正本を写したもので、
+      上のチャンネルタブの選択は反映されません。gen-farm 以外の中身はリポジトリ側の正本を写したもので、
       更新は同期スクリプト（${esc(syncHint)}）を実行したときだけ入れ替わります。</div></div>
     <div class="stack">
+      ${gf && !gf.error ? genfarmCard(gf)
+        : `<section class="card gfcard"><h2>🖥 gen-farm（実家の生成機）のいま</h2>
+            <div class="noitem">待ち行列を読み込めませんでした
+            <span class="s">${esc((gf && gf.error) || '')}</span></div></section>`}
       ${overviewCard(docs['system-overview'])}
       ${linksCard()}
       ${scheduleCard(docs['schedule'])}
@@ -3492,7 +3714,8 @@ document.addEventListener('click', e => {
   const chBtn = e.target.closest('.chtab[data-ch]');
   if (chBtn) { state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters(); saveUI(); render(); return; }
 
-  const navBtn = e.target.closest('.navbtn[data-view]');
+  /* 画面の切り替え。下のナビ（制作・分析）と、チャンネルタブ右の共通タブ（稼働・システム）の両方 */
+  const navBtn = e.target.closest('.navbtn[data-view], .chtab[data-view]');
   if (navBtn) { state.view = navBtn.dataset.view; saveUI(); render(); window.scrollTo({ top: 0 }); return; }
 
   /* 一覧の畳んだセクション（完了・ネタ案・没）の開閉 */
