@@ -832,6 +832,17 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .ovit .v{font-size:var(--fs-sm); font-weight:650; line-height:1.4; overflow-wrap:anywhere}
 .ovit .n{font-size:var(--fs-2xs); color:var(--ink-2); line-height:1.5; overflow-wrap:anywhere}
 
+/* 用語集（system_docs.glossary）。1語＝1行の縦積み。スマホでも横スクロールしないよう
+   表組みにはしない（言葉／意味／別の呼び方 を上下に重ねる） */
+.glgroup{margin:0 0 var(--sp-4)}
+.glgroup > h3{font-size:var(--fs-sm); font-weight:700; margin:0 0 4px}
+.glgroup > .note2{font-size:var(--fs-2xs); color:var(--ink-2); margin:0 0 var(--sp-2); line-height:1.6}
+.glit{padding:8px 0; border-top:1px solid var(--border-2); min-width:0}
+.glit .t{font-size:var(--fs-sm); font-weight:700; line-height:1.4}
+.glit .m{font-size:var(--fs-xs); color:var(--ink-2); line-height:1.6; overflow-wrap:anywhere}
+.glit .a{display:inline-block; margin-top:3px; font-size:var(--fs-2xs); color:var(--muted);
+  overflow-wrap:anywhere}
+
 .syslegend{display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4); margin:0 0 var(--sp-3);
   font-size:var(--fs-2xs); color:var(--ink-2)}
 .syslegend .lg{display:inline-flex; align-items:center; gap:7px}
@@ -1196,7 +1207,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/19 00:27';
+const BUILT_AT = '8/19 11:30';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1684,13 +1695,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/19 00:27') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/19 11:30') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/19 00:27') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/19 11:30') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3085,6 +3096,23 @@ function overviewCard(doc){
       ${it.note ? `<span class="n">${esc(it.note)}</span>` : ''}</div>`).join('')}</div></div>`;
 }
 
+function glossaryCard(doc){
+  const d = parseDoc(doc);
+  if (!d || !Array.isArray(d.groups)) return '';
+  return `<div class="card">
+    <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>${esc(doc.title || '用語集')}</h2>
+      <span class="hint">${esc(fmtDT(doc.updated_at) || '')} 同期</span></div>
+    ${d.intro ? `<div class="note"><span>💬</span><div>${esc(d.intro)}</div></div>` : ''}
+    ${d.groups.map(g => `<div class="glgroup">
+      <h3>${esc(g.title)}</h3>
+      ${g.note ? `<p class="note2">${esc(g.note)}</p>` : ''}
+      ${g.terms.map(t => `<div class="glit">
+        <div class="t">${esc(t.term)}</div>
+        <div class="m">${esc(t.meaning)}</div>
+        ${t.aka ? `<span class="a">技術用語: ${esc(t.aka)}</span>` : ''}</div>`).join('')}
+    </div>`).join('')}</div>`;
+}
+
 function scheduleCard(doc){
   const d = parseDoc(doc);
   if (!d || !Array.isArray(d.entries)) return notSynced('スケジュール');
@@ -3217,6 +3245,7 @@ async function renderSystem(){
     <div class="stack">
       ${overviewCard(docs['system-overview'])}
       ${scheduleCard(docs['schedule'])}
+      ${glossaryCard(docs['glossary'])}
     </div>`;
 }
 
