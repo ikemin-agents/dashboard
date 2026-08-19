@@ -406,8 +406,8 @@ td.ttl .flags{margin-left:8px}
 
 /* ═══ 詳細を広い画面で2カラムに（#203）
    左＝メタ情報（フック／工程タイムライン／メトリクス／メモ）・右＝レビュー（素材＋履歴＋入力）。
-   横幅を「1行を長くする」のではなく「情報を並べる」ことに使う。本文の行長は .cmt .txt の
-   max-width で 74ch に抑える（読み物は45〜75文字/行を超えると視線の戻りで読みにくくなる） ═══ */
+   横幅を「1行を長くする」のではなく「情報を並べる」ことに使う。本文の行長は .cmt .bub の
+   max-width で 92ch に抑える（読み物は45〜75文字/行を超えると視線の戻りで読みにくくなる） ═══ */
 @media (min-width:1240px){
   /* レビュー中の動画だけ2カラム（レビュー節が無い動画は従来どおり1カラムで詰める）。
      行スパンではなく「左列を1つのラッパにまとめて2要素を横に並べる」形にする
@@ -629,20 +629,43 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .oldver[open]>.dsum{margin-bottom:var(--sp-3)}
 .oldver[open]>.dsum::before{transform:rotate(90deg)}
 .thread{display:grid; gap:var(--sp-2)}
-.cmt{display:flex; gap:9px}
-.cmt .av{width:26px;height:26px;border-radius:var(--r-pill);flex:0 0 auto;display:grid;place-items:center;
-  font-size:var(--fs-2xs);font-weight:700;color:#fff}
+/* 吹き出しは1件＝1ブロック（アバター列は作らない）。誰の発言かは吹き出しの中の名前の行に
+   小さいアイコンで出す＝本文が横幅を全部使える（#266） */
+.cmt{display:block}
+.cmt .av{width:20px;height:20px;border-radius:var(--r-pill);flex:0 0 auto;display:grid;place-items:center;
+  font-size:9px;font-weight:700;color:#fff}
 .cmt.ai .av{background:var(--stg4)}
 /* AI（ai:*）は Claude 公式アイコン画像（角丸オレンジ+白バースト・#204）。画像自身が背景と角丸を持つので
    丸クリップせず角丸のまま・object-fit:cover でアバター枠(26px)に収める（白背景/内側リングは不要） */
 .cmt .av.aiav,.cmt.ai .av.aiav{background:transparent; box-shadow:none; padding:0;
   border-radius:var(--r-sm); object-fit:cover; display:block}
 .cmt .bub{background:var(--surface-2); border:1px solid var(--border-2); border-radius:var(--r-md);
-  padding:9px 12px; flex:1 1 auto; min-width:0; max-width:92ch}
+  padding:9px 12px; min-width:0; max-width:92ch}
 .cmt .who{font-size:var(--fs-2xs); color:var(--muted); margin-bottom:2px;
   display:flex; gap:6px; align-items:center; flex-wrap:wrap}
 .cmt .who b{color:var(--ink-2); font-weight:680}
-.cmt .txt{font-size:var(--fs-md); line-height:1.75; white-space:pre-wrap; word-break:break-word}
+/* ── コメント本文（#266）──────────────────────────────────────────
+   素材の台本と同じ .mdbody の組版（見出し・箇条書き・太字）を使い、囲みだけ外して
+   吹き出しの中に地の文として置く（.mdbody の背景・内側余白・スクロール枠は打ち消す）。
+   .mdbody の基本定義はこの下にあるが、詳細度は .cmt .ctxt が上なので後勝ちにならない */
+.cmt .ctxt{padding:0; background:transparent; max-height:none; overflow:visible;
+  font-size:var(--fs-md); line-height:1.75; word-break:break-word}
+.cmt .ctxt .mdh{margin:.9em 0 .35em}
+.cmt .ctxt>*:first-child{margin-top:0}
+/* 長いコメントは冒頭2行だけ見せて畳む。開くと全文に差し替わる（履歴・旧版と同じ details）*/
+.cfold>.csum{list-style:none; cursor:pointer; display:grid; gap:3px}
+.cfold>.csum::-webkit-details-marker{display:none}
+.cfold>.csum:focus-visible{outline:2px solid var(--s1); outline-offset:3px; border-radius:var(--r-sm)}
+.cfold[open]>.csum{margin-bottom:7px}
+.cfold .cprev{font-size:var(--fs-md); line-height:1.75; color:var(--ink); overflow:hidden;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+.cfold[open] .cprev{display:none}
+.cfold .cmore{font-size:var(--fs-2xs); font-weight:700; color:var(--s1); letter-spacing:.03em;
+  display:inline-flex; align-items:center; gap:5px}
+.cfold .cmore::after{content:'続きを読む'}
+.cfold[open] .cmore::after{content:'閉じる'}
+.cfold .ctri{display:inline-block; transition:transform .15s}
+.cfold[open] .ctri{transform:rotate(90deg)}
 .kindchip{font-size:var(--fs-2xs); border-radius:5px; padding:0 7px; border:1px solid var(--border-2);
   background:var(--surface-1); color:var(--ink-2)}
 /* 承認＝終わったイベントなので沈める。修正依頼＝AIが直す番なのでオレンジ、
@@ -1083,6 +1106,12 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .dbody .oldver{border-radius:0; border-left-width:0; border-right-width:0;
     padding-left:0; padding-right:0}
   .dbody .oldver>.dsum{padding-left:var(--dpad); padding-right:var(--dpad)}
+  /* ── コメントを画面いっぱいに（#266 オーナー要望 2026-08-19）────────────────
+     .thread の左右余白と吹き出しの左右の枠線・角丸を落として、他のブロック（素材・履歴）と
+     同じく端から端まで使う。内側は地の文が縁に貼り付かないぶんだけ（--dpad）残す */
+  .dbody .thread{padding-left:0; padding-right:0}
+  .dbody .cmt .bub{max-width:none; border-radius:0; border-left-width:0; border-right-width:0;
+    padding-left:var(--dpad); padding-right:var(--dpad)}
 }
 /* ═══ PC（広い画面）だけ本文フォントを少し大きく（#203）
    root を 16→17px にして rem ベースの --fs-* を一律 +約1px。スマホ層(≤680px)は
@@ -1212,7 +1241,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/19 11:48';
+const BUILT_AT = '8/19 22:45';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1700,13 +1729,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/19 11:48') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/19 22:45') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/19 11:48') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/19 22:45') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2068,19 +2097,22 @@ function detailHTML(it){
     ? `<div class="dstate rv">● <b>あなたの承認待ち</b>です。素材を確認して、コメントするか承認してください。</div>`
     : (it._rc ? `<div class="dstate rc">↺ <b>${AI_TAG}${GATE_LABEL[it._rc]}修正中</b>です。${
         it._open ? `未対応の指摘 <b>${it._open}件</b>。` : ''}夜間の制作エージェントが対応すると自動で解消されます。</div>` : '');
-  const review = rvGate ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
-      <h4>レビュー — ${GATE_LABEL[rvGate]}ゲート</h4>${stateBar}${reviewPanel(it, rvGate)}</div>` : '';
-
   /* ── レビュー履歴は常設（#207）────────────────────────────────────
-     承認するとゲート状態（_rv/_rc）が消えてレビュー節ごと閉じるため、履歴だけは
-     レビュー節の外に出して「記録が1件でもあれば必ず出す」。全ゲートを時系列1本で読ませる。
+     承認するとゲート状態（_rv/_rc）が消えてレビュー節ごと閉じるため、履歴は
+     「記録が1件でもあれば必ず出す」。全ゲートを時系列1本で読ませる。
      開閉: 議論中（承認待ち／【AI】修正中）は開いた状態・それ以外は畳んで件数だけ見せる。
-     素材・コメント欄・承認/没ブロックは従来どおり rvGate があるときだけ（ここには出さない）。 */
+     置き場所（#266 オーナー要望 2026-08-19）: レビュー中は「素材 → レビュー履歴 → コメント欄」
+     の順にレビュー節の中へ入れる。スマホは1カラムで上から流れるので、一番下が素材ではなく
+     コメントになり、読んだ流れのまま書ける（広い画面では右列＝レビュー列の中に収まる）。
+     レビュー節が無い動画（承認済み・投稿済み等）は行き先が無いので従来どおり左のメタ列に置く。 */
   const evs = threadOf(it.id);
   const history = evs.length ? `<details class="dsec dsec-history"${rvGate ? ' open' : ''}>
       <summary class="dsum">レビュー履歴<span class="n">（${evs.length}件）</span></summary>
       <div class="dsum-body">${threadHTML(it.id)}</div>
     </details>` : '';
+
+  const review = rvGate ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
+      <h4>レビュー — ${GATE_LABEL[rvGate]}ゲート</h4>${stateBar}${reviewPanel(it, rvGate, history)}</div>` : '';
 
   return `<div class="dview">
     <button class="backbtn" data-close="1" aria-label="一覧に戻る">← 一覧に戻る</button>
@@ -2106,7 +2138,7 @@ function detailHTML(it){
           <div class="dsec"><h4>フック</h4><div class="hook">${esc(it.hook || '（未設定）')}</div></div>
           <div class="dsec"><h4>工程タイムライン</h4><div class="tl">${timelineRows(it)}</div>
             <div class="dhint">日付は承認ゲート・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
-          ${metrics}${history}
+          ${metrics}${rvGate ? '' : history}
         </div>${review}
       </div>
     </article>
@@ -2234,6 +2266,8 @@ function assetHead(f){
 function mdInline(s){
   return esc(s)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    /* 斜体（*…*）。太字を先に消してから拾い、前後が空白の * は掛け算とみなして触らない */
+    .replace(/(^|[^*\w])\*([^\s*][^*\n]*[^\s*]|[^\s*])\*(?!\*)/g, '$1<em>$2</em>')
     .replace(/(【[^】]+】)/g, '<strong class="mdtag">$1</strong>');
 }
 function mdToHTML(src){
@@ -2358,16 +2392,19 @@ const mountAllAssets = root => (root || document).querySelectorAll('[data-assets
    誤タップ防止（#205）: コメント欄・承認・没はそれぞれ別ブロック。コメント欄からは
    承認できず、承認は「承認ボタン → メモ欄と注意書きが開く → 確定ボタン」の2段階でしか
    通らない。没はさらに慎重にする（理由が空のあいだ確定ボタンを押せない）。 */
-function reviewPanel(it, gate){
+function reviewPanel(it, gate, historyHTML){
   const key = it.id + '|' + gate;
   const gname = GATE_LABEL[gate] || gate;
   const caution = GATE_CAUTION[gate] || null;
   const pid = `ap-${it.id}-${gate}`;
   const rid = `rj-${it.id}-${gate}`;
+  /* 並び順は「素材 → レビュー履歴 → コメント欄 → 没 → 承認バー」（#266）。
+     historyHTML は detailHTML から受け取る（無ければ空文字） */
   return `<div class="blk"><h4>レビュー素材</h4>
       <div class="assets" data-assets="${esc(key)}" data-ch="${esc(it.channel)}"
            data-seq="${esc(it.seq)}" data-gate="${esc(gate)}">
         <div class="loadbox">素材を読み込み中…</div></div></div>
+    ${historyHTML || ''}
     <div class="wbox" data-wbox="${esc(key)}">
       <h4 class="wh">コメント</h4>
       <textarea class="wta" rows="3" aria-label="コメント"
@@ -2619,18 +2656,47 @@ function avatarOf(author){
   const bg = author === 'koike' ? 'var(--s1)' : 'var(--s2)';
   return `<span class="av" style="background:${bg}">${esc(init)}</span>`;
 }
+/* ── コメント本文の描き方（#266）──────────────────────────────────
+   AI の提出コメントは Markdown で書かれている（見出し・箇条書き・太字）ので、素材の台本と
+   同じ mdToHTML で組む（記法がそのまま文字として出るのを止める）。XSS は mdToHTML 側で
+   担保済み（必ず esc() してから既知パターンだけをタグ化する＝生HTMLは通さない）。
+   長さ: AI コメントは平均487文字・最長1159文字（実測46件）で、スマホだと1件で画面2〜3枚に
+   なる。既定は冒頭2行だけ見せて畳み、「続きを読む」で開く（人のコメントは平均55文字なので
+   しきい値には掛からず、従来どおり全文が出る）。畳みは履歴・旧版と同じ details/summary。 */
+const CMT_FOLD_LEN = 220;
+function cmtPreview(src, n){
+  const t = String(src || '').replace(/\r\n?/g, '\n')
+    .replace(/^\s*#{1,6}\s+/gm, '')                   /* 見出しの # */
+    .replace(/^\s*([-*_]\s*){3,}\s*$/gm, '')          /* 水平線 */
+    .replace(/^\s*(?:[-*]\s+|・\s*|\d+[.)]\s+)/gm, '')/* 箇条書き・番号 */
+    .replace(/\*\*([^*]+)\*\*/g, '$1')                /* 太字 */
+    .replace(/\s+/g, ' ').trim();
+  return t.length > n ? t.slice(0, n) + '…' : t;
+}
+function cmtBodyHTML(body){
+  const src = String(body || '');
+  if (!src.trim()) return `<div class="ctxt mdbody"><p>（本文なし）</p></div>`;
+  const full = `<div class="ctxt mdbody">${mdToHTML(src)}</div>`;
+  if (src.length <= CMT_FOLD_LEN) return full;
+  return `<details class="cfold"><summary class="csum">
+      <span class="cprev">${esc(cmtPreview(src, 96))}</span>
+      <span class="cmore"><span class="ctri">▸</span></span></summary>${full}</details>`;
+}
+
 function threadHTML(videoId){
   const evs = threadOf(videoId);
   if (!evs.length) return `<div class="noitem">この動画のレビュー記録はまだありません</div>`;
   return `<div class="thread">${evs.map(e => {
     const ai = String(e.author).startsWith('ai:');
-    return `<div class="cmt ${ai ? 'ai' : ''}">${avatarOf(e.author)}<div class="bub">
-      <div class="who"><b>${ai ? '【AI】' + esc(String(e.author).slice(3)) : esc(e.author)}</b>
+    /* アバターは吹き出しの外（左の列）ではなく名前の行に置く。吹き出しが幅を全部使えるので
+       長い提出コメントが読みやすく、スマホでは端から端まで伸びる（#266 オーナー要望） */
+    return `<div class="cmt ${ai ? 'ai' : ''}"><div class="bub">
+      <div class="who">${avatarOf(e.author)}<b>${ai ? '【AI】' + esc(String(e.author).slice(3)) : esc(e.author)}</b>
         <span class="gatechip">${esc(GATE_LABEL[e.gate] || e.gate || '—')}</span>
         <span class="kindchip ${esc(e.kind)}">${KIND_LABEL[e.kind] || esc(e.kind)}</span>
         <span>${esc(fmtDT(e.created_at) || '')}</span>
         ${e.score != null ? `<span class="kindchip">score ${esc(e.score)}</span>` : ''}</div>
-      <div class="txt">${esc(e.body || '')}</div>
+      ${cmtBodyHTML(e.body)}
       ${e.resolution_status ? `<span class="resolved ${e.resolution_status === 'open' ? 'open' : 'closed'}">${
         e.resolution_status === 'open' ? '⏳' : '✓'} ${
         RESOLUTION_LABEL[e.resolution_status] || esc(e.resolution_status)}${
