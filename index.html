@@ -171,9 +171,9 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chrow{display:flex; align-items:flex-end; gap:var(--sp-3); margin-top:var(--sp-3)}
 .chtabs{display:flex; gap:var(--sp-1); overflow-x:auto; scrollbar-width:none; min-width:0}
 .systabs{display:flex; gap:var(--sp-1); margin-left:auto; flex:0 0 auto}
-/* 共通画面（稼働・システム）は広い画面では上の行にだけ出す。下のナビ側は隠しておき、
-   スマホ（≤640px）で逆に切り替える */
+/* 共通画面（稼働・システム）は上の行にだけ出す（下のナビ側は常に隠す） */
 .navbtn.indep{display:none}
+.chtab.sys .lbl{margin-left:4px}
 .chtabs::-webkit-scrollbar{display:none}
 .chtab{flex:0 0 auto; display:inline-flex; align-items:center; gap:7px;
   border:1px solid transparent; border-bottom:none; background:transparent; color:var(--ink-2);
@@ -1087,11 +1087,19 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .topbar-in{padding:10px var(--sp-3) 0}
   .nav-in{padding:0}
   .brand{font-size:var(--fs-md); line-height:1.15}
-  .chrow{margin-top:var(--sp-2); gap:var(--sp-2)}
-  /* 狭い画面では上の行はチャンネルだけに使い、共通画面（稼働・システム）は
-     下の固定タブバーへ戻す（チャンネル名が読めなくなるため） */
-  .systabs{display:none}
-  .navbtn.indep{display:inline-flex}
+  .chrow{margin-top:var(--sp-2); gap:var(--sp-1)}
+  /* 狭い画面でも共通画面（稼働・システム）はチャンネルタブの右に置く（オーナー指定 2026-08-20）。
+     チャンネル名の場所を残すため、この2つは記号だけにして文字を畳む（読み上げと長押しの
+     ためのラベルは title / aria-label に残す）。チャンネル側は詰めて横スクロールで逃がす */
+  .chtab{padding:8px 10px; gap:5px}
+  /* 色の点は省く（記号と、選択中タブ上端の色帯でチャンネルは判る）。名前の場所を優先する */
+  .chtab .cdot{display:none}
+  .chtab.sys{padding:8px 9px; font-size:var(--fs-md)}
+  .chtab.sys .lbl{display:none}
+  /* いま開いている共通画面だけは名前を出す（どこにいるかが分かる）。この状態では
+     チャンネルタブは沈んでいて選べないので、その場所を借りても困らない */
+  .chtab.sys[aria-selected="true"]{font-size:var(--fs-sm)}
+  .chtab.sys[aria-selected="true"] .lbl{display:inline}
   .syncchip{display:none}
   .nav{position:fixed; bottom:0; left:0; right:0; top:auto; border-top:1px solid var(--border);
     border-bottom:none; background:var(--surface-1); z-index:50; padding-bottom:env(safe-area-inset-bottom)}
@@ -1296,7 +1304,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 00:25';
+const BUILT_AT = '8/20 08:57';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1809,8 +1817,9 @@ function renderShell(){
      従来どおり下の固定タブバーに置く。両方に描いて CSS で出し分ける（画面幅の判定を
      JS に持たせると回転・リサイズのたびに描き直しが要るため）。 */
   $('#systabs').innerHTML = views.filter(v => v.chIndep).map(v =>
-    `<button class="chtab sys" role="tab" aria-selected="${state.view === v.key}" data-view="${v.key}">
-      <span class="cdot" style="background:var(--axis)"></span>${v.icon} ${v.label}</button>`).join('');
+    `<button class="chtab sys" role="tab" aria-selected="${state.view === v.key}" data-view="${v.key}"
+       title="${esc(v.label)}" aria-label="${esc(v.label)}">
+      <span class="cdot" style="background:var(--axis)"></span>${v.icon}<span class="lbl">${v.label}</span></button>`).join('');
 
   $('#nav').innerHTML = views.map(v => {
     const on = state.view === v.key, n = v.badge ? v.badge() : 0;
@@ -1844,13 +1853,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 00:25') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 08:57') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 00:25') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 08:57') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
