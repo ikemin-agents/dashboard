@@ -207,7 +207,7 @@ main{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-6) var(--sp-5)
 .card{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   padding:var(--sp-5); box-shadow:var(--shadow-2); min-width:0}
 .stack{display:grid; gap:var(--sp-4); min-width:0}
-.stack>*, .kpis>*, .rvlist>*, .runs>*{min-width:0}
+.stack>*, .kpis>*, .runs>*{min-width:0}
 .note{display:flex; gap:9px; align-items:flex-start; background:var(--surface-2); border:1px solid var(--border-2);
   border-radius:var(--r-md); padding:10px 13px; font-size:var(--fs-sm); color:var(--ink-2); margin-bottom:var(--sp-4)}
 .note b{color:var(--ink); font-weight:650}
@@ -317,6 +317,29 @@ td.dim{color:var(--muted)}
 .mark.todo{color:var(--axis)}
 .mtx tr.dropped td{color:var(--muted)}
 .mtx tbody tr{cursor:pointer}
+/* ── 一覧のセクション見出し（在庫・レビュー統合）────────────────────────
+   表の中では colspan で1行まるごと使う帯、スマホでは同じ体裁の見出しブロック。
+   畳めるもの（完了・ネタ案・没）は ▸ が付き、行ごと押すと開閉する。 */
+.mtx tbody tr.secrow{cursor:default; background:var(--surface-2)}
+.mtx tbody tr.secrow.foldable{cursor:pointer}
+.mtx tbody tr.secrow:hover td{background:var(--surface-2)}
+.mtx tbody tr.secrow td{position:static; padding:9px var(--sp-4); box-shadow:none;
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border-2); background:var(--surface-2)}
+.mtx tbody tr.secrow+tr td{border-top:none}
+.csechead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:10px var(--sp-4);
+  background:var(--surface-2); border-top:1px solid var(--border); border-bottom:1px solid var(--border-2)}
+.csechead.foldable{cursor:pointer}
+.secrow td,.csechead{font-size:var(--fs-sm)}
+.secrow .sn,.csechead .sn{font-weight:700; color:var(--ink); display:inline-flex; align-items:center; gap:6px}
+.secrow .tri,.csechead .tri{font-size:11px; color:var(--ink-2)}
+.secrow .n,.csechead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2);
+  background:var(--surface-1); border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px}
+.secrow .hint,.csechead .hint{font-size:var(--fs-2xs); color:var(--muted)}
+/* 見出しの左端の色帯で「誰の番か」を段そのものに持たせる（行の色帯と同じ割り当て） */
+.mtx tbody tr.secrow.s-rv td{box-shadow:inset 4px 0 0 var(--s1)}
+.mtx tbody tr.secrow.s-ai td{box-shadow:inset 4px 0 0 var(--fix)}
+.csechead.s-rv{box-shadow:inset 4px 0 0 var(--s1)}
+.csechead.s-ai{box-shadow:inset 4px 0 0 var(--fix)}
 .mtx th.sortable{cursor:pointer; user-select:none}
 .mtx th.sortable:hover{color:var(--ink)}
 .mtx th .ar{font-size:9px; margin-left:3px; color:var(--ink)}
@@ -396,9 +419,9 @@ td.ttl .flags{margin-left:8px}
   main,footer{max-width:100%}
   .stockcards{display:grid; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
     border-top:1px solid var(--border)}
-  /* ⚠️ レビュー（.rvlist/.rvitem）・稼働（.runs/.run）の同等ルールはここには書かない。
-     それらの基本定義がこのブロックより後ろにあり、同じ詳細度なので上書きされてしまう
-     （実際それで角丸・影が残っていた）。スタイルシート末尾の専用ブロックに置く（#205） */
+  /* ⚠️ 稼働（.runs/.run）の同等ルールはここには書かない。基本定義がこのブロックより
+     後ろにあり、同じ詳細度なので上書きされてしまう（実際それで角丸・影が残っていた）。
+     スタイルシート末尾の専用ブロックに置く（#205） */
 }
 
 /* ═══ 詳細ビュー（履歴付き全画面遷移・#200） ══════════════════════ */
@@ -560,39 +583,19 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .reason{font-size:var(--fs-2xs); color:var(--muted); margin-left:auto}
 
 /* ═══ レビュー ══════════════════════════════════════════════════ */
-.rvlist{display:grid; gap:var(--sp-2)}
-.rvitem{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
-  overflow:hidden; box-shadow:var(--shadow-2); transition:border-color .12s}
-.rvitem:hover{border-color:var(--axis)}
-/* 左端の色帯で「あなたの番＝承認待ち（青）／AIの番＝作業中・修正中（オレンジ）」を分ける（#205） */
-.rvitem.is-rv{border-left:3px solid var(--s1)}
-.rvitem.is-rc{border-left:3px solid var(--fix)}
-/* 在庫カードと同じ構成（#205）: 1行目=seq＋タイトル（右端に待ち日数）／2行目=状態バッジ。
-   広い画面では flex-wrap で1行に収まり、狭い画面ではバッジが2行目へ落ちる */
-.rvhead{width:100%; text-align:left; background:transparent; border:none; font-family:inherit;
-  padding:14px var(--sp-4); display:flex; gap:8px var(--sp-3); align-items:center; flex-wrap:wrap;
-  cursor:pointer; color:inherit}
-.rvtop{display:flex; align-items:baseline; gap:10px; flex:1 1 340px; min-width:0}
-.rvhead:hover{background:var(--surface-2)}
+/* レビュー専用の一覧（.rvlist / .rvitem / .rvhead）は在庫と統合したので廃止（2026-08-19）。
+   一覧は進捗マトリクスの行＋セクション見出しに一本化した。 */
 .chip{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-2xs); border-radius:var(--r-pill);
   padding:2px 9px; border:1px solid var(--border); white-space:nowrap}
 .chip .cdot{width:8px;height:8px;border-radius:2px}
-.rvhead .ttl{font-size:var(--fs-md); font-weight:600; flex:1 1 auto; min-width:0; line-height:1.45}
-.rvhead .seq{flex:0 0 auto; font-size:var(--fs-2xs); font-weight:700; color:var(--muted);
-  font-variant-numeric:tabular-nums}
 .gbadge{font-size:var(--fs-2xs); font-weight:680; border-radius:var(--r-pill); padding:2px 9px; white-space:nowrap;
   background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
   display:inline-flex; align-items:center; gap:5px}
 .gbadge i{width:8px; height:8px; border-radius:2px; flex:0 0 auto}
 .wait{font-size:var(--fs-xs); color:var(--ink-2); white-space:nowrap; font-variant-numeric:tabular-nums;
   display:inline-flex; align-items:center; gap:4px}
-.rvtop .wait{flex:0 0 auto; margin-left:auto}
-.rvhead .caret{flex:0 0 auto; margin-left:auto}
 .wait.slow{background:var(--warn-tint); border-radius:var(--r-sm); padding:1px 9px; color:var(--ink)}
 .caret{color:var(--muted); font-size:var(--fs-xs); transition:transform .15s}
-.rvitem.open .caret{transform:rotate(90deg)}
-.rvbody{display:none; padding:0 var(--sp-4) var(--sp-4); border-top:1px solid var(--border-2)}
-.rvitem.open .rvbody{display:block}
 .blk{margin-top:var(--sp-4)}
 .blk h4{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
   text-transform:uppercase; margin:0 0 var(--sp-2)}
@@ -876,15 +879,18 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .syslegend .lg{display:inline-flex; align-items:center; gap:7px}
 .runner{display:inline-flex; align-items:center; font-size:var(--fs-2xs); font-weight:700;
   border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap; line-height:1.6}
-.runner.routine{background:var(--s1-tint); color:var(--s1-ink)}
-.runner.task{background:var(--done-tint); color:var(--done)}
-.runner.poller{background:var(--fix-tint); color:var(--fix-ink)}
+/* 色は「実行主体」にだけ使う（オーナー要望 2026-08-19）。
+   オレンジ=Claude ルーチン（Claude のアイコンと同じ色）／青=ポーラー／緑=タスクスケジューラ。
+   分類（YouTube制作／X運用／その他）には色を当てない＝タイムラインは区切り線だけで分ける。 */
+.runner.routine{background:var(--fix-tint); color:var(--fix-ink)}
+.runner.poller{background:var(--s1-tint); color:var(--s1-ink)}
+.runner.task{background:var(--good-tint); color:var(--up)}
 .sysflag{display:inline-flex; align-items:center; font-size:var(--fs-2xs); font-weight:700;
   border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap; line-height:1.6;
   background:var(--warn-tint); color:var(--ink)}
 
-/* 時間軸。丸バッジ(.tlpin)の色は .runner と同じ割り当て（青=ルーチン／枠線=タスク
-   スケジューラ／橙=ポーラー）。1件=1段（.tlrow の bottom で高さを決める）で、段の数だけ
+/* 時間軸。丸バッジ(.tlpin)の色は .runner と同じ割り当て（橙=Claude ルーチン／青=ポーラー／
+   緑の枠線=タスクスケジューラ）。1件=1段（.tlrow の bottom で高さを決める）で、段の数だけ
    .tlpins の高さが伸びる。.tlstem が軸線から段の高さまでの目印線。.tlrow は時刻の
    左半分なら丸バッジ→名前の順（右に伸びる）、右半分なら名前→丸バッジの順（左に伸びる）
    にして、右端で名前が画面外にはみ出しにくくする。 */
@@ -892,11 +898,9 @@ a.syslink .t{color:var(--accent, var(--ink))}
    小さい文字ラベルは読みにくい・8/18。横スクロールしてもカードは常に見える）。 */
 .tltrack{display:flex; align-items:flex-start; gap:10px; margin-bottom:var(--sp-4)}
 .tlsidebar{position:relative; flex:0 0 150px; width:150px}
+/* 分類のラベル。色は付けない（色は実行主体だけ）。レーンの区切り線は右の軸側と揃える */
 .tlcard{position:absolute; left:0; right:0; display:flex; flex-direction:column;
-  justify-content:center; gap:3px; padding:0 13px; border-radius:var(--r-md); box-shadow:var(--shadow-1)}
-.tlcard.youtube{background:var(--good-tint)}
-.tlcard.x{background:var(--s2-tint)}
-.tlcard.other{background:var(--surface-3)}
+  justify-content:center; gap:3px; padding:0 13px 0 0; border-top:1px solid var(--border)}
 .tlcardtitle{font-size:var(--fs-sm); font-weight:700; color:var(--ink); line-height:1.3}
 .tlcardcount{font-size:var(--fs-2xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
 .tlouter{flex:1 1 auto; min-width:0; overflow-x:auto; -webkit-overflow-scrolling:touch}
@@ -905,19 +909,20 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .tlrow{position:absolute; z-index:1; display:flex; align-items:center; gap:5px; white-space:nowrap}
 .tlrow.off{opacity:.5}
 .tlname{font-size:10.5px; font-weight:600; color:var(--ink-2)}
-/* 領域の帯本体は左のカードと同じ配色の背景だけ（ラベルはカード側に出すのでここには
-   置かない）。帯は表と同じ並び（YouTube→X→その他）を上から出す・pointer-events:none
-   でクリック/ホバーの邪魔をしない。 */
-.tlchband{position:absolute; left:0; right:0; border-radius:var(--r-sm); pointer-events:none}
-.tlchband.youtube{background:var(--good-tint)}
-.tlchband.x{background:var(--s2-tint)}
-.tlchband.other{background:var(--surface-3)}
-/* 常時稼働（5分間隔など・特定の時刻を持たないタスク）は該当する帯の一番上に外枠だけの
-   帯として全幅で出す。塗りつぶし黒は主張が強すぎるとの指摘で、中は透明・枠線だけ黒に
-   変更（テーマに関係なく常に黒＝「点ではなく常時」を一目で区別させる意図は維持・8/18）。 */
+/* 領域（YouTube制作／X運用／その他）はスイムレーンの区切り線だけで分ける。背景色は
+   付けない（色は実行主体＝Claude／ポーラー／スケジューラのためだけに取っておく・
+   オーナー要望 2026-08-19）。ラベルは左のカード側。pointer-events:none で操作の邪魔をしない。 */
+.tlchband{position:absolute; left:0; right:0; pointer-events:none;
+  border-top:1px solid var(--border)}
+/* 常時稼働（5分間隔など・特定の時刻を持たないタスク）は該当するレーンの一番上に外枠だけの
+   帯として全幅で出す（中は透明＝「点ではなく常時」を一目で区別させる・8/18）。枠線の色は
+   実行主体に合わせる（黒固定をやめた・2026-08-19）。 */
 .tlalways{position:absolute; left:0; right:0; z-index:1; box-sizing:border-box;
   display:flex; align-items:center; gap:9px; padding:0 9px; border-radius:var(--r-sm);
-  background:transparent; border:1.5px solid #18120f; color:var(--ink)}
+  background:transparent; border:1.5px solid var(--axis); color:var(--ink)}
+.tlalways.routine{border-color:var(--fix)}
+.tlalways.poller{border-color:var(--s1)}
+.tlalways.task{border-color:var(--up)}
 .tlalways .tlpin{flex:0 0 auto}
 .tlalways span:last-child{font-size:var(--fs-2xs); font-weight:600; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis}
@@ -927,9 +932,9 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .tlpin{display:inline-flex; align-items:center; justify-content:center;
   width:22px; height:22px; flex:0 0 auto;
   border-radius:var(--r-pill); font-size:11px; font-weight:700; font-variant-numeric:normal; cursor:default}
-.tlpin.routine{background:var(--s1); color:#fff}
-.tlpin.poller{background:var(--fix); color:#fff}
-.tlpin.task{background:var(--done-tint); color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--done)}
+.tlpin.routine{background:var(--fix); color:#fff}
+.tlpin.poller{background:var(--s1); color:#fff}
+.tlpin.task{background:var(--good-tint); color:var(--up); box-shadow:inset 0 0 0 1.5px var(--up)}
 .tlstem{position:absolute; bottom:0; width:1px; background:var(--border-2); transform:translateX(-50%)}
 .tlstem.off{opacity:.5}
 .tlaxis{position:relative; height:1px; background:var(--grid); margin-top:6px}
@@ -1051,7 +1056,6 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .navbtn .badge{position:absolute; transform:translate(12px,-9px)}
   .kanban{grid-auto-columns:minmax(196px,196px)}
   .tblwrap.tall{max-height:none}
-  .rvhead{padding:12px var(--sp-3)}
   #toast{bottom:78px}
   footer{padding-bottom:72px}   /* 固定タブバー(≈64px)を避ける最小限 */
 }
@@ -1072,18 +1076,15 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
 /* ═══ スマホ: 在庫・レビュー・稼働の3タブを同じ「左右いっぱいの表」に揃える（#205）
    基準は在庫カード（.stockcards の行）: 角丸なし・影なし・画面端まで・区切りは細線1本・
    左端に状態の色帯・行の内側余白は 12px 16px。
-   ⚠️ 置き場所に意味がある: .rvitem / .run の基本定義（角丸・影つきカード）はこの
-      ブロックより前にあり詳細度も同じなので、前方のメディアクエリに書くと後勝ちで
-      上書きされて効かない。必ず基本定義より後ろ＝ここに置くこと ═══ */
+   ⚠️ 置き場所に意味がある: .run の基本定義（角丸・影つきカード）はこのブロックより
+      前にあり詳細度も同じなので、前方のメディアクエリに書くと後勝ちで上書きされて
+      効かない。必ず基本定義より後ろ＝ここに置くこと ═══ */
 @media (max-width:640px){
   /* リスト本体: main の左右パディングを打ち消して画面端まで。行間の隙間は無くす */
-  .rvlist,.runs{gap:0; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3))}
-  .rvlist{border-top:1px solid var(--border)}
+  .runs{gap:0; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3))}
   /* 行: カードの角丸・影・左右の枠線を外し、下線1本だけの表の行にする。
-     状態の色帯（.rvitem.is-rv / .run.ok 等）は詳細度が高いので 3px のまま残る */
-  .rvitem,.run{border-radius:0; border-width:0 0 1px 0; box-shadow:none}
-  .rvhead{padding:var(--sp-3) var(--sp-4)}
-  .rvhead .chip{display:none}   /* チャンネルは見出しに出ているので行からは省く */
+     状態の色帯（.run.ok 等）は詳細度が高いので 3px のまま残る */
+  .run{border-radius:0; border-width:0 0 1px 0; box-shadow:none}
   .run{padding:var(--sp-3) var(--sp-4)}
   /* 稼働タブ: 上の説明バナーと現況も囲みを外し、下の実行ログと地続きの1枚に見せる */
   .note,.card.now{margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
@@ -1178,7 +1179,6 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
 
 <main>
   <section class="view" id="view-stock"></section>
-  <section class="view" id="view-review"></section>
   <section class="view" id="view-analytics"></section>
   <section class="view" id="view-ops"></section>
   <section class="view" id="view-system"></section>
@@ -1241,7 +1241,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/19 22:45';
+const BUILT_AT = '8/19 23:41';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1328,8 +1328,23 @@ async function q(builder){
 const state = {
   user:null, me:null, ch:null, view:'stock', stockView:'table', stockFilter:null,
   stockQ:'', stockGenre:'', stockSort:null, stockPage:0, detail:null, open:null, tblOpen:false,
-  filtersOpen:false, busy:false, lastSync:null
+  filtersOpen:false, busy:false, lastSync:null,
+  /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
+  secOpen:{}
 };
+
+/* ── 開いていたタブ・チャンネルを覚える ──────────────────────────────
+   リロードすると必ず先頭のタブに戻るのを止める（オーナー要望 2026-08-19）。
+   localStorage に置くだけで、権限が変わっていたら起動時の照合ではじく。
+   詳細（#detail/…）は従来どおり URL のハッシュが担当する（共有・再読込に強い）。 */
+const UI_KEY = 'ikemin-dashboard-ui';
+function saveUI(){
+  try { localStorage.setItem(UI_KEY, JSON.stringify({view: state.view, ch: state.ch})); }
+  catch (_) { /* プライベートモード等で書けなくても動作に影響はない */ }
+}
+function loadUI(){
+  try { return JSON.parse(localStorage.getItem(UI_KEY) || '{}') || {}; } catch (_) { return {}; }
+}
 /* ── キャッシュの持ち方（#215 Phase 2）──────────────────────────────
    core    = 表に出している1ページぶん（100件）。絞り込み・並べ替え・ページを
              変えるたびに DB から取り直す（キーが変わったら破棄）
@@ -1348,9 +1363,12 @@ const clearVideoCaches = () => {
 const resetStockFilters = () => {
   state.stockFilter=null; state.stockQ=''; state.stockGenre=''; state.stockSort=null; state.stockPage=0;
 };
+/* 在庫とレビューは1つのタブ（制作）に統合した（オーナー要望 2026-08-19）。
+   承認した動画がレビュー一覧から消えて「どこへ行ったのか分からない」状態を無くすため、
+   同じ画面の中で「あなたの番 →【AI】作業中 → 完了」とセクションで見せる。
+   バッジは従来のレビュータブと同じ「承認待ちの件数」。 */
 const VIEWS = [
-  {key:'stock',     icon:'🗂', label:'在庫'},
-  {key:'review',    icon:'📝', label:'レビュー', badge:() => pendingList(state.ch).length},
+  {key:'stock',     icon:'🗂', label:'制作', badge:() => pendingList(state.ch).length},
   {key:'analytics', icon:'📈', label:'分析'},
   /* 稼働（夜間ジョブ）はチャンネル横断の運用ログ。全チャンネル可のユーザーだけに出す */
   {key:'ops',       icon:'🌙', label:'稼働', chIndep:true, fullOnly:true},
@@ -1385,9 +1403,13 @@ async function loadBootstrap(){
   /* 動画チャンネル＝YouTube アカウントを持つ稼働中チャンネル */
   store.channels = chs.filter(c => c.status !== 'closed'
     && accs.some(a => a.channel === c.slug && a.platform === 'youtube'));
+  /* 前回開いていたチャンネル・タブを復元する。許可外・廃止済みなら黙って既定へ落とす */
+  const ui = loadUI();
+  if (!state.ch && ui.ch && store.channels.some(c => c.slug === ui.ch)) state.ch = ui.ch;
   if (!state.ch || !store.channels.some(c => c.slug === state.ch)) {
     state.ch = store.channels.length ? store.channels[0].slug : null;
   }
+  if (ui.view && visibleViews().some(v => v.key === ui.view)) state.view = ui.view;
 }
 
 /* ── 一覧は v_dashboard_list（M027）から1ページぶんだけ取る（#215 Phase 2）──
@@ -1729,13 +1751,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/19 22:45') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/19 23:41') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/19 22:45') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/19 23:41') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -1823,6 +1845,44 @@ function filterChips(facets){
       承認待ちの動画が2ページ目に隠れて見逃す。列見出しクリックの並べ替えも同じ理由で
       DB へ渡している（listOrder / SORT_DB）。 */
 
+/* ── 一覧のセクション（在庫とレビューの統合・オーナー要望 2026-08-19）────────────
+   「あなたの番 →【AI】作業中 → 完了 → ネタ案 → 没」の順に見出しを立てて並べる。
+   承認した動画が一覧から消えず【AI】作業中に残り続けるのが主目的（承認＝レビュー一覧から
+   消える、だとどこへ行ったのか分からない）。下3つは既定で畳み、件数だけ見せる。
+   並びは DB 側の sort_rank（承認待ち→修正中→進行中→投稿済み→ネタ案）そのままなので、
+   ここでは見出しを差し込むだけで並べ替えはしない。
+   絞り込み・並べ替え中は順番の意味が変わるのでセクションを外し、素直な一覧にする。 */
+const SECTIONS = [
+  {key:'rv',   label:'あなたの番 — 承認待ち',      hint:'素材を見て、承認するか修正を依頼してください'},
+  {key:'ai',   label:AI_TAG + '作業中',            hint:'AIが自動で進めています（差し戻した分の直しもここ）'},
+  {key:'done', label:'完了（予約済み・投稿済み）',  fold:true},
+  {key:'idea', label:'ネタ案（未着手）',            fold:true},
+  {key:'drop', label:'没',                         fold:true}
+];
+function sectionOf(it){
+  if (it.stage === 'dropped') return 'drop';
+  if (it._rv) return 'rv';                    /* あなたの番。工程より優先する */
+  if (it._rc) return 'ai';                    /* 差し戻しの直し中も AI の番 */
+  if (it.stage === 'posted' || it.stage === 'queue') return 'done';
+  if (it.stage === 'idea') return 'idea';
+  return 'ai';
+}
+const sectionsOff = () => !!(state.stockSort || state.stockFilter
+  || state.stockQ.trim() || state.stockGenre);
+const secOpen = s => !s.fold || !!state.secOpen[s.key];
+function groupSections(rows){
+  const g = {};
+  rows.forEach(it => { const k = sectionOf(it); (g[k] = g[k] || []).push(it); });
+  return SECTIONS.map(s => Object.assign({}, s, {rows: g[s.key] || []})).filter(s => s.rows.length);
+}
+/* 見出しの共通部分（表の行とスマホのカード見出しで同じ文言・同じ開閉状態を使う） */
+function secHeadInner(s){
+  return `<span class="sn">${s.fold ? `<span class="tri">${secOpen(s) ? '▾' : '▸'}</span>` : ''}${esc(s.label)}</span>
+    <span class="n">${s.rows.length}件</span>${s.hint ? `<span class="hint">${esc(s.hint)}</span>` : ''}`;
+}
+const secAttrs = s => s.fold
+  ? ` data-secfold="${s.key}" tabindex="0" role="button" aria-expanded="${secOpen(s)}"` : '';
+
 function matrixTable(core){
   const rows = core.items;         /* 絞り込み・並べ替え・ページ切りは DB 側で済んでいる */
 
@@ -1839,7 +1899,8 @@ function matrixTable(core){
       PSTAGES.map((s, j) => `<th class="st${j === 0 ? ' first' : (j === PSTAGES.length - 1 ? ' last' : '')}">${s.name}</th>`).join('')
     }${th('days', ' num')}<th>投稿日時</th>${th('plays', ' num')}${th('subs', ' num')}</tr>`;
 
-  const body = rows.length ? rows.map(it => `<tr data-vid="${it.id}" tabindex="0" class="${
+  const COLS = 7 + PSTAGES.length;
+  const tr = it => `<tr data-vid="${it.id}" tabindex="0" class="${
       (it.stage === 'dropped' ? 'dropped ' : '') + stateCls(it)}">
       <td class="seq">${esc(it.seq)}</td>
       <td class="ttl">${esc(it.title)}${rowFlagsHTML(it)}</td>
@@ -1848,8 +1909,14 @@ function matrixTable(core){
       <td class="num">${it.days == null ? '—' : it.days + '日'}</td>
       <td class="${it.resv || it.pub ? '' : 'dim'}">${it.resv ? `<span class="resv">🗓 ${esc(it.resv)}</span>` : (esc(it.pub) || '—')}</td>
       <td class="num${it.plays == null ? ' dim' : ''}">${it.plays == null ? '—' : nf(it.plays)}</td>
-      <td class="num${it.subs == null ? ' dim' : ''}">${it.subs == null ? '—' : (it.subs > 0 ? '+' : '') + it.subs}</td></tr>`).join('')
-    : `<tr class="emptyrow"><td colspan="${7 + PSTAGES.length}">条件に一致する動画はありません</td></tr>`;
+      <td class="num${it.subs == null ? ' dim' : ''}">${it.subs == null ? '—' : (it.subs > 0 ? '+' : '') + it.subs}</td></tr>`;
+  const secTR = s => `<tr class="secrow s-${s.key}${s.fold ? ' foldable' : ''}"${secAttrs(s)}>
+      <td colspan="${COLS}">${secHeadInner(s)}</td></tr>`;
+
+  const body = !rows.length
+    ? `<tr class="emptyrow"><td colspan="${COLS}">条件に一致する動画はありません</td></tr>`
+    : sectionsOff() ? rows.map(tr).join('')
+    : groupSections(rows).map(s => secTR(s) + (secOpen(s) ? s.rows.map(tr).join('') : '')).join('');
 
   return `<div class="tblwrap mtx${rows.length > 14 ? ' tall' : ''}">
     <table><thead>${head}</thead><tbody>${body}</tbody></table></div>${stockCards(rows)}`;
@@ -1882,7 +1949,7 @@ function progressDots(it){
   }).join('') + `</div>`;
 }
 function stockCards(rows){
-  const body = rows.length ? rows.map(it => {
+  const card = it => {
     const b = stageBadge(it);
     const extra = it.stage === 'posted'
       ? (it.plays != null ? `<span class="sx">▶ ${nf(it.plays)} 回再生</span>` : '')
@@ -1898,7 +1965,13 @@ function stockCards(rows){
       ${progressDots(it)}
       ${extra ? `<div class="scard-extra">${extra}</div>` : ''}
     </article>`;
-  }).join('') : `<div class="noitem">条件に一致する動画はありません</div>`;
+  };
+  const secHead = s => `<div class="csechead s-${s.key}${s.fold ? ' foldable' : ''}"${secAttrs(s)}>${
+    secHeadInner(s)}</div>`;
+  const body = !rows.length
+    ? `<div class="noitem">条件に一致する動画はありません</div>`
+    : sectionsOff() ? rows.map(card).join('')
+    : groupSections(rows).map(s => secHead(s) + (secOpen(s) ? s.rows.map(card).join('') : '')).join('');
   return `<div class="stockcards">${body}</div>`;
 }
 
@@ -1973,18 +2046,20 @@ async function renderStock(){
 
   const droppedN = facets.filter(f => f.stage_key === 'dropped').length;
   const active = facets.length - droppedN;
+  const rvN = pendingList(state.ch).length;
   const genres = [...new Set(facets.filter(f => f.stage_key !== 'dropped').map(f => f.genre_label))]
     .sort((a, b) => a.localeCompare(b, 'ja'));
 
   el.innerHTML = `
     <div class="pagehead">
-      <div class="eyebrow">在庫</div>
-      <h1>${m.icon} ${esc(m.name)}</h1>
-      <p>仕掛かり ${active}本・没 ${droppedN}本。v_dashboard_list（videos の status と承認列＋主口の投稿＋レビューの現在状態）から集計しています。表は ${PAGE_SIZE} 件ずつ表示し、承認待ちが必ず1ページ目に来る順に並べています。行（スマホはカード）をクリックすると詳細が開きます。</p>
+      <div class="eyebrow">制作</div>
+      <h1>${m.icon} ${esc(m.name)}${rvN ? `<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${rvN}件</span>` : ''}</h1>
+      <p>仕掛かり ${active}本・没 ${droppedN}本。上から「あなたの番（承認待ち）→${AI_TAG}作業中 → 完了」の順に並びます。行（スマホはカード）をクリックすると素材とレビュー履歴が開き、その場でコメント・承認ができます。表は ${PAGE_SIZE} 件ずつ表示します。</p>
     </div>
     <div class="sectionhead" style="margin-top:0">
       <h2>進捗マトリクス</h2>
-      <span class="hint">既定は承認待ち → 【AI】修正中 → 滞留の長い順</span>
+      <span class="hint">${sectionsOff() ? '絞り込み・並べ替え中はセクションを外して一覧で出しています'
+        : '承認したものは【AI】作業中に残ります'}</span>
       <span class="spacer"></span>
       <div class="seg" role="group" aria-label="表示切替">
         <button data-stockview="table" aria-pressed="${isTable}">表</button>
@@ -2705,50 +2780,6 @@ function threadHTML(videoId){
   }).join('')}</div>`;
 }
 
-async function renderReview(){
-  const el = $('#view-review');
-  if (!state.ch) { el.innerHTML = `<div class="noitem">動画チャンネルがありません</div>`; return; }
-  const m = chMeta(state.ch);
-  if (!store.pending[state.ch]) el.innerHTML = loading();
-  /* 一覧のページングとは独立。「状態を持つ行」だけを引く専用クエリ（#215 Phase 2） */
-  try { await loadPending(state.ch); }
-  catch (e) { el.innerHTML = errBox(e.message); return; }
-
-  const list = pendingList(state.ch);
-  const chg  = changesList(state.ch);
-  const gateNames = m.gates.map(g => GATE_LABEL[g]).join(' / ');
-  /* 行の作りもバッジも在庫カードと同じ（1行目=seq＋タイトル＋待ち日数／2行目=状態バッジ）。
-     バッジは flagsHTML＝在庫と同一のコンポーネントなので、同じ動画なら同じ見え方になる */
-  const rvRow = (r, st) => `<article class="rvitem is-${st}" data-vid="${r.item.id}" data-gate="${esc(r.gate)}">
-      <button class="rvhead" aria-label="${esc(r.item.title)} の詳細を開く">
-        <span class="rvtop">
-          <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon}</span>
-          <span class="seq">${esc(r.item.seq)}</span>
-          <span class="ttl">${esc(r.item.title)}</span>
-          <span class="wait ${r.wait >= 3 ? 'slow' : ''}">${r.wait >= 3 ? '⏳ ' : ''}待ち ${r.wait == null ? '—' : r.wait + '日'}</span>
-        </span>
-        ${flagsHTML(r.item)}
-        <span class="caret">›</span>
-      </button>
-    </article>`;
-  /* 空のときは .rvlist の外に出す（リストは画面端まで伸ばす負マージンを持つので、
-     空状態の囲みまで端に貼り付いてしまうため） */
-  const items = list.length ? `<div class="rvlist">${list.map(r => rvRow(r, 'rv')).join('')}</div>`
-    : `<div class="noitem">承認待ちはありません
-    <span class="s">レビュー依頼（review_events の request_review）が記録されるとここに並びます</span></div>`;
-
-  el.innerHTML = `
-    <div class="pagehead">
-      <div class="eyebrow">レビュー</div>
-      <h1>${m.icon} ${esc(m.name)}<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${list.length}件</span></h1>
-      <p>${gateNames} の${m.gates.length}ゲート。カードを開くと搬出済みの素材と review_events の履歴を確認でき、その場でコメント・承認ができます。表示は選択中のチャンネル分のみです。</p>
-    </div>
-    ${items}
-    ${chg.length ? `<div class="sectionhead"><h2>${AI_TAG}修正中（AIの対応待ち）${chg.length}件</h2>
-        <span class="hint">あなたが出した指摘。夜間の制作エージェントが対応すると自動で消えます</span></div>
-      <div class="rvlist">${chg.map(r => rvRow(r, 'rc')).join('')}</div>` : ''}`;
-}
-
 /* ══ ③ 分析 ════════════════════════════════════════════════════ */
 function sparkline(data, color, W, H, label){
   const P = 10;
@@ -3249,8 +3280,8 @@ function scheduleCard(doc){
       <i class="tlstem${off ? ' off' : ''}" style="left:${leftPct.toFixed(2)}%; height:${bottom}px"></i>`;
   }).join('');
 
-  // 分類は帯（背景色）＋縦位置そのもので表す。ラベルは帯の中の小さい文字ではなく、
-  // 左に固定表示するカードにする（横スクロールしても常に見える・オーナー指摘 8/18）。
+  // 分類は縦位置（レーン）と区切り線だけで表す。背景色は使わない（色は実行主体のため・
+  // オーナー要望 8/19）。ラベルは左に固定表示するカード（横スクロールしても常に見える・8/18）。
   const chBandsHtml = CHANNEL_ORDER.map(ch => {
     const L = bandLayout[ch];
     return L ? `<div class="tlchband ${ch}" style="bottom:${L.bottom}px; height:${L.height}px"></div>` : '';
@@ -3278,8 +3309,9 @@ function scheduleCard(doc){
       const title = a.e.title_ja || a.e.name || a.e.id;
       const bottom = L.alwaysBottom + i * (TL_ALWAYS_H + 4);
       const tip = `${a.e.when || ''}　${title}（${esc(a.e.name || a.e.id)}）`;
-      return `<div class="tlalways" style="bottom:${bottom}px; height:${TL_ALWAYS_H}px">
-        <span class="tlpin poller" title="${esc(tip)}">${a.num}</span>
+      const cls = RUNNER_CLS[a.e.runner] || 'poller';   /* 枠線と丸バッジを実行主体の色に揃える */
+      return `<div class="tlalways ${cls}" style="bottom:${bottom}px; height:${TL_ALWAYS_H}px">
+        <span class="tlpin ${cls}" title="${esc(tip)}">${a.num}</span>
         <span>${esc(a.e.when || '')}で常時稼働・${esc(title)}</span></div>`;
     }).join('');
   }).join('');
@@ -3414,7 +3446,6 @@ async function render(){
   state.busy = true; renderShell();
   try {
     if (state.view === 'stock')          await renderStock();
-    else if (state.view === 'review')    await renderReview();
     else if (state.view === 'analytics') await renderAnalytics();
     else if (state.view === 'ops')       await renderOps();
     else if (state.view === 'system')    await renderSystem();
@@ -3459,10 +3490,18 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-close]')) { history.back(); return; }
 
   const chBtn = e.target.closest('.chtab[data-ch]');
-  if (chBtn) { state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters(); render(); return; }
+  if (chBtn) { state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters(); saveUI(); render(); return; }
 
   const navBtn = e.target.closest('.navbtn[data-view]');
-  if (navBtn) { state.view = navBtn.dataset.view; render(); window.scrollTo({ top: 0 }); return; }
+  if (navBtn) { state.view = navBtn.dataset.view; saveUI(); render(); window.scrollTo({ top: 0 }); return; }
+
+  /* 一覧の畳んだセクション（完了・ネタ案・没）の開閉 */
+  const secBtn = e.target.closest('[data-secfold]');
+  if (secBtn) {
+    const k = secBtn.dataset.secfold;
+    state.secOpen[k] = !state.secOpen[k];
+    refreshStockTable(); return;
+  }
 
   const segBtn = e.target.closest('[data-stockview]');
   if (segBtn) { state.stockView = segBtn.dataset.stockview; renderStock(); return; }
@@ -3509,12 +3548,6 @@ document.addEventListener('click', e => {
 
   const row = e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
   if (row) { pushDetail(row.dataset.vid); return; }
-
-  const rvHead = e.target.closest('.rvhead');
-  if (rvHead) {
-    const rv = rvHead.closest('.rvitem');
-    pushDetail(rv.dataset.vid, rv.dataset.gate); return;
-  }
 
   if (e.target.closest('#tbltoggle')) {
     state.tblOpen = !state.tblOpen;
@@ -3565,7 +3598,13 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (e.key === 'Escape' && state.detail) { history.back(); return; }
-  const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid], .rvitem[data-vid]');
+  const sec = e.target.closest && e.target.closest('[data-secfold]');
+  if (sec && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    state.secOpen[sec.dataset.secfold] = !state.secOpen[sec.dataset.secfold];
+    refreshStockTable(); return;
+  }
+  const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
   if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pushDetail(row.dataset.vid, row.dataset.gate); }
 });
 window.addEventListener('scroll', hideTip, { passive: true });
