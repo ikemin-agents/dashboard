@@ -195,7 +195,9 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
   color:var(--ink); background:var(--surface-2); box-shadow:inset 0 2px 0 0 var(--chac);
   -webkit-user-select:none; user-select:none; white-space:nowrap}
 .chpick>.chcur::-webkit-details-marker{display:none}
-.chpick>.chcur .tri{font-size:10px; color:var(--ink-2); transition:transform .15s}
+.chpick>.chcur .chgo{display:inline-flex; align-items:center; gap:7px}
+.chpick>.chcur .tri{font-size:10px; color:var(--ink-2); transition:transform .15s;
+  padding:2px 4px; margin:-2px -4px}
 .chpick[open]>.chcur .tri{transform:rotate(180deg)}
 .chmenu{position:absolute; top:calc(100% + 4px); left:0; z-index:60; min-width:max(100%, 190px);
   display:grid; gap:2px; padding:6px; border:1px solid var(--border); border-radius:var(--r-md);
@@ -935,10 +937,15 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .gfm .k{font-size:var(--fs-2xs); color:var(--muted)}
 .gfm .v{font-size:var(--fs-xl); font-weight:700; font-variant-numeric:tabular-nums; line-height:1.25}
 .gfm .s{font-size:var(--fs-2xs); color:var(--ink-2)}
-/* 動画（エピソード）ごとの束。押すとその動画のシーンが開く */
-.gfgrp{border-top:1px solid var(--border-2)}
+/* 動画（エピソード）ごとの束。1本＝1枚の囲みにして、どこまでが同じ動画か分かるようにする
+   （オーナー指摘 2026-08-20: どこまでが一動画か分かりづらい）。押すとシーンが開く */
+.gfgroups{display:grid; gap:var(--sp-3)}
+.gfgrp{border:1px solid var(--border-2); border-radius:var(--r-md); overflow:hidden;
+  background:var(--surface-1)}
 .gfghead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; cursor:pointer;
-  padding:9px 2px; list-style:none; font-size:var(--fs-sm); -webkit-user-select:none; user-select:none}
+  padding:10px 13px; background:var(--surface-2); list-style:none; font-size:var(--fs-sm);
+  -webkit-user-select:none; user-select:none}
+.gfgrp[open]>.gfghead{border-bottom:1px solid var(--border-2)}
 .gfghead::-webkit-details-marker{display:none}
 .gfghead:focus-visible{outline:2px solid var(--s1); outline-offset:3px; border-radius:var(--r-sm)}
 .gfghead .tri{font-size:11px; color:var(--ink-2); transition:transform .15s}
@@ -949,9 +956,10 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .gfghead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2); background:var(--surface-2);
   border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap}
 .gfghead .tm{font-size:var(--fs-2xs); color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums}
-.gfjobs{display:grid; padding-left:var(--sp-4); padding-bottom:var(--sp-2)}
-.gfjob{display:flex; gap:10px; align-items:baseline; padding:8px 2px;
+.gfjobs{display:grid; padding:2px 13px 8px}
+.gfjob{display:flex; gap:10px; align-items:baseline; padding:8px 0;
   border-bottom:1px solid var(--border-2); font-size:var(--fs-sm)}
+.gfjob:last-child{border-bottom:none}
 .gfjob .st{flex:0 0 auto; font-size:var(--fs-2xs); font-weight:700; border-radius:var(--r-pill);
   padding:1px 9px; background:var(--surface-2); color:var(--ink-2); white-space:nowrap}
 .gfjob.is-running .st{background:var(--s1-tint); color:var(--s1-ink)}
@@ -960,8 +968,6 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .gfjob .tm{flex:0 0 auto; color:var(--ink-2); font-size:var(--fs-xs); white-space:nowrap;
   font-variant-numeric:tabular-nums}
 .gfmore{padding:8px 2px; font-size:var(--fs-2xs); color:var(--muted)}
-.gfnote{margin:var(--sp-3) 0 0; font-size:var(--fs-2xs); color:var(--muted); line-height:1.75}
-.gfnote code{background:var(--surface-2); border-radius:4px; padding:1px 5px; font-size:.95em}
 @media (max-width:640px){
   .gfmetrics{grid-template-columns:1fr; gap:0}
   .gfm{border-radius:0; border-width:0 0 1px 0; display:flex; align-items:baseline; gap:10px}
@@ -1378,7 +1384,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 22:59';
+const BUILT_AT = '8/20 23:09';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1903,10 +1909,11 @@ function renderShell(){
   const others = store.channels.filter(c => c.slug !== state.ch);
   $('#chpick').innerHTML = !curCh ? '' : (() => {
     const m = chMeta(curCh.slug);
-    return `<details class="chpick"><summary class="chcur" style="--chac:${m.accent}"
-        aria-label="チャンネルを切り替える">
-        <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(curCh.name)}
-        ${others.length ? '<span class="tri">▾</span>' : ''}</summary>
+    /* 名前を押す＝そのチャンネルの制作へ（共通画面からの戻り道）、▾ を押す＝他の候補を開く */
+    return `<details class="chpick"><summary class="chcur" style="--chac:${m.accent}">
+        <span class="chgo" data-ch="${esc(curCh.slug)}">
+          <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(curCh.name)}</span>
+        ${others.length ? '<span class="tri" aria-label="ほかのチャンネルを選ぶ">▾</span>' : ''}</summary>
       ${others.length ? `<div class="chmenu">${others.map(c => {
         const om = chMeta(c.slug);
         return `<button class="chitem" data-ch="${esc(c.slug)}">
@@ -1955,13 +1962,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 22:59') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 23:09') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:59') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 23:09') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3751,15 +3758,15 @@ function genfarmCard(gf){
   }).join('');
 
   return `<section class="card gfcard">
-    <h2>🖥 gen-farm（実家の生成機）のいま</h2>
+    <div class="sectionhead" style="margin:0 0 var(--sp-3)"><h2>🖥 gen-farm（実家の生成機）のいま</h2>
+      <span class="hint">${gf.at ? `${esc(gfClock(gf.at))} 時点` : ''}</span></div>
     <div class="gfhead ${head.cls}"><span class="mk">${head.mark}</span><span>${head.text}</span></div>
     <div class="gfmetrics">${tiles}</div>
-    ${s.jobs.length ? groups : `<div class="noitem">待っている生成はありません</div>`}
-    ${stuck.length ? `<div class="note"><span>⚠</span><div>生成機の中では出来上がっているのに、
-      手元のパソコンへ降りてきていません。<b>その動画の生成をやり直す</b>と回収されます。</div></div>` : ''}
-    <p class="gfnote">生成機は1件ずつ作ります。「順番待ち」は生成機の中で待っているぶんも含みます。
-      終わる時刻は順番どおりに進む前提の概算です。${
-      gf.at ? `${esc(gfClock(gf.at))} 時点・この画面を開いている間は1分ごとに自動更新` : ''}</p>
+    ${s.jobs.length ? `<div class="gfgroups">${groups}</div>`
+      : `<div class="noitem">待っている生成はありません</div>`}
+    ${stuck.length ? `<div class="note" style="margin:var(--sp-3) 0 0"><span>⚠</span><div>生成機の中では
+      出来上がっているのに、手元のパソコンへ降りてきていません。<b>その動画の生成をやり直す</b>と
+      回収されます。</div></div>` : ''}
   </section>`;
 }
 
@@ -3960,7 +3967,10 @@ document.addEventListener('click', e => {
   /* 詳細内の「戻る／閉じる」は履歴を戻す（popstate で一覧へ復帰・経路を一本化） */
   if (e.target.closest('[data-close]')) { history.back(); return; }
 
-  const chBtn = e.target.closest('.chtab[data-ch], .chitem[data-ch]');
+  /* チャンネル名そのものを押したときは、開閉ではなく切り替えとして扱う（2026-08-20） */
+  const goBtn = e.target.closest('.chgo[data-ch]');
+  if (goBtn) e.preventDefault();
+  const chBtn = e.target.closest('.chtab[data-ch], .chitem[data-ch], .chgo[data-ch]');
   if (chBtn) {
     state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters();
     /* チャンネル共通の画面（稼働・システム）から押したときは、そのチャンネルの制作へ戻す。
