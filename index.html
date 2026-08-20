@@ -1390,7 +1390,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 23:21';
+const BUILT_AT = '8/20 23:27';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1968,13 +1968,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 23:21') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 23:27') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 23:21') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 23:27') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3747,8 +3747,14 @@ function genfarmCard(gf){
 
   /* 動画ごとに束ねて、作成中のものだけ開いておく */
   const groups = gfGroups(s, titles).map(g => {
-    const sum = [g.running ? `作成中${g.running}` : '', g.queued ? `待ち${g.queued}` : '',
-                 g.ready ? `受け取り待ち${g.ready}` : ''].filter(Boolean).join('・');
+    /* 状態の書き方（オーナー指摘 2026-08-20: 「待ち1」の1が何なのか分からない）。
+       数は「その動画で、その状態のシーンが何本あるか」。1本のときは数を出さない
+       （「待ち1」が並ぶだけで意味が無い）。数え方の単位は中身に合わせる。 */
+    const unit = g.jobs.every(j => j.kind === 'h3_video') ? '本'
+               : g.jobs.every(j => j.kind === 'flux_image') ? '枚' : '件';
+    const n = (label, cnt) => cnt ? `${label}${cnt > 1 ? cnt + unit : ''}` : '';
+    const sum = [n('作成中', g.running), n('待ち', g.queued), n('受け取り待ち', g.ready)]
+      .filter(Boolean).join('・');
     /* 1件は「何を作っているか」と「いつ」の2列だけ。状態はまとめて見出しの右上に出すので
        ここには繰り返さない（オーナー指摘 2026-08-20: 同じことが2か所に出て分かりづらい） */
     const rows = g.jobs.map(j => `<div class="gfjob is-${esc(j.state)}">
@@ -3761,7 +3767,7 @@ function genfarmCard(gf){
         <span class="g1"><span class="tri">▸</span>
           <span class="who">${esc(g.who.icon)} ${esc(g.who.name)}</span>
           <span class="seq">${esc(g.seq)}</span></span>
-        <span class="n">${esc(sum)}</span>
+        <span class="n" title="この動画で待っているシーンの数">${esc(sum)}</span>
         <span class="ttl">${esc(g.who.title)}</span>
         <span class="tm">${g.eta ? `${esc(gfClock(g.eta))}ごろ` : ''}</span></summary>
       <div class="gfjobs">${rows}</div></details>`;
