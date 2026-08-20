@@ -942,28 +942,34 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .gfgroups{display:grid; gap:var(--sp-3)}
 .gfgrp{border:1px solid var(--border-2); border-radius:var(--r-md); overflow:hidden;
   background:var(--surface-1)}
-.gfghead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; cursor:pointer;
-  padding:10px 13px; background:var(--surface-2); list-style:none; font-size:var(--fs-sm);
-  -webkit-user-select:none; user-select:none}
+/* 2段の固定レイアウト: 左上＝チャンネルと番号／右上＝状態／左下＝タイトル／右下＝時刻。
+   タイトルの長さで位置がずれないよう、右側は常に同じ場所に来る（オーナー指摘 2026-08-20）*/
+.gfghead{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:3px 10px; align-items:center;
+  cursor:pointer; padding:10px 13px; background:var(--surface-2); list-style:none;
+  font-size:var(--fs-sm); -webkit-user-select:none; user-select:none}
+.gfghead .g1{grid-column:1; grid-row:1; display:flex; align-items:baseline; gap:8px; min-width:0}
+.gfghead .n{grid-column:2; grid-row:1; justify-self:end}
+.gfghead .ttl{grid-column:1; grid-row:2}
+.gfghead .tm{grid-column:2; grid-row:2; justify-self:end}
 .gfgrp[open]>.gfghead{border-bottom:1px solid var(--border-2)}
 .gfghead::-webkit-details-marker{display:none}
 .gfghead:focus-visible{outline:2px solid var(--s1); outline-offset:3px; border-radius:var(--r-sm)}
 .gfghead .tri{font-size:11px; color:var(--ink-2); transition:transform .15s}
 .gfgrp[open]>.gfghead .tri{transform:rotate(90deg)}
-.gfghead .who{font-weight:700; white-space:nowrap}
+.gfghead .who{font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .gfghead .seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
 .gfghead .ttl{flex:1 1 auto; min-width:0; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .gfghead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2); background:var(--surface-2);
   border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap}
 .gfghead .tm{font-size:var(--fs-2xs); color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums}
 .gfjobs{display:grid; padding:2px 13px 8px}
-.gfjob{display:flex; gap:10px; align-items:baseline; padding:8px 0;
-  border-bottom:1px solid var(--border-2); font-size:var(--fs-sm)}
+.gfjob{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:baseline;
+  padding:8px 0; border-bottom:1px solid var(--border-2); font-size:var(--fs-sm)}
+/* 作成中の1件だけ、左に細い印を付けて分かるようにする */
+.gfjob.is-running{font-weight:680}
+.gfjob.is-running .tm{color:var(--s1-ink)}
+.gfjob.is-ready .tm{color:var(--fix-ink)}
 .gfjob:last-child{border-bottom:none}
-.gfjob .st{flex:0 0 auto; font-size:var(--fs-2xs); font-weight:700; border-radius:var(--r-pill);
-  padding:1px 9px; background:var(--surface-2); color:var(--ink-2); white-space:nowrap}
-.gfjob.is-running .st{background:var(--s1-tint); color:var(--s1-ink)}
-.gfjob.is-ready .st{background:var(--warn-tint); color:var(--ink)}
 .gfjob .wt{flex:1 1 auto; min-width:0; overflow-wrap:anywhere}
 .gfjob .tm{flex:0 0 auto; color:var(--ink-2); font-size:var(--fs-xs); white-space:nowrap;
   font-variant-numeric:tabular-nums}
@@ -1384,7 +1390,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 23:09';
+const BUILT_AT = '8/20 23:21';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1962,13 +1968,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 23:09') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 23:21') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 23:09') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 23:21') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3743,16 +3749,20 @@ function genfarmCard(gf){
   const groups = gfGroups(s, titles).map(g => {
     const sum = [g.running ? `作成中${g.running}` : '', g.queued ? `待ち${g.queued}` : '',
                  g.ready ? `受け取り待ち${g.ready}` : ''].filter(Boolean).join('・');
+    /* 1件は「何を作っているか」と「いつ」の2列だけ。状態はまとめて見出しの右上に出すので
+       ここには繰り返さない（オーナー指摘 2026-08-20: 同じことが2か所に出て分かりづらい） */
     const rows = g.jobs.map(j => `<div class="gfjob is-${esc(j.state)}">
-        <span class="st">${esc(GF_STATE_LABEL[j.state] || j.state)}</span>
         <span class="wt">${esc(gfPart(j))}</span>
         <span class="tm">${esc(gfWhen(j))}</span></div>`).join('');
+    /* 見出しは2段の固定レイアウト（右上＝状態、右下＝時刻）。タイトルの長さで
+       位置がずれたり折り返したりしないようにする */
     return `<details class="gfgrp"${g.running ? ' open' : ''}>
-      <summary class="gfghead"><span class="tri">▸</span>
-        <span class="who">${esc(g.who.icon)} ${esc(g.who.name)}</span>
-        <span class="seq">${esc(g.seq)}</span>
-        <span class="ttl">${esc(g.who.title)}</span>
+      <summary class="gfghead">
+        <span class="g1"><span class="tri">▸</span>
+          <span class="who">${esc(g.who.icon)} ${esc(g.who.name)}</span>
+          <span class="seq">${esc(g.seq)}</span></span>
         <span class="n">${esc(sum)}</span>
+        <span class="ttl">${esc(g.who.title)}</span>
         <span class="tm">${g.eta ? `${esc(gfClock(g.eta))}ごろ` : ''}</span></summary>
       <div class="gfjobs">${rows}</div></details>`;
   }).join('');
