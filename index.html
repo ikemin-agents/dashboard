@@ -186,7 +186,28 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 /* チャンネル共通の画面（稼働・システム）を見ている間は「いまチャンネルは効いていない」
    ことを薄さで示す。ただし押せなくはしない（2026-08-20 オーナー指摘: グレーアウトして
    元に戻れない）。押したらそのチャンネルの制作へ戻る＝ここが戻り道になる。 */
+/* ── チャンネル切替（スマホ）──────────────────────────────────────────
+   いま見ているチャンネルだけを出し、押すと他が下に開く。広い画面では横並びのタブ
+   （.chtabs）に切り替わるので、既定では隠しておく。 */
+.chpickwrap{display:none; position:relative; flex:0 0 auto; min-width:0}
+.chpick>.chcur{display:inline-flex; align-items:center; gap:7px; cursor:pointer; list-style:none;
+  border-radius:var(--r-md) var(--r-md) 0 0; padding:8px 13px; font-size:var(--fs-sm); font-weight:650;
+  color:var(--ink); background:var(--surface-2); box-shadow:inset 0 2px 0 0 var(--chac);
+  -webkit-user-select:none; user-select:none; white-space:nowrap}
+.chpick>.chcur::-webkit-details-marker{display:none}
+.chpick>.chcur .tri{font-size:10px; color:var(--ink-2); transition:transform .15s}
+.chpick[open]>.chcur .tri{transform:rotate(180deg)}
+.chmenu{position:absolute; top:calc(100% + 4px); left:0; z-index:60; min-width:max(100%, 190px);
+  display:grid; gap:2px; padding:6px; border:1px solid var(--border); border-radius:var(--r-md);
+  background:var(--surface-1); box-shadow:var(--shadow-2)}
+.chitem{display:flex; align-items:center; gap:8px; width:100%; text-align:left; cursor:pointer;
+  font-family:inherit; font-size:var(--fs-sm); color:var(--ink); background:transparent; border:none;
+  border-radius:var(--r-sm); padding:10px 12px; white-space:nowrap}
+.chitem:hover,.chitem:focus-visible{background:var(--surface-2)}
+.chitem .cdot{width:9px; height:9px; border-radius:3px; flex:0 0 auto}
 body[data-chindep="1"] .chtabs{opacity:.6}
+body[data-chindep="1"] .chpickwrap{opacity:.6}
+body[data-chindep="1"] .chpickwrap:hover{opacity:1}
 body[data-chindep="1"] .chtab[data-ch]{cursor:pointer}
 body[data-chindep="1"] .chtab[data-ch]:hover{opacity:1}
 /* 共通画面のタブはチャンネルタブと同じ見た目だが、選択中の色帯だけ中立色にする
@@ -1108,6 +1129,9 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .nav-in{padding:0}
   .brand{font-size:var(--fs-md); line-height:1.15}
   .chrow{margin-top:var(--sp-2); gap:var(--sp-1)}
+  /* チャンネルは「いま見ているものだけ」を出し、押して切り替える（オーナー要望 2026-08-20） */
+  .chtabs{display:none}
+  .chpickwrap{display:block}
   /* 狭い画面でも共通画面（稼働・システム）はチャンネルタブの右に置く（オーナー指定 2026-08-20）。
      チャンネル名の場所を残すため、この2つは記号だけにして文字を畳む（読み上げと長押しの
      ためのラベルは title / aria-label に残す）。チャンネル側は詰めて横スクロールで逃がす */
@@ -1264,6 +1288,9 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
          別の入れ物にしてあるのは、チャンネル横断の画面を開いている間 .chtabs は
          「選べない（＝関係ない）」ものとして沈むため。同じ入れ物だと自分自身も押せなくなる。 -->
     <div class="chrow">
+      <!-- スマホは「いま見ているチャンネル」だけを出し、押すと他の選択肢が開く（2026-08-20）。
+           広い画面では下の .chtabs（横並びのタブ）に切り替わる（CSS で出し分け） -->
+      <div class="chpickwrap" id="chpick"></div>
       <div class="chtabs" id="chtabs" role="tablist" aria-label="チャンネル"></div>
       <div class="systabs" id="systabs" role="tablist" aria-label="チャンネル共通の画面"></div>
     </div>
@@ -1337,7 +1364,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 22:18';
+const BUILT_AT = '8/20 22:35';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1847,6 +1874,23 @@ function renderShell(){
       <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(c.name)}</button>`;
   }).join('') || `<span class="chtab" aria-hidden="true">チャンネルなし</span>`;
 
+  /* スマホ用: いま見ているチャンネルだけを出し、押すと他が開く（オーナー要望 2026-08-20）。
+     開閉は details/summary に任せる（JS を持たない＝選ぶと再描画で自然に閉じる）。 */
+  const curCh = store.channels.find(c => c.slug === state.ch);
+  const others = store.channels.filter(c => c.slug !== state.ch);
+  $('#chpick').innerHTML = !curCh ? '' : (() => {
+    const m = chMeta(curCh.slug);
+    return `<details class="chpick"><summary class="chcur" style="--chac:${m.accent}"
+        aria-label="チャンネルを切り替える">
+        <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(curCh.name)}
+        ${others.length ? '<span class="tri">▾</span>' : ''}</summary>
+      ${others.length ? `<div class="chmenu">${others.map(c => {
+        const om = chMeta(c.slug);
+        return `<button class="chitem" data-ch="${esc(c.slug)}">
+          <span class="cdot" style="background:${om.accent}"></span>${om.icon} ${esc(c.name)}</button>`;
+      }).join('')}</div>` : ''}</details>`;
+  })();
+
   /* チャンネルに依存しない画面（稼働・システム）はチャンネルタブの右へ（オーナー要望 2026-08-19）。
      下のナビはそのチャンネルの中の画面（制作・分析）だけにして、2つの軸を混ぜない。
      ⚠️ スマホだけは逆にする: 画面が狭いとチャンネル名が読めなくなるので、共通画面は
@@ -1888,13 +1932,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 22:18') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 22:35') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:18') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:35') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3822,7 +3866,7 @@ document.addEventListener('click', e => {
   /* 詳細内の「戻る／閉じる」は履歴を戻す（popstate で一覧へ復帰・経路を一本化） */
   if (e.target.closest('[data-close]')) { history.back(); return; }
 
-  const chBtn = e.target.closest('.chtab[data-ch]');
+  const chBtn = e.target.closest('.chtab[data-ch], .chitem[data-ch]');
   if (chBtn) {
     state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters();
     /* チャンネル共通の画面（稼働・システム）から押したときは、そのチャンネルの制作へ戻す。
