@@ -825,7 +825,15 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .run.warn{border-left:3px solid var(--warn)}
 .run.ok{border-left:3px solid var(--done)}
 .run.run-{border-left:3px solid var(--axis)}
-.runhead{display:flex; gap:var(--sp-3); align-items:center; flex-wrap:wrap; margin-bottom:10px}
+/* 1件は畳んだ状態が既定。見出し行（summary）を押すと中身が開く（2026-08-20） */
+.runhead{display:flex; gap:var(--sp-3); align-items:center; flex-wrap:wrap;
+  cursor:pointer; list-style:none; -webkit-user-select:none; user-select:none}
+.runhead::-webkit-details-marker{display:none}
+.runhead:focus-visible{outline:2px solid var(--s1); outline-offset:3px; border-radius:var(--r-sm)}
+.runhead .tri{font-size:11px; color:var(--ink-2); transition:transform .15s}
+.run[open]>.runhead{margin-bottom:10px}
+.run[open]>.runhead .tri{transform:rotate(90deg)}
+.runbody{display:grid; gap:var(--sp-2)}
 .runhead .when{font-size:var(--fs-md); font-weight:680; font-variant-numeric:tabular-nums}
 .runhead .dur{font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums}
 .runhead .kind{font-size:var(--fs-2xs); color:var(--ink-2); border:1px solid var(--border-2);
@@ -864,15 +872,7 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
    （ポーラー）は特定の時刻を持たないので軸には点を打たず、軸の上に帯（.tlband）として
    出す。時間軸だけは狭い画面で横スクロールを許容する（旧2列表の「横スクロール無し」
    方針は詳細の表側で引き続き守る＝表の列は番号・時刻とも幅1%に固定し、本文だけ折り返す）。 */
-.ovgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:var(--sp-3)}
-.ovit{display:grid; gap:2px; padding:10px 12px; background:var(--surface-2);
-  border:1px solid var(--border-2); border-radius:var(--r-md); min-width:0}
-.ovit .k{font-size:var(--fs-2xs); color:var(--muted); font-weight:700; letter-spacing:.07em;
-  text-transform:uppercase}
-.ovit .v{font-size:var(--fs-sm); font-weight:650; line-height:1.4; overflow-wrap:anywhere}
-.ovit .n{font-size:var(--fs-2xs); color:var(--ink-2); line-height:1.5; overflow-wrap:anywhere}
-
-/* 用語集（system_docs.glossary）。1語＝1行の縦積み。スマホでも横スクロールしないよう
+/* 用語集。1語＝1行の縦積み。スマホでも横スクロールしないよう
    表組みにはしない（言葉／意味／別の呼び方 を上下に重ねる） */
 .glgroup{margin:0 0 var(--sp-4)}
 .glgroup > h3{font-size:var(--fs-sm); font-weight:700; margin:0 0 4px}
@@ -1010,7 +1010,6 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .systbl td.what .nm{font-weight:650; margin-right:7px}
 .systbl td.what .runner,.systbl td.what .sysflag{vertical-align:1px; margin-right:5px}
 .systbl td.what .ds{display:block; color:var(--ink-2); font-size:var(--fs-xs); margin-top:3px}
-.systbl td.what .mt{display:block; color:var(--muted); font-size:var(--fs-2xs); margin-top:3px}
 .systbl tr.off{opacity:.5}
 /* 領域見出し行（YouTube制作／X運用／その他・共通基盤）。進捗マトリクスの列グループ見出し
    （.legend2 等）と同じ stage-bg トーンを使い、既存の「グループの区切り」語彙に揃える。 */
@@ -1253,7 +1252,7 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   <section class="view" id="view-detail"></section>
 </main>
 
-<footer id="footer">制作ダッシュボード（#191）</footer>
+<footer id="footer">制作ダッシュボード</footer>
 </div>
 
 <div id="tip" role="status"></div>
@@ -1289,7 +1288,9 @@ const RE_IMG = /\.(png|jpe?g|webp|gif|avif)$/i;
 const RE_VID = /\.(mp4|mov|webm|m4v)$/i;
 const RE_TXT = /\.(md|txt|srt|vtt|json|csv)$/i;
 /* 承認時の追加注意（課金や不可逆な工程に進むゲート） */
-const GATE_CAUTION = {storyboard:'承認すると映像生成（課金）へ進みます。'};
+/* 承認時の追加注意。**金額の話はしない**——生成は gen-farm ローカルで 0円（#273）。
+   それでも作り直しは GPU 時間と順番待ちを食うので、進む前に見てほしいことは残す。 */
+const GATE_CAUTION = {storyboard:'承認すると映像生成へ進みます（gen-farm で生成・追加費用なし）。'};
 
 /* 表示上の7工程（videos.status からの写像）。
      name  = 列見出し・タイムラインの工程名（体言）
@@ -1309,7 +1310,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 11:46';
+const BUILT_AT = '8/20 21:18';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1851,8 +1852,7 @@ function renderShell(){
   $('#synctext').textContent = state.busy ? '読み込み中…'
     : (state.lastSync ? '最終読込 ' + fmtDT(state.lastSync) : '未読込');
   $('#reloadbtn').classList.toggle('spin', state.busy);
-  $('#footer').textContent =
-    `制作ダッシュボード #191 ・ Supabase 実データ ・ 更新 ${BUILT_AT}`;
+  $('#footer').textContent = `制作ダッシュボード ・ 更新 ${BUILT_AT}`;
 }
 
 /* ══ 新版の検知（#205）════════════════════════════════════════════
@@ -1861,13 +1861,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 11:46') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 21:18') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 11:46') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 21:18') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2297,7 +2297,7 @@ function detailHTML(it){
     </details>` : '';
 
   const review = rvGate ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
-      <h4>レビュー — ${GATE_LABEL[rvGate]}ゲート</h4>${stateBar}${reviewPanel(it, rvGate, history)}</div>` : '';
+      <h4>レビュー — ${GATE_LABEL[rvGate]}の承認ポイント</h4>${stateBar}${reviewPanel(it, rvGate, history)}</div>` : '';
 
   return `<div class="dview">
     <button class="backbtn" data-close="1" aria-label="一覧に戻る">← 一覧に戻る</button>
@@ -2322,7 +2322,7 @@ function detailHTML(it){
         <div class="dcol-meta">
           <div class="dsec"><h4>フック</h4><div class="hook">${esc(it.hook || '（未設定）')}</div></div>
           <div class="dsec"><h4>工程タイムライン</h4><div class="tl">${timelineRows(it)}</div>
-            <div class="dhint">日付は承認ゲート・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
+            <div class="dhint">日付は承認ポイント・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
           ${metrics}${rvGate ? '' : history}
         </div>${review}
       </div>
@@ -2436,8 +2436,8 @@ window.addEventListener('popstate', e => {
 /* ══ ② レビュー ═════════════════════════════════════════════════ */
 
 /* ── 素材の描画 ─────────────────────────────────────────────── */
-const NO_ASSET = `<div class="noitem">素材未搬出
-  <span class="s">次回の夜間搬出から格納されます</span></div>`;
+const NO_ASSET = `<div class="noitem">まだ素材がありません
+  <span class="s">今夜の制作でここに入ります</span></div>`;
 
 function assetHead(f){
   return `<div class="ahead"><span class="anm">${esc(f.name)}</span>
@@ -2596,7 +2596,7 @@ function reviewPanel(it, gate, historyHTML){
         placeholder="直してほしい点・気づいたことを入力（Ctrl + Enter で送信）"></textarea>
       <div class="wmsg" data-slot="comment" hidden></div>
       <div class="wact">
-        <span class="whint">修正依頼として記録され、夜間の制作エージェントが対応します（投稿者はログイン中のアカウント）</span>
+        <span class="whint">修正依頼として記録され、AI が直して出し直します</span>
         <button class="btn soft" data-act="comment" data-key="${esc(key)}">コメントする</button>
       </div></div>
     <div class="rjbox" data-rjbox="${esc(key)}">
@@ -2608,7 +2608,7 @@ function reviewPanel(it, gate, historyHTML){
         <label class="alb" for="${rid}-reason">没にする理由（必須）</label>
         <textarea class="rta" id="${rid}-reason" rows="2" aria-label="没にする理由（必須）"
           placeholder="例: 検証できないネタだった／類似動画が伸びていない"></textarea>
-        <div class="anote">理由は videos.decision_note と review_events に残ります（同じネタの再提案時に参照されます）。</div>
+        <div class="anote">理由は記録され、同じネタが再び提案されたときに参照されます。</div>
         <div class="wmsg" data-slot="reject" hidden></div>
         <div class="aact">
           <button class="btn" data-act="reject-cancel">キャンセル</button>
@@ -2618,7 +2618,7 @@ function reviewPanel(it, gate, historyHTML){
     <div class="abox" data-abox="${esc(key)}">
       <div class="arow">
         <span class="ainfo"><span class="ahd">承認</span>
-          <span class="atx">${esc(gname)}ゲートを承認すると、この工程は完了して次へ進みます。</span></span>
+          <span class="atx">${esc(gname)}の承認ポイントを通すと、この工程は完了して次へ進みます。</span></span>
         <button class="btn primary" data-act="approve-open" data-key="${esc(key)}"
           aria-expanded="false" aria-controls="${pid}">${esc(gname)}を承認</button>
       </div>
@@ -2627,7 +2627,7 @@ function reviewPanel(it, gate, historyHTML){
         <label class="alb" for="${pid}-note">承認メモ（任意）</label>
         <textarea class="ata" id="${pid}-note" rows="2" aria-label="承認メモ（任意）"
           placeholder="残したいメモがあれば入力（空欄のままでも承認できます）"></textarea>
-        <div class="anote">承認は review_events に記録され、ダッシュボードからは取り消せません。</div>
+        <div class="anote">承認するとこの工程は完了します。<b>あとから取り消せません。</b></div>
         <div class="wmsg" data-slot="approve" hidden></div>
         <div class="aact">
           <button class="btn" data-act="approve-cancel">キャンセル</button>
@@ -2652,7 +2652,7 @@ function rpcErrText(error, act){
   if (code === '22023')
     return /reason is empty/i.test(raw) ? '没にする理由を入力してください'
          : /body is empty/i.test(raw)   ? 'コメントを入力してください'
-                                        : '対象のゲートが不正です（台本 / 絵コンテ / 完成のいずれか）';
+                                        : '対象の承認ポイントが不正です（台本 / 絵コンテ / 完成のいずれか）';
   if (/JWT|token is expired|invalid claim/i.test(raw))
     return 'ログインの有効期限が切れました。再度ログインしてください';
   if (/fetch|network|Failed to send/i.test(raw))
@@ -2780,7 +2780,7 @@ async function submitComment(box, key){
   if (error) { wboxBusy(box, false, 'comment'); wboxMsg(box, rpcErrText(error, 'comment'), true, 'comment'); return; }
   ta.value = '';
   await refreshAfterWrite(false);
-  toast('コメントを送信しました（修正依頼として review_events に記録）');
+  toast('修正を依頼しました');
 }
 
 /* 承認の2段階目（確定）。パネルが開いていないときは絶対に実行しない＝1タップでは通らない */
@@ -2802,7 +2802,7 @@ async function submitApprove(box, key){
   if (ta) ta.value = '';
   const already = !!(data && data.already_approved);
   await refreshAfterWrite(true);
-  toast(already ? `${gname}ゲートは既に承認済みです` : `${gname}を承認しました（review_events に記録）`);
+  toast(already ? `${gname}は既に承認済みです` : `${gname}を承認しました`);
 }
 
 /* 没の2段階目（確定）。パネルが開いていて理由が入っているときだけ実行する。
@@ -2825,7 +2825,7 @@ async function submitReject(box, key){
   if (ta) ta.value = '';
   const already = !!(data && data.already_dropped);
   await refreshAfterWrite(true);
-  toast(already ? 'この動画はすでに没になっています' : '没にしました（review_events に記録）');
+  toast(already ? 'この動画はすでに没になっています' : '没にしました');
 }
 
 // Claude（Anthropic）公式アイコン画像（角丸オレンジ背景＋白バースト・WebP）。オーナー提供画像を
@@ -3063,7 +3063,7 @@ async function renderAnalytics(){
   const hookAvg = hooks.length ? hooks.reduce((s, v) => s + v, 0) / hooks.length : null;
   const hookGe18 = hooks.filter(v => v >= 1.8).length;
   const hookCard = hooks.length ? `<div class="card">
-      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>フック維持率（目標 1.8）</h2>
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>冒頭の維持（目標 1.8）</h2>
         <span class="hint">v_publications.hook_awr・冒頭の離脱耐性・NULL除外</span></div>
       <div class="substats">
         <div class="substat"><span class="k">平均</span><span class="v">${hookAvg.toFixed(2)}</span></div>
@@ -3073,8 +3073,8 @@ async function renderAnalytics(){
       <div class="distwrap"><div class="dist">${histogram(hooks, 1.8, 0.2, m.accent, v => v.toFixed(1), '')}</div></div>
       <div class="distlegend"><span><i style="background:var(--good)"></i>1.8到達</span><span><i style="background:${m.accent}"></i>未達</span><span style="color:var(--crit)">┊ 1.8ライン</span></div>
     </div>` : `<div class="card">
-      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>フック維持率（目標 1.8）</h2><span class="hint">hook_awr</span></div>
-      <div class="noitem">フック維持率のデータがまだありません<span class="s">投稿済 ${posted.length} 本中 計測 0 本</span></div>
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>冒頭の維持（目標 1.8）</h2><span class="hint">hook_awr</span></div>
+      <div class="noitem">冒頭の維持のデータがまだありません<span class="s">投稿済 ${posted.length} 本中 計測 0 本</span></div>
     </div>`;
 
   /* 48時間初速（枠のみ・空状態）
@@ -3116,7 +3116,7 @@ async function renderAnalytics(){
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>動画別の成績</h2><span class="hint">公開が新しい順・最大12件・値なしは —</span></div>
         <div class="tblwrap perftbl"><table>
           <thead><tr><th>seq</th><th>タイトル</th><th>公開日</th><th class="num">再生数</th>
-            <th class="num">完全視聴率</th><th class="num">フック維持率</th><th class="num">エンゲージ率</th><th class="num">登録者増</th></tr></thead>
+            <th class="num">完全視聴率</th><th class="num">冒頭の維持</th><th class="num">エンゲージ率</th><th class="num">登録者増</th></tr></thead>
           <tbody>${rows}</tbody></table></div>
       </div>
       ${velocityCard}
@@ -3150,6 +3150,15 @@ function laneChips(lanes){
   }).join('');
 }
 
+/* 実行記録の種類をオーナーの言葉にする（画面に内部の名前を出さない・2026-08-20） */
+const RUN_KIND_JA = {
+  'stock-keeper':'動画の夜間制作', 'daily-log':'数字の記録', 'weekly-review':'週次レビュー',
+  'monthly-audit':'月次点検', 'review-poller':'承認・差し戻しの反映',
+  'x-reply':'Xのリプ返信', 'x-post-publish':'Xの投稿', 'x-post-propose':'Xの投稿ネタ選び'
+};
+
+/* 稼働タブ（オーナー指定 2026-08-20）: 上に「正常終了か・異常があったか」だけを大きく出し、
+   1件ずつの詳細（何をしたか・所要時間・チャンネル別の内訳）は畳んで、開いたときだけ見せる。 */
 async function renderOps(){
   const el = $('#view-ops');
   if (!store.ops) el.innerHTML = loading();
@@ -3158,18 +3167,28 @@ async function renderOps(){
   catch (e) { el.innerHTML = errBox(e.message); return; }
 
   const running = ops.runs.find(r => !r.finished_at);
-  const runs = ops.runs.length ? ops.runs.map(r => {
-    const evs = ops.events.filter(e => e.run_id === r.id);
-    /* 4状態（#219）: エラー / 中断疑い（実行中のまま5時間超）/ 実行中 / 注意あり（summary の ⚠）/ 正常終了。
-       ok は「技術的に完走したか」だけを表すので、業務上の注意は ⚠ 行で拾う（_common/agent-runs.md） */
+  /* 1件の状態を4つに畳む。ok は「最後まで走ったか」しか表さないので、
+     業務上の注意（⚠ 付きの要約）は別に拾う */
+  const stateOf = r => {
     const stale = r.ok == null && r.started_at
       && (Date.now() - new Date(r.started_at).getTime()) > STALE_RUN_MS;
-    const warn = r.ok === true && String(r.summary || '').includes('⚠');
-    const bad = r.ok === false || stale;
-    const cls = bad ? 'err' : (r.ok === true ? (warn ? 'warn' : 'ok') : 'run-');
-    const statCls = bad ? 'err' : (r.ok === true ? (warn ? 'warn' : 'ok') : 'run');
-    const statTxt = r.ok === false ? '✕ エラー'
-      : (stale ? '✕ 中断疑い' : (r.ok === true ? (warn ? '⚠ 注意あり' : '✓ 正常終了') : '● 実行中'));
+    if (r.ok === false || stale) return {key:'err', cls:'err', txt: r.ok === false ? '✕ エラー' : '✕ 途中で止まった'};
+    if (r.ok == null) return {key:'run', cls:'run', txt:'● 実行中'};
+    return String(r.summary || '').includes('⚠')
+      ? {key:'warn', cls:'warn', txt:'⚠ 注意あり'} : {key:'ok', cls:'ok', txt:'✓ 正常終了'};
+  };
+  const states = ops.runs.map(stateOf);
+  const nErr = states.filter(s => s.key === 'err').length;
+  const nWarn = states.filter(s => s.key === 'warn').length;
+
+  const head = !ops.runs.length ? {cls:'ok', mark:'—', text:'まだ記録がありません'}
+    : nErr ? {cls:'bad', mark:'✕', text:`直近${ops.runs.length}件のうち ${nErr}件でエラーが出ています`}
+    : nWarn ? {cls:'warn', mark:'⚠', text:`直近${ops.runs.length}件のうち ${nWarn}件に注意があります`}
+    : {cls:'ok', mark:'✓', text:`直近${ops.runs.length}件はすべて正常に終わっています`};
+
+  const runs = ops.runs.map((r, i) => {
+    const st = states[i];
+    const evs = ops.events.filter(e => e.run_id === r.id);
     const dur = durText(r.started_at, r.finished_at);
     const acts = evs.map(e => {
       const m = e.channel ? chMeta(e.channel) : null;
@@ -3179,34 +3198,37 @@ async function renderOps(){
       const mk = e.severity === 'error' ? '✕' : (e.severity === 'warn' ? '⚠' : '✓');
       return `<li class="${sev}">${tag}<span class="mk">${mk}</span><span class="tm">${esc(fmtTime(e.at))}</span><span class="bd">${esc(e.body)}</span></li>`;
     }).join('');
-    return `<article class="run ${cls}">
-      <div class="runhead"><span class="when">${esc(fmtDT(r.started_at) || '—')}</span>
-        <span class="kind">${esc(r.kind)}</span>
+    /* 異常があったものだけ最初から開いておく（見てほしいものを隠さない） */
+    const open = st.key === 'err' || st.key === 'warn' || st.key === 'run';
+    return `<details class="run ${st.cls === 'run' ? 'run-' : st.cls}"${open ? ' open' : ''}>
+      <summary class="runhead"><span class="tri">▸</span>
+        <span class="when">${esc(fmtDT(r.started_at) || '—')}</span>
+        <span class="kind">${esc(RUN_KIND_JA[r.kind] || r.kind)}</span>
         ${dur ? `<span class="dur">所要 ${esc(dur)}</span>` : ''}
-        <span class="stat ${statCls}">${statTxt}</span></div>
-      ${r.summary ? `<div class="runsummary">${esc(r.summary)}</div>` : ''}
-      ${laneChips(r.lanes)}
-      ${evs.length ? `<ul class="acts">${acts}</ul>` : ''}</article>`;
-  }).join('') : '';
-  /* 空のときは .runs の外に出す（レビュー一覧と同じ理由・#205） */
-  const runsBlock = ops.runs.length ? `<div class="runs">${runs}</div>`
-    : `<div class="noitem">まだ実行記録がありません
-    <span class="s">初回: 毎日 02:00 の stock keeper（PC 起動中のみ実行）</span></div>`;
+        <span class="stat ${st.cls}">${st.txt}</span></summary>
+      <div class="runbody">
+        ${r.summary ? `<div class="runsummary">${esc(r.summary)}</div>` : ''}
+        ${laneChips(r.lanes)}
+        ${evs.length ? `<ul class="acts">${acts}</ul>`
+          : `<div class="dhint">この回の細かい記録は残っていません</div>`}
+      </div></details>`;
+  }).join('');
 
   el.innerHTML = `
     <div class="pagehead">
       <div class="eyebrow">稼働</div>
-      <h1>🌙 夜間エージェント</h1>
-      <p>agent_runs / agent_run_events の実行記録（新しい順に最大20件）。</p>
+      <h1>🌙 自動で動いた記録</h1>
+      <p>夜間の制作やXの投稿など、自動で走った仕事の結果です。行を開くと中身が見られます。</p>
     </div>
-    <div class="note"><span>🌐</span><div><b>この画面は全チャンネル共通です。</b>
-      夜間ジョブは 1 回の実行で全チャンネルをまとめて処理するため、上のチャンネルタブの選択は反映されません。</div></div>
+    <div class="gfhead ${head.cls}"><span class="mk">${head.mark}</span><span>${head.text}</span></div>
     <div class="card now">
       <span class="pulse ${running ? 'live' : ''}"></span>
-      <div><b>${running ? `実行中: ${esc(running.kind)}（${esc(fmtDT(running.started_at) || '')} 開始）` : 'いま進行中のジョブはありません'}</b>
-        <div style="font-size:var(--fs-xs);color:var(--ink-2)">次回実行 毎日 02:00 JST・PC 起動中のみ実行</div></div>
+      <div><b>${running ? `いま実行中: ${esc(RUN_KIND_JA[running.kind] || running.kind)}（${esc(fmtDT(running.started_at) || '')} 開始）`
+        : 'いま動いているものはありません'}</b>
+        <div style="font-size:var(--fs-xs);color:var(--ink-2)">動画の夜間制作は毎日 2:00（パソコンが起動しているときだけ動きます）</div></div>
     </div>
-    ${runsBlock}`;
+    ${ops.runs.length ? `<div class="runs">${runs}</div>`
+      : `<div class="noitem">まだ記録がありません</div>`}`;
 }
 
 /* ══ ⑤ システム ════════════════════════════════════════════════ */
@@ -3292,21 +3314,9 @@ function parseDoc(doc){
   if (!doc) return null;
   try { return JSON.parse(doc.content); } catch { return null; }
 }
-const syncHint = '同期: python dashboard/sync-system-docs.py';
-const notSynced = what => `<div class="noitem">${esc(what)}がまだ同期されていません
-    <span class="s">${esc(syncHint)}</span></div>`;
-
-function overviewCard(doc){
-  const d = parseDoc(doc);
-  if (!d || !Array.isArray(d.items)) return '';
-  return `<div class="card sysover">
-    <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>${esc(doc.title || 'いまの構成')}</h2>
-      <span class="hint">${esc(fmtDT(doc.updated_at) || '')} 同期</span></div>
-    <div class="ovgrid">${d.items.map(it => `<div class="ovit">
-      <span class="k">${esc(it.label)}</span>
-      <span class="v">${esc(it.value)}</span>
-      ${it.note ? `<span class="n">${esc(it.note)}</span>` : ''}</div>`).join('')}</div></div>`;
-}
+/* 中身がまだ入っていないときの表示。理由（同期の仕組み）は画面に出さない
+   （オーナー指定 2026-08-20: ダッシュボードには裏側の話を書かない） */
+const notSynced = what => `<div class="noitem">${esc(what)}をまだ読み込めていません</div>`;
 
 /* 外部リンク集。スマホから GitHub の課題ボード等へ1タップで飛ぶための入口
    （アプリが入っていればアプリ側で開く）。中身は静的なのでコード内に持つ。 */
@@ -3319,7 +3329,7 @@ const SYS_LINKS = [
     {label:'秘書タスク', url:'https://github.com/orgs/ikemin-agents/projects/1/views/5',
      note:'生活・家まわり'},
   ]},
-  {group:'課題一覧（リポジトリ）', items:[
+  {group:'課題一覧', items:[
     {label:'未対応の課題', url:'https://github.com/ikemin-agents/sns-automation/issues',
      note:'未クローズの課題を新しい順に'},
     {label:'自分に割り当て', url:'https://github.com/issues/assigned',
@@ -3376,12 +3386,12 @@ function scheduleCard(doc){
   const pinsHtml = pins.map(p => {
     const cls = RUNNER_CLS[p.e.runner] || 'routine';
     const off = p.e.enabled === false;
-    const title = p.e.title_ja || p.e.name || p.e.id;
+    const title = p.e.title_ja || p.e.id;
     const leftPct = p.min / 1440 * 100;
     const flip = leftPct > 50;   // 時刻が後半(50%超)は名前を左へ伸ばし、右端でのはみ出しを防ぐ
     const L = bandLayout[p.channel];
     const bottom = (L ? L.innerBottom : 0) + p.lane * TL_ROW_H;
-    const tip = `${p.e.when || ''}　${title}（${esc(p.e.name || p.e.id)}）`;
+    const tip = `${p.e.when || ''}　${title}`;
     const badge = `<span class="tlpin ${cls}" title="${esc(tip)}">${p.num}</span>`;
     const label = `<span class="tlname">${esc(title)}</span>`;
     const pos = flip ? `right:calc(${(100 - leftPct).toFixed(2)}% - 11px)` : `left:calc(${leftPct.toFixed(2)}% - 11px)`;
@@ -3416,9 +3426,9 @@ function scheduleCard(doc){
     const list = alwaysOnByChannel[ch] || [];
     if (!L || !list.length) return '';
     return list.map((a, i) => {
-      const title = a.e.title_ja || a.e.name || a.e.id;
+      const title = a.e.title_ja || a.e.id;
       const bottom = L.alwaysBottom + i * (TL_ALWAYS_H + 4);
-      const tip = `${a.e.when || ''}　${title}（${esc(a.e.name || a.e.id)}）`;
+      const tip = `${a.e.when || ''}　${title}`;
       const cls = RUNNER_CLS[a.e.runner] || 'poller';   /* 枠線と丸バッジを実行主体の色に揃える */
       return `<div class="tlalways ${cls}" style="bottom:${bottom}px; height:${TL_ALWAYS_H}px">
         <span class="tlpin ${cls}" title="${esc(tip)}">${a.num}</span>
@@ -3439,19 +3449,16 @@ function scheduleCard(doc){
   // 表は「どの領域(YouTube制作／X運用／その他)の仕事か」で区切って読めるようにする。
   // 各領域の中は entries の時系列順のまま（採番はグループ化の前後で変わらない）。
   const rowHtml = e => {
-    const meta = [runnerLabel[e.runner] || e.runner, e.model && e.model !== '（既定）' ? e.model : null]
-      .filter(Boolean).join(' ・ ');
     const off = e.enabled === false;
     const cls = RUNNER_CLS[e.runner] || 'routine';
     return `<tr${off ? ' class="off"' : ''}>
       <td class="no"><span class="tlpin ${cls}">${numOf.get(e)}</span></td>
       <td class="when">${esc(e.when || '—')}</td>
       <td class="what">
-        <span class="nm">${esc(e.name || e.id)}</span>
+        <span class="nm">${esc(e.title_ja || e.id)}</span>
         <span class="runner ${cls}">${esc(runnerLabel[e.runner] || e.runner)}</span>
         ${e.status && e.status !== '運用中' ? `<span class="sysflag">${esc(e.status)}</span>` : ''}
-        ${e.description ? `<span class="ds">${esc(e.description)}</span>` : ''}
-        <span class="mt">${esc(meta)}</span></td></tr>`;
+        ${e.description ? `<span class="ds">${esc(e.description)}</span>` : ''}</td></tr>`;
   };
   const rows = CHANNEL_ORDER.map(ch => {
     const group = d.entries.filter(e => (e.channel || 'other') === ch);
@@ -3587,10 +3594,8 @@ function genfarmCard(gf){
     ${stuck.length ? `<div class="note"><span>⚠</span><div>生成機の中では出来上がっているのに、
       手元のパソコンへ降りてきていません。<b>その動画の生成スクリプトを実行し直す</b>と回収されます
       （2026-08-19 に同じ形の詰まりが起きています）。</div></div>` : ''}
-    <p class="gfnote">数字は発注台帳（generation_jobs）そのもの。完了時刻は「1件ずつ順に処理される」
-      前提の概算です。同じ内容をパソコンから見るには
-      <code>python 00-config/tools/genfarm-status/genfarm_status.py</code>。
-      ${gf.at ? `${esc(gfClock(gf.at))} 時点・この画面を開いている間は1分ごとに自動更新` : ''}</p>
+    <p class="gfnote">終わる時刻は「1件ずつ順番に処理される」前提の概算です。${
+      gf.at ? `${esc(gfClock(gf.at))} 時点・この画面を開いている間は1分ごとに自動更新` : ''}</p>
   </section>`;
 }
 
@@ -3634,18 +3639,13 @@ async function renderSystem(){
     <div class="pagehead">
       <div class="eyebrow">システム</div>
       <h1>⚙️ 構成とスケジュール</h1>
-      <p>いちばん上は gen-farm のいまの待ち行列（generation_jobs の実データ）。その下は
-        system_docs（M029）の写しです。ログインした人だけが見られます（公開ページには載りません）。</p>
+      <p>いちばん上は生成機のいまの状況。その下は、何が何時に自動で動くかの一覧です。</p>
     </div>
-    <div class="note"><span>🌐</span><div><b>この画面は全チャンネル共通です。</b>
-      上のチャンネルタブの選択は反映されません。gen-farm 以外の中身はリポジトリ側の正本を写したもので、
-      更新は同期スクリプト（${esc(syncHint)}）を実行したときだけ入れ替わります。</div></div>
     <div class="stack">
       <div id="gfslot">${gf && !gf.error ? genfarmCard(gf)
         : `<section class="card gfcard"><h2>🖥 gen-farm（実家の生成機）のいま</h2>
             <div class="noitem">待ち行列を読み込めませんでした
             <span class="s">${esc((gf && gf.error) || '')}</span></div></section>`}</div>
-      ${overviewCard(docs['system-overview'])}
       ${linksCard()}
       ${scheduleCard(docs['schedule'])}
       ${glossaryCard(docs['glossary'])}
