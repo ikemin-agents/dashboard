@@ -945,24 +945,23 @@ a.syslink .t{color:var(--accent, var(--ink))}
 /* 2段の固定レイアウト: 左上＝チャンネルと番号／右上＝状態／左下＝タイトル／右下＝時刻。
    タイトルの長さで位置がずれないよう、右側は常に同じ場所に来る（オーナー指摘 2026-08-20）*/
 .gfghead{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:3px 10px; align-items:center;
-  cursor:pointer; padding:10px 13px; background:var(--surface-2); list-style:none;
-  font-size:var(--fs-sm); -webkit-user-select:none; user-select:none}
+  padding:10px 13px; background:var(--surface-2); font-size:var(--fs-sm)}
+.gfghead.tap{cursor:pointer}
+.gfghead.tap:hover{background:var(--surface-3)}
+.gfghead.tap:focus-visible{outline:2px solid var(--s1); outline-offset:-2px}
+.gfghead .caret{margin-left:6px}
 .gfghead .g1{grid-column:1; grid-row:1; display:flex; align-items:baseline; gap:8px; min-width:0}
 .gfghead .n{grid-column:2; grid-row:1; justify-self:end}
 .gfghead .ttl{grid-column:1; grid-row:2}
 .gfghead .tm{grid-column:2; grid-row:2; justify-self:end}
-.gfgrp[open]>.gfghead{border-bottom:1px solid var(--border-2)}
-.gfghead::-webkit-details-marker{display:none}
-.gfghead:focus-visible{outline:2px solid var(--s1); outline-offset:3px; border-radius:var(--r-sm)}
-.gfghead .tri{font-size:11px; color:var(--ink-2); transition:transform .15s}
-.gfgrp[open]>.gfghead .tri{transform:rotate(90deg)}
 .gfghead .who{font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .gfghead .seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
-.gfghead .ttl{flex:1 1 auto; min-width:0; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+/* タイトルは省略しない（オーナー指定 2026-08-20: 見切れずに全部出す）。長ければ折り返す */
+.gfghead .ttl{min-width:0; color:var(--ink-2); line-height:1.5; overflow-wrap:anywhere}
 .gfghead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2); background:var(--surface-2);
   border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap}
 .gfghead .tm{font-size:var(--fs-2xs); color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums}
-.gfjobs{display:grid; padding:2px 13px 8px}
+.gfjobs{display:grid; padding:2px 13px 8px; border-top:1px solid var(--border-2)}
 .gfjob{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:baseline;
   padding:8px 0; border-bottom:1px solid var(--border-2); font-size:var(--fs-sm)}
 /* 作成中の1件だけ、左に細い印を付けて分かるようにする */
@@ -1390,7 +1389,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 23:27';
+const BUILT_AT = '8/20 23:39';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1968,13 +1967,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 23:27') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 23:39') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 23:27') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 23:39') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3702,7 +3701,8 @@ function gfGroups(s, titles){
   const map = new Map();
   s.jobs.forEach(j => {
     const key = `${j.r.channel || ''}|${j.r.episode_seq || '—'}`;
-    if (!map.has(key)) map.set(key, { seq: j.r.episode_seq || '—', who: gfWhose(j.r, titles), jobs: [] });
+    if (!map.has(key)) map.set(key, { seq: j.r.episode_seq || '—', who: gfWhose(j.r, titles),
+                                      videoId: j.r.video_id || null, jobs: [] });
     map.get(key).jobs.push(j);
   });
   return [...map.values()].map(g => {
@@ -3760,17 +3760,20 @@ function genfarmCard(gf){
     const rows = g.jobs.map(j => `<div class="gfjob is-${esc(j.state)}">
         <span class="wt">${esc(gfPart(j))}</span>
         <span class="tm">${esc(gfWhen(j))}</span></div>`).join('');
-    /* 見出しは2段の固定レイアウト（右上＝状態、右下＝時刻）。タイトルの長さで
-       位置がずれたり折り返したりしないようにする */
-    return `<details class="gfgrp"${g.running ? ' open' : ''}>
-      <summary class="gfghead">
-        <span class="g1"><span class="tri">▸</span>
+    /* 見出しは2段の固定レイアウト（右上＝状態、右下＝時刻）。中身は常に開いておく
+       （オーナー指定 2026-08-20: 閉じる必要はない）。動画として登録済みなら、
+       見出しを押すとその動画の詳細（素材とレビューの記録）へ移る。 */
+    const go = g.videoId
+      ? ` data-gfvid="${g.videoId}" role="button" tabindex="0" title="この動画の詳細を開く"` : '';
+    return `<div class="gfgrp">
+      <div class="gfghead${g.videoId ? ' tap' : ''}"${go}>
+        <span class="g1">
           <span class="who">${esc(g.who.icon)} ${esc(g.who.name)}</span>
           <span class="seq">${esc(g.seq)}</span></span>
         <span class="n" title="この動画で待っているシーンの数">${esc(sum)}</span>
-        <span class="ttl">${esc(g.who.title)}</span>
-        <span class="tm">${g.eta ? `${esc(gfClock(g.eta))}ごろ` : ''}</span></summary>
-      <div class="gfjobs">${rows}</div></details>`;
+        <span class="ttl">${esc(g.who.title)}${g.videoId ? '<span class="caret">›</span>' : ''}</span>
+        <span class="tm">${g.eta ? `${esc(gfClock(g.eta))}ごろ` : ''}</span></div>
+      <div class="gfjobs">${rows}</div></div>`;
   }).join('');
 
   return `<section class="card gfcard">
@@ -3800,7 +3803,8 @@ function startGenfarmAuto(){
 async function refreshGenfarmCard(){
   const slot = $('#gfslot');
   /* 画面が変わった／タブが裏に回った／ログアウトした ならこの回は何もしない */
-  if (!slot || state.view !== 'system' || document.hidden || !state.user) return;
+  if (!slot || state.view !== 'system' || document.hidden || !state.user
+      || state.detail != null) return;      /* 詳細を開いている間は取りに行かない */
   let gf;
   try { gf = await loadGenfarm(true); }
   catch (_) { return; }                 /* 一時的に読めなくても前の表示を残す */
@@ -4051,6 +4055,10 @@ document.addEventListener('click', e => {
     return;
   }
 
+  /* gen-farm の動画カードを押したら、その動画の詳細（素材とレビューの記録）を開く */
+  const gfRow = e.target.closest('[data-gfvid]');
+  if (gfRow) { pushDetail(gfRow.dataset.gfvid); return; }
+
   const row = e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
   if (row) { pushDetail(row.dataset.vid); return; }
 
@@ -4109,6 +4117,8 @@ document.addEventListener('keydown', e => {
     state.secOpen[sec.dataset.secfold] = !state.secOpen[sec.dataset.secfold];
     refreshStockTable(); return;
   }
+  const gfRow = e.target.closest && e.target.closest('[data-gfvid]');
+  if (gfRow && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pushDetail(gfRow.dataset.gfvid); return; }
   const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
   if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pushDetail(row.dataset.vid, row.dataset.gate); }
 });
