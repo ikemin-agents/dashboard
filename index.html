@@ -183,7 +183,12 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chtab .cdot{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
 .chtab[aria-selected="true"]{background:var(--surface-2); color:var(--ink); font-weight:650;
   border-color:var(--border-2); box-shadow:inset 0 2px 0 0 var(--chac)}
-body[data-chindep="1"] .chtabs{opacity:.5; pointer-events:none}
+/* チャンネル共通の画面（稼働・システム）を見ている間は「いまチャンネルは効いていない」
+   ことを薄さで示す。ただし押せなくはしない（2026-08-20 オーナー指摘: グレーアウトして
+   元に戻れない）。押したらそのチャンネルの制作へ戻る＝ここが戻り道になる。 */
+body[data-chindep="1"] .chtabs{opacity:.6}
+body[data-chindep="1"] .chtab[data-ch]{cursor:pointer}
+body[data-chindep="1"] .chtab[data-ch]:hover{opacity:1}
 /* 共通画面のタブはチャンネルタブと同じ見た目だが、選択中の色帯だけ中立色にする
    （チャンネルの色ではないので） */
 .chtab.sys[aria-selected="true"]{box-shadow:inset 0 2px 0 0 var(--ink-2)}
@@ -1304,7 +1309,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 08:57';
+const BUILT_AT = '8/20 11:46';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1805,9 +1810,12 @@ function renderShell(){
   const views = visibleViews();
   if (!views.some(v => v.key === state.view)) state.view = views[0].key;
 
+  /* いま見ているのがチャンネル共通の画面か（＝チャンネルタブが「戻り道」になる） */
+  const indepNow = !!(views.find(x => x.key === state.view) || {}).chIndep;
   $('#chtabs').innerHTML = store.channels.map(c => {
     const m = chMeta(c.slug), on = state.ch === c.slug;
-    return `<button class="chtab" role="tab" aria-selected="${on}" data-ch="${esc(c.slug)}" style="--chac:${m.accent}">
+    return `<button class="chtab" role="tab" aria-selected="${on && !indepNow}" data-ch="${esc(c.slug)}"
+       style="--chac:${m.accent}" title="${esc(c.name)}${indepNow ? 'の制作へ戻る' : ''}">
       <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(c.name)}</button>`;
   }).join('') || `<span class="chtab" aria-hidden="true">チャンネルなし</span>`;
 
@@ -1853,13 +1861,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 08:57') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 11:46') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 08:57') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 11:46') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3750,7 +3758,14 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-close]')) { history.back(); return; }
 
   const chBtn = e.target.closest('.chtab[data-ch]');
-  if (chBtn) { state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters(); saveUI(); render(); return; }
+  if (chBtn) {
+    state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters();
+    /* チャンネル共通の画面（稼働・システム）から押したときは、そのチャンネルの制作へ戻す。
+       戻り道が無いと「押しても何も起きない」ように見える（2026-08-20 オーナー指摘） */
+    const cur = VIEWS.find(v => v.key === state.view);
+    if (cur && cur.chIndep) state.view = 'stock';
+    saveUI(); render(); return;
+  }
 
   /* 画面の切り替え。下のナビ（制作・分析）と、チャンネルタブ右の共通タブ（稼働・システム）の両方 */
   const navBtn = e.target.closest('.navbtn[data-view], .chtab[data-view]');
