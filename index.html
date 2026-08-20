@@ -1181,6 +1181,17 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .dbody .oldver{border-radius:0; border-left-width:0; border-right-width:0;
     padding-left:0; padding-right:0}
   .dbody .oldver>.dsum{padding-left:var(--dpad); padding-right:var(--dpad)}
+  /* ── 入力欄をタップしたときに画面が動くのを止める（オーナー要望 2026-08-20）──────
+     iPhone は「文字が16pxより小さい入力欄」に合わせて自動で拡大する。これが
+     タップした瞬間に画面がグイッと動く正体なので、スマホでは入力欄だけ16pxにする
+     （拡大が起きなければ、戻るときの揺れも起きない）。 */
+  .wbox .wta,.abox .ata,.rjbox .rta,.toolbar input[type="search"],.toolbar select,.fld input{
+    font-size:16px}
+  /* ブラウザが入力欄を見せようとして画面を送るとき、下端の承認バーの裏に潜らせない */
+  .wbox .wta{scroll-margin-bottom:104px}
+  /* 書いている間は承認バーを画面下端に貼り付けない（入力欄と重なって画面が揺れるため） */
+  body:has(.wta:focus) .dbody .abox{position:static; box-shadow:none; max-height:none}
+
   /* ── コメントを画面いっぱいに（#266 オーナー要望 2026-08-19）────────────────
      .thread の左右余白と吹き出しの左右の枠線・角丸を落として、他のブロック（素材・履歴）と
      同じく端から端まで使う。内側は地の文が縁に貼り付かないぶんだけ（--dpad）残す */
@@ -1323,7 +1334,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 21:56';
+const BUILT_AT = '8/20 22:07';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1874,13 +1885,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 21:56') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 22:07') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 21:56') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:07') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
