@@ -935,13 +935,27 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .gfm .k{font-size:var(--fs-2xs); color:var(--muted)}
 .gfm .v{font-size:var(--fs-xl); font-weight:700; font-variant-numeric:tabular-nums; line-height:1.25}
 .gfm .s{font-size:var(--fs-2xs); color:var(--ink-2)}
-.gfjobs{display:grid; border-top:1px solid var(--border-2)}
+/* 動画（エピソード）ごとの束。押すとその動画のシーンが開く */
+.gfgrp{border-top:1px solid var(--border-2)}
+.gfghead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; cursor:pointer;
+  padding:9px 2px; list-style:none; font-size:var(--fs-sm); -webkit-user-select:none; user-select:none}
+.gfghead::-webkit-details-marker{display:none}
+.gfghead:focus-visible{outline:2px solid var(--s1); outline-offset:3px; border-radius:var(--r-sm)}
+.gfghead .tri{font-size:11px; color:var(--ink-2); transition:transform .15s}
+.gfgrp[open]>.gfghead .tri{transform:rotate(90deg)}
+.gfghead .who{font-weight:700; white-space:nowrap}
+.gfghead .seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
+.gfghead .ttl{flex:1 1 auto; min-width:0; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.gfghead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2); background:var(--surface-2);
+  border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap}
+.gfghead .tm{font-size:var(--fs-2xs); color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums}
+.gfjobs{display:grid; padding-left:var(--sp-4); padding-bottom:var(--sp-2)}
 .gfjob{display:flex; gap:10px; align-items:baseline; padding:8px 2px;
   border-bottom:1px solid var(--border-2); font-size:var(--fs-sm)}
 .gfjob .st{flex:0 0 auto; font-size:var(--fs-2xs); font-weight:700; border-radius:var(--r-pill);
   padding:1px 9px; background:var(--surface-2); color:var(--ink-2); white-space:nowrap}
-.gfjob.is-in_flight .st{background:var(--s1-tint); color:var(--s1-ink)}
-.gfjob.is-done .st{background:var(--warn-tint); color:var(--ink)}
+.gfjob.is-running .st{background:var(--s1-tint); color:var(--s1-ink)}
+.gfjob.is-ready .st{background:var(--warn-tint); color:var(--ink)}
 .gfjob .wt{flex:1 1 auto; min-width:0; overflow-wrap:anywhere}
 .gfjob .tm{flex:0 0 auto; color:var(--ink-2); font-size:var(--fs-xs); white-space:nowrap;
   font-variant-numeric:tabular-nums}
@@ -1364,7 +1378,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 22:35';
+const BUILT_AT = '8/20 22:59';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1818,7 +1832,6 @@ async function loadSystem(){
    30秒だけキャッシュする（システムタブを開き直すたびに叩かないため）。 */
 const GF_OPEN_STATUS = ['submitting', 'in_flight', 'done'];
 const GF_KIND_LABEL = {h3_video:'H3映像', flux_image:'FLUX画像', unknown:'不明'};
-const GF_STATUS_LABEL = {submitting:'発注中', in_flight:'実行中', done:'生成済み・未回収'};
 const GF_FALLBACK_SEC = {h3_video:223, flux_image:76, unknown:200};
 const GF_STALE_DONE_MIN = 10;      /* 「生成済み・未回収」が続くと詰まりを疑う分数 */
 const GF_TTL_MS = 30000;
@@ -1827,14 +1840,24 @@ async function loadGenfarm(force){
   if (!force && store.genfarm && Date.now() - store.genfarm.at < GF_TTL_MS) return store.genfarm;
   const [open, recent] = await Promise.all([
     q(sb.from('generation_jobs')
-        .select('id,kind,channel,episode_seq,artifact_key,status,purpose,source,submitted_at,started_at,estimated_sec')
+        .select('id,kind,channel,video_id,episode_seq,artifact_key,status,purpose,source,submitted_at,started_at,estimated_sec')
         .is('materialized_at', null).in('status', GF_OPEN_STATUS)
         .order('submitted_at', { ascending: true }).limit(200)),
     q(sb.from('generation_jobs').select('kind,estimated_sec,started_at,finished_at')
         .not('finished_at', 'is', null).not('started_at', 'is', null)
         .order('finished_at', { ascending: false }).limit(150))
   ]);
-  store.genfarm = { open, recent, at: Date.now() };
+  /* どの動画のぶんかを出すためにタイトルを引く（動画として登録済みのものだけ。
+     試作・練習のエピソードは videos に行が無いので番号だけで出す） */
+  const ids = [...new Set(open.map(r => r.video_id).filter(Boolean))];
+  const titles = {};
+  if (ids.length) {
+    try {
+      (await q(sb.from('v_dashboard_list').select('id,seq,title,channel').in('id', ids)))
+        .forEach(r => { titles[r.id] = r; });
+    } catch (_) { /* 取れなくても番号だけで出せる */ }
+  }
+  store.genfarm = { open, recent, titles, at: Date.now() };
   return store.genfarm;
 }
 
@@ -1932,13 +1955,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 22:35') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 22:59') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:35') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:59') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3585,27 +3608,33 @@ function gfEstimator(recent){
 }
 function gfState(gf){
   const est = gfEstimator(gf.recent), now = Date.now();
+  const open = gf.open || [];
+  /* 生成機は1件ずつしか作らない。DB が持っているのは「投げたところまで」なので、
+     投げた分（in_flight）のうち**いちばん早く投げた1件だけ**を「作成中」とみなし、
+     残りは生成機の中で順番待ちとして扱う（先入れ先出しなので実態とほぼ一致する）。
+     オーナー指摘 2026-08-20「なぜ両方実行中なのか」への対応。 */
+  const runningId = (open.find(r => r.status === 'in_flight') || {}).id;
   let cursor = 0;
-  const jobs = (gf.open || []).map(r => {
+  const jobs = open.map(r => {
     const kind = r.kind || 'unknown';
-    const hint = Number(r.estimated_sec) || 0;
-    const e = est(kind, hint);
-    /* 実行中なのに開始時刻が記録されていないジョブがある（発注直後に走り出した場合）。
-       その場合は発注時刻からの経過で代用する＝「—経過」と出さない */
-    const from = r.started_at || (r.status === 'in_flight' ? r.submitted_at : null);
+    const e = est(kind, Number(r.estimated_sec) || 0);
+    const isRunning = r.id === runningId;
+    /* 経過は「作成中」の1件だけが意味を持つ。開始時刻が無いときは発注時刻で代用する */
+    const from = isRunning ? (r.started_at || r.submitted_at) : null;
     const elapsed = from ? (now - new Date(from)) / 1000 : null;
     const remaining = r.status === 'done' ? 0
-      : (r.status === 'in_flight' && elapsed != null) ? Math.max(0, e - elapsed) : e;
+      : (isRunning && elapsed != null) ? Math.max(0, e - elapsed) : e;
     cursor += remaining;
-    return { r, kind, status: r.status, est: e, elapsed, remaining,
-             age: (now - new Date(r.submitted_at)) / 1000,
+    const state = r.status === 'done' ? 'ready'
+      : isRunning ? 'running'
+      : r.status === 'in_flight' ? 'queued' : 'todo';
+    return { r, kind, state, est: e, elapsed, remaining,
+             age: (now - new Date(r.finished_at || r.submitted_at)) / 1000,
              eta: r.status === 'done' ? null : now + cursor * 1000 };
   });
-  return { jobs, now,
-    running: jobs.filter(j => j.status === 'in_flight'),
-    waiting: jobs.filter(j => j.status === 'submitting'),
-    stale:   jobs.filter(j => j.status === 'done'),
-    allDoneAt: cursor > 0 ? now + cursor * 1000 : null };
+  const by = st => jobs.filter(j => j.state === st);
+  return { jobs, now, running: by('running'), queued: by('queued'), todo: by('todo'),
+           stale: by('ready'), allDoneAt: cursor > 0 ? now + cursor * 1000 : null };
 }
 /* 秒 → 「3分20秒」「1時間5分」。1分未満は秒だけ（進行中の経過が動いて見える） */
 function gfDur(sec){
@@ -3616,55 +3645,120 @@ function gfDur(sec){
   return m < 60 ? `${m}分` : `${Math.floor(m / 60)}時間${m % 60}分`;
 }
 const gfClock = ms => ms == null ? '—' : fmtTime(new Date(ms).toISOString());
-function gfWhat(j){
-  const ep = j.r.episode_seq ? `${j.r.episode_seq} ` : '';
-  const what = j.r.artifact_key || j.r.purpose || '';
-  return `${ep}${GF_KIND_LABEL[j.kind] || j.kind}${what ? `（${what}）` : ''}`;
+
+/* ── 「どの企画の・どの動画の・何を作っているか」を出すための言い換え ───────────
+   エピソード番号の頭文字で企画が分かる（D=歯科医番長／K=人類の力わざ／R=練習・検証／
+   数字だけ=世界のバズ雑学）。動画として登録済みならチャンネルとタイトルが引けるので
+   そちらを優先し、試作・練習のものは番号だけで出す。 */
+const EP_HINT = [
+  {re: /^D/i, icon: '🦷', name: '歯科医番長'},
+  {re: /^K/i, icon: '🏗', name: '人類の力わざ'},
+  {re: /^R/i, icon: '🧪', name: '練習・検証'},
+  {re: /^\d/, icon: '🌐', name: '世界のバズ雑学'}
+];
+function gfWhose(r, titles){
+  const t = (titles || {})[r.video_id];
+  if (r.channel && store.channels.some(c => c.slug === r.channel)) {
+    const m = chMeta(r.channel);
+    return { icon: m.icon, name: m.name, title: (t && t.title) || '' };
+  }
+  const hit = EP_HINT.find(h => h.re.test(String(r.episode_seq || '')));
+  return { icon: hit ? hit.icon : '🎬', name: hit ? hit.name : 'その他',
+           title: (t && t.title) || '' };
+}
+/* 何を作っているか。scene05 → シーン5の映像 / S02a・S02b → シーン2の開始・終了フレーム */
+function gfPart(j){
+  const k = String(j.r.artifact_key || '');
+  let m = /^scene0*(\d+)/i.exec(k);
+  if (m) return `シーン${Number(m[1])}の映像`;
+  m = /^S0*(\d+)([ab])?/i.exec(k);
+  if (m) return `シーン${Number(m[1])}の${m[2] === 'b' ? '終了フレーム' : '開始フレーム'}`;
+  return j.kind === 'h3_video' ? 'シーンの映像' : 'フレームの絵';
+}
+const GF_STATE_LABEL = {running:'作成中', queued:'生成機で順番待ち', todo:'待ち', ready:'できあがり'};
+/* 1件の右端に出す時刻・経過 */
+function gfWhen(j){
+  if (j.state === 'running') return `${gfDur(j.elapsed)}経過・${
+    j.remaining > 0 ? `残り${gfDur(j.remaining)}` : '見込み超過'}`;
+  if (j.state === 'ready') return `${gfDur(j.age)}前にできあがり`;
+  return `${gfClock(j.eta)}ごろ`;
+}
+
+/* エピソード（動画1本）ごとに束ねる。「この動画がいつ揃うか」を1行で見せるため */
+function gfGroups(s, titles){
+  const map = new Map();
+  s.jobs.forEach(j => {
+    const key = `${j.r.channel || ''}|${j.r.episode_seq || '—'}`;
+    if (!map.has(key)) map.set(key, { seq: j.r.episode_seq || '—', who: gfWhose(j.r, titles), jobs: [] });
+    map.get(key).jobs.push(j);
+  });
+  return [...map.values()].map(g => {
+    const n = st => g.jobs.filter(j => j.state === st).length;
+    const eta = g.jobs.reduce((mx, j) => Math.max(mx, j.eta || 0), 0);
+    return Object.assign(g, {
+      running: n('running'), queued: n('queued') + n('todo'), ready: n('ready'),
+      eta: eta || null
+    });
+  });
 }
 
 function genfarmCard(gf){
   const s = gfState(gf);
+  const titles = gf.titles || {};
   const stuck = s.stale.filter(j => j.age > GF_STALE_DONE_MIN * 60);
-  /* いちばん大きく出す1行。詰まりの疑い＞制作中＞順番待ち＞空き の順で強い方を出す */
+  const waitN = s.queued.length + s.todo.length;
+
+  /* いちばん大きく出す1行。詰まりの疑い＞作成中＞順番待ち＞空き の順で強い方を出す */
+  const cur = s.running[0];
+  const curWho = cur ? gfWhose(cur.r, titles) : null;
   const head = stuck.length
-    ? {cls:'bad', mark:'⚠', text:`生成は終わっているのに手元に降りてきていません（${stuck.length}件）`}
-    : s.running.length
-      ? {cls:'run', mark:'●', text:`制作中 — ${esc(gfWhat(s.running[0]))}`}
-      : s.waiting.length
-        ? {cls:'warn', mark:'●', text:`${s.waiting.length}件が順番待ち（まだ動き出していません）`}
+    ? {cls:'bad', mark:'⚠', text:`できあがったのに手元へ降りてきていません（${stuck.length}件）`}
+    : cur
+      ? {cls:'run', mark:'●', text:`制作中 — ${esc(curWho.icon + ' ' + curWho.name)} ${
+          esc(cur.r.episode_seq || '')}${curWho.title ? ' ' + esc(curWho.title) : ''} の${esc(gfPart(cur))}`}
+      : waitN
+        ? {cls:'warn', mark:'●', text:`${waitN}件が順番待ち（まだ動き出していません）`}
         : {cls:'ok', mark:'✓', text:'空いています（待ちはありません）'};
 
-  /* 見込みより長く走っているとき「残り0秒」を出さない（終わりそうに見えてしまうため） */
-  const overdue = s.running.some(j => j.remaining <= 0);
+  const overdue = cur && cur.remaining <= 0;
   const tiles = [
-    {k:'実行中', v:s.running.length, s:s.running.length ? gfDur(s.running[0].elapsed) + '経過' : '—'},
-    {k:'順番待ち', v:s.waiting.length,
-     s:s.allDoneAt ? `全部終わるのは ${gfClock(s.allDoneAt)} ごろ`
-       : overdue ? '見込み時間を超えて実行中' : '—'},
-    {k:'生成済み・未回収', v:s.stale.length,
-     s:stuck.length ? `${gfDur(Math.max(...stuck.map(j => j.age)))}以上そのまま` : (s.stale.length ? '回収待ち' : '—')}
+    {k:'作成中', v:s.running.length, s:cur ? gfDur(cur.elapsed) + '経過' : '—'},
+    {k:'順番待ち', v:waitN,
+     s:s.allDoneAt ? `全部そろうのは ${gfClock(s.allDoneAt)} ごろ`
+       : overdue ? '見込み時間を超えて作成中' : '—'},
+    {k:'受け取り待ち', v:s.stale.length,
+     s:stuck.length ? `${gfDur(Math.max(...stuck.map(j => j.age)))}以上そのまま`
+       : (s.stale.length ? 'まもなく手元に降ります' : '—')}
   ].map(t => `<div class="gfm"><div class="k">${esc(t.k)}</div><div class="v">${t.v}</div>
       <div class="s">${esc(t.s)}</div></div>`).join('');
 
-  const rows = s.jobs.slice(0, 10).map(j => `<div class="gfjob is-${esc(j.status)}">
-      <span class="st">${esc(GF_STATUS_LABEL[j.status] || j.status)}</span>
-      <span class="wt">${esc(gfWhat(j))}</span>
-      <span class="tm">${j.status === 'in_flight'
-        ? `${gfDur(j.elapsed)}経過・${j.remaining > 0 ? `残り${gfDur(j.remaining)}` : '見込み超過'}`
-        : j.status === 'done' ? `${gfDur(j.age)}前に完成` : `${gfClock(j.eta)}ごろ`}</span>
-    </div>`).join('');
-  const more = s.jobs.length > 10 ? `<div class="gfmore">ほか ${s.jobs.length - 10}件</div>` : '';
+  /* 動画ごとに束ねて、作成中のものだけ開いておく */
+  const groups = gfGroups(s, titles).map(g => {
+    const sum = [g.running ? `作成中${g.running}` : '', g.queued ? `待ち${g.queued}` : '',
+                 g.ready ? `受け取り待ち${g.ready}` : ''].filter(Boolean).join('・');
+    const rows = g.jobs.map(j => `<div class="gfjob is-${esc(j.state)}">
+        <span class="st">${esc(GF_STATE_LABEL[j.state] || j.state)}</span>
+        <span class="wt">${esc(gfPart(j))}</span>
+        <span class="tm">${esc(gfWhen(j))}</span></div>`).join('');
+    return `<details class="gfgrp"${g.running ? ' open' : ''}>
+      <summary class="gfghead"><span class="tri">▸</span>
+        <span class="who">${esc(g.who.icon)} ${esc(g.who.name)}</span>
+        <span class="seq">${esc(g.seq)}</span>
+        <span class="ttl">${esc(g.who.title)}</span>
+        <span class="n">${esc(sum)}</span>
+        <span class="tm">${g.eta ? `${esc(gfClock(g.eta))}ごろ` : ''}</span></summary>
+      <div class="gfjobs">${rows}</div></details>`;
+  }).join('');
 
   return `<section class="card gfcard">
     <h2>🖥 gen-farm（実家の生成機）のいま</h2>
     <div class="gfhead ${head.cls}"><span class="mk">${head.mark}</span><span>${head.text}</span></div>
     <div class="gfmetrics">${tiles}</div>
-    ${s.jobs.length ? `<div class="gfjobs">${rows}${more}</div>`
-      : `<div class="noitem">待っている生成はありません</div>`}
+    ${s.jobs.length ? groups : `<div class="noitem">待っている生成はありません</div>`}
     ${stuck.length ? `<div class="note"><span>⚠</span><div>生成機の中では出来上がっているのに、
-      手元のパソコンへ降りてきていません。<b>その動画の生成スクリプトを実行し直す</b>と回収されます
-      （2026-08-19 に同じ形の詰まりが起きています）。</div></div>` : ''}
-    <p class="gfnote">終わる時刻は「1件ずつ順番に処理される」前提の概算です。${
+      手元のパソコンへ降りてきていません。<b>その動画の生成をやり直す</b>と回収されます。</div></div>` : ''}
+    <p class="gfnote">生成機は1件ずつ作ります。「順番待ち」は生成機の中で待っているぶんも含みます。
+      終わる時刻は順番どおりに進む前提の概算です。${
       gf.at ? `${esc(gfClock(gf.at))} 時点・この画面を開いている間は1分ごとに自動更新` : ''}</p>
   </section>`;
 }
