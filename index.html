@@ -1337,7 +1337,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 22:12';
+const BUILT_AT = '8/20 22:18';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1888,13 +1888,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 22:12') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 22:18') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:12') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:18') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2790,9 +2790,33 @@ async function approveNow(vid, gate, note){
   const gname = GATE_LABEL[gate] || gate;
   const { data, error } = await sb.rpc('approve_gate',
     { p_video_id: Number(vid), p_gate: gate, p_note: note || null });
-  if (error) { toast(rpcErrText(error, 'approve')); await refreshAfterWrite(true); return; }
-  await refreshAfterWrite(true);
+  if (error) {
+    markApproved(vid, gate, false);              /* ボタンを押せる状態に戻す */
+    toast(rpcErrText(error, 'approve'));
+    return;
+  }
+  /* ⚠️ ここで画面を作り直さない（オーナー指定 2026-08-20）。一覧を描き直すと
+     スクロールが先頭へ戻ってしまい、続けて承認するときに毎回探し直しになるため。
+     代わりに「押した行のボタンだけ」を承認済みに変え、手元の記憶（キャッシュ）を捨てて
+     次にこの画面を描き直すとき（タブ切替・再読み込み・⟳）に新しい状態で出るようにする。 */
+  store.core = {}; store.facets = {}; store.board = {}; store.byId = new Map();
+  store.assets = {}; store.analytics = {};
+  delete store.threads[Number(vid)];
+  /* 承認待ちバッジだけは今すぐ正しくする（この1件を減らす。一覧は触らない） */
+  const p = store.pending[state.ch];
+  if (p && Array.isArray(p.rv)) {
+    p.rv = p.rv.filter(r => !(r.item && r.item.id === Number(vid) && r.gate === gate));
+  }
+  markApproved(vid, gate, true);
+  renderShell();
   toast((data && data.already_approved) ? `${gname}は既に承認済みです` : `${gname}を承認しました`);
+}
+/* 承認した動画のボタンを、画面を作り直さずにその場で書き換える（表の行・スマホのカード・詳細） */
+function markApproved(vid, gate, done){
+  document.querySelectorAll(`[data-act="approve-quick"][data-key="${vid}|${gate}"]`).forEach(b => {
+    b.disabled = done;
+    b.textContent = done ? '承認済み' : (b.dataset.label || '承認');
+  });
 }
 function quickApprove(key, btn){
   const [vidS, gate] = String(key).split('|');
@@ -2801,11 +2825,10 @@ function quickApprove(key, btn){
   const box = btn && btn.closest('[data-abox]');
   const ta = box && box.querySelector('.ata');
   const note = ((ta && ta.value) || '').trim();
-  const label = btn ? (btn.dataset.label || btn.textContent) : '';
   if (btn) { btn.disabled = true; btn.textContent = '承認しました'; }
   actWithUndo(`${gname}を承認しました`,
     () => approveNow(vidS, gate, note),
-    () => { if (btn) { btn.disabled = false; btn.textContent = label; } });
+    () => markApproved(vidS, gate, false));
 }
 
 /* 没の2段階目（確定）。パネルが開いていて理由が入っているときだけ実行する。
