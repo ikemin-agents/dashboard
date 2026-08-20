@@ -370,6 +370,13 @@ td.dim{color:var(--muted)}
    在庫の表／在庫カード／レビュー一覧／詳細で同じ .sbadge を使う。状態は「tint 背景＋文字色」
    だけで表し、枠線・リングは使わない（枠線あり/なしが混ざると同じ行で大きさが揃わないため）。
    寸法は全種類共通: fs-sm / padding 4px 13px / 角丸ピル / gap 5px。 */
+/* 一覧の行から直接承認するボタン（オーナー要望 2026-08-20）。行のどこを押しても詳細が
+   開く作りなので、押し間違えないよう独立したボタンにして色でも分ける */
+.okbtn{font-family:inherit; font-size:var(--fs-2xs); font-weight:700; cursor:pointer;
+  border:none; border-radius:var(--r-pill); padding:4px 13px; white-space:nowrap;
+  background:var(--s1); color:#fff}
+.okbtn:hover{filter:brightness(1.07)}
+.okbtn:disabled{background:var(--done-tint); color:var(--done); cursor:default}
 .sbadges,.flags{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
 .flags{display:inline-flex; vertical-align:middle}
 td.ttl .flags{margin-left:8px}
@@ -541,8 +548,7 @@ body.detail-open .chrow, body.detail-open .nav{display:none}
     border-bottom-width:0; max-height:min(72vh, 560px);
     box-shadow:0 -7px 20px rgba(0,0,0,.20)}
   .dbody .abox .ainfo{display:none}
-  .dbody .abox .arow>[data-act="approve-open"]{flex:1 1 100%; padding-top:11px; padding-bottom:11px}
-  .dbody .abox .apanel{border-top:none; padding-top:0}
+  .dbody .abox .arow>[data-act="approve-quick"]{flex:1 1 100%; padding-top:11px; padding-bottom:11px}
 }
 tr.dropped td{color:var(--muted)}
 
@@ -732,8 +738,11 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .abox .ahd{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
   text-transform:uppercase}
 .abox .atx{margin:0; font-size:var(--fs-sm); color:var(--ink-2); line-height:1.5}
-.abox .apanel{display:grid; gap:var(--sp-2); width:100%; margin-top:2px;
-  border-top:1px dashed var(--border); padding-top:var(--sp-3)}
+/* メモは既定で畳んでおく。承認はメモ無しの1クリックが普通なので、開くのは書きたいときだけ */
+.abox .afold{width:100%}
+.abox .afold>.dsum{text-transform:none; letter-spacing:.02em; font-weight:680; color:var(--ink-2)}
+.abox .afold[open]>.dsum{margin-bottom:var(--sp-2)}
+.abox .afold[open]>.dsum::before{transform:rotate(90deg)}
 .abox .acaution{background:var(--warn-tint); border:1px solid var(--border-2); border-radius:var(--r-md);
   padding:10px 12px; font-size:var(--fs-sm); color:var(--ink); line-height:1.65}
 .abox .alb{font-size:var(--fs-2xs); color:var(--muted); font-weight:700; letter-spacing:.07em;
@@ -1074,7 +1083,11 @@ a.syslink .t{color:var(--accent, var(--ink))}
   background:var(--ink); color:var(--page); border-radius:var(--r-md); padding:12px 20px; font-size:var(--fs-sm);
   opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; text-align:center;
   width:max-content; max-width:min(430px, calc(100vw - 32px)); box-shadow:0 8px 28px rgba(0,0,0,.28)}
-#toast.on{opacity:1; transform:translate(-50%,0)}
+#toast.on{opacity:1; transform:translate(-50%,0); pointer-events:auto}
+/* 「取り消す」つきトースト（1クリック承認の猶予・2026-08-20） */
+#toast .undo{margin-left:12px; font-family:inherit; font-size:var(--fs-xs); font-weight:700;
+  cursor:pointer; background:var(--page); color:var(--ink); border:none;
+  border-radius:var(--r-pill); padding:5px 13px}
 
 /* フッターは1行に収める（#205 オーナー指摘: やけに長い・空白が多い）。
    下の余白はスマホの固定タブバーを避ける最小限だけ残す */
@@ -1310,7 +1323,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 21:18';
+const BUILT_AT = '8/20 21:56';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1861,13 +1874,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 21:18') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 21:56') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 21:18') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 21:56') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -1903,7 +1916,12 @@ function flagsHTML(it){
 /* 一覧の行に付けるバッジ一式（#206）。進行中（【AI】台本作成中 等）も含む stageBadge を使うので、
    PC の表とスマホの在庫カードで必ず同じバッジが出る（表だけ無印の行ができない）。
    生成は badgeHTML / openBadgeHTML の2つだけを通す＝表記も寸法も1か所のまま。 */
-const rowFlagsHTML = it => `<span class="flags">${badgeHTML(stageBadge(it))}${openBadgeHTML(it)}</span>`;
+/* 承認待ちの行には、その場で通せるボタンを出す（オーナー要望 2026-08-20）。
+   コメント無しの承認が普通なので、1タップで承認まで行く（数秒だけ取り消せる） */
+const quickOkHTML = it => it._rv
+  ? `<button class="okbtn" data-act="approve-quick" data-key="${it.id}|${esc(it._rv)}"
+      data-label="承認" title="${esc(GATE_LABEL[it._rv] || it._rv)}を承認">承認</button>` : '';
+const rowFlagsHTML = it => `<span class="flags">${badgeHTML(stageBadge(it))}${openBadgeHTML(it)}${quickOkHTML(it)}</span>`;
 const pKeyOf = it => it.stage === 'dropped' ? 'dropped' : PSTAGES[displayIdx(it)].key;
 
 function progressCells(it){
@@ -2071,7 +2089,7 @@ function stockCards(rows){
         <span class="scard-ttl">${esc(it.title)}</span>
         <span class="scard-days${it.days >= 7 ? ' slow' : ''}">${it.days >= 7 ? '⏳ ' : ''}滞留 ${it.days == null ? '—' : it.days + '日'}</span>
       </div>
-      <div class="sbadges">${badgeHTML(b)}${openBadgeHTML(it)}</div>
+      <div class="sbadges">${badgeHTML(b)}${openBadgeHTML(it)}${quickOkHTML(it)}</div>
       ${progressDots(it)}
       ${extra ? `<div class="scard-extra">${extra}</div>` : ''}
     </article>`;
@@ -2616,24 +2634,17 @@ function reviewPanel(it, gate, historyHTML){
         </div>
       </div></div>
     <div class="abox" data-abox="${esc(key)}">
+      ${caution ? `<div class="acaution">⚠ ${esc(caution)}</div>` : ''}
+      <details class="afold"><summary class="dsum">メモを付ける（任意）</summary>
+        <textarea class="ata" id="${pid}-note" rows="2" aria-label="承認メモ（任意）"
+          placeholder="残したいメモがあれば入力（空欄のままで構いません）"></textarea></details>
       <div class="arow">
         <span class="ainfo"><span class="ahd">承認</span>
           <span class="atx">${esc(gname)}の承認ポイントを通すと、この工程は完了して次へ進みます。</span></span>
-        <button class="btn primary" data-act="approve-open" data-key="${esc(key)}"
-          aria-expanded="false" aria-controls="${pid}">${esc(gname)}を承認</button>
+        <button class="btn primary" data-act="approve-quick" data-key="${esc(key)}"
+          data-label="${esc(gname)}を承認">${esc(gname)}を承認</button>
       </div>
-      <div class="apanel" id="${pid}" hidden>
-        ${caution ? `<div class="acaution">⚠ ${esc(caution)}</div>` : ''}
-        <label class="alb" for="${pid}-note">承認メモ（任意）</label>
-        <textarea class="ata" id="${pid}-note" rows="2" aria-label="承認メモ（任意）"
-          placeholder="残したいメモがあれば入力（空欄のままでも承認できます）"></textarea>
-        <div class="anote">承認するとこの工程は完了します。<b>あとから取り消せません。</b></div>
-        <div class="wmsg" data-slot="approve" hidden></div>
-        <div class="aact">
-          <button class="btn" data-act="approve-cancel">キャンセル</button>
-          <button class="btn primary" data-act="approve-confirm" data-key="${esc(key)}">この内容で承認する</button>
-        </div>
-      </div></div>`;
+      <div class="wmsg" data-slot="approve" hidden></div></div>`;
 }
 
 /* RPC の例外はそのまま出さず、SQLSTATE から日本語の案内に置き換える */
@@ -2704,34 +2715,6 @@ function wboxMsg(box, text, isErr, slot){
 }
 
 /* 承認の2段階目を開く／閉じる。1段目のボタンは開いている間は隠して、押し先を1つに絞る */
-function openApprovePanel(box){
-  if (box.dataset.busy === '1') return;
-  const panel = box.querySelector('.apanel'), btn = box.querySelector('[data-act="approve-open"]');
-  if (!panel) return;
-  wboxMsg(box, '', false, 'approve');
-  panel.hidden = false;
-  if (btn) { btn.hidden = true; btn.setAttribute('aria-expanded', 'true'); }
-  panel.querySelector('.ata')?.focus();
-  /* sticky は「はみ出したぶんだけ上へ」しか動けず、レビュー節の先頭が画面内にある間は
-     開いたパネルの下端（確定ボタン）が画面外に残る。足りないぶんだけスクロールして全部見せる */
-  requestAnimationFrame(() => {
-    const over = box.getBoundingClientRect().bottom - window.innerHeight;
-    if (over > 0) window.scrollBy({ top: over + 6, behavior: 'smooth' });
-  });
-}
-function closeApprovePanel(box){
-  if (box.dataset.busy === '1') return;
-  const panel = box.querySelector('.apanel'), btn = box.querySelector('[data-act="approve-open"]');
-  if (panel) {
-    panel.hidden = true;
-    const ta = panel.querySelector('.ata'); if (ta) ta.value = '';
-  }
-  wboxMsg(box, '', false, 'approve');
-  if (btn) { btn.hidden = false; btn.setAttribute('aria-expanded', 'false'); btn.focus(); }
-}
-
-/* 没の2段階目を開く／閉じる。承認と同じ2段階に加えて、理由が空のあいだは
-   確定ボタンを disabled のままにする（＝空タップでは絶対に没にならない） */
 function openRejectPanel(box){
   if (box.dataset.busy === '1') return;
   const panel = box.querySelector('.rjpanel'), btn = box.querySelector('[data-act="reject-open"]');
@@ -2784,25 +2767,30 @@ async function submitComment(box, key){
 }
 
 /* 承認の2段階目（確定）。パネルが開いていないときは絶対に実行しない＝1タップでは通らない */
-async function submitApprove(box, key){
-  if (box.dataset.busy === '1') return;
-  const panel = box.querySelector('.apanel');
-  if (!panel || panel.hidden) return;
-  const [vidS, gate] = key.split('|');
-  const vid = Number(vidS);
+/* ── 1クリック承認（オーナー要望 2026-08-20）─────────────────────────────
+   一覧の行からも詳細のボタンからも、押した1回で承認まで通す。押した瞬間は DB へ
+   書かず、数秒の猶予をおいてから書く（その間は「取り消す」で無かったことにできる）。
+   詳細でメモを開いて書いてあれば、その内容を添えて承認する。 */
+async function approveNow(vid, gate, note){
   const gname = GATE_LABEL[gate] || gate;
-  const ta = panel.querySelector('.ata');
-  const note = ((ta && ta.value) || '').trim();
-
-  wboxMsg(box, '', false, 'approve');
-  wboxBusy(box, true, 'approve-confirm');
   const { data, error } = await sb.rpc('approve_gate',
-    { p_video_id: vid, p_gate: gate, p_note: note || null });
-  if (error) { wboxBusy(box, false, 'approve-confirm'); wboxMsg(box, rpcErrText(error, 'approve'), true, 'approve'); return; }
-  if (ta) ta.value = '';
-  const already = !!(data && data.already_approved);
+    { p_video_id: Number(vid), p_gate: gate, p_note: note || null });
+  if (error) { toast(rpcErrText(error, 'approve')); await refreshAfterWrite(true); return; }
   await refreshAfterWrite(true);
-  toast(already ? `${gname}は既に承認済みです` : `${gname}を承認しました`);
+  toast((data && data.already_approved) ? `${gname}は既に承認済みです` : `${gname}を承認しました`);
+}
+function quickApprove(key, btn){
+  const [vidS, gate] = String(key).split('|');
+  const gname = GATE_LABEL[gate] || gate;
+  /* 詳細のメモ欄（同じ動画・同じゲートのもの）に書いてあれば添える */
+  const box = btn && btn.closest('[data-abox]');
+  const ta = box && box.querySelector('.ata');
+  const note = ((ta && ta.value) || '').trim();
+  const label = btn ? (btn.dataset.label || btn.textContent) : '';
+  if (btn) { btn.disabled = true; btn.textContent = '承認しました'; }
+  actWithUndo(`${gname}を承認しました`,
+    () => approveNow(vidS, gate, note),
+    () => { if (btn) { btn.disabled = false; btn.textContent = label; } });
 }
 
 /* 没の2段階目（確定）。パネルが開いていて理由が入っているときだけ実行する。
@@ -3697,6 +3685,46 @@ function toast(msg){
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3000);
 }
 
+/* ── 1クリック承認と「取り消し」の猶予（オーナー要望 2026-08-20）──────────────────
+   承認は1タップで通るようにしたい。ただし承認は取り消せない操作なので、押した瞬間に
+   DB へ書かず、数秒の猶予をおいてから書く（その間は「取り消す」で無かったことにできる）。
+   確認ダイアログを挟むより速く、誤タップも救える。
+   猶予中にページを離れる／別の書き込みをするときは、待たずにその場で確定する。 */
+const UNDO_MS = 6000;
+let pendingAct = null;      /* {commit, timer} — 猶予中の1件だけ持つ */
+function flushPendingAct(){
+  if (!pendingAct) return;
+  clearTimeout(pendingAct.timer);
+  const run = pendingAct.commit; pendingAct = null;
+  hideToast(); run();
+}
+function actWithUndo(msg, commit, onUndo){
+  flushPendingAct();
+  const timer = setTimeout(() => { pendingAct = null; hideToast(); commit(); }, UNDO_MS);
+  pendingAct = { commit, timer };
+  toastUndo(msg, () => {
+    if (!pendingAct) return;            /* すでに確定していたら何もしない */
+    clearTimeout(pendingAct.timer); pendingAct = null; hideToast();
+    if (onUndo) onUndo();
+    toast('取り消しました');
+  });
+}
+function hideToast(){ clearTimeout(toastT); $('#toast').classList.remove('on'); }
+function toastUndo(msg, undo){
+  const t = $('#toast');
+  t.innerHTML = '';
+  t.appendChild(document.createTextNode(msg));
+  const b = document.createElement('button');
+  b.className = 'undo'; b.textContent = '取り消す';
+  b.addEventListener('click', undo);
+  t.appendChild(b);
+  t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), UNDO_MS);
+}
+/* ページを閉じる・裏に回すときは待たずに確定する（押したのに記録されない、を防ぐ） */
+window.addEventListener('pagehide', flushPendingAct);
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushPendingAct(); });
+
 /* ══ 描画オーケストレーション ═══════════════════════════════════ */
 /* 進捗マトリクスのページスクロール用: サイトヘッダー(.topbar＝トップバー＋ナビ)の実高さと
    マトリクス2段ヘッダーの1段目高さを実測し CSS 変数へ反映（sticky thead の top オフセット・#204）。 */
@@ -3740,13 +3768,12 @@ document.addEventListener('click', e => {
   /* 書き込み（コメント・承認）は他のハンドラより先に拾う */
   const wbtn = e.target.closest('[data-act]');
   if (wbtn) {
+    const act = wbtn.dataset.act;
+    /* 承認は一覧の行にもボタンがある（囲みの外なので box 判定より先に処理する） */
+    if (act === 'approve-quick') { quickApprove(wbtn.dataset.key, wbtn); return; }
     const box = wbtn.closest('[data-wbox],[data-abox],[data-rjbox]');
     if (box) {
-      const act = wbtn.dataset.act;
       if (act === 'comment')              submitComment(box, wbtn.dataset.key);
-      else if (act === 'approve-open')    openApprovePanel(box);
-      else if (act === 'approve-cancel')  closeApprovePanel(box);
-      else if (act === 'approve-confirm') submitApprove(box, wbtn.dataset.key);
       else if (act === 'reject-open')     openRejectPanel(box);
       else if (act === 'reject-cancel')   closeRejectPanel(box);
       else if (act === 'reject-confirm')  submitReject(box, wbtn.dataset.key);
