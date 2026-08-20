@@ -377,6 +377,9 @@ td.dim{color:var(--muted)}
   background:var(--s1); color:#fff}
 .okbtn:hover{filter:brightness(1.07)}
 .okbtn:disabled{background:var(--done-tint); color:var(--done); cursor:default}
+/* 表では右端の専用列に、カードではバッジ行の右端に置く（オーナー指定 2026-08-20） */
+.mtx td.okcol,.mtx th.okcol{width:1%; white-space:nowrap; text-align:right; padding-left:var(--sp-3)}
+.sbadges .okbtn{margin-left:auto}
 .sbadges,.flags{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
 .flags{display:inline-flex; vertical-align:middle}
 td.ttl .flags{margin-left:8px}
@@ -1334,7 +1337,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 22:07';
+const BUILT_AT = '8/20 22:12';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1885,13 +1888,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 22:07') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/20 22:12') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:07') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/20 22:12') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -1932,7 +1935,7 @@ function flagsHTML(it){
 const quickOkHTML = it => it._rv
   ? `<button class="okbtn" data-act="approve-quick" data-key="${it.id}|${esc(it._rv)}"
       data-label="承認" title="${esc(GATE_LABEL[it._rv] || it._rv)}を承認">承認</button>` : '';
-const rowFlagsHTML = it => `<span class="flags">${badgeHTML(stageBadge(it))}${openBadgeHTML(it)}${quickOkHTML(it)}</span>`;
+const rowFlagsHTML = it => `<span class="flags">${badgeHTML(stageBadge(it))}${openBadgeHTML(it)}</span>`;
 const pKeyOf = it => it.stage === 'dropped' ? 'dropped' : PSTAGES[displayIdx(it)].key;
 
 function progressCells(it){
@@ -2033,12 +2036,12 @@ function matrixTable(core){
   const head = `<tr>
       <th class="pad" colspan="3"></th>
       <th class="grp" colspan="${PSTAGES.length}">工程</th>
-      <th class="pad" colspan="4"></th></tr>
+      <th class="pad" colspan="5"></th></tr>
     <tr>${th('seq')}${th('title')}${th('genre')}${
       PSTAGES.map((s, j) => `<th class="st${j === 0 ? ' first' : (j === PSTAGES.length - 1 ? ' last' : '')}">${s.name}</th>`).join('')
-    }${th('days', ' num')}<th>投稿日時</th>${th('plays', ' num')}${th('subs', ' num')}</tr>`;
+    }${th('days', ' num')}<th>投稿日時</th>${th('plays', ' num')}${th('subs', ' num')}<th class="okcol"></th></tr>`;
 
-  const COLS = 7 + PSTAGES.length;
+  const COLS = 8 + PSTAGES.length;
   const tr = it => `<tr data-vid="${it.id}" tabindex="0" class="${
       (it.stage === 'dropped' ? 'dropped ' : '') + stateCls(it)}">
       <td class="seq">${esc(it.seq)}</td>
@@ -2048,7 +2051,8 @@ function matrixTable(core){
       <td class="num">${it.days == null ? '—' : it.days + '日'}</td>
       <td class="${it.resv || it.pub ? '' : 'dim'}">${it.resv ? `<span class="resv">🗓 ${esc(it.resv)}</span>` : (esc(it.pub) || '—')}</td>
       <td class="num${it.plays == null ? ' dim' : ''}">${it.plays == null ? '—' : nf(it.plays)}</td>
-      <td class="num${it.subs == null ? ' dim' : ''}">${it.subs == null ? '—' : (it.subs > 0 ? '+' : '') + it.subs}</td></tr>`;
+      <td class="num${it.subs == null ? ' dim' : ''}">${it.subs == null ? '—' : (it.subs > 0 ? '+' : '') + it.subs}</td>
+      <td class="okcol">${quickOkHTML(it)}</td></tr>`;
   const secTR = s => `<tr class="secrow s-${s.key}${s.fold ? ' foldable' : ''}"${secAttrs(s)}>
       <td colspan="${COLS}">${secHeadInner(s)}</td></tr>`;
 
