@@ -1389,7 +1389,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/20 23:39';
+const BUILT_AT = '8/22 15:32';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1842,6 +1842,11 @@ async function loadSystem(){
      recent … 見込み時間の較正に使う直近の実測（終わったジョブの所要時間）
    30秒だけキャッシュする（システムタブを開き直すたびに叩かないため）。 */
 const GF_OPEN_STATUS = ['submitting', 'in_flight', 'done'];
+/* コレクターが生成機の履歴から後追いで記録したジョブ（source が pipeline 以外）は、
+   誰も受け取りに行かないので「できあがり」が終了状態。これを未回収に数えると
+   「受け取り待ち」が永久に減らず、詰まりの警告が鳴りっぱなしになる（#278）。
+   この除き方は genfarm-status（EXCLUDE_COLLECTED_DONE）と揃えること。 */
+const gfCollected = r => r.source && r.source !== 'pipeline' && r.status === 'done';
 const GF_KIND_LABEL = {h3_video:'H3映像', flux_image:'FLUX画像', unknown:'不明'};
 const GF_FALLBACK_SEC = {h3_video:223, flux_image:76, unknown:200};
 const GF_STALE_DONE_MIN = 10;      /* 「生成済み・未回収」が続くと詰まりを疑う分数 */
@@ -1849,7 +1854,7 @@ const GF_TTL_MS = 30000;
 
 async function loadGenfarm(force){
   if (!force && store.genfarm && Date.now() - store.genfarm.at < GF_TTL_MS) return store.genfarm;
-  const [open, recent] = await Promise.all([
+  const [openAll, recent] = await Promise.all([
     q(sb.from('generation_jobs')
         .select('id,kind,channel,video_id,episode_seq,artifact_key,status,purpose,source,submitted_at,started_at,estimated_sec')
         .is('materialized_at', null).in('status', GF_OPEN_STATUS)
@@ -1858,6 +1863,7 @@ async function loadGenfarm(force){
         .not('finished_at', 'is', null).not('started_at', 'is', null)
         .order('finished_at', { ascending: false }).limit(150))
   ]);
+  const open = openAll.filter(r => !gfCollected(r));
   /* どの動画のぶんかを出すためにタイトルを引く（動画として登録済みのものだけ。
      試作・練習のエピソードは videos に行が無いので番号だけで出す） */
   const ids = [...new Set(open.map(r => r.video_id).filter(Boolean))];
@@ -1967,13 +1973,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/20 23:39') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/22 15:32') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/20 23:39') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/22 15:32') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
