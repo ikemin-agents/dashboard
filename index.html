@@ -373,9 +373,9 @@ td.dim{color:var(--muted)}
   background:var(--surface-1); border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px}
 .secrow .hint,.csechead .hint{font-size:var(--fs-2xs); color:var(--muted)}
 /* 見出しの左端の色帯で「誰の番か」を段そのものに持たせる（行の色帯と同じ割り当て） */
-.mtx tbody tr.secrow.s-rv td{box-shadow:inset 4px 0 0 var(--s1)}
+.mtx tbody tr.secrow.s-rv td,.mtx tbody tr.secrow.s-triage td{box-shadow:inset 4px 0 0 var(--s1)}
 .mtx tbody tr.secrow.s-ai td{box-shadow:inset 4px 0 0 var(--fix)}
-.csechead.s-rv{box-shadow:inset 4px 0 0 var(--s1)}
+.csechead.s-rv,.csechead.s-triage{box-shadow:inset 4px 0 0 var(--s1)}
 .csechead.s-ai{box-shadow:inset 4px 0 0 var(--fix)}
 .mtx th.sortable{cursor:pointer; user-select:none}
 .mtx th.sortable:hover{color:var(--ink)}
@@ -1389,7 +1389,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/22 15:38';
+const BUILT_AT = '8/24 09:13';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1516,7 +1516,8 @@ const resetStockFilters = () => {
    同じ画面の中で「あなたの番 →【AI】作業中 → 完了」とセクションで見せる。
    バッジは従来のレビュータブと同じ「承認待ちの件数」。 */
 const VIEWS = [
-  {key:'stock',     icon:'🗂', label:'制作', badge:() => pendingList(state.ch).length},
+  /* バッジ＝「あなたが動く番」の総数（承認待ち ＋ ネタの仕分け待ち・#314） */
+  {key:'stock',     icon:'🗂', label:'制作', badge:() => pendingList(state.ch).length + triageCount(state.ch)},
   {key:'analytics', icon:'📈', label:'分析'},
   /* 稼働（夜間ジョブ）はチャンネル横断の運用ログ。全チャンネル可のユーザーだけに出す */
   {key:'ops',       icon:'🌙', label:'稼働', chIndep:true, fullOnly:true},
@@ -1662,11 +1663,17 @@ async function loadPending(ch){
       (st === 'review' ? rv : rc).push({ item: it, gate: g, at, wait: daysSince(at), open: it._open });
     }
   }
+  /* ネタの仕分け待ち（#314）はゲートを持たないので上の展開に乗らない。左ナビのバッジは
+     「あなたが動く番」の総数を出したいので、別に1本だけ数える（件数だけ・行は引かない）。 */
+  const { count: triageN } = await sb.from('v_dashboard_list')
+    .select('id', { count: 'exact', head: true }).eq('channel', ch).eq('stage_key', 'triage');
+
   const byAt = (a, b) => new Date(a.at) - new Date(b.at);
-  store.pending[ch] = { rv: rv.sort(byAt), rc: rc.sort(byAt) };
+  store.pending[ch] = { rv: rv.sort(byAt), rc: rc.sort(byAt), triage: triageN || 0 };
   return store.pending[ch];
 }
 const pendingList = ch => ((store.pending[ch] || {}).rv) || [];
+const triageCount = ch => ((store.pending[ch] || {}).triage) || 0;
 const changesList = ch => ((store.pending[ch] || {}).rc) || [];
 
 /* カンバンは盤面全体（各列の件数と滞留上位）を見せる表示で、絞り込みもページングも
@@ -1973,13 +1980,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/22 15:38') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/24 09:13') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/22 15:38') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/24 09:13') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -1993,7 +2000,8 @@ const loading = () => `<div class="loadbox">読み込み中…</div>`;
 
 /* ══ ① 在庫 ════════════════════════════════════════════════════ */
 function displayIdx(it){
-  if (it.stage === 'dropped') return -1;
+  /* 没とネタの仕分け待ち（#314）は工程の並びの外。-1 ＝ どの工程にも到達していない */
+  if (it.stage === 'dropped' || it.stage === 'triage') return -1;
   let i = Math.max(0, PSTAGES.findIndex(s => s.key === it.stage));
   const rv = it._rv || it._rc;          /* 【AI】修正中もそのゲートの工程で止まっている */
   if (rv && GATE_COL[rv] > i) i = GATE_COL[rv];
@@ -2001,7 +2009,8 @@ function displayIdx(it){
 }
 /* 一覧の行／カードに付ける状態クラス（左端の色帯）と状態バッジ。
    バッジは在庫の表・在庫カード・レビュー一覧・詳細で必ずこの2つの関数から作る（表記も寸法も1か所） */
-const stateCls = it => it._rv ? 'st-rv' : (it._rc ? 'st-rc' : (it._open ? 'st-open' : ''));
+const stateCls = it => (it._rv || it.stage === 'triage') ? 'st-rv'
+  : (it._rc ? 'st-rc' : (it._open ? 'st-open' : ''));
 const badgeHTML = b => b ? `<span class="sbadge ${b.cls}">${b.gl} ${esc(b.text)}</span>` : '';
 const stateBadgeOf = it =>
     it._rv ? {cls:'rv', gl:'●', text:`${GATE_LABEL[it._rv]}承認待ち`}
@@ -2021,7 +2030,8 @@ const quickOkHTML = it => it._rv
   ? `<button class="okbtn" data-act="approve-quick" data-key="${it.id}|${esc(it._rv)}"
       data-label="承認" title="${esc(GATE_LABEL[it._rv] || it._rv)}を承認">承認</button>` : '';
 const rowFlagsHTML = it => `<span class="flags">${badgeHTML(stageBadge(it))}${openBadgeHTML(it)}</span>`;
-const pKeyOf = it => it.stage === 'dropped' ? 'dropped' : PSTAGES[displayIdx(it)].key;
+const pKeyOf = it => (it.stage === 'dropped' || it.stage === 'triage')
+  ? it.stage : PSTAGES[displayIdx(it)].key;
 
 function progressCells(it){
   const cur = displayIdx(it), done = it.stage === 'posted';
@@ -2047,14 +2057,17 @@ function filterChips(facets){
   const rows = (facets || []).filter(f =>
     (!qs || String(f.search_text || '').includes(qs)) && (!g || f.genre_label === g));
   const cnt = {};
-  let dropped = 0;
+  let dropped = 0, triage = 0;
   rows.forEach(f => {
     if (f.stage_key === 'dropped') dropped++;
+    else if (f.stage_key === 'triage') triage++;   /* ネタの仕分け待ち（#314） */
     else cnt[f.stage_key] = (cnt[f.stage_key] || 0) + 1;
   });
+  /* 仕分け待ちは「すべて」に含める（没と違って生きているネタ）。工程チップは
+     PSTAGES の外なので、没と同じく末尾に別立てで出す */
   const all = [{key:null, name:'すべて', n:rows.length - dropped}]
     .concat(PSTAGES.map(s => ({key:s.key, name:s.name, n:cnt[s.key] || 0})))
-    .concat([{key:'dropped', name:'没', n:dropped}]);
+    .concat([{key:'triage', name:'仕分け', n:triage}, {key:'dropped', name:'没', n:dropped}]);
   return `<div class="chips" role="group" aria-label="工程で絞り込み">${all.map(c => {
     const on = state.stockFilter === c.key, dis = c.key && !c.n ? ' disabled' : '';
     return `<button class="chipf" data-filter="${c.key === null ? '' : c.key}" aria-pressed="${on}"${dis}>${
@@ -2081,6 +2094,10 @@ function filterChips(facets){
    絞り込み・並べ替え中は順番の意味が変わるのでセクションを外し、素直な一覧にする。 */
 const SECTIONS = [
   {key:'rv',   label:'あなたの番 — 承認待ち',      hint:'素材を見て、承認するか修正を依頼してください'},
+  /* ネタの仕分け（#314）。台本の型カタログの3型に乗らずAIが起草を見送った案。
+     AI は没にしないので、ここに溜まったものはオーナーが必ず1回見る */
+  {key:'triage', label:'あなたの番 — ネタの仕分け',
+   hint:'台本の型に乗らなかったネタです。切り口を変える／このまま作る／没 を選んでください'},
   {key:'ai',   label:AI_TAG + '作業中',            hint:'AIが自動で進めています（差し戻した分の直しもここ）'},
   {key:'done', label:'完了（予約済み・投稿済み）',  fold:true},
   {key:'idea', label:'ネタ案（未着手）',            fold:true},
@@ -2088,6 +2105,7 @@ const SECTIONS = [
 ];
 function sectionOf(it){
   if (it.stage === 'dropped') return 'drop';
+  if (it.stage === 'triage')  return 'triage';  /* ネタの仕分け待ち（#314）。ゲートは持たない */
   if (it._rv) return 'rv';                    /* あなたの番。工程より優先する */
   if (it._rc) return 'ai';                    /* 差し戻しの直し中も AI の番 */
   if (it.stage === 'posted' || it.stage === 'queue') return 'done';
@@ -2155,6 +2173,8 @@ function matrixTable(core){
    同じ状態なら在庫カードでもレビュー一覧でも完全に同じ見え方になる） */
 function stageBadge(it){
   if (it.stage === 'dropped') return {cls:'idea', gl:'○', text:'没'};
+  /* ネタの仕分け待ち（#314）＝あなたが動く番なので承認待ちと同じ色（rv） */
+  if (it.stage === 'triage')  return {cls:'rv',   gl:'●', text:'仕分け待ち'};
   if (it.stage === 'posted')  return {cls:'done', gl:'✓', text:'投稿済'};
   const st = stateBadgeOf(it);
   if (st) return st;
@@ -2165,7 +2185,8 @@ function stageBadge(it){
 }
 function progressDots(it){
   const cur = displayIdx(it), done = it.stage === 'posted';
-  return `<div class="dotrow" role="img" aria-label="工程 ${esc(cur < 0 ? '没' : PSTAGES[cur].name)}">` + PSTAGES.map((s, j) => {
+  const curLabel = cur < 0 ? (it.stage === 'triage' ? '仕分け待ち' : '没') : PSTAGES[cur].name;
+  return `<div class="dotrow" role="img" aria-label="工程 ${esc(curLabel)}">` + PSTAGES.map((s, j) => {
     let cls = 'todo', gl = '·';
     if (cur >= 0 && (done || j < cur)) { cls = 'done'; gl = '✓'; }
     else if (cur >= 0 && j === cur) {
@@ -2273,6 +2294,7 @@ async function renderStock(){
   } catch (e) { el.innerHTML = errBox(e.message); return; }
 
   const droppedN = facets.filter(f => f.stage_key === 'dropped').length;
+  const triageN  = facets.filter(f => f.stage_key === 'triage').length;   /* ネタの仕分け待ち（#314） */
   const active = facets.length - droppedN;
   const rvN = pendingList(state.ch).length;
   const genres = [...new Set(facets.filter(f => f.stage_key !== 'dropped').map(f => f.genre_label))]
@@ -2281,8 +2303,9 @@ async function renderStock(){
   el.innerHTML = `
     <div class="pagehead">
       <div class="eyebrow">制作</div>
-      <h1>${m.icon} ${esc(m.name)}${rvN ? `<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${rvN}件</span>` : ''}</h1>
-      <p>仕掛かり ${active}本・没 ${droppedN}本。上から「あなたの番（承認待ち）→${AI_TAG}作業中 → 完了」の順に並びます。行（スマホはカード）をクリックすると素材とレビュー履歴が開き、その場でコメント・承認ができます。表は ${PAGE_SIZE} 件ずつ表示します。</p>
+      <h1>${m.icon} ${esc(m.name)}${rvN ? `<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${rvN}件</span>` : ''}${
+        triageN ? `<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">仕分け待ち ${triageN}件</span>` : ''}</h1>
+      <p>仕掛かり ${active}本・没 ${droppedN}本。上から「あなたの番（承認待ち → ネタの仕分け）→${AI_TAG}作業中 → 完了」の順に並びます。行（スマホはカード）をクリックすると素材とレビュー履歴が開き、その場でコメント・承認ができます。表は ${PAGE_SIZE} 件ずつ表示します。</p>
     </div>
     <div class="sectionhead" style="margin-top:0">
       <h2>進捗マトリクス</h2>
@@ -2329,8 +2352,12 @@ async function refreshStockTable(){
 
   const conds = [];
   if (state.stockFilter) {
-    const s = PSTAGES.find(x => x.key === state.stockFilter);
-    conds.push(`工程=<b>${state.stockFilter === 'dropped' ? '没' : s.name}</b>`);
+    /* PSTAGES の外にある特別扱い（没・ネタの仕分け待ち・#314）は find が空を返すので、
+       ここで名前を決めてから触る（s.name を直接読むと落ちる） */
+    const sName = state.stockFilter === 'dropped' ? '没'
+      : state.stockFilter === 'triage' ? '仕分け待ち'
+      : (PSTAGES.find(x => x.key === state.stockFilter) || {}).name;
+    conds.push(`工程=<b>${esc(sName || state.stockFilter)}</b>`);
   }
   if (state.stockGenre) conds.push(`ジャンル=<b>${esc(state.stockGenre)}</b>`);
   if (state.stockQ.trim()) conds.push(`検索=<b>${esc(state.stockQ.trim())}</b>`);
@@ -2377,7 +2404,7 @@ function timelineRows(it){
 
 function detailHTML(it){
   const m = chMeta(it.channel), cur = displayIdx(it);
-  const curName = cur < 0 ? '没' : PSTAGES[cur].name;
+  const curName = cur < 0 ? (it.stage === 'triage' ? '仕分け待ち' : '没') : PSTAGES[cur].name;
 
   const metrics = (it.plays != null || it.avg_view_rate_pct != null || it.subs != null) ? `
     <div class="dsec"><h4>メトリクス${it.measured_date ? `（${esc(fmtDate(it.measured_date) || it.measured_date)} 計測）` : ''}</h4>
@@ -2417,6 +2444,14 @@ function detailHTML(it){
   const review = rvGate ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
       <h4>レビュー — ${GATE_LABEL[rvGate]}の承認ポイント</h4>${stateBar}${reviewPanel(it, rvGate, history)}</div>` : '';
 
+  /* ネタの仕分け（#314）。ゲートを持たないので review 節とは排他で、同じ位置に出す */
+  const triage = it.stage === 'triage'
+    ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
+        <h4>ネタの仕分け</h4>
+        <div class="dstate rv">● <b>あなたの番</b>です。台本の型に乗らなかったので、AIは起草せずここへ回しました。</div>
+        ${triagePanel(it)}${history}</div>`
+    : '';
+
   return `<div class="dview">
     <button class="backbtn" data-close="1" aria-label="一覧に戻る">← 一覧に戻る</button>
     <article class="dcard" role="region" aria-label="${esc(it.title)} の詳細">
@@ -2441,8 +2476,8 @@ function detailHTML(it){
           <div class="dsec"><h4>フック</h4><div class="hook">${esc(it.hook || '（未設定）')}</div></div>
           <div class="dsec"><h4>工程タイムライン</h4><div class="tl">${timelineRows(it)}</div>
             <div class="dhint">日付は承認ポイント・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
-          ${metrics}${rvGate ? '' : history}
-        </div>${review}
+          ${metrics}${(rvGate || it.stage === 'triage') ? '' : history}
+        </div>${review}${triage}
       </div>
     </article>
   </div>`;
@@ -2747,6 +2782,70 @@ function reviewPanel(it, gate, historyHTML){
       <div class="wmsg" data-slot="approve" hidden></div></div>`;
 }
 
+/* ── ネタの仕分けパネル（#314）──────────────────────────────────────
+   台本の型カタログ（3型）に乗らずAIが起草を見送った案に対して、オーナーが
+   「切り口を変える／このまま作る／没」を返す。前2つは triage_idea() RPC、
+   没は既存の没パネル（reject_video・M023）をそのまま使い回す＝没の作法を
+   1か所に集めておく（ゲートは台本より前の判断なので 'script' 固定）。
+   囲みは wbox / rjbox の規約に乗せる（wboxBusy / wboxMsg がこの2つを探すため）。 */
+function triagePanel(it){
+  const rid = `rj-${it.id}-script`;
+  const key = `${it.id}|script`;
+  const why = it.decision_note
+    ? `<div class="dsec dsec-note"><h4>AIが起草を見送った理由</h4>
+        <div class="hook">${esc(sentenceWrap(it.decision_note))}</div></div>` : '';
+  return `${why}
+    <div class="wbox" data-wbox="${esc(key)}">
+      <h4 class="wh">どうしますか</h4>
+      <textarea class="wta" rows="2" aria-label="仕分けのメモ（任意）"
+        placeholder="切り口の指示や、このまま作ってよい理由があれば入力（空欄でも構いません）"></textarea>
+      <div class="wmsg" data-slot="comment" hidden></div>
+      <div class="wact">
+        <span class="whint">どちらを選んでもネタ案に戻り、次の夜にAIが拾います</span>
+        <button class="btn soft" data-act="triage-retype" data-key="${esc(key)}"
+          data-label="切り口を変える">切り口を変えて作り直す</button>
+        <button class="btn primary" data-act="triage-produce" data-key="${esc(key)}"
+          data-label="このまま作る">型を外してこのまま作る</button>
+      </div></div>
+    <div class="rjbox" data-rjbox="${esc(key)}">
+      <button class="btn rjopen" data-act="reject-open" data-key="${esc(key)}"
+        aria-expanded="false" aria-controls="${rid}">このネタを没にする</button>
+      <div class="rjpanel" id="${rid}" hidden>
+        <div class="rjwarn">⚠ このネタを<b>没</b>にします。切り口を変えれば使えそうなら、
+          上の「切り口を変えて作り直す」を選んでください。没の取り消しはダッシュボードからはできません。</div>
+        <label class="alb" for="${rid}-reason">没にする理由（必須）</label>
+        <textarea class="rta" id="${rid}-reason" rows="2" aria-label="没にする理由（必須）"
+          placeholder="例: 出典が取れない／どの型にも直しようがない"></textarea>
+        <div class="anote">理由は記録され、同じネタが再び提案されたときに参照されます。</div>
+        <div class="wmsg" data-slot="reject" hidden></div>
+        <div class="aact">
+          <button class="btn" data-act="reject-cancel">キャンセル</button>
+          <button class="btn danger" data-act="reject-confirm" data-key="${esc(key)}" disabled>この理由で没にする</button>
+        </div>
+      </div></div>`;
+}
+
+/* 仕分けの「切り口を変える」「このまま作る」を送る。どちらも案に戻す（#314）。
+   メモは任意（没だけ理由必須で、そちらは submitReject が担う） */
+async function submitTriage(box, key, action){
+  const vid = Number(String(key).split('|')[0]);
+  const ta  = box.querySelector('.wta');
+  const note = ((ta && ta.value) || '').trim();
+  const act = action === 'retype' ? 'triage-retype' : 'triage-produce';
+
+  wboxMsg(box, '', false, 'comment');
+  wboxBusy(box, true, act);
+  const { data, error } = await sb.rpc('triage_idea',
+    { p_video_id: vid, p_action: action, p_note: note || null });
+  if (error) { wboxBusy(box, false, act); wboxMsg(box, rpcErrText(error, 'triage'), true, 'comment'); return; }
+  if (ta) ta.value = '';
+  const skipped = !!(data && data.skipped);
+  await refreshAfterWrite(true);
+  toast(skipped ? 'この動画はすでに仕分け済みです'
+      : action === 'retype' ? '切り口を変えて作り直すよう記録しました'
+                            : '型を外して作ってよいと記録しました');
+}
+
 /* RPC の例外はそのまま出さず、SQLSTATE から日本語の案内に置き換える */
 function rpcErrText(error, act){
   const code = error && error.code;
@@ -2761,15 +2860,18 @@ function rpcErrText(error, act){
   if (code === '55000' || /already scheduled or published/i.test(raw))
     return '予約済み・投稿済みの動画は没にできません（先に予約の取り消し／公開の取り下げをしてください）';
   if (code === '22023')
-    return /reason is empty/i.test(raw) ? '没にする理由を入力してください'
-         : /body is empty/i.test(raw)   ? 'コメントを入力してください'
-                                        : '対象の承認ポイントが不正です（台本 / 絵コンテ / 完成のいずれか）';
+    return /reason is empty/i.test(raw)  ? '没にする理由を入力してください'
+         : /body is empty/i.test(raw)    ? 'コメントを入力してください'
+         /* triage_idea の action 不正（#314）。ボタン以外から呼ばれたときだけ出る */
+         : /invalid action/i.test(raw)   ? '操作の指定が不正です。画面を再読み込みしてやり直してください'
+                                         : '対象の承認ポイントが不正です（台本 / 絵コンテ / 完成のいずれか）';
   if (/JWT|token is expired|invalid claim/i.test(raw))
     return 'ログインの有効期限が切れました。再度ログインしてください';
   if (/fetch|network|Failed to send/i.test(raw))
     return '通信に失敗しました。接続を確認して再度お試しください';
   return act === 'approve' ? '承認できませんでした。時間をおいて再度お試しください'
        : act === 'reject'    ? '没にできませんでした。時間をおいて再度お試しください'
+       : act === 'triage'    ? '仕分けを記録できませんでした。時間をおいて再度お試しください'
                              : 'コメントを送信できませんでした。時間をおいて再度お試しください';
 }
 
@@ -3986,6 +4088,8 @@ document.addEventListener('click', e => {
       else if (act === 'reject-open')     openRejectPanel(box);
       else if (act === 'reject-cancel')   closeRejectPanel(box);
       else if (act === 'reject-confirm')  submitReject(box, wbtn.dataset.key);
+      else if (act === 'triage-retype')   submitTriage(box, wbtn.dataset.key, 'retype');
+      else if (act === 'triage-produce')  submitTriage(box, wbtn.dataset.key, 'produce');
     }
     return;
   }
