@@ -855,10 +855,26 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .afiles{display:grid; gap:6px; padding:10px 12px; font-size:var(--fs-xs); background:var(--surface-1)}
 .afiles a{color:var(--s1); word-break:break-all}
 
-/* ═══ 稼働 ══════════════════════════════════════════════════════ */
-.now{display:flex; gap:var(--sp-3); align-items:center; flex-wrap:wrap}
-.pulse{width:10px;height:10px;border-radius:var(--r-pill);background:var(--muted);flex:0 0 auto}
-.pulse.live{background:var(--good)}
+/* ═══ 運営（旧: 稼働／システム／費用）════════════════════════════ */
+/* 折りたたみ節。カード1枚の見た目のまま、見出し行を押すと開く。右端の小さい字は
+   畳んだままでも分かってほしい要約（エラー件数・今月の請求額）。異常なら色を付ける。 */
+details.opsec{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-2); padding:var(--sp-4) var(--sp-5)}
+details.opsec>summary{display:flex; align-items:baseline; gap:9px; cursor:pointer; list-style:none;
+  font-size:var(--fs-md); font-weight:680; -webkit-user-select:none; user-select:none}
+details.opsec>summary::-webkit-details-marker{display:none}
+details.opsec>summary::before{content:'▸'; font-size:12px; color:var(--ink-2); flex:0 0 auto;
+  transition:transform .15s}
+details.opsec[open]>summary::before{transform:rotate(90deg)}
+details.opsec>summary:hover{color:var(--s1)}
+details.opsec>summary:focus-visible{outline:2px solid var(--s1); outline-offset:3px;
+  border-radius:var(--r-sm)}
+details.opsec>summary .s{margin-left:auto; text-align:right; font-size:var(--fs-xs); font-weight:400;
+  color:var(--ink-2); line-height:1.5}
+details.opsec>summary .s.warn{color:var(--warn); font-weight:680}
+details.opsec>summary .s.bad{color:var(--crit); font-weight:680}
+details.opsec[open]>summary{margin-bottom:var(--sp-4)}
+.opsnote{font-size:var(--fs-xs); color:var(--ink-2); margin:0 0 var(--sp-3); line-height:1.65}
 .runs{display:grid; gap:var(--sp-2); margin-top:var(--sp-4)}
 .run{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   padding:var(--sp-4); box-shadow:var(--shadow-2)}
@@ -1218,12 +1234,13 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
      状態の色帯（.run.ok 等）は詳細度が高いので 3px のまま残る */
   .run{border-radius:0; border-width:0 0 1px 0; box-shadow:none}
   .run{padding:var(--sp-3) var(--sp-4)}
-  /* 稼働タブ: 上の説明バナーと現況も囲みを外し、下の実行ログと地続きの1枚に見せる */
-  .note,.card.now{margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
-    border-radius:0; border-width:0 0 1px 0; box-shadow:none}
-  .note{margin-bottom:0}
-  .card.now{padding:var(--sp-3) var(--sp-4)}
+  /* 説明バナーは囲みを外し、下の実行ログと地続きの1枚に見せる */
+  .note{margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
+    border-radius:0; border-width:0 0 1px 0; box-shadow:none; margin-bottom:0}
   .runs{margin-top:0}
+  /* 折りたたみ節は左右の余白を詰め、中の実行ログは節の内側余白ぶん外へ出して端まで使う */
+  details.opsec{padding-left:var(--sp-4); padding-right:var(--sp-4)}
+  details.opsec>.runs{margin-left:calc(-1 * var(--sp-4)); margin-right:calc(-1 * var(--sp-4))}
 }
 /* ═══ スマホ: レビュー履歴も詳細の他ブロックと同じ「端まで1枚」に揃える（#207）
    ⚠️ .dsec-history の基本定義（枠線・角丸・内側余白）はスタイルシートの前方にあり
@@ -1332,9 +1349,7 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
 <main>
   <section class="view" id="view-stock"></section>
   <section class="view" id="view-analytics"></section>
-  <section class="view" id="view-ops"></section>
-  <section class="view" id="view-system"></section>
-  <section class="view" id="view-cost"></section>
+  <section class="view" id="view-admin"></section>
   <section class="view" id="view-detail"></section>
 </main>
 
@@ -1396,7 +1411,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/24 23:28';
+const BUILT_AT = '8/24 23:31';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1527,15 +1542,13 @@ const VIEWS = [
   /* バッジ＝「あなたが動く番」の総数（承認待ち ＋ ネタの仕分け待ち・#314） */
   {key:'stock',     icon:'🗂', label:'制作', badge:() => pendingList(state.ch).length + triageCount(state.ch)},
   {key:'analytics', icon:'📈', label:'分析'},
-  /* 稼働（夜間ジョブ）はチャンネル横断の運用ログ。全チャンネル可のユーザーだけに出す */
-  {key:'ops',       icon:'🌙', label:'稼働', chIndep:true, fullOnly:true},
-  /* システム（#249）＝定時タスクの時刻表とフローマップ。チャンネル横断の運用情報だが、
-     稼働（agent_runs）と違い共同運営者にも見せてよいので fullOnly にはしない（M029 の
-     RLS も「ダッシュボード利用者なら誰でも読める」で揃えてある）。 */
-  {key:'system',    icon:'⚙️', label:'システム', chIndep:true},
-  /* 費用（#321）＝AIの残量と今月の請求。手元PCのステータスパネル（#303）が30分ごとに
-     書いた値を読むだけ。運営の内側の数字なので 稼働 と同じく全チャンネル可の人だけに出す */
-  {key:'cost',      icon:'💰', label:'費用', chIndep:true, fullOnly:true}
+  /* 運営（オーナー決定 2026-08-24）＝ 稼働・システム・費用の3タブを1つに畳んだもの。
+     3つとも「運営の内側」の話で、分かれていたのはデータの出どころが違うだけだった。
+     中は上から「いま／お金／記録／調べる」。常に開くのは「いま」（自動運転・gen-farm）だけで、
+     残りは畳む（異常・残量僅少のときは畳んだ節が自分から開く）。
+     タブ自体は共同運営者にも出す＝旧「システム」の中身（時刻表・リンク集）は今までどおり見える。
+     お金と記録は運営の内側の数字なので、節ごと全チャンネル可の人にだけ出す（旧 fullOnly 相当）。 */
+  {key:'admin',     icon:'🛠', label:'運営', chIndep:true}
 ];
 /* ── 権限（#208）─────────────────────────────────────────────────
    state.me は dashboard_me() RPC の戻り値（{display_name, channels, full_access}）。
@@ -1991,13 +2004,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/24 23:28') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/24 23:31') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/24 23:28') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/24 23:31') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3388,77 +3401,6 @@ const RUN_KIND_JA = {
 
 /* 稼働タブ（オーナー指定 2026-08-20）: 上に「正常終了か・異常があったか」だけを大きく出し、
    1件ずつの詳細（何をしたか・所要時間・チャンネル別の内訳）は畳んで、開いたときだけ見せる。 */
-async function renderOps(){
-  const el = $('#view-ops');
-  if (!store.ops) el.innerHTML = loading();
-  let ops;
-  try { ops = await loadOps(); }
-  catch (e) { el.innerHTML = errBox(e.message); return; }
-
-  const running = ops.runs.find(r => !r.finished_at);
-  /* 1件の状態を4つに畳む。ok は「最後まで走ったか」しか表さないので、
-     業務上の注意（⚠ 付きの要約）は別に拾う */
-  const stateOf = r => {
-    const stale = r.ok == null && r.started_at
-      && (Date.now() - new Date(r.started_at).getTime()) > STALE_RUN_MS;
-    if (r.ok === false || stale) return {key:'err', cls:'err', txt: r.ok === false ? '✕ エラー' : '✕ 途中で止まった'};
-    if (r.ok == null) return {key:'run', cls:'run', txt:'● 実行中'};
-    return String(r.summary || '').includes('⚠')
-      ? {key:'warn', cls:'warn', txt:'⚠ 注意あり'} : {key:'ok', cls:'ok', txt:'✓ 正常終了'};
-  };
-  const states = ops.runs.map(stateOf);
-  const nErr = states.filter(s => s.key === 'err').length;
-  const nWarn = states.filter(s => s.key === 'warn').length;
-
-  const head = !ops.runs.length ? {cls:'ok', mark:'—', text:'まだ記録がありません'}
-    : nErr ? {cls:'bad', mark:'✕', text:`直近${ops.runs.length}件のうち ${nErr}件でエラーが出ています`}
-    : nWarn ? {cls:'warn', mark:'⚠', text:`直近${ops.runs.length}件のうち ${nWarn}件に注意があります`}
-    : {cls:'ok', mark:'✓', text:`直近${ops.runs.length}件はすべて正常に終わっています`};
-
-  const runs = ops.runs.map((r, i) => {
-    const st = states[i];
-    const evs = ops.events.filter(e => e.run_id === r.id);
-    const dur = durText(r.started_at, r.finished_at);
-    const acts = evs.map(e => {
-      const m = e.channel ? chMeta(e.channel) : null;
-      const tag = m ? `<span class="cq" style="background:${m.tint}" title="${esc(m.name)}">${m.icon}</span>`
-                    : `<span class="cq">共通</span>`;
-      const sev = e.severity === 'error' ? 'bad' : (e.severity === 'warn' ? 'warn' : '');
-      const mk = e.severity === 'error' ? '✕' : (e.severity === 'warn' ? '⚠' : '✓');
-      return `<li class="${sev}">${tag}<span class="mk">${mk}</span><span class="tm">${esc(fmtTime(e.at))}</span><span class="bd">${esc(e.body)}</span></li>`;
-    }).join('');
-    /* 異常があったものだけ最初から開いておく（見てほしいものを隠さない） */
-    const open = st.key === 'err' || st.key === 'warn' || st.key === 'run';
-    return `<details class="run ${st.cls === 'run' ? 'run-' : st.cls}"${open ? ' open' : ''}>
-      <summary class="runhead"><span class="tri">▸</span>
-        <span class="when">${esc(fmtDT(r.started_at) || '—')}</span>
-        <span class="kind">${esc(RUN_KIND_JA[r.kind] || r.kind)}</span>
-        ${dur ? `<span class="dur">所要 ${esc(dur)}</span>` : ''}
-        <span class="stat ${st.cls}">${st.txt}</span></summary>
-      <div class="runbody">
-        ${r.summary ? `<div class="runsummary">${esc(r.summary)}</div>` : ''}
-        ${laneChips(r.lanes)}
-        ${evs.length ? `<ul class="acts">${acts}</ul>`
-          : `<div class="dhint">この回の細かい記録は残っていません</div>`}
-      </div></details>`;
-  }).join('');
-
-  el.innerHTML = `
-    <div class="pagehead">
-      <div class="eyebrow">稼働</div>
-      <h1>🌙 自動で動いた記録</h1>
-      <p>夜間の制作やXの投稿など、自動で走った仕事の結果です。行を開くと中身が見られます。</p>
-    </div>
-    <div class="gfhead ${head.cls}"><span class="mk">${head.mark}</span><span>${head.text}</span></div>
-    <div class="card now">
-      <span class="pulse ${running ? 'live' : ''}"></span>
-      <div><b>${running ? `いま実行中: ${esc(RUN_KIND_JA[running.kind] || running.kind)}（${esc(fmtDT(running.started_at) || '')} 開始）`
-        : 'いま動いているものはありません'}</b>
-        <div style="font-size:var(--fs-xs);color:var(--ink-2)">動画の夜間制作は毎日 2:00（パソコンが起動しているときだけ動きます）</div></div>
-    </div>
-    ${ops.runs.length ? `<div class="runs">${runs}</div>`
-      : `<div class="noitem">まだ記録がありません</div>`}`;
-}
 
 /* ══ ⑤ システム ════════════════════════════════════════════════ */
 /* system_docs（M029）の3件を描くだけの画面。中身の正本はリポジトリ側にあり、ここは
@@ -3566,10 +3508,9 @@ const SYS_LINKS = [
   ]},
 ];
 
-function linksCard(){
-  return `<div class="card">
-    <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>リンク集</h2>
-      <span class="hint">スマホから1タップ</span></div>
+function linksSection(){
+  return `<details class="opsec">
+    <summary>🔗 リンク集<span class="s">スマホから1タップ</span></summary>
     <div class="note"><span>📱</span><div>GitHub アプリを入れているスマホでは、
       タップするとアプリ側で開きます。ホーム画面に置きたいときはブラウザの共有 →
       「ホーム画面に追加」。</div></div>
@@ -3579,29 +3520,16 @@ function linksCard(){
           target="_blank" rel="noopener noreferrer">
         <div class="t">${esc(it.label)} ↗</div>
         <div class="m">${esc(it.note)}</div></a>`).join('')}
-    </div>`).join('')}</div>`;
+    </div>`).join('')}</details>`;
 }
 
-function glossaryCard(doc){
-  const d = parseDoc(doc);
-  if (!d || !Array.isArray(d.groups)) return '';
-  return `<div class="card">
-    <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>${esc(doc.title || '用語集')}</h2>
-      <span class="hint">${esc(fmtDT(doc.updated_at) || '')} 同期</span></div>
-    ${d.intro ? `<div class="note"><span>💬</span><div>${esc(d.intro)}</div></div>` : ''}
-    ${d.groups.map(g => `<div class="glgroup">
-      <h3>${esc(g.title)}</h3>
-      ${g.note ? `<p class="note2">${esc(g.note)}</p>` : ''}
-      ${g.terms.map(t => `<div class="glit">
-        <div class="t">${esc(t.term)}</div>
-        <div class="m">${esc(t.meaning)}</div>
-        ${t.aka ? `<span class="a">技術用語: ${esc(t.aka)}</span>` : ''}</div>`).join('')}
-    </div>`).join('')}</div>`;
-}
 
-function scheduleCard(doc){
+/* 定時タスクの時刻表。畳んだ節を返す（月に一度見るかどうかの情報なので既定は閉じる） */
+function scheduleSection(doc){
   const d = parseDoc(doc);
-  if (!d || !Array.isArray(d.entries)) return notSynced('スケジュール');
+  if (!d || !Array.isArray(d.entries)) return `<details class="opsec">
+    <summary>⏰ 定時タスクの時刻表<span class="s">まだ読み込めていません</span></summary>
+    ${notSynced('スケジュール')}</details>`;
 
   const runnerLabel = {};
   (d.runners || []).forEach(r => { runnerLabel[r.key] = r.label; });
@@ -3699,15 +3627,15 @@ function scheduleCard(doc){
     `<span class="lg"><span class="runner ${RUNNER_CLS[r.key] || 'routine'}">${esc(r.label)}</span>${esc(r.note || '')}</span>`).join('');
   const notes = (d.notes || []).map(n => `<li>${esc(n)}</li>`).join('');
 
-  return `<div class="card">
-    <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>${esc(doc.title || '定時タスク')}</h2>
-      <span class="hint">${esc(d.timezone || '')}・${esc(fmtDT(doc.updated_at) || '')} 同期</span></div>
+  return `<details class="opsec">
+    <summary>⏰ ${esc(doc.title || '定時タスク')}<span class="s">${esc(d.timezone || '')}
+      ・${esc(fmtDT(doc.updated_at) || '')} 同期</span></summary>
     ${legend ? `<div class="syslegend">${legend}</div>` : ''}
     ${timelineHtml}
     <div class="tblwrap systbl"><table>
       <thead><tr><th class="no"></th><th class="when">時刻</th><th>内容</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
-    ${notes ? `<ul class="sysnotes">${notes}</ul>` : ''}</div>`;
+    ${notes ? `<ul class="sysnotes">${notes}</ul>` : ''}</details>`;
 }
 
 /* ══ gen-farm のいま（システムタブの先頭・オーナー要望 2026-08-19）══════════════
@@ -4012,21 +3940,21 @@ function startGenfarmAuto(){
 async function refreshGenfarmCard(){
   const slot = $('#gfslot');
   /* 画面が変わった／タブが裏に回った／ログアウトした ならこの回は何もしない */
-  if (!slot || state.view !== 'system' || document.hidden || !state.user
+  if (!slot || state.view !== 'admin' || document.hidden || !state.user
       || state.detail != null) return;      /* 詳細を開いている間は取りに行かない */
   let gf;
   try { gf = await loadGenfarm(true); }
   catch (_) { return; }                 /* 一時的に読めなくても前の表示を残す */
-  if (!$('#gfslot') || state.view !== 'system') return;   /* 待っている間に画面が変わった */
+  if (!$('#gfslot') || state.view !== 'admin') return;   /* 待っている間に画面が変わった */
   $('#gfslot').innerHTML = genfarmCard(gf);
   /* 自動運転のカードも同じ1分周期で取り直す（#330。失敗しても前の表示を残す） */
   try {
     const an = await loadAutomationNow(true);
-    if ($('#autoslot') && state.view === 'system') $('#autoslot').innerHTML = automationCard(an);
+    if ($('#autoslot') && state.view === 'admin') $('#autoslot').innerHTML = automationCard(an);
   } catch (_) {}
 }
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && state.view === 'system') refreshGenfarmCard();
+  if (!document.hidden && state.view === 'admin') refreshGenfarmCard();
 });
 
 /* ── 費用（#321）───────────────────────────────────────────────
@@ -4193,44 +4121,133 @@ function costView(d){
   return html;
 }
 
-async function renderCost(){
-  const el = $('#view-cost');
-  if (!store.cost) el.innerHTML = loading();
-  let d;
-  try { d = await loadCost(); }
-  catch (e) { el.innerHTML = errBox(e.message); return; }
-  el.innerHTML = costView(d);
+
+
+/* ══ ④ 運営 ═══════════════════════════════════════════════════
+   稼働・システム・費用を1つに畳んだ横断タブ（オーナー決定 2026-08-24）。
+   並びは「いま → お金 → 記録 → 調べる」。常に開いているのは「いま」だけで、下の3つは畳む。
+   ただし異常・残量僅少のときは畳んだ節が自分から開く（見てほしいものは隠さない）。 */
+
+/* 自動で動いた記録（旧「稼働」タブ）。1件の状態を4つに畳む。ok は「最後まで走ったか」しか
+   表さないので、業務上の注意（⚠ 付きの要約）は別に拾う。
+   「いま実行中」の1枚はここには出さない — 同じ agent_runs の走っている行を、上の
+   「自動運転のいま」がすでに出しているため（3タブ時代は同じものを2か所に出していた）。 */
+function recordSection(ops){
+  const stateOf = r => {
+    const stale = r.ok == null && r.started_at
+      && (Date.now() - new Date(r.started_at).getTime()) > STALE_RUN_MS;
+    if (r.ok === false || stale) return {key:'err', cls:'err', txt: r.ok === false ? '✕ エラー' : '✕ 途中で止まった'};
+    if (r.ok == null) return {key:'run', cls:'run', txt:'● 実行中'};
+    return String(r.summary || '').includes('⚠')
+      ? {key:'warn', cls:'warn', txt:'⚠ 注意あり'} : {key:'ok', cls:'ok', txt:'✓ 正常終了'};
+  };
+  const states = ops.runs.map(stateOf);
+  const nErr  = states.filter(s => s.key === 'err').length;
+  const nWarn = states.filter(s => s.key === 'warn').length;
+  const head = !ops.runs.length ? {cls:'', text:'— まだ記録がありません'}
+    : nErr  ? {cls:'bad',  text:`✕ 直近${ops.runs.length}件のうち ${nErr}件でエラー`}
+    : nWarn ? {cls:'warn', text:`⚠ 直近${ops.runs.length}件のうち ${nWarn}件に注意あり`}
+    : {cls:'', text:`✓ 直近${ops.runs.length}件はすべて正常`};
+
+  const runs = ops.runs.map((r, i) => {
+    const st = states[i];
+    const evs = ops.events.filter(e => e.run_id === r.id);
+    const dur = durText(r.started_at, r.finished_at);
+    const acts = evs.map(e => {
+      const m = e.channel ? chMeta(e.channel) : null;
+      const tag = m ? `<span class="cq" style="background:${m.tint}" title="${esc(m.name)}">${m.icon}</span>`
+                    : `<span class="cq">共通</span>`;
+      const sev = e.severity === 'error' ? 'bad' : (e.severity === 'warn' ? 'warn' : '');
+      const mk = e.severity === 'error' ? '✕' : (e.severity === 'warn' ? '⚠' : '✓');
+      return `<li class="${sev}">${tag}<span class="mk">${mk}</span><span class="tm">${esc(fmtTime(e.at))}</span><span class="bd">${esc(e.body)}</span></li>`;
+    }).join('');
+    /* 異常があったものだけ最初から開いておく（見てほしいものを隠さない） */
+    const open = st.key === 'err' || st.key === 'warn' || st.key === 'run';
+    return `<details class="run ${st.cls === 'run' ? 'run-' : st.cls}"${open ? ' open' : ''}>
+      <summary class="runhead"><span class="tri">▸</span>
+        <span class="when">${esc(fmtDT(r.started_at) || '—')}</span>
+        <span class="kind">${esc(RUN_KIND_JA[r.kind] || r.kind)}</span>
+        ${dur ? `<span class="dur">所要 ${esc(dur)}</span>` : ''}
+        <span class="stat ${st.cls}">${st.txt}</span></summary>
+      <div class="runbody">
+        ${r.summary ? `<div class="runsummary">${esc(r.summary)}</div>` : ''}
+        ${laneChips(r.lanes)}
+        ${evs.length ? `<ul class="acts">${acts}</ul>`
+          : `<div class="dhint">この回の細かい記録は残っていません</div>`}
+      </div></details>`;
+  }).join('');
+
+  return `<details class="opsec"${(nErr || nWarn) ? ' open' : ''}>
+    <summary>🌙 自動で動いた記録<span class="s ${head.cls}">${esc(head.text)}</span></summary>
+    <p class="opsnote">夜間の制作やXの投稿など、自動で走った仕事の結果です。
+      行を押すと中身が見られます（異常があった回は最初から開いています）。</p>
+    ${ops.runs.length ? `<div class="runs">${runs}</div>`
+      : `<div class="noitem">まだ記録がありません</div>`}</details>`;
 }
 
-async function renderSystem(){
-  const el = $('#view-system');
+/* お金（旧「費用」タブ）。畳んだままでも「今月いくら」が見えるようにし、
+   目立たせるのは尽きそうなときだけ（前払い残高が少ない・AI残量が残りわずか・値が古い）。 */
+function moneySection(d){
+  const ai = d.ai && d.ai.payload, bill = d.billing && d.billing.payload;
+  const stamp = [d.ai && d.ai.captured_at, d.billing && d.billing.captured_at].filter(Boolean).sort().pop();
+  const stale = stamp && (Date.now() - new Date(stamp).getTime()) > 3 * 3600 * 1000;
+
+  let total = null;
+  if (bill) {
+    const fal = bill.fal || {}, gcp = bill.gcp || {};
+    const f = (fal.this_month || {}).total, g = gcp.ok ? (gcp.this_month || {}).total : null;
+    if (f != null || g != null) total = (f || 0) + (g || 0);
+  }
+  let hot = 0;
+  if (ai) for (const pv of Object.values(ai.providers || {}))
+    for (const w of (pv.windows || [])) if (w.percent != null && w.percent >= 90) hot++;
+  const lowBal = bill && bill.fal && bill.fal.balance != null && bill.fal.balance < 20;
+
+  let cls = '', note = '';
+  if (lowBal)     { cls = 'bad';  note = ' ・ ⚠ fal.ai の残高が少なくなっています'; }
+  else if (hot)   { cls = 'warn'; note = ` ・ ⚠ 残りわずかなAIの枠が${hot}件`; }
+  else if (stale) { cls = 'warn'; note = ' ・ 自宅PCが止まっていて値が古いままです'; }
+
+  const sum = (total == null ? 'まだ記録がありません' : `今月 ${costUsd(total)}`) + note;
+  return `<details class="opsec"${cls ? ' open' : ''}>
+    <summary>💰 今月の請求とAI残量<span class="s ${cls}">${esc(sum)}</span></summary>
+    ${costView(d)}</details>`;
+}
+
+/* 1本が読めなくても画面ごと落とさない。落とすのはその節だけにする */
+const settled = pr => pr.then(v => ({ v }), e => ({ e: (e && e.message) || String(e) }));
+
+async function renderAdmin(){
+  const el = $('#view-admin');
   if (!store.system) el.innerHTML = loading();
-  let docs;
-  try { docs = await loadSystem(); }
-  catch (e) { el.innerHTML = errBox(e.message); return; }
-  /* gen-farm の待ち行列は「いまの状態」なので、読めなくても画面は出す（カードだけ落とす） */
-  let gf = null;
-  try { gf = await loadGenfarm(); }
-  catch (e) { gf = { error: e.message }; }
-  let an = null;
-  try { an = await loadAutomationNow(); }
-  catch (_) {}
+  /* お金・記録は運営の内側の数字なので全チャンネル可の人にだけ出す（制限ありの人は
+     読んでも RLS で 0 行になるが、空の節を並べても意味がないので節ごと出さない） */
+  const full = fullAccess();
+
+  const [docsR, gfR, anR, opsR, costR] = await Promise.all([
+    settled(loadSystem()), settled(loadGenfarm()), settled(loadAutomationNow()),
+    full ? settled(loadOps())  : Promise.resolve({ v: null }),
+    full ? settled(loadCost()) : Promise.resolve({ v: null })
+  ]);
+  if (docsR.e) { el.innerHTML = errBox(docsR.e); return; }
+  const docs = docsR.v || {};
 
   el.innerHTML = `
     <div class="pagehead">
-      <div class="eyebrow">システム</div>
-      <h1>⚙️ 構成とスケジュール</h1>
-      <p>いちばん上は自動運転と生成機のいまの状況。その下は、何が何時に自動で動くかの一覧です。</p>
+      <div class="eyebrow">運営</div>
+      <h1>🛠 いまの状態と記録</h1>
+      <p>いちばん上は自動運転と生成機のいまの状況。その下は畳んであり、押すと開きます。</p>
     </div>
     <div class="stack">
-      <div id="autoslot">${an ? automationCard(an) : ''}</div>
-      <div id="gfslot">${gf && !gf.error ? genfarmCard(gf)
+      <div id="autoslot">${anR.v ? automationCard(anR.v) : ''}</div>
+      <div id="gfslot">${gfR.v ? genfarmCard(gfR.v)
         : `<section class="card gfcard"><h2>🖥 gen-farm（実家の生成機）のいま</h2>
             <div class="noitem">待ち行列を読み込めませんでした
-            <span class="s">${esc((gf && gf.error) || '')}</span></div></section>`}</div>
-      ${linksCard()}
-      ${scheduleCard(docs['schedule'])}
-      ${glossaryCard(docs['glossary'])}
+            <span class="s">${esc(gfR.e || '')}</span></div></section>`}</div>
+      ${full && costR.v ? moneySection(costR.v) : ''}
+      ${full && opsR.v ? recordSection(opsR.v) : ''}
+      ${scheduleSection(docs['schedule'])}
+      ${linksSection()}
     </div>`;
 
   startGenfarmAuto();   /* この画面を開いている間だけ1分ごとに gen-farm を取り直す */
@@ -4336,9 +4353,7 @@ async function render(){
   try {
     if (state.view === 'stock')          await renderStock();
     else if (state.view === 'analytics') await renderAnalytics();
-    else if (state.view === 'ops')       await renderOps();
-    else if (state.view === 'system')    await renderSystem();
-    else if (state.view === 'cost')      await renderCost();
+    else if (state.view === 'admin')     await renderAdmin();
     state.lastSync = new Date().toISOString();
   } catch (e) {
     $('#view-' + state.view).innerHTML = errBox(e.message);
@@ -4351,7 +4366,7 @@ async function render(){
 
 async function reloadAll(){
   clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {}; store.system = null;
-  store.cost = null;   /* 費用（#321） */
+  store.cost = null; store.autonow = null;   /* 運営タブ（お金・自動運転のいま） */
   store.genfarm = null;         /* gen-farm の待ち行列は30秒キャッシュ。⟳ では必ず取り直す */
   state.busy = true; renderShell();
   try { await loadBootstrap(); } catch (e) { toast('再読み込みに失敗: ' + e.message); }
