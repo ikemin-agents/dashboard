@@ -1328,6 +1328,7 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   <section class="view" id="view-analytics"></section>
   <section class="view" id="view-ops"></section>
   <section class="view" id="view-system"></section>
+  <section class="view" id="view-cost"></section>
   <section class="view" id="view-detail"></section>
 </main>
 
@@ -1389,7 +1390,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/24 10:02';
+const BUILT_AT = '8/24 18:03';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1524,7 +1525,10 @@ const VIEWS = [
   /* システム（#249）＝定時タスクの時刻表とフローマップ。チャンネル横断の運用情報だが、
      稼働（agent_runs）と違い共同運営者にも見せてよいので fullOnly にはしない（M029 の
      RLS も「ダッシュボード利用者なら誰でも読める」で揃えてある）。 */
-  {key:'system',    icon:'⚙️', label:'システム', chIndep:true}
+  {key:'system',    icon:'⚙️', label:'システム', chIndep:true},
+  /* 費用（#321）＝AIの残量と今月の請求。手元PCのステータスパネル（#303）が30分ごとに
+     書いた値を読むだけ。運営の内側の数字なので 稼働 と同じく全チャンネル可の人だけに出す */
+  {key:'cost',      icon:'💰', label:'費用', chIndep:true, fullOnly:true}
 ];
 /* ── 権限（#208）─────────────────────────────────────────────────
    state.me は dashboard_me() RPC の戻り値（{display_name, channels, full_access}）。
@@ -1980,13 +1984,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/24 10:02') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/24 18:03') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/24 10:02') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/24 18:03') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3926,6 +3930,151 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && state.view === 'system') refreshGenfarmCard();
 });
 
+/* ── 費用（#321）───────────────────────────────────────────────
+   手元PCのステータスパネルが30分ごとに書いた値を読むだけ。**PCが落ちている間は
+   更新されない**ので、必ず「いつ時点の値か」を添える。
+   配色は手元パネルと同じ約束: 緑→赤＝使い切ると困るもの / 琥珀＝お金。 */
+const COST_TTL_MS = 60000;
+
+async function loadCost(force){
+  if (!force && store.cost && Date.now() - store.cost.at < COST_TTL_MS) return store.cost;
+  const pick = kind => q(sb.from('usage_snapshots').select('captured_at,payload')
+    .eq('kind', kind).order('captured_at', { ascending: false }).limit(1));
+  const [ai, bill] = await Promise.all([pick('ai_usage'), pick('billing')]);
+  store.cost = { at: Date.now(), ai: ai[0] || null, billing: bill[0] || null };
+  return store.cost;
+}
+
+function costAgo(iso){
+  if (!iso) return '—';
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 90) return 'たった今';
+  if (s < 3600) return Math.round(s / 60) + '分前';
+  if (s < 86400) return Math.round(s / 3600) + '時間前';
+  return Math.round(s / 86400) + '日前';
+}
+const costUsd = n => '$' + Number(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const costYen = n => '¥' + Math.round(Number(n ?? 0)).toLocaleString('ja-JP');
+const costLvl = p => p >= 95 ? 'var(--bad)' : p >= 80 ? '#ec835a' : p >= 50 ? '#fab219' : '#0ca30c';
+
+function costMeter(label, pct, right, color, sub){
+  if (pct == null) {
+    return `<div class="cm"><div class="cm-k">${esc(label)}</div><div class="cm-t"></div>
+      <div class="cm-v" style="opacity:.5">—</div></div>` + (sub ? `<div class="cm-s">${esc(sub)}</div>` : '');
+  }
+  const p = Math.max(0, Math.min(100, Number(pct) || 0));
+  return `<div class="cm"><div class="cm-k">${esc(label)}</div>
+    <div class="cm-t"><i style="width:${p}%;background:${color}"></i><u></u></div>
+    <div class="cm-v">${esc(right)}</div></div>` + (sub ? `<div class="cm-s">${esc(sub)}</div>` : '');
+}
+
+function costView(d){
+  const ai = d.ai && d.ai.payload, bill = d.billing && d.billing.payload;
+  const stamp = [d.ai && d.ai.captured_at, d.billing && d.billing.captured_at].filter(Boolean).sort().pop();
+  const stale = stamp && (Date.now() - new Date(stamp).getTime()) > 3 * 3600 * 1000;
+
+  let html = `<style>
+    .cost-wrap{display:grid;gap:14px;grid-template-columns:1fr}
+    @media(min-width:860px){.cost-wrap{grid-template-columns:1fr 1fr}}
+    .cost-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
+    .cost-card h3{font-size:12px;letter-spacing:.04em;color:var(--muted);margin:0 0 11px;font-weight:600}
+    .cost-note{font-size:11.5px;color:var(--muted);margin:0 0 12px}
+    .cost-note.stale{color:#ec835a}
+    .cost-prov{display:flex;align-items:center;gap:8px;background:rgba(127,127,127,.09);
+      border-radius:8px;padding:5px 9px;margin:11px -3px 6px;font-weight:700;font-size:13px}
+    .cost-prov:first-of-type{margin-top:0}
+    .cost-prov span{font-weight:400;font-size:10.5px;color:var(--muted)}
+    .cm{display:grid;grid-template-columns:88px 1fr 50px;gap:9px;align-items:center;padding:3px 0}
+    .cm-k{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cm-t{height:7px;border-radius:4px;background:rgba(127,127,127,.18);position:relative;overflow:hidden}
+    .cm-t i{display:block;height:100%;border-radius:4px}
+    .cm-t u{position:absolute;inset:0;background:repeating-linear-gradient(to right,
+      transparent 0 calc(10% - 1px),rgba(127,127,127,.45) calc(10% - 1px) 10%)}
+    .cm-v{text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
+    .cm-s{font-size:10.5px;color:var(--muted);margin:0 0 6px 97px}
+    .cost-kv{display:flex;justify-content:space-between;align-items:center;padding:7px 9px;
+      margin:8px -3px 0;border-radius:8px;background:rgba(127,127,127,.09)}
+    .cost-kv b{font-size:13px}
+    .cost-kv .amt{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+    .cost-hero{font-size:31px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:2px 0 3px}
+    .cost-hero small{font-size:14px;font-weight:500;color:var(--muted);margin-left:7px}
+    .cost-item{display:grid;grid-template-columns:1fr 70px;gap:9px;font-size:11.5px;padding:3px 0}
+    .cost-item .c{text-align:right;font-variant-numeric:tabular-nums}
+    .cost-bd{margin:5px 0 2px 12px;padding-left:12px;border-left:2px solid var(--line)}
+  </style>
+  <p class="cost-note${stale ? ' stale' : ''}">
+    ${stamp ? `${esc(costAgo(stamp))}の値（${esc(fmtDT(stamp))}）` : 'まだ記録がありません'}
+    ${stale ? ' ・ 自宅PCが止まっている間は更新されません' : ''}
+  </p><div class="cost-wrap">`;
+
+  /* AI残量 */
+  html += `<div class="cost-card"><h3>AI残量</h3>`;
+  if (!ai) html += `<div class="cost-note">まだ記録がありません</div>`;
+  else {
+    const jp = { claude: 'Claude', codex: 'Codex', grok: 'Grok' };
+    for (const [k, p] of Object.entries(ai.providers || {})) {
+      html += `<div class="cost-prov">${jp[k] || k}<span>${esc(p.plan || '')}</span></div>`;
+      if (!p.ok) { html += `<div class="cm-s" style="margin-left:0">取得できませんでした</div>`; continue; }
+      for (const w of p.windows || []) {
+        if (w.percent == null) { html += costMeter(w.label, null, '', '', p.note || '使用率を取得できません'); continue; }
+        const pc = Math.round(w.percent);
+        html += costMeter(w.label, pc, pc + '%', costLvl(pc),
+          w.resets_at ? 'リセット ' + fmtDT(w.resets_at) : '');
+      }
+    }
+  }
+  html += `</div>`;
+
+  /* 今月の請求 */
+  html += `<div class="cost-card"><h3>今月の請求</h3>`;
+  if (!bill) html += `<div class="cost-note">まだ記録がありません</div>`;
+  else {
+    const fal = bill.fal || {}, gcp = bill.gcp || {}, el = bill.elevenlabs || {};
+    const falNow = (fal.this_month || {}).total, gcpNow = gcp.ok ? (gcp.this_month || {}).total : null;
+    html += `<div class="cost-hero">${esc(costUsd((falNow || 0) + (gcpNow || 0)))}<small>USD</small></div>
+      <p class="cost-note">fal.ai${gcp.ok ? ' ＋ Google Cloud' : ''} の合計</p>`;
+    if (fal.ok) {
+      html += `<div class="cost-kv"><b>fal.ai</b><span class="amt">${esc(costUsd(falNow))}</span></div>
+        <div class="cost-bd">`;
+      for (const i of ((fal.this_month || {}).items || []).slice(0, 5))
+        html += `<div class="cost-item"><div>${esc(String(i.name).replace(/^fal-ai\//, ''))}</div>
+          <div class="c">${esc(costUsd(i.cost))}</div></div>`;
+      html += `</div>`;
+      if (fal.balance != null)
+        html += `<div class="cm-s" style="margin-left:12px;${fal.balance < 20 ? 'color:#ec835a' : ''}">
+          ${fal.balance < 20 ? '⚠ ' : ''}残高 ${esc(costUsd(fal.balance))}（前払い式）</div>`;
+    }
+    if (gcp.ok) {
+      const jpy = (gcp.this_month || {}).total_local;
+      html += `<div class="cost-kv"><b>Google Cloud</b><span class="amt">${esc(costUsd(gcpNow))}
+        ${jpy != null && gcp.currency === 'JPY' ? `<small style="font-size:11px;font-weight:400;opacity:.7">${esc(costYen(jpy))}</small>` : ''}</span></div>
+        <div class="cost-bd">`;
+      for (const i of ((gcp.this_month || {}).items || []).slice(0, 4))
+        html += `<div class="cost-item"><div>${esc(i.name)}</div>
+          <div class="c">${esc(i.cost_local != null && gcp.currency === 'JPY' ? costYen(i.cost_local) : costUsd(i.cost))}</div></div>`;
+      html += `</div>`;
+    } else {
+      html += `<div class="cost-kv"><b>Google Cloud</b><span class="cm-s" style="margin:0">${esc(gcp.pending ? '書き出し待ち' : '取得できません')}</span></div>`;
+    }
+    if (el.ok) {
+      html += `<div class="cost-kv"><b>ElevenLabs</b><span class="cm-s" style="margin:0">月額固定（${esc(el.tier || '')}）</span></div>`;
+      html += costMeter('音声の文字数', el.percent, (el.percent ?? 0) + '%', costLvl(el.percent ?? 0),
+        `${Number(el.used || 0).toLocaleString('ja-JP')} / ${Number(el.limit || 0).toLocaleString('ja-JP')} 字`);
+    }
+  }
+  html += `</div></div>`;
+  return html;
+}
+
+async function renderCost(){
+  const el = $('#view-cost');
+  if (!store.cost) el.innerHTML = loading();
+  let d;
+  try { d = await loadCost(); }
+  catch (e) { el.innerHTML = errBox(e.message); return; }
+  el.innerHTML = costView(d);
+}
+
 async function renderSystem(){
   const el = $('#view-system');
   if (!store.system) el.innerHTML = loading();
@@ -4058,6 +4207,7 @@ async function render(){
     else if (state.view === 'analytics') await renderAnalytics();
     else if (state.view === 'ops')       await renderOps();
     else if (state.view === 'system')    await renderSystem();
+    else if (state.view === 'cost')      await renderCost();
     state.lastSync = new Date().toISOString();
   } catch (e) {
     $('#view-' + state.view).innerHTML = errBox(e.message);
@@ -4070,6 +4220,7 @@ async function render(){
 
 async function reloadAll(){
   clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {}; store.system = null;
+  store.cost = null;   /* 費用（#321） */
   store.genfarm = null;         /* gen-farm の待ち行列は30秒キャッシュ。⟳ では必ず取り直す */
   state.busy = true; renderShell();
   try { await loadBootstrap(); } catch (e) { toast('再読み込みに失敗: ' + e.message); }
@@ -4261,6 +4412,7 @@ $('#loginform').addEventListener('submit', async ev => {
 async function signOut(){
   await sb.auth.signOut();
   clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {}; store.system = null;
+  store.cost = null;   /* 費用（#321） */
   store.channels = []; store.accounts = [];
   state.user = null; state.me = null; state.ch = null; state.view = 'stock'; state.stockPage = 0;
   showLogin();
