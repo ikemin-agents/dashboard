@@ -1396,7 +1396,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/24 23:21';
+const BUILT_AT = '8/24 23:27';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1991,13 +1991,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/24 23:21') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/24 23:27') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/24 23:21') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/24 23:27') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -4054,7 +4054,10 @@ function costAgo(iso){
 }
 const costUsd = n => '$' + Number(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const costYen = n => '¥' + Math.round(Number(n ?? 0)).toLocaleString('ja-JP');
-const costLvl = p => p >= 95 ? 'var(--bad)' : p >= 80 ? '#ec835a' : p >= 50 ? '#fab219' : '#0ca30c';
+/* ⚠ 色は**このダッシュボードに定義がある変数**を使うこと。存在しない名前（--bad 等）を書くと
+   background が無効になり、バーが透明になって「100%なのに何も出ない」になる（2026-08-24 に発生）。
+   ここは手元パネルと同じ約束（緑→黄→橙→赤＝使い切ると困るもの）。 */
+const costLvl = p => p >= 95 ? '#d03b3b' : p >= 80 ? '#ec835a' : p >= 50 ? '#fab219' : '#0ca30c';
 
 function costMeter(label, pct, right, color, sub){
   if (pct == null) {
@@ -4141,7 +4144,8 @@ function costView(d){
       if (k === 'claude') {
         const c = p.credit;
         html += `<div class="cm-s" style="margin-left:0">追加クレジット ` + (
-          c ? `${esc(costUsd(c.used ?? 0))} / ${esc(costUsd(c.limit ?? 0))}　残り ${esc(costUsd(c.remaining ?? 0))}`
+          c ? `${esc(costUsd(c.used ?? 0))} / ${esc(costUsd(c.limit ?? 0))}`
+              + `（${Math.round(c.percent ?? 0)}%）　残り ${esc(costUsd(c.remaining ?? 0))}`
             : (p.extra_usage ? '有効（まだ使っていません）' : '無効')) + `</div>`;
       }
     }
