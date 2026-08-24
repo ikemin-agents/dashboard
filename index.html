@@ -491,9 +491,15 @@ td.ttl .flags{margin-left:8px}
   .dbody:not(:has(.dsec-review)){max-width:980px}
 }
 @keyframes detailin{from{transform:translateY(8px);opacity:.5}to{transform:none;opacity:1}}
+/* 「一覧に戻る」はどこまで下がっても押せるよう、サイトヘッダー直下に貼り付ける（#331）。
+   帯（.backbar）にページ背景を敷いて、下から上がってくるカードが文字に重ならないようにする。
+   top のオフセット --stickytop は JS がヘッダーの実高さを測って入れる（詳細表示中はタブが
+   隠れてヘッダーが低くなるので、開閉のたびに測り直す） */
+.backbar{position:sticky; top:var(--stickytop, 0px); z-index:35; background:var(--page);
+  padding:var(--sp-2) 0 var(--sp-3)}
 .backbtn{display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-sm);
   border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
-  padding:8px 16px; cursor:pointer; margin-bottom:var(--sp-4); transition:background .12s}
+  padding:8px 16px; cursor:pointer; transition:background .12s}
 .backbtn:hover{background:var(--surface-3)}
 /* overflow:hidden は付けない（#205）: 祖先がスクロールコンテナになると子孫の position:sticky が
    ビューポートに貼り付かなくなり、承認バーのスクロール追従が死ぬ。角の処理は .dhead 側の
@@ -1390,7 +1396,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/24 20:03';
+const BUILT_AT = '8/24 23:15';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1985,13 +1991,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/24 20:03') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/24 23:15') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/24 20:03') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/24 23:15') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2458,7 +2464,7 @@ function detailHTML(it){
     : '';
 
   return `<div class="dview">
-    <button class="backbtn" data-close="1" aria-label="一覧に戻る">← 一覧に戻る</button>
+    <div class="backbar"><button class="backbtn" data-close="1" aria-label="一覧に戻る">← 一覧に戻る</button></div>
     <article class="dcard" role="region" aria-label="${esc(it.title)} の詳細">
       <div class="dhead">
         <div style="flex:1 1 auto;min-width:0">
@@ -2520,6 +2526,7 @@ async function openDetail(vid, gate){
   annotate(it, evs);
 
   dv.innerHTML = detailHTML(it);
+  syncStickyOffsets();          /* タブが隠れてヘッダーが低くなるので測り直す（戻るボタンの貼り付き位置） */
   window.scrollTo(0, 0);
   dv.querySelector('.backbtn')?.focus();
   mountAllAssets(dv);
@@ -2535,6 +2542,7 @@ function closeDetail(scrollY){
   document.body.classList.remove('detail-open');
   document.body.style.overflow = '';
   $('#view-' + state.view)?.classList.add('active');
+  syncStickyOffsets();          /* タブが戻ってヘッダーが高くなるので測り直す */
   if (wasOpen) {
     const y = (scrollY != null) ? scrollY : _returnScroll;
     if (y != null) requestAnimationFrame(() => window.scrollTo(0, y));
