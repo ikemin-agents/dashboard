@@ -1396,7 +1396,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/24 23:15';
+const BUILT_AT = '8/24 23:20';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1991,13 +1991,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/24 23:15') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/24 23:20') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/24 23:15') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/24 23:20') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -4111,14 +4111,38 @@ function costView(d){
   if (!ai) html += `<div class="cost-note">まだ記録がありません</div>`;
   else {
     const jp = { claude: 'Claude', codex: 'Codex', grok: 'Grok' };
-    for (const [k, p] of Object.entries(ai.providers || {})) {
-      html += `<div class="cost-prov">${jp[k] || k}<span>${esc(p.plan || '')}</span></div>`;
+    /* ⚠ 保存先が JSONB なので**キーの順序は保たれない**（短い順→辞書順になり grok が先頭に来る）。
+       手元のパネルと同じ並びに揃える（オーナー指摘 2026-08-24） */
+    const ORDER = ['claude', 'codex', 'grok'];
+    const rank = k => { const i = ORDER.indexOf(k); return i < 0 ? 99 : i; };
+    /* Claude は複数アカウントを並べる（#319）。1つしか無ければ従来どおり1件 */
+    const rows = [];
+    for (const [k, p] of Object.entries(ai.providers || {}).sort((a, b) => rank(a[0]) - rank(b[0]))) {
+      if (k === 'claude' && Array.isArray(p.accounts) && p.accounts.length) p.accounts.forEach(a => rows.push([k, a]));
+      else rows.push([k, p]);
+    }
+    const multiClaude = rows.filter(r => r[0] === 'claude').length > 1;
+
+    for (const [k, p] of rows) {
+      const who = (k === 'claude' && p.email && multiClaude)
+        ? ` <span style="font-weight:400;opacity:.75">${esc(String(p.email).split('@')[0])}</span>` : '';
+      html += `<div class="cost-prov">${jp[k] || k}${who}<span>${esc(p.plan || '')}</span></div>`;
       if (!p.ok) { html += `<div class="cm-s" style="margin-left:0">取得できませんでした</div>`; continue; }
       for (const w of p.windows || []) {
         if (w.percent == null) { html += costMeter(w.label, null, '', '', p.note || '使用率を取得できません'); continue; }
         const pc = Math.round(w.percent);
         html += costMeter(w.label, pc, pc + '%', costLvl(pc),
           w.resets_at ? 'リセット ' + fmtDT(w.resets_at) : '');
+      }
+      /* Grok の製品別の内訳（統合請求で追加） */
+      if (p.products && p.products.length)
+        html += `<div class="cm-s" style="margin-left:0">内訳 ${esc(p.products.map(x => `${x.name} ${x.percent}%`).join(' · '))}</div>`;
+      /* 追加クレジット（枠超過分を従量で買う設定。無効なら「無効」と出す・オーナー指定） */
+      if (k === 'claude') {
+        const c = p.credit;
+        html += `<div class="cm-s" style="margin-left:0">追加クレジット ` + (
+          c ? `${esc(costUsd(c.used ?? 0))} / ${esc(costUsd(c.limit ?? 0))}　残り ${esc(costUsd(c.remaining ?? 0))}`
+            : (p.extra_usage ? '有効（まだ使っていません）' : '無効')) + `</div>`;
       }
     }
   }
