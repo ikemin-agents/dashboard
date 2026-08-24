@@ -1390,7 +1390,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/24 18:04';
+const BUILT_AT = '8/24 20:03';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1504,7 +1504,8 @@ function loadUI(){
    threads = 動画ごとのレビュー記録。詳細を開いた動画のぶんだけ貯める
    byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため） */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
-                board:{}, threads:{}, ops:null, analytics:{}, assets:{}, system:null, genfarm:null };
+                board:{}, threads:{}, ops:null, analytics:{}, assets:{}, system:null, genfarm:null,
+                autonow:null };
 const clearVideoCaches = () => {
   store.byId = new Map();
   store.core = {}; store.facets = {}; store.pending = {}; store.board = {}; store.threads = {};
@@ -1984,13 +1985,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/24 18:04') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/24 20:03') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/24 18:04') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/24 20:03') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3904,6 +3905,91 @@ function genfarmCard(gf){
   </section>`;
 }
 
+/* ══ 自動運転のいま（#330・オーナー要望 2026-08-24）═══════════════════════════
+   「承認を押したのに生成機が動かない」とき、理由を3択に分解して見せる:
+   本当に暇 ／ 裏でAIが考え中 ／ 見張りが落ちている。今までは全部同じに見えたので、
+   オーナーは次の承認を押して様子を見る探り運転になっていた。
+
+   データは既存の権限のまま読む（DB 変更なし）:
+     ・見張りの心拍   … system_heartbeat（誰でも読める・5分ごとに更新される1行）
+     ・実行中のAI     … agent_runs の未終了行＋最新の途中経過（全チャンネル可ユーザー限定。
+                        読めないユーザーではこの行だけ静かに消える）
+     ・発注待ちの承認 … 絵コンテ承認済みなのに、承認より新しい発注記録が無い動画 */
+const AUTO_TTL_MS = 60000;
+const AUTO_RUN_JA = {'step-runner':'制作の工程', 'stock-keeper':'夜間の在庫番',
+  'daily-log':'日次ログ同期', 'x-reply':'Xのリプ投稿', 'x-post-publish':'Xの投稿',
+  'x-post-propose':'Xのネタ提案', 'weekly-review':'週次レビュー'};
+async function loadAutomationNow(force){
+  if (!force && store.autonow && Date.now() - store.autonow.at < AUTO_TTL_MS) return store.autonow;
+  const out = { beat: null, runs: [], runNotes: {}, waiting: [], at: Date.now() };
+  try {
+    out.beat = (await q(sb.from('system_heartbeat').select('beat_at,source').limit(1)))[0] || null;
+  } catch (_) {}
+  try {
+    const cut = new Date(Date.now() - 2 * 3600e3).toISOString();   /* 心拍の切れた残骸は見せない */
+    out.runs = (await q(sb.from('agent_runs').select('id,kind,channel,started_at,heartbeat_at')
+      .is('finished_at', null).gte('heartbeat_at', cut)
+      .order('id', { ascending: false }).limit(3))) || [];
+    if (out.runs.length) {
+      const evs = await q(sb.from('agent_run_events').select('run_id,body')
+        .in('run_id', out.runs.map(r => r.id)).order('id', { ascending: false }).limit(10));
+      (evs || []).forEach(e => { if (!(e.run_id in out.runNotes)) out.runNotes[e.run_id] = e.body; });
+    }
+  } catch (_) {}   /* 全チャンネル可ユーザー以外は読めない＝0件のまま */
+  try {
+    const vids = (await q(sb.from('v_dashboard_list')
+      .select('seq,title,approved_storyboard_at').eq('channel', state.ch)
+      .eq('status', '素材制作中').not('approved_storyboard_at', 'is', null))) || [];
+    if (vids.length) {
+      const oldest = vids.map(v => v.approved_storyboard_at).sort()[0];
+      const jobs = (await q(sb.from('generation_jobs').select('episode_seq,created_at')
+        .in('episode_seq', vids.map(v => v.seq)).gte('created_at', oldest))) || [];
+      const latest = {};
+      jobs.forEach(j => {
+        if (!latest[j.episode_seq] || latest[j.episode_seq] < j.created_at)
+          latest[j.episode_seq] = j.created_at;
+      });
+      out.waiting = vids.filter(v => !latest[v.seq] || latest[v.seq] < v.approved_storyboard_at);
+    }
+  } catch (_) {}
+  store.autonow = out;
+  return out;
+}
+function automationCard(an){
+  const mins = ts => Math.max(0, Math.round((Date.now() - new Date(ts)) / 60000));
+  /* 心拍。見張りは5分ごとに打つので、15分空いたら「落ちているかも」と言い切る */
+  let beat;
+  if (!an.beat) {
+    beat = `<div class="gfhead warn"><span class="mk">–</span><span>見張りの心拍を読み込めませんでした</span></div>`;
+  } else {
+    const m = mins(an.beat.beat_at);
+    beat = m < 15
+      ? `<div class="gfhead ok"><span class="mk">●</span><span>レビュー見張り: 稼働中（最終確認 ${m}分前）</span></div>`
+      : `<div class="gfhead bad"><span class="mk">⚠</span><span>レビュー見張り: <b>${m}分間 音沙汰がありません</b> — 止まっているかもしれません（自動の復旧を待っても直らなければ PC を確認）</span></div>`;
+  }
+  const runs = an.runs.map(r => {
+    const what = AUTO_RUN_JA[r.kind] || r.kind;
+    const note = an.runNotes[r.id]
+      ? ` — ${esc(String(an.runNotes[r.id]).slice(0, 80))}` : '';
+    return `<div style="display:flex;gap:8px;align-items:baseline;font-size:var(--fs-sm)">
+      <span>↻</span><div>${AI_TAG}作業中: <b>${esc(what)}</b>
+      （${esc(fmtDT(r.started_at) || '')} 開始）${note}</div></div>`;
+  }).join('');
+  const waiting = an.waiting.length
+    ? `<div style="display:flex;gap:8px;align-items:baseline;font-size:var(--fs-sm)">
+        <span>●</span><div>発注待ちの承認: <b>${an.waiting.length}件</b>
+        （${esc(an.waiting.map(v => v.seq).join('・'))}）— 5分以内に発注係が生成機へ送ります</div></div>`
+    : '';
+  const idle = !runs && !waiting
+    ? `<div class="noitem">いま動いている自動の作業はありません（承認・差し戻しを押せば5分以内に拾います）</div>` : '';
+  return `<section class="card gfcard">
+    <div class="sectionhead" style="margin:0 0 var(--sp-3)"><h2>🤖 自動運転のいま</h2>
+      <span class="hint">生成機が空でも、下に${AI_TAG}作業中が出ていれば裏で進んでいます</span></div>
+    ${beat}
+    ${runs || waiting ? `<div class="stack" style="gap:6px;margin-top:var(--sp-3)">${runs}${waiting}</div>` : idle}
+  </section>`;
+}
+
 /* ── gen-farm カードの自動更新（オーナー指定 2026-08-20: 1分おき・見ている間だけ）──────
    条件を絞って無駄打ちしない: システムタブを開いていて、かつブラウザのタブが手前に
    ある間だけ取りに行く（裏に回している間は止める。戻ってきたら即1回取り直す）。
@@ -3925,6 +4011,11 @@ async function refreshGenfarmCard(){
   catch (_) { return; }                 /* 一時的に読めなくても前の表示を残す */
   if (!$('#gfslot') || state.view !== 'system') return;   /* 待っている間に画面が変わった */
   $('#gfslot').innerHTML = genfarmCard(gf);
+  /* 自動運転のカードも同じ1分周期で取り直す（#330。失敗しても前の表示を残す） */
+  try {
+    const an = await loadAutomationNow(true);
+    if ($('#autoslot') && state.view === 'system') $('#autoslot').innerHTML = automationCard(an);
+  } catch (_) {}
 }
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && state.view === 'system') refreshGenfarmCard();
@@ -4085,14 +4176,18 @@ async function renderSystem(){
   let gf = null;
   try { gf = await loadGenfarm(); }
   catch (e) { gf = { error: e.message }; }
+  let an = null;
+  try { an = await loadAutomationNow(); }
+  catch (_) {}
 
   el.innerHTML = `
     <div class="pagehead">
       <div class="eyebrow">システム</div>
       <h1>⚙️ 構成とスケジュール</h1>
-      <p>いちばん上は生成機のいまの状況。その下は、何が何時に自動で動くかの一覧です。</p>
+      <p>いちばん上は自動運転と生成機のいまの状況。その下は、何が何時に自動で動くかの一覧です。</p>
     </div>
     <div class="stack">
+      <div id="autoslot">${an ? automationCard(an) : ''}</div>
       <div id="gfslot">${gf && !gf.error ? genfarmCard(gf)
         : `<section class="card gfcard"><h2>🖥 gen-farm（実家の生成機）のいま</h2>
             <div class="noitem">待ち行列を読み込めませんでした
