@@ -1053,6 +1053,7 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .tlalways.routine{border-color:var(--fix)}
 .tlalways.poller{border-color:var(--s1)}
 .tlalways.task{border-color:var(--up)}
+.tlalways.off{opacity:.5}   /* 止めてあるタスク（表の行・ピンと同じ薄さに揃える） */
 .tlalways .tlpin{flex:0 0 auto}
 .tlalways span:last-child{font-size:var(--fs-2xs); font-weight:600; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis}
@@ -1411,7 +1412,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/24 23:32';
+const BUILT_AT = '8/26 12:07';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2004,13 +2005,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/24 23:32') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/26 12:07') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/24 23:32') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/26 12:07') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3392,10 +3393,14 @@ function laneChips(lanes){
   }).join('');
 }
 
-/* 実行記録の種類をオーナーの言葉にする（画面に内部の名前を出さない・2026-08-20） */
+/* 実行記録の種類をオーナーの言葉にする（画面に内部の名前を出さない・2026-08-20）。
+   ここに無い種類は英語のまま画面に出てしまうので、実際に記録される種類を全部載せる
+   （2026-08-26 に実データと突き合わせ: いちばん多い作業係と全体監査が抜けていた／
+   月次点検はもう記録されないので削除した）。名前は用語集に合わせる。 */
 const RUN_KIND_JA = {
-  'stock-keeper':'動画の夜間制作', 'daily-log':'数字の記録', 'weekly-review':'週次レビュー',
-  'monthly-audit':'月次点検', 'review-poller':'承認・差し戻しの反映',
+  'step-runner':'作業係（Claude）', 'stock-keeper':'動画の夜間制作',
+  'daily-log':'数字の記録', 'weekly-review':'週次レビュー', 'project-audit':'全体監査',
+  'review-poller':'承認・差し戻しの反映',
   'x-reply':'Xのリプ返信', 'x-post-publish':'Xの投稿', 'x-post-propose':'Xの投稿ネタ選び'
 };
 
@@ -3584,12 +3589,14 @@ function scheduleSection(doc){
     if (!L || !list.length) return '';
     return list.map((a, i) => {
       const title = a.e.title_ja || a.e.id;
+      const off = a.e.enabled === false;   /* 止めてあるものは「常時稼働」と言わない */
       const bottom = L.alwaysBottom + i * (TL_ALWAYS_H + 4);
-      const tip = `${a.e.when || ''}　${title}`;
+      const tip = `${off ? (a.e.status || '停止中') : (a.e.when || '')}　${title}`;
       const cls = RUNNER_CLS[a.e.runner] || 'poller';   /* 枠線と丸バッジを実行主体の色に揃える */
-      return `<div class="tlalways ${cls}" style="bottom:${bottom}px; height:${TL_ALWAYS_H}px">
+      return `<div class="tlalways ${cls}${off ? ' off' : ''}" style="bottom:${bottom}px; height:${TL_ALWAYS_H}px">
         <span class="tlpin ${cls}" title="${esc(tip)}">${a.num}</span>
-        <span>${esc(a.e.when || '')}で常時稼働・${esc(title)}</span></div>`;
+        <span>${off ? `${esc(title)}・${esc(a.e.status || '停止中')}`
+                    : `${esc(a.e.when || '')}で常時稼働・${esc(title)}`}</span></div>`;
     }).join('');
   }).join('');
 
@@ -3711,22 +3718,39 @@ function gfDur(sec){
 const gfClock = ms => ms == null ? '—' : fmtTime(new Date(ms).toISOString());
 
 /* ── 「どの企画の・どの動画の・何を作っているか」を出すための言い換え ───────────
-   エピソード番号の頭文字で企画が分かる（D=歯科医番長／K=人類の力わざ／R=練習・検証／
-   数字だけ=世界のバズ雑学）。動画として登録済みならチャンネルとタイトルが引けるので
-   そちらを優先し、試作・練習のものは番号だけで出す。 */
+   動画の番号の頭2文字で企画が分かる（BZ=世界のバズ雑学／DT=歯科医番長／
+   RW=人類の力わざ。2026-08-25 の付け替え後の体系）。ただし 9000 番台は本編ではなく
+   試作・検証なので、頭2文字より番号を優先してそちらの札を出す。
+   付け替え前の旧番号（D007・K001・R001・071 など）の記録もまだ残っているので、
+   下段のフォールバックで拾う。
+   動画として登録済みならチャンネルとタイトルが引けるのでそちらを優先し、
+   試作・練習のものは番号だけで出す。 */
+const EP_PILOT = {icon: '🧪', name: '試作・検証'};
 const EP_HINT = [
-  {re: /^D/i, icon: '🦷', name: '歯科医番長'},
-  {re: /^K/i, icon: '🏗', name: '人類の力わざ'},
-  {re: /^R/i, icon: '🧪', name: '練習・検証'},
-  {re: /^\d/, icon: '🌐', name: '世界のバズ雑学'}
+  {re: /^BZ/i,  icon: '🌏', name: '世界のバズ雑学'},
+  {re: /^DT/i,  icon: '🦷', name: '歯科医番長'},
+  {re: /^RW/i,  icon: '🏗', name: '人類の力わざ'},
+  /* ── ここから下は旧番号（2026-08-25 の付け替え前）。過去の記録のためだけに残す ── */
+  {re: /^D\d/i, icon: '🦷', name: '歯科医番長'},
+  {re: /^K\d/i, icon: '🏗', name: '人類の力わざ'},
+  {re: /^R\d/i, icon: '🧪', name: '試作・検証'},
+  {re: /^\d/,   icon: '🌏', name: '世界のバズ雑学'}
 ];
+/* 番号（末尾の3〜4桁）が 9000 以上なら試作・検証。BZ9006・RW9001 のように
+   企画の頭2文字が付いていても本編ではないので、企画名では出さない。 */
+function epHint(seq){
+  const s = String(seq || '');
+  const num = /(\d{3,4})$/.exec(s);
+  if (num && Number(num[1]) >= 9000) return EP_PILOT;
+  return EP_HINT.find(h => h.re.test(s)) || null;
+}
 function gfWhose(r, titles){
   const t = (titles || {})[r.video_id];
   if (r.channel && store.channels.some(c => c.slug === r.channel)) {
     const m = chMeta(r.channel);
     return { icon: m.icon, name: m.name, title: (t && t.title) || '' };
   }
-  const hit = EP_HINT.find(h => h.re.test(String(r.episode_seq || '')));
+  const hit = epHint(r.episode_seq);
   return { icon: hit ? hit.icon : '🎬', name: hit ? hit.name : 'その他',
            title: (t && t.title) || '' };
 }
@@ -3852,7 +3876,9 @@ function genfarmCard(gf){
                         読めないユーザーではこの行だけ静かに消える）
      ・発注待ちの承認 … 絵コンテ承認済みなのに、承認より新しい発注記録が無い動画 */
 const AUTO_TTL_MS = 60000;
-const AUTO_RUN_JA = {'step-runner':'制作の工程', 'stock-keeper':'夜間の在庫番',
+/* 「いま動いている」側の言い方。ここに無い種類は下の記録側の対応表（RUN_KIND_JA）に
+   落として拾うので、新しい種類は原則あちらに足すだけでよい。 */
+const AUTO_RUN_JA = {'stock-keeper':'夜間の在庫番',
   'daily-log':'日次ログ同期', 'x-reply':'Xのリプ投稿', 'x-post-publish':'Xの投稿',
   'x-post-propose':'Xのネタ提案', 'weekly-review':'週次レビュー'};
 async function loadAutomationNow(force){
@@ -3904,7 +3930,7 @@ function automationCard(an){
       : `<div class="gfhead bad"><span class="mk">⚠</span><span>レビュー見張り: <b>${m}分間 音沙汰がありません</b> — 止まっているかもしれません（自動の復旧を待っても直らなければ PC を確認）</span></div>`;
   }
   const runs = an.runs.map(r => {
-    const what = AUTO_RUN_JA[r.kind] || r.kind;
+    const what = AUTO_RUN_JA[r.kind] || RUN_KIND_JA[r.kind] || r.kind;
     const note = an.runNotes[r.id]
       ? ` — ${esc(String(an.runNotes[r.id]).slice(0, 80))}` : '';
     return `<div style="display:flex;gap:8px;align-items:baseline;font-size:var(--fs-sm)">
@@ -4131,8 +4157,13 @@ function costView(d){
 /* 自動で動いた記録（旧「稼働」タブ）。1件の状態を4つに畳む。ok は「最後まで走ったか」しか
    表さないので、業務上の注意（⚠ 付きの要約）は別に拾う。
    「いま実行中」の1枚はここには出さない — 同じ agent_runs の走っている行を、上の
-   「自動運転のいま」がすでに出しているため（3タブ時代は同じものを2か所に出していた）。 */
-function recordSection(ops){
+   「自動運転のいま」がすでに出しているため（3タブ時代は同じものを2か所に出していた）。
+   絞り込みは「上のカードが実際に出した行」だけを外す形にする（2026-08-26 修正: それまで
+   コメントだけで実装が無く、二重に出ていた）。上が拾わなかった走行中の行——心拍が
+   切れて久しい残骸など——はここに残す。「途中で止まった」と見せたいのはこちらのため。 */
+function recordSection(ops, an){
+  const shownNow = new Set(((an && an.runs) || []).map(r => r.id));
+  if (shownNow.size) ops = { ...ops, runs: ops.runs.filter(r => !shownNow.has(r.id)) };
   const stateOf = r => {
     const stale = r.ok == null && r.started_at
       && (Date.now() - new Date(r.started_at).getTime()) > STALE_RUN_MS;
@@ -4245,7 +4276,7 @@ async function renderAdmin(){
             <div class="noitem">待ち行列を読み込めませんでした
             <span class="s">${esc(gfR.e || '')}</span></div></section>`}</div>
       ${full && costR.v ? moneySection(costR.v) : ''}
-      ${full && opsR.v ? recordSection(opsR.v) : ''}
+      ${full && opsR.v ? recordSection(opsR.v, anR.v) : ''}
       ${scheduleSection(docs['schedule'])}
       ${linksSection()}
     </div>`;
