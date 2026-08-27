@@ -667,6 +667,10 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
 .dsum:focus-visible{outline:2px solid var(--s1); outline-offset:3px; border-radius:var(--r-sm)}
 .dsum .n{letter-spacing:.03em; color:var(--ink-2); font-weight:700}
 .dsec-history[open]>.dsum{margin-bottom:var(--sp-3)}
+/* 素材の折りたたみ（#360）は履歴と同じ作法の畳み。枠・キャレット・スマホの全幅化は
+   .dsec-history をそのまま共用し（同じ見た目・同じ開き方に揃える）、見出しだけ節名ではなく
+   操作の名前として読ませたいので、大文字化と字間だけ外す */
+.dsec-mat>.dsum{text-transform:none; letter-spacing:.02em; color:var(--ink-2)}
 /* どのゲート（台本／絵コンテ／完成）の発言かを1本の時系列の中で見分ける印 */
 .gatechip{font-size:var(--fs-2xs); border-radius:5px; padding:0 7px; font-weight:680;
   border:1px solid var(--border-2); background:var(--surface-1); color:var(--ink-2)}
@@ -1412,7 +1416,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/26 12:07';
+const BUILT_AT = '8/27 22:56';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2005,13 +2009,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/26 12:07') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/27 22:56') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/26 12:07') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/27 22:56') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2469,6 +2473,9 @@ function detailHTML(it){
   const review = rvGate ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
       <h4>レビュー — ${GATE_LABEL[rvGate]}の承認ポイント</h4>${stateBar}${reviewPanel(it, rvGate, history)}</div>` : '';
 
+  /* 承認待ちでなくても素材を見られる畳み（#360）。レビュー節に出ているゲートは重複しない */
+  const materials = materialsHTML(it, rvGate);
+
   /* ネタの仕分け（#314）。ゲートを持たないので review 節とは排他で、同じ位置に出す */
   const triage = it.stage === 'triage'
     ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
@@ -2501,7 +2508,7 @@ function detailHTML(it){
           <div class="dsec"><h4>フック</h4><div class="hook">${esc(it.hook || '（未設定）')}</div></div>
           <div class="dsec"><h4>工程タイムライン</h4><div class="tl">${timelineRows(it)}</div>
             <div class="dhint">日付は承認ポイント・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
-          ${metrics}${(rvGate || it.stage === 'triage') ? '' : history}
+          ${metrics}${materials}${(rvGate || it.stage === 'triage') ? '' : history}
         </div>${review}${triage}
       </div>
     </article>
@@ -2544,6 +2551,7 @@ async function openDetail(vid, gate){
   window.scrollTo(0, 0);
   dv.querySelector('.backbtn')?.focus();
   mountAllAssets(dv);
+  armLazyAssets(dv);            /* 畳んである素材は開かれた時点で読みに行く（#360） */
 }
 
 /* 一覧へ戻す（履歴は操作しない）。scrollY 指定があればそこへ、無ければ開いた時点へ復元 */
@@ -2751,7 +2759,48 @@ async function mountAssets(node){
       <span class="s">${esc(e.message || String(e))}</span></div>`;
   }
 }
-const mountAllAssets = root => (root || document).querySelectorAll('[data-assets]').forEach(mountAssets);
+/* data-lazy 付きは畳んだ折りたたみの中身。開かれるまで Storage を見に行かない（#360） */
+const mountAllAssets = root =>
+  (root || document).querySelectorAll('[data-assets]:not([data-lazy])').forEach(mountAssets);
+
+/* ── 素材を「見るだけ」で開く折りたたみ（#360）────────────────────────
+   02（世界のバズ雑学）は絵コンテの承認ポイントを廃止した。レビュー節は承認待ち／
+   【AI】修正中の動画にしか出ないので、そのままだと搬出済みの絵コンテがどこからも
+   見られない。詳細画面に見るだけの畳みを足して読めるようにする（承認・コメント・没は
+   付けない＝書き込みの入口はレビュー節ひとつのまま）。
+     ・レビュー節に出ているゲートはここへ出さない（同じ素材を2か所に並べない）
+     ・その工程に到達した動画にだけ出す（到達前は Storage にまだ何も無い）
+     ・中身は開いたときに初めて読みに行く（畳んだままなら通信しない） */
+const MATERIAL_FOLDS = [
+  { gate:'storyboard', label:'絵コンテを見る' },
+  { gate:'final',      label:'完成した動画を見る' }
+];
+function materialsHTML(it, rvGate){
+  const cur = displayIdx(it);
+  if (cur < 0) return '';                 /* 没・ネタの仕分け待ちは工程の並びの外 */
+  return MATERIAL_FOLDS
+    .filter(g => g.gate !== rvGate && cur >= GATE_COL[g.gate])
+    .map(g => {
+      const key = it.id + '|view|' + g.gate;
+      return `<details class="dsec dsec-history dsec-mat" data-lazyassets="1">
+        <summary class="dsum">${esc(g.label)}</summary>
+        <div class="dsum-body assets" data-assets="${esc(key)}" data-lazy="1"
+             data-ch="${esc(it.channel)}" data-seq="${esc(it.seq)}" data-gate="${esc(g.gate)}">
+          <div class="loadbox">素材を読み込み中…</div></div></details>`;
+    }).join('');
+}
+/* toggle は bubble しないので、畳みひとつずつに直接ぶら下げる（詳細を描き直すたびに呼ぶ） */
+function armLazyAssets(root){
+  (root || document).querySelectorAll('details[data-lazyassets]').forEach(d => {
+    d.addEventListener('toggle', () => {
+      if (!d.open) return;
+      const box = d.querySelector('[data-assets][data-lazy]');
+      if (!box) return;
+      box.removeAttribute('data-lazy');    /* 二重読み込みを防ぐ（結果は loadAssets 側でキャッシュ） */
+      mountAssets(box);
+    });
+  });
+}
 
 /* ── 書き込み（コメント・承認・没）───────────────────────────────
    誤タップ防止（#205）: コメント欄・承認・没はそれぞれ別ブロック。コメント欄からは
