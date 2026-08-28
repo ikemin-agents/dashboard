@@ -1446,7 +1446,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/28 00:06';
+const BUILT_AT = '8/28 11:25';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2039,13 +2039,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/28 00:06') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/28 11:25') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/28 00:06') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/28 11:25') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -4374,10 +4374,12 @@ async function renderAdmin(){
     <div class="pagehead">
       <div class="eyebrow">運営</div>
       <h1>🛠 いまの状態と記録</h1>
-      <p>いちばん上は自動運転と生成機のいまの状況。その下は畳んであり、押すと開きます。</p>
+      <p>いちばん上は生成機のいまの状況。その下は畳んであり、押すと開きます。</p>
     </div>
     <div class="stack">
-      <div id="autoslot">${anR.v ? automationCard(anR.v) : ''}</div>
+      <!-- 「自動運転のいま」は 2026-08-28 に非表示（オーナー指示・v2切替 #361）。
+           実行記録は機械の稼働ログでオーナーが日々見るものではないため。
+           戻すときはこの行を <div id="autoslot">${anR.v ? automationCard(anR.v) : ''}</div> に -->
       <div id="gfslot">${gfR.v ? genfarmCard(gfR.v)
         : `<section class="card gfcard"><h2>🖥 gen-farm（実家の生成機）のいま</h2>
             <div class="noitem">待ち行列を読み込めませんでした
