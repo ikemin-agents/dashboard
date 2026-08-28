@@ -958,6 +958,9 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .gfhead.ok{background:var(--done-tint); color:var(--ink-2)}
 .gfhead.warn{background:var(--warn-tint); color:var(--ink)}
 .gfhead.bad{background:var(--crit-tint); color:var(--ink)}
+/* 正常な合間の待ち（できあがりを回収するまで）。異常ではないので色を当てず灰色で置く
+   （オーナー指摘 2026-08-28: 受け取り待ちが赤く出て毎回びっくりする） */
+.gfhead.info{background:var(--surface-2); color:var(--ink-2)}
 .gfmetrics{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-2); margin-bottom:var(--sp-3)}
 .gfm{background:var(--surface-2); border:1px solid var(--border-2); border-radius:var(--r-md); padding:10px 12px}
 .gfm .k{font-size:var(--fs-2xs); color:var(--muted)}
@@ -1007,7 +1010,12 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .gfbig .pg .d{color:var(--ink-2)}
 .gfbig .et{color:var(--ink-2)}
 .gfbig .et .u{font-size:var(--fs-xs); margin-left:4px; white-space:normal}
+/* 見込みを超えたときだけ時刻の前に付く「再見積り」。当初の見込みと読み違えないための札 */
+.gfbig .et .u2{font-size:var(--fs-xs); font-weight:700; margin-right:5px; white-space:nowrap}
 .gfbig .et.late{color:var(--crit)}
+/* 束の内訳（できあがりと生成中が混ざっている束だけ）。畳んだままでも中身が読めるようにする */
+.gfghead .sub{grid-column:1/-1; grid-row:4; margin-top:3px; font-size:var(--fs-2xs);
+  color:var(--muted); line-height:1.5; overflow-wrap:anywhere}
 .gfjobs{display:grid; padding:2px 13px 8px; border-top:1px solid var(--border-2)}
 .gfjob{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:baseline;
   padding:8px 0; border-bottom:1px solid var(--border-2); font-size:var(--fs-sm)}
@@ -1446,7 +1454,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/28 11:25';
+const BUILT_AT = '8/28 13:46';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1915,14 +1923,18 @@ const GF_OPEN_STATUS = ['submitting', 'in_flight', 'done'];
 const gfCollected = r => r.source && r.source !== 'pipeline' && r.status === 'done';
 const GF_KIND_LABEL = {h3_video:'H3映像', flux_image:'FLUX画像', unknown:'不明'};
 const GF_FALLBACK_SEC = {h3_video:223, flux_image:76, unknown:200};
-const GF_STALE_DONE_MIN = 10;      /* 「生成済み・未回収」が続くと詰まりを疑う分数 */
+/* 「できあがったのに手元へ降りていない」を詰まりと疑うまでの分数。**数えはじめは
+   できあがった時刻**（finished_at）で、発注時刻ではない。生成が全部終わるまで回収しない
+   作りなので、数分〜十数分の待ちは正常な合間。赤い警告はここを超えたときだけ出す
+   （オーナー指定 2026-08-28: 20分。コマンドラインの genfarm-status は 10分のまま）。 */
+const GF_STALE_DONE_MIN = 20;
 const GF_TTL_MS = 30000;
 
 async function loadGenfarm(force){
   if (!force && store.genfarm && Date.now() - store.genfarm.at < GF_TTL_MS) return store.genfarm;
   const [openAll, recent] = await Promise.all([
     q(sb.from('generation_jobs')
-        .select('id,kind,channel,video_id,episode_seq,artifact_key,status,purpose,source,submitted_at,started_at,estimated_sec')
+        .select('id,kind,channel,video_id,episode_seq,artifact_key,status,purpose,source,submitted_at,started_at,finished_at,updated_at,estimated_sec')
         .is('materialized_at', null).in('status', GF_OPEN_STATUS)
         .order('submitted_at', { ascending: true }).limit(200)),
     q(sb.from('generation_jobs').select('kind,estimated_sec,started_at,finished_at')
@@ -2039,13 +2051,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/28 11:25') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/28 13:46') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/28 11:25') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/28 13:46') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3729,7 +3741,8 @@ function scheduleSection(doc){
    コマンドラインの genfarm-status（00-config/tools/genfarm-status/）と同じ:
      ・待ち行列＝まだ手元に無いジョブ（materialized_at が空／発注中・実行中・生成済み）
      ・完了見込み＝1件ずつ順に処理される前提で、残り時間を積み上げた概算
-     ・「生成済み・未回収」が10分以上続いていたら詰まりを疑う（2026-08-19 の障害と同じ形）
+     ・「できあがったのに手元へ降りていない」が長く続いたら詰まりを疑う（2026-08-19 の障害と
+       同じ形）。数えはじめはできあがった時刻で、しきい値は GF_STALE_DONE_MIN
    見込み時間は、発注時に記録した見込み秒（estimated_sec）が近い実測で較正する。
    実測が無い種類は既定値（H3映像 223秒／FLUX画像 76秒）に落とす。 */
 const GF_MAX_SANE_SEC = 6 * 3600;
@@ -3756,6 +3769,15 @@ function gfEstimator(recent){
     return hint > 0 ? hint : (GF_FALLBACK_SEC[kind] || 200);
   };
 }
+/* 時刻の文字列 → ミリ秒。空・壊れた値は null（起点の取り違えを黙って通さない） */
+function gfMs(v){ const t = v ? Date.parse(v) : NaN; return isFinite(t) ? t : null; }
+/* できあがった時刻＝ status が done になった時刻。生成機が記録する finished_at が正で、
+   古い記録で欠けていれば更新時刻・発注時刻の順に落とす。 */
+function gfDoneAt(r){ return gfMs(r.finished_at) || gfMs(r.updated_at) || gfMs(r.submitted_at); }
+/* 経過の起点の言い方。オーナーに見せる言葉はこの2つだけに絞る（同じものを別名で呼ばない）:
+   作りはじめてから … 生成機が実際に手を付けてからの時間
+   発注から         … まだ手を付けたか分からないので、投げてからの時間で代用している */
+const GF_FROM_LABEL = {make:'作りはじめてから', order:'発注から'};
 function gfState(gf){
   const est = gfEstimator(gf.recent), now = Date.now();
   const open = gf.open || [];
@@ -3764,22 +3786,39 @@ function gfState(gf){
      残りは生成機の中で順番待ちとして扱う（先入れ先出しなので実態とほぼ一致する）。
      オーナー指摘 2026-08-20「なぜ両方実行中なのか」への対応。 */
   const runningId = (open.find(r => r.status === 'in_flight') || {}).id;
+  /* 作成中の1件が「作りはじめた時刻」の求め方（オーナー指摘 2026-08-28: 発注からの経過だと
+     大げさに見える）。生成機は1件ずつ順に作るので、**直前の1本ができあがった時刻＝次の1本を
+     作りはじめた時刻**（実測でミリ秒まで一致する）。処理開始時刻（started_at）は終わってから
+     しか入らないので、待っているあいだはこの繰り上がりがいちばん正確な起点になる。
+     どちらも取れなければ発注時刻に落とし、そのときは「発注から」と名乗って超過は主張しない。 */
+  const prevDone = open.filter(r => r.status === 'done').map(gfDoneAt).filter(Boolean);
+  const lastDoneAt = prevDone.length ? Math.max(...prevDone) : null;
   let cursor = 0;
   const jobs = open.map(r => {
     const kind = r.kind || 'unknown';
     const e = est(kind, Number(r.estimated_sec) || 0);
     const isRunning = r.id === runningId;
-    /* 経過は「作成中」の1件だけが意味を持つ。開始時刻が無いときは発注時刻で代用する */
-    const from = isRunning ? (r.started_at || r.submitted_at) : null;
-    const elapsed = from ? (now - new Date(from)) / 1000 : null;
+    const sub = gfMs(r.submitted_at);
+    let from = null, fromKind = null;
+    if (isRunning) {
+      const started = gfMs(r.started_at);
+      if (started) { from = started; fromKind = 'make'; }
+      else if (lastDoneAt && sub && lastDoneAt > sub) { from = lastDoneAt; fromKind = 'make'; }
+      else { from = sub; fromKind = 'order'; }
+    }
+    const elapsed = from ? (now - from) / 1000 : null;
     const remaining = r.status === 'done' ? 0
       : (isRunning && elapsed != null) ? Math.max(0, e - elapsed) : e;
     cursor += remaining;
     const state = r.status === 'done' ? 'ready'
       : isRunning ? 'running'
       : r.status === 'in_flight' ? 'queued' : 'todo';
-    return { r, kind, state, est: e, elapsed, remaining,
-             age: (now - new Date(r.finished_at || r.submitted_at)) / 1000,
+    /* 見込みを何分超えたか。**作りはじめた時刻が取れているときだけ**数える。発注起点の
+       経過は順番待ちの時間を含むので、そこから超過を名乗ると嘘になる（オーナー指摘の型）。 */
+    const overBy = (isRunning && fromKind === 'make' && elapsed != null && elapsed > e)
+      ? elapsed - e : null;
+    return { r, kind, state, est: e, elapsed, fromKind, overBy, remaining,
+             age: (r.status === 'done' ? (now - gfDoneAt(r)) : (now - sub)) / 1000,
              eta: r.status === 'done' ? null : now + cursor * 1000 };
   });
   const by = st => jobs.filter(j => j.state === st);
@@ -3843,11 +3882,18 @@ function gfPart(j){
   return j.kind === 'h3_video' ? 'シーンの映像' : 'フレームの絵';
 }
 const GF_STATE_LABEL = {running:'作成中', queued:'生成機で順番待ち', todo:'待ち', ready:'できあがり'};
-/* 1件の右端に出す時刻・経過 */
+/* 1件の右端に出す時刻・経過。**起点を必ず名乗る**（オーナー指摘 2026-08-28: どこから
+   数えた時間か分からないと大げさに見える）。できあがったものは「できあがりから」。 */
 function gfWhen(j){
-  if (j.state === 'running') return `${gfDur(j.elapsed)}経過・${
-    j.remaining > 0 ? `残り${gfDur(j.remaining)}` : '見込み超過'}`;
-  if (j.state === 'ready') return `${gfDur(j.age)}前にできあがり`;
+  if (j.state === 'running') {
+    const head = `${GF_FROM_LABEL[j.fromKind] || ''}${gfDur(j.elapsed)}`;
+    if (j.overBy > 0) return `${head}・見込み+${gfDur(j.overBy)}`;
+    /* 発注起点の経過には順番待ちが混ざっているので、そこから「残り」も「まもなく」も
+       言えない（言うと嘘になる）。起点と経過だけを出して、時刻は束の見込みに任せる。 */
+    if (j.fromKind !== 'make') return head;
+    return `${head}・${j.remaining > 0 ? `残り${gfDur(j.remaining)}` : 'まもなく'}`;
+  }
+  if (j.state === 'ready') return `できあがりから${gfDur(j.age)}`;
   return `${gfClock(j.eta)}ごろ`;
 }
 
@@ -3870,14 +3916,23 @@ function gfGroups(s, titles){
     const kinds = [...new Set(g.jobs.map(j => j.kind))];
     const run = g.jobs.find(j => j.state === 'running');
     const ready = n('ready');
-    /* 見込みを超えて作り続けている1件があれば、それをいちばん強い札にする */
-    const late = !!(run && run.remaining <= 0);
+    const making = n('running') + n('queued') + n('todo');
+    /* 見込みを超えて作り続けている1件があれば、それをいちばん強い札にする。
+       **どれだけ超えたかを札に書く**（オーナー要望 2026-08-28: 超過とだけ出ても量が分からない）。
+       超過を名乗れるのは作りはじめた時刻が取れているときだけ（gfState の overBy を参照）。 */
+    const over = run && run.overBy > 0 ? run.overBy : null;
+    const late = !!over;
+    /* できあがりと生成中が混ざっている束は、畳んだままでも内訳が読めるようにする */
+    const mix = (ready && making)
+      ? `できあがり${ready}本は受け取り待ち・${making}本は生成中` : '';
     return Object.assign(g, {
       running: n('running'), queued: n('queued') + n('todo'), ready,
-      eta: eta || null, late,
+      eta: eta || null, late, over, mix,
+      /* 受け取り待ちの最長経過（できあがりからの時間）。詰まりの判定に使う */
+      readyAge: ready ? Math.max(...g.jobs.filter(j => j.state === 'ready').map(j => j.age)) : null,
       unit: kinds.length === 1 ? (GF_UNIT[kinds[0]] || '素材') : '素材',
       done: ready, total: g.jobs.length,
-      badge: late ? {t:'見込み超過', c:'late'}
+      badge: late ? {t:`見込み超過 +${gfDur(over)}`, c:'late'}
            : run ? {t:'制作中', c:'run'}
            : ready === g.jobs.length ? {t:'受け取り待ち', c:'ready'}
            : {t:'待ち', c:''}
@@ -3901,27 +3956,33 @@ function genfarmCard(gf){
   const stuck = s.stale.filter(j => j.age > GF_STALE_DONE_MIN * 60);
   const waitN = s.queued.length + s.todo.length;
 
-  /* いちばん大きく出す1行。詰まりの疑い＞作成中＞順番待ち＞空き の順で強い方を出す */
+  /* いちばん大きく出す1行。詰まりの疑い＞作成中＞順番待ち＞回収待ち＞空き の順で強い方を出す。
+     **できあがりを待っているだけの状態を赤くしない**（オーナー指摘 2026-08-28: 生成が全部
+     終わるまで回収しない作りなので、合間の待ちは正常）。赤は GF_STALE_DONE_MIN を超えたときだけ。 */
   const cur = s.running[0];
   const curWho = cur ? gfWhose(cur.r, titles) : null;
+  const readyMax = s.stale.length ? Math.max(...s.stale.map(j => j.age)) : null;
   const head = stuck.length
-    ? {cls:'bad', mark:'⚠', text:`できあがったのに手元へ降りてきていません（${stuck.length}件）`}
+    ? {cls:'bad', mark:'⚠', text:`できあがったのに手元へ降りてきていません（${stuck.length}件・できあがりから最長${gfDur(readyMax)}）`}
     : cur
       ? {cls:'run', mark:'●', text:`制作中 — ${esc(curWho.icon + ' ' + curWho.name)} ${
           esc(cur.r.episode_seq || '')}${curWho.title ? ' ' + esc(curWho.title) : ''} の${esc(gfPart(cur))}`}
       : waitN
         ? {cls:'warn', mark:'●', text:`${waitN}件が順番待ち（まだ動き出していません）`}
-        : {cls:'ok', mark:'✓', text:'空いています（待ちはありません）'};
+        : s.stale.length
+          ? {cls:'info', mark:'●', text:`回収待ち ${s.stale.length}件（生成の合間にまとめて受け取ります）`}
+          : {cls:'ok', mark:'✓', text:'空いています（待ちはありません）'};
 
-  const overdue = cur && cur.remaining <= 0;
+  /* 数字3つ。**経過は必ず起点を名乗る**（発注からなのか、作りはじめてからなのか）。 */
   const tiles = [
-    {k:'作成中', v:s.running.length, s:cur ? gfDur(cur.elapsed) + '経過' : '—'},
+    {k:'作成中', v:s.running.length,
+     s:cur ? `${GF_FROM_LABEL[cur.fromKind] || ''}${gfDur(cur.elapsed)}${
+         cur.overBy > 0 ? `（見込み+${gfDur(cur.overBy)}）` : ''}` : '—'},
     {k:'順番待ち', v:waitN,
-     s:s.allDoneAt ? `全部そろうのは ${gfClock(s.allDoneAt)} ごろ`
-       : overdue ? '見込み時間を超えて作成中' : '—'},
+     s:s.allDoneAt ? `${cur && cur.overBy > 0 ? '再見積り ' : ''}${gfClock(s.allDoneAt)} ごろ全部そろう`
+       : '—'},
     {k:'受け取り待ち', v:s.stale.length,
-     s:stuck.length ? `${gfDur(Math.max(...stuck.map(j => j.age)))}以上そのまま`
-       : (s.stale.length ? 'まもなく手元に降ります' : '—')}
+     s:s.stale.length ? `できあがりから最長${gfDur(readyMax)}` : '—'}
   ].map(t => `<div class="gfm"><div class="k">${esc(t.k)}</div><div class="v">${t.v}</div>
       <div class="s">${esc(t.s)}</div></div>`).join('');
 
@@ -3939,11 +4000,16 @@ function genfarmCard(gf){
     const go = g.videoId
       ? `<div class="gfgo"><button type="button" data-gfvid="${esc(g.videoId)}"
            >この動画の記録を見る ›</button></div>` : '';
+    /* 見込みを超えているあいだの時刻は「当初の見込み」ではなく引き直した見積り。
+       同じ見た目で意味が変わらないよう「再見積り」と名乗る（オーナー要望 2026-08-28）。 */
     const etaWord = g.total > 1 ? 'ごろ 全部そろう' : 'ごろ できあがる';
     const eta = g.eta
-      ? `<span class="et${g.late ? ' late' : ''}">${esc(gfClock(g.eta))}<span
+      ? `<span class="et${g.late ? ' late' : ''}">${g.late
+           ? '<span class="u2">再見積り</span>' : ''}${esc(gfClock(g.eta))}<span
            class="u">${etaWord}</span></span>`
-      : `<span class="et"><span class="u">手元に降りるのを待っています</span></span>`;
+      : `<span class="et"><span class="u">${g.readyAge != null
+           ? `できあがりから${esc(gfDur(g.readyAge))}・手元に降りるのを待っています`
+           : '手元に降りるのを待っています'}</span></span>`;
     return `<details class="gfgrp" data-gfkey="${esc(g.key)}"${gfOpen.has(g.key) ? ' open' : ''}>
       <summary class="gfghead">
         <span class="g1">
@@ -3955,7 +4021,8 @@ function genfarmCard(gf){
         <span class="gfbig">
           <span class="pg" title="できあがった数 ／ この動画で待っている数"><span
             class="u">${esc(g.unit)}</span>${g.done}<span class="d">/${g.total}</span></span>
-          ${eta}</span></summary>
+          ${eta}</span>
+        ${g.mix ? `<span class="sub">${esc(g.mix)}</span>` : ''}</summary>
       <div class="gfjobs">${rows}</div>${go}</details>`;
   }).join('');
 
@@ -3967,8 +4034,8 @@ function genfarmCard(gf){
     ${s.jobs.length ? `<div class="gfgroups">${groups}</div>`
       : `<div class="noitem">待っている生成はありません</div>`}
     ${stuck.length ? `<div class="note" style="margin:var(--sp-3) 0 0"><span>⚠</span><div>生成機の中では
-      出来上がっているのに、手元のパソコンへ降りてきていません。<b>その動画の生成をやり直す</b>と
-      回収されます。</div></div>` : ''}
+      出来上がっているのに、<b>できあがりから${esc(gfDur(readyMax))}</b>のあいだ手元のパソコンへ
+      降りてきていません。<b>その動画の生成をやり直す</b>と回収されます。</div></div>` : ''}
   </section>`;
 }
 
