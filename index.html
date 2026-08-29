@@ -345,12 +345,16 @@ td.dim{color:var(--muted)}
   font-size:11px; text-align:center; font-variant-numeric:normal}
 /* 完了は沈める（グレー）／AIが動いている工程は Claude のオレンジ（塗り＝作業中・
    縁取り＝あなたの指摘を修正中）／あなたの承認待ちは青の塗り（#205）。
-   色で「誰のボールか」が分かる: オレンジ=AI・青=あなた・グレー=終わり */
+   色で「誰のボールか」が分かる: オレンジ=AI・青=あなた・グレー=終わり。
+   ⚠️ rcai（AI審査で作り直し中）だけは**あなたが関わっていない**直しなので、
+   オレンジを使わず無彩色に落とす＝「見なくていい」を色の強さで伝える（M051）。 */
 .mark.done{color:var(--done); background:var(--done-tint); font-weight:700}
 .mark.work{background:var(--fix); color:#fff; font-weight:700}
 .mark.rv{background:var(--s1); color:#fff; font-weight:700}
 .mark.rc{color:var(--fix-ink); background:var(--fix-tint); font-weight:700;
   box-shadow:inset 0 0 0 1.5px var(--fix)}
+.mark.rcai{color:var(--ink-2); background:var(--surface-3); font-weight:700;
+  box-shadow:inset 0 0 0 1.5px var(--axis)}
 .mark.todo{color:var(--axis)}
 .mtx tr.dropped td{color:var(--muted)}
 .mtx tbody tr{cursor:pointer}
@@ -410,6 +414,8 @@ td.ttl .flags{margin-left:8px}
   border:none; border-radius:var(--r-pill); padding:4px 13px; white-space:nowrap; line-height:1.35;
   background:var(--surface-2); color:var(--ink-2)}
 .sbadge.work,.sbadge.rc,.sbadge.open{background:var(--fix-tint); color:var(--fix-ink)}
+/* AI審査だけが起点の作り直し（M051）。オーナーの指摘の直しより一段落ち着かせる */
+.sbadge.rcai{background:var(--surface-3); color:var(--ink-2)}
 .sbadge.rv{background:var(--s1-tint); color:var(--s1-ink)}
 .sbadge.done{background:var(--done-tint); color:var(--done)}
 .sbadge.idea{background:var(--surface-2); color:var(--ink-2)}
@@ -453,6 +459,8 @@ td.ttl .flags{margin-left:8px}
 .dot.rv{background:var(--s1); color:#fff; font-weight:700}
 .dot.rc{color:var(--fix-ink); background:var(--fix-tint); font-weight:700;
   box-shadow:inset 0 0 0 1.5px var(--fix)}
+.dot.rcai{color:var(--ink-2); background:var(--surface-3); font-weight:700;
+  box-shadow:inset 0 0 0 1.5px var(--axis)}
 .dot.todo{color:var(--axis); background:var(--surface-2)}
 .plbl{font-size:9px; line-height:1.15; color:var(--muted); text-align:center; white-space:nowrap;
   letter-spacing:-.03em; max-width:100%; overflow:hidden; text-overflow:ellipsis}
@@ -540,6 +548,7 @@ td.ttl .flags{margin-left:8px}
   border-radius:var(--r-md); padding:8px 12px; margin:0 0 var(--sp-3); line-height:1.55}
 .dstate.rv{background:var(--s1-tint); color:var(--ink)}
 .dstate.rc{background:var(--fix-tint); color:var(--ink)}
+.dstate.rcai{background:var(--surface-3); color:var(--ink)}
 .dstate b{font-weight:700}
 /* 詳細ビュー表示中は一覧ナビ／チャンネルタブを隠して全画面に見せる */
 body.detail-open .chrow, body.detail-open .nav{display:none}
@@ -619,6 +628,7 @@ tr.dropped td{color:var(--muted)}
   border-radius:5px; padding:1px 7px; color:var(--s1-ink); font-weight:680; white-space:nowrap}
 .rcflag{font-size:var(--fs-2xs); background:var(--fix-tint); border:none;
   border-radius:5px; padding:1px 7px; color:var(--fix-ink); font-weight:680; white-space:nowrap}
+.rcflag.ai{background:var(--surface-3); color:var(--ink-2)}
 .more{font-size:var(--fs-xs); color:var(--ink-2); text-align:center; padding:7px;
   border:1px dashed var(--border); border-radius:var(--r-sm)}
 .empty{font-size:var(--fs-xs); color:var(--muted); text-align:center; padding:16px 6px}
@@ -1454,7 +1464,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/28 13:46';
+const BUILT_AT = '8/30 00:09';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1677,6 +1687,11 @@ function mapRow(r){
   it._rv   = r.rv_gate || null;
   it._rc   = r.rc_gate || null;
   it._open = r.open_feedback_count || 0;
+  /* 指摘の内訳と差し戻しの出どころ（M051）。未適用の DB では列そのものが返らない＝
+     0 / null になり、従来どおり「あなたの指摘」扱いで描画される（壊れずに退行するだけ） */
+  it._openH  = r.open_feedback_count_human || 0;
+  it._openAi = r.open_feedback_count_ai    || 0;
+  it._rcSrc  = r.rc_src || null;
   store.byId.set(it.id, it);
   return it;
 }
@@ -1815,17 +1830,40 @@ function gateStateMap(events){
   return m;
 }
 
-/* 詳細ビュー用の状態注釈。一覧の _rv/_rc/_open はビュー（M027）由来だが、詳細は
+/* 発言者が審査AIか（review_events.author の語彙は koike / kohnosuke / ai:* に
+   閉じているので、ai: で始まらなければ人間・M017 の CHECK）。DB 側（M051）が
+   `author IN ('koike','kohnosuke')` で数えているのと同じ集合になる。 */
+const isAiAuthor = a => String(a || '').startsWith('ai:');
+
+/* 差し戻しの出どころ（DB 側 v_dashboard_list.rc_src と同じ規則・M051）。
+   ①そのゲートに載っている未対応（open）の修正依頼の著者集合で決める
+   ②1件も無ければ、状態を決めた最新の修正依頼の著者で決める */
+function rcSrcOf(gate, events){
+  const evs = (events || []).filter(e => e.gate === gate && e.kind === 'request_changes');
+  let last = null;
+  for (const e of evs) if (!last || evNewer(e, last)) last = e;
+  const open = evs.filter(e => e.resolution_status === 'open');
+  const set = open.length ? open : (last ? [last] : []);
+  const h = set.some(e => !isAiAuthor(e.author)), a = set.some(e => isAiAuthor(e.author));
+  return h && a ? 'both' : h ? 'human' : (a ? 'ai' : null);
+}
+
+/* 詳細ビュー用の状態注釈。一覧の _rv/_rc/_open はビュー（M027・M051）由来だが、詳細は
    開いた瞬間にその動画のレビュー記録を取り直すので、そちらで上書きする（判定規則は
-   ビューと同じ）。_rv=承認待ちのゲート / _rc=【AI】修正中のゲート / _open=未対応の指摘件数。
+   ビューと同じ）。_rv=承認待ちのゲート / _rc=直し中のゲート / _open=未対応の指摘件数
+   （_openH=あなたの指摘 / _openAi=AI審査の指摘）/ _rcSrc=差し戻しの出どころ。
    没にした動画はどちらのキューにも出さない（#203） */
 function annotate(it, events){
   let rv = null, rc = null;
   for (const p of gateStateMap(events).values()) { if (p.st === 'review') rv = p.gate; else rc = p.gate; }
   const drop = it.stage === 'dropped';
-  it._rv   = drop ? null : rv;
-  it._rc   = drop ? null : rc;
-  it._open = drop ? 0 : (events || []).filter(e => e.resolution_status === 'open').length;
+  const open = drop ? [] : (events || []).filter(e => e.resolution_status === 'open');
+  it._rv    = drop ? null : rv;
+  it._rc    = drop ? null : rc;
+  it._open  = open.length;
+  it._openH = open.filter(e => !isAiAuthor(e.author)).length;
+  it._openAi= open.filter(e =>  isAiAuthor(e.author)).length;
+  it._rcSrc = it._rc ? rcSrcOf(it._rc, events) : null;
   return it;
 }
 /* レビュー記録はゲートで切らず動画単位で持つ（#207）。台本→絵コンテ→完成を1本の時系列で
@@ -2051,13 +2089,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/28 13:46') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '8/30 00:09') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/28 13:46') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '8/30 00:09') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2083,11 +2121,27 @@ function displayIdx(it){
 const stateCls = it => (it._rv || it.stage === 'triage') ? 'st-rv'
   : (it._rc ? 'st-rc' : (it._open ? 'st-open' : ''));
 const badgeHTML = b => b ? `<span class="sbadge ${b.cls}">${b.gl} ${esc(b.text)}</span>` : '';
+/* ── 差し戻しの直し中は「誰の指摘が起点か」で見せ方を分ける（M051）────────
+   あなた（＋歯科医監修）の指摘が入っているものは今までどおりオレンジで目立たせ、
+   AI審査だけが起点のもの（基準に届かず作り直しているだけ）は無彩色に落とす。
+   文言は必ずこの2つの関数を通す＝表記のゆれを1か所に閉じる。 */
+const rcAiOnly = it => it._rcSrc === 'ai';
+const rcText  = it => rcAiOnly(it) ? `AI審査で${GATE_LABEL[it._rc]}作り直し中`
+                                   : `${AI_TAG}${GATE_LABEL[it._rc]}修正対応中`;
+const rcShort = it => rcAiOnly(it) ? 'AI審査で作り直し中' : `${AI_TAG}修正対応中`;
+const rcCls   = it => rcAiOnly(it) ? 'rcai' : 'rc';
+/* 未対応の指摘の内訳（M051）。b=true なら件数を太字にする（吹き出し用）、
+   false なら title 属性に入れられる素のテキスト。0件の側は出さない。 */
+const openSplit = (it, b) => {
+  const w = n => b ? `<b>${n}件</b>` : `${n}件`;
+  return [it._openH  ? `あなたの指摘 ${w(it._openH)}`  : '',
+          it._openAi ? `AI審査 ${w(it._openAi)}` : ''].filter(Boolean).join('・');
+};
 const stateBadgeOf = it =>
     it._rv ? {cls:'rv', gl:'●', text:`${GATE_LABEL[it._rv]}承認待ち`}
-  : it._rc ? {cls:'rc', gl:'↺', text:`${AI_TAG}${GATE_LABEL[it._rc]}修正中`} : null;
+  : it._rc ? {cls:rcCls(it), gl:'↺', text:rcText(it)} : null;
 const openBadgeHTML = it => it._open
-  ? `<span class="sbadge open" title="あなたの指摘のうち未対応 ${it._open}件">💬 指摘${it._open}件</span>` : '';
+  ? `<span class="sbadge open" title="未対応の指摘 ${esc(openSplit(it, false) || it._open + '件')}">💬 指摘${it._open}件</span>` : '';
 function flagsHTML(it){
   const h = badgeHTML(stateBadgeOf(it)) + openBadgeHTML(it);
   return h ? `<span class="flags">${h}</span>` : '';
@@ -2113,7 +2167,7 @@ function progressCells(it){
     else if (done || j < cur) { cls = 'done'; gl = '✓'; tt = `${s.name} 完了`; }
     else if (j === cur) {
       if (it._rv)      { cls = 'rv'; gl = '●'; tt = `${GATE_LABEL[it._rv]}承認待ち（あなたの番）`; }
-      else if (it._rc) { cls = 'rc'; gl = '↺'; tt = `${AI_TAG}${GATE_LABEL[it._rc]}修正中`; }
+      else if (it._rc) { cls = rcCls(it); gl = '↺'; tt = rcText(it); }
       else             { cls = 'work'; gl = '●'; tt = `${AI_TAG}${s.work}`; }
     }
     return `<td class="st${pos}"><span class="mark ${cls}" title="${esc(tt)}">${gl}</span></td>`;
@@ -2261,7 +2315,7 @@ function progressDots(it){
     let cls = 'todo', gl = '·';
     if (cur >= 0 && (done || j < cur)) { cls = 'done'; gl = '✓'; }
     else if (cur >= 0 && j === cur) {
-      cls = it._rv ? 'rv' : (it._rc ? 'rc' : 'work'); gl = it._rc && !it._rv ? '↺' : '●';
+      cls = it._rv ? 'rv' : (it._rc ? rcCls(it) : 'work'); gl = it._rc && !it._rv ? '↺' : '●';
     }
     const here = cur >= 0 && j === cur;
     return `<span class="pstep"><span class="dot ${cls}" title="${esc(s.name)}">${gl}</span>` +
@@ -2299,7 +2353,8 @@ const MARK_LEGEND = `<div class="legend2">
   <b>工程</b>
   <span class="lg"><span class="mark done">✓</span>完了</span>
   <span class="lg"><span class="mark work">●</span>${AI_TAG}作業中<span class="ex">（AIが自動で進めています）</span></span>
-  <span class="lg"><span class="mark rc">↺</span>${AI_TAG}修正中<span class="ex">（あなたの指摘をAIが対応中）</span></span>
+  <span class="lg"><span class="mark rc">↺</span>${AI_TAG}修正対応中<span class="ex">（あなたが出した指摘をAIが直しています）</span></span>
+  <span class="lg"><span class="mark rcai">↺</span>AI審査で作り直し中<span class="ex">（AIの審査が基準未達と判定。あなたの操作は要りません）</span></span>
   <span class="lg"><span class="mark rv">●</span>承認待ち<span class="ex">（あなたの番）</span></span>
   <span class="lg"><span class="mark todo">·</span>未到達</span></div>`;
 
@@ -2322,8 +2377,8 @@ function kanbanView(items, slug){
             <div class="ttl">${esc(c.title)}</div>
             <div class="meta">${gateChips(c, slug)}${c.resv ? `<span class="resv">🗓 ${esc(c.resv.slice(5))}</span>` : ''}${
               c._rv ? `<span class="rvflag">● ${GATE_LABEL[c._rv]}承認待ち</span>` : ''}${
-              c._rc ? `<span class="rcflag">↺ ${AI_TAG}${GATE_LABEL[c._rc]}修正中</span>` : ''}${
-              c._open ? `<span class="rcflag">💬 指摘${c._open}件</span>` : ''}</div>
+              c._rc ? `<span class="rcflag${rcAiOnly(c) ? ' ai' : ''}">↺ ${esc(rcText(c))}</span>` : ''}${
+              c._open ? `<span class="rcflag" title="${esc(openSplit(c, false) || c._open + '件')}">💬 指摘${c._open}件</span>` : ''}</div>
           </article>`).join('') + (rest > 0 ? `<div class="more">＋${rest}件</div>` : '');
     return `<div class="col">
       <div class="colhead"><span class="sw" style="background:var(${s.sw});margin:0"></span>
@@ -2463,12 +2518,12 @@ function timelineRows(it){
       mk = 'done'; cls = '';
       dt = fmtDate(stamp[j]) || '—';
     } else if (j === cur) {
-      mk = it._rv ? 'rv' : (it._rc ? 'rc' : 'work'); cls = '';
+      mk = it._rv ? 'rv' : (it._rc ? rcCls(it) : 'work'); cls = '';
       const since = fmtDate(it.status_changed_at);
-      dt = (it._rv ? '承認待ち' : it._rc ? `${AI_TAG}修正中` : `${AI_TAG}${s.work}`) + (since ? `（${since}〜）` : '');
+      dt = (it._rv ? '承認待ち' : it._rc ? rcShort(it) : `${AI_TAG}${s.work}`) + (since ? `（${since}〜）` : '');
     }
     return `<div class="row${cls}"><span class="mark ${mk}">${
-      mk === 'done' ? '✓' : (mk === 'todo' ? '·' : (mk === 'rc' ? '↺' : '●'))}</span>
+      mk === 'done' ? '✓' : (mk === 'todo' ? '·' : (mk.startsWith('rc') ? '↺' : '●'))}</span>
       <span class="nm">${s.name}</span><span class="dt">${esc(dt)}</span></div>`;
   }).join('');
 }
@@ -2492,12 +2547,18 @@ function detailHTML(it){
 
   const noteBlk = it.note ? `<div class="dsec dsec-note"><h4>メモ</h4><div class="hook">${esc(sentenceWrap(it.note))}</div></div>` : '';
 
-  /* 【AI】修正中（AIの番）でもレビュー節は出す。素材・履歴を見て追加コメントや承認ができる */
+  /* 直し中（AIの番）でもレビュー節は出す。素材・履歴を見て追加コメントや承認ができる。
+     文言は差し戻しの出どころで分ける（M051）——あなたの指摘の直しなのか、
+     AI審査が基準未達と見て勝手に作り直しているのかで、読む人のすることが違う */
   const rvGate = it._rv || it._rc;
+  const openLine = it._rc && openSplit(it, true) ? `未対応の指摘は ${openSplit(it, true)}。` : '';
   const stateBar = it._rv
     ? `<div class="dstate rv">● <b>あなたの承認待ち</b>です。素材を確認して、コメントするか承認してください。</div>`
-    : (it._rc ? `<div class="dstate rc">↺ <b>${AI_TAG}${GATE_LABEL[it._rc]}修正中</b>です。${
-        it._open ? `未対応の指摘 <b>${it._open}件</b>。` : ''}夜間の制作エージェントが対応すると自動で解消されます。</div>` : '');
+    : (it._rc ? (rcAiOnly(it)
+        ? `<div class="dstate rcai">↺ <b>AI審査で${GATE_LABEL[it._rc]}を作り直し中</b>です。基準に届かなかったフレーム・映像をAIが自動で直しています。${
+            openLine}あなたの操作は要りません。</div>`
+        : `<div class="dstate rc">↺ <b>あなたの指摘にAIが対応中</b>です（${GATE_LABEL[it._rc]}）。${
+            openLine}直り次第、新しい版で出し直します。</div>`) : '');
   /* ── レビュー履歴は常設（#207）────────────────────────────────────
      承認するとゲート状態（_rv/_rc）が消えてレビュー節ごと閉じるため、履歴は
      「記録が1件でもあれば必ず出す」。全ゲートを時系列1本で読ませる。
