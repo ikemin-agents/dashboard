@@ -1207,7 +1207,7 @@ a.syslink .t{color:var(--accent, var(--ink))}
   max-width:560px; box-shadow:inset 0 0 0 1px var(--border-2)}
 .track .fill{height:100%; background:var(--meter-fill); border-radius:var(--r-pill); min-width:5px}
 .meterblk .cond{font-size:var(--fs-2xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
-.perftbl table{min-width:820px}
+.perftbl table{min-width:1000px}
 .substats{display:flex; flex-wrap:wrap; gap:var(--sp-3) var(--sp-6); margin:2px 0 var(--sp-2)}
 .substat{display:flex; flex-direction:column; gap:2px}
 .substat .k{font-size:var(--fs-2xs); color:var(--muted)}
@@ -1459,7 +1459,7 @@ const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷'};
 const ACCENTS = ['var(--s1)','var(--s2)','var(--stg5)','var(--warn)','var(--good)'];
 const TINTS   = ['var(--s1-tint)','var(--s2-tint)','var(--stage-bg)','var(--warn-tint)','var(--good-tint)'];
 /* チャンネル別の承認ゲート（DB に列が無いため UI 側の定義。既定は3ゲート） */
-const CH_GATES = {'buzz-zatsugaku':['storyboard','final'], 'dental':['script','storyboard','final']};
+const CH_GATES = {'buzz-zatsugaku':['final'], 'dental':['script','storyboard','final']};
 const GATE_LABEL = {script:'台本', storyboard:'絵コンテ', final:'完成'};
 const GATE_COL = {script:1, storyboard:2, final:4};
 const GATE_COLUMN_FIELD = {script:'approved_script_at', storyboard:'approved_storyboard_at', final:'approved_final_at'};
@@ -1497,7 +1497,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/2 15:37';
+const BUILT_AT = '9/2 18:23';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2176,13 +2176,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/2 15:37') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/2 18:23') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/2 15:37') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/2 18:23') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3625,10 +3625,10 @@ async function renderAnalytics(){
       </div>`;
     }).join('')}</div>`;
 
-  /* 完全視聴率（#72 最重要 KPI・70%閾値）: NULL 除外して集計 */
+  /* 平均視聴率（#72 最重要 KPI・70%閾値）: NULL 除外して集計 */
   const avrGe70 = rates.filter(v => v >= 70).length;
   const compCard = rates.length ? `<div class="card">
-      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>完全視聴率（70%目標）</h2>
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>平均視聴率（70%目標）</h2>
         <span class="hint">v_publications.avg_view_rate_pct・NULL除外</span></div>
       <div class="substats">
         <div class="substat"><span class="k">平均</span><span class="v">${avgRate.toFixed(1)}<small>%</small></span></div>
@@ -3638,8 +3638,8 @@ async function renderAnalytics(){
       <div class="distwrap"><div class="dist">${histogram(rates, 70, 10, m.accent, v => Math.round(v), '%')}</div></div>
       <div class="distlegend"><span><i style="background:var(--good)"></i>70%到達</span><span><i style="background:${m.accent}"></i>未達</span><span style="color:var(--crit)">┊ 70%ライン</span></div>
     </div>` : `<div class="card">
-      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>完全視聴率（70%目標）</h2><span class="hint">avg_view_rate_pct</span></div>
-      <div class="noitem">完全視聴率のデータがまだありません<span class="s">投稿済 ${posted.length} 本中 計測 0 本。retention 計測が daily-log に載ると集計します</span></div>
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>平均視聴率（70%目標）</h2><span class="hint">avg_view_rate_pct</span></div>
+      <div class="noitem">平均視聴率のデータがまだありません<span class="s">投稿済 ${posted.length} 本中 計測 0 本。retention 計測が daily-log に載ると集計します</span></div>
     </div>`;
 
   /* フック維持率（hook_awr・目標 ≥1.8）: NULL 除外 */
@@ -3664,14 +3664,16 @@ async function renderAnalytics(){
   /* 48時間初速（枠のみ・空状態）
      設計: publication_metrics_daily（pmd）が publication_id×date で積まれたら、各投稿について
      published_at + 48h に最も近い（date >= 公開+2日 を満たす最初の）pmd スナップショット行を引き、
-     その時点の avg_view_rate_pct / views を集計して「投稿後48h時点で完全視聴率70%↑の割合」を出す。
+     その時点の avg_view_rate_pct / views を集計して「投稿後48h時点で平均視聴率70%↑の割合」を出す。
      pmd は現状0行のため、蓄積後に有効化する空状態プレースホルダを表示する。 */
   const velocityCard = `<div class="card">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>48時間初速</h2><span class="hint">publication_metrics_daily（日次スナップショット）</span></div>
-      <div class="noitem">投稿後48時間の初速（完全視聴率70%↑が目標）はデータ蓄積後に表示<span class="s">publication_metrics_daily に日次スナップショットが2日分たまる明朝以降から。各投稿の公開+48h時点の指標を集計します</span></div>
+      <div class="noitem">投稿後48時間の初速（平均視聴率70%↑が目標）はデータ蓄積後に表示<span class="s">publication_metrics_daily に日次スナップショットが2日分たまる明朝以降から。各投稿の公開+48h時点の指標を集計します</span></div>
     </div>`;
 
-  /* 動画別成績（列強化: 完全視聴率・フック維持率・エンゲージ率を追加） */
+  /* 動画別成績（列: 平均視聴率・冒頭の維持・末尾の維持・冒頭の離脱・エンゲージ率）。
+     hook_awr / end_awr は比率（1.8 = 平均の1.8倍が見ている）、early_loss_pct は%値。
+     単位が違うので書式も分ける（比率=小数2桁 / %値=小数1桁＋%・#192）。 */
   const perf = posted.slice().sort((x, y) => new Date(y.published_at || 0) - new Date(x.published_at || 0)).slice(0, 12);
   const rows = perf.length ? perf.map(v => `<tr>
       <td class="seq">${esc(v.seq)}</td><td class="ttl">${esc(v.effective_title)}</td>
@@ -3679,9 +3681,11 @@ async function renderAnalytics(){
       <td class="num">${v.views == null ? '—' : nf(v.views)}</td>
       <td class="num">${v.avg_view_rate_pct == null ? '—' : Number(v.avg_view_rate_pct).toFixed(1) + '%'}</td>
       <td class="num">${v.hook_awr == null ? '—' : Number(v.hook_awr).toFixed(2)}</td>
+      <td class="num">${v.end_awr == null ? '—' : Number(v.end_awr).toFixed(2)}</td>
+      <td class="num">${v.early_loss_pct == null ? '—' : Number(v.early_loss_pct).toFixed(1) + '%'}</td>
       <td class="num">${v.engaged_rate_pct == null ? '—' : Number(v.engaged_rate_pct).toFixed(1) + '%'}</td>
       <td class="num">${v.subscribers_gained == null ? '—' : (v.subscribers_gained > 0 ? '+' : '') + v.subscribers_gained}</td></tr>`).join('')
-    : `<tr class="emptyrow"><td colspan="8">投稿済の動画がありません</td></tr>`;
+    : `<tr class="emptyrow"><td colspan="10">投稿済の動画がありません</td></tr>`;
 
   el.innerHTML = `
     <div class="pagehead">
@@ -3697,10 +3701,11 @@ async function renderAnalytics(){
       ${compCard}
       ${hookCard}
       <div class="card">
-        <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>動画別の成績</h2><span class="hint">公開が新しい順・最大12件・値なしは —</span></div>
+        <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>動画別の成績</h2><span class="hint">公開が新しい順・最大12件・値なしは —　／　目安 冒頭の維持 1.8以上・末尾の維持 0.85以上・冒頭の離脱 25%以下</span></div>
         <div class="tblwrap perftbl"><table>
           <thead><tr><th>seq</th><th>タイトル</th><th>公開日</th><th class="num">再生数</th>
-            <th class="num">完全視聴率</th><th class="num">冒頭の維持</th><th class="num">エンゲージ率</th><th class="num">登録者増</th></tr></thead>
+            <th class="num">平均視聴率</th><th class="num">冒頭の維持</th><th class="num">末尾の維持</th>
+            <th class="num">冒頭の離脱</th><th class="num">エンゲージ率</th><th class="num">登録者増</th></tr></thead>
           <tbody>${rows}</tbody></table></div>
       </div>
       ${velocityCard}
@@ -3738,8 +3743,9 @@ function laneChips(lanes){
 
 /* 実行記録の種類をオーナーの言葉にする（画面に内部の名前を出さない・2026-08-20）。
    ここに無い種類は英語のまま画面に出てしまうので、実際に記録される種類を全部載せる
-   （2026-08-26 に実データと突き合わせ: いちばん多い作業係と全体監査が抜けていた／
-   月次点検はもう記録されないので削除した）。名前は用語集に合わせる。
+   （2026-08-26 に実データと突き合わせ: いちばん多い作業係と全体監査が抜けていた）。
+   名前は用語集に合わせる。**同じ仕事を2つの名前で呼ばない**——月に一度の点検は
+   画面のどこでも「全体監査」と書く（#413 低9）。
    2026-09-02: 動画制作の記録は進行係が出す `dispatcher-*` に全部入れ替わったので、
    工程表（各チャンネルの制作の工程表）に載っている全工程を足した。ここに足し忘れると
    その工程だけ英語のまま画面に出る。旧体制（作業係・夜間の在庫番・レビュー見張り）の
@@ -3747,6 +3753,8 @@ function laneChips(lanes){
 const RUN_KIND_JA = {
   'step-runner':'作業係（旧）', 'stock-keeper':'夜間の在庫番（旧）',
   'review-poller':'レビュー見張り（旧）',
+  'dispatcher-storyboard-review':'絵コンテ審査係（旧）',
+  'dispatcher-final-review':'完成審査係（旧）',
   'daily-log':'数字の記録', 'weekly-review':'週次レビュー', 'project-audit':'全体監査',
   'x-reply':'Xのリプ返信', 'x-post-publish':'Xの投稿', 'x-post-propose':'Xの投稿ネタ選び',
   /* 進行係が動かす制作の工程（用語集の係の名前・工程表のラベルに合わせる） */
