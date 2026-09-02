@@ -1497,7 +1497,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/2 18:23';
+const BUILT_AT = '9/2 23:48';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1881,7 +1881,7 @@ const AI_ROLE_JA = {
   'video-frame-reviewer':'絵コンテ審査係', 'video-check-final':'完成審査係',
   'video-final-reviewer':'完成審査係', 'video-rework':'差し戻し対応係',
   'video-topic-refill':'ネタ補充係', 'final-validate':'機械測定', 'dispatcher':'進行係',
-  'youtube-step':'作業係', 'youtube-stock-keeper':'夜間の在庫番', 'youtube-produce':'制作の進行',
+  'youtube-step':'作業係（旧）', 'youtube-stock-keeper':'夜間の在庫番（旧）', 'youtube-produce':'制作の進行',
   'main-session':'制作の進行', 'backfill':'記録の後追い'
 };
 const aiRoleOf = a => AI_ROLE_JA[String(a || '').replace(/^ai:/, '')] || null;
@@ -2176,13 +2176,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/2 18:23') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/2 23:48') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/2 18:23') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/2 23:48') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
