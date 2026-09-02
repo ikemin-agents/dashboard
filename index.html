@@ -1464,7 +1464,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '8/30 00:09';
+const BUILT_AT = '9/2 12:07';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1799,7 +1799,8 @@ async function loadThread(videoId){
      review  = 承認待ち（AIが提出済み・あなたの番）
      changes = 【AI】修正中（あなたがコメントを出した・AIの番）
    approve / reject が来たら解消。判定は毎回 review_events から作り直す＝
-   夜間 stock keeper が resolution_status を閉じれば UI 側は何もせず追随する。 */
+   差し戻し対応係が resolution_status を閉じれば UI 側は何もせず追随する
+   （2026-08-28 まではこれを夜間の在庫番がやっていた）。 */
 /* 状態を決めるイベント（これ以外の kind は現在の状態に影響しない） */
 const STATE_KINDS = ['request_review', 'request_changes', 'approve', 'reject'];
 /* a のほうが b より新しいか。同時刻なら id の大きい方を後とみなす（連番のため） */
@@ -2089,13 +2090,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '8/30 00:09') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/2 12:07') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '8/30 00:09') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/2 12:07') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3530,7 +3531,9 @@ function drawSpark(){
 
 /* ══ ④ 稼働 ════════════════════════════════════════════════════ */
 /* ok=null（＝閉じられていない）のまま この時間を超えた行は「中断疑い」として赤で出す。
-   正規の最長ランは stock keeper の 02:00→06:00 打ち切り＝4時間なので 5時間で線を引く（#219） */
+   もともとは夜間の在庫番の 02:00→06:00 打ち切り＝4時間を基準に 5時間で線を引いた（#219）。
+   在庫番は 2026-08-28 に止まったが、いま最長の作業（差し戻し対応係の札＝1時間）でも
+   この線には届かないので、そのまま 5時間で据え置く。 */
 const STALE_RUN_MS = 5 * 60 * 60 * 1000;
 
 function laneChips(lanes){
@@ -3548,12 +3551,38 @@ function laneChips(lanes){
 /* 実行記録の種類をオーナーの言葉にする（画面に内部の名前を出さない・2026-08-20）。
    ここに無い種類は英語のまま画面に出てしまうので、実際に記録される種類を全部載せる
    （2026-08-26 に実データと突き合わせ: いちばん多い作業係と全体監査が抜けていた／
-   月次点検はもう記録されないので削除した）。名前は用語集に合わせる。 */
+   月次点検はもう記録されないので削除した）。名前は用語集に合わせる。
+   2026-09-02: 動画制作の記録は進行係が出す `dispatcher-*` に全部入れ替わったので、
+   工程表（各チャンネルの制作の工程表）に載っている全工程を足した。ここに足し忘れると
+   その工程だけ英語のまま画面に出る。旧体制（作業係・夜間の在庫番・レビュー見張り）の
+   3つは過去の記録がまだ画面に出るので、（旧）を付けて残す。 */
 const RUN_KIND_JA = {
-  'step-runner':'作業係（Claude）', 'stock-keeper':'動画の夜間制作',
+  'step-runner':'作業係（旧）', 'stock-keeper':'夜間の在庫番（旧）',
+  'review-poller':'レビュー見張り（旧）',
   'daily-log':'数字の記録', 'weekly-review':'週次レビュー', 'project-audit':'全体監査',
-  'review-poller':'承認・差し戻しの反映',
-  'x-reply':'Xのリプ返信', 'x-post-publish':'Xの投稿', 'x-post-propose':'Xの投稿ネタ選び'
+  'x-reply':'Xのリプ返信', 'x-post-publish':'Xの投稿', 'x-post-propose':'Xの投稿ネタ選び',
+  /* 進行係が動かす制作の工程（用語集の係の名前・工程表のラベルに合わせる） */
+  'dispatcher-lease-reap':'期限切れの札の後片付け',
+  'dispatcher-idea-generate':'ネタ補充係',
+  'dispatcher-script-generate':'台本係',
+  'dispatcher-script-review-clarity':'台本チェック係（わかりやすさ）',
+  'dispatcher-script-review-compliance':'コンプラチェック係',
+  'dispatcher-script-submit-review':'台本の提出',
+  'dispatcher-audio-generate':'ナレーション音声の生成',
+  'dispatcher-storyboard-generate':'絵コンテ設計係',
+  'dispatcher-storyboard-review-spec':'spec審査係',
+  'dispatcher-storyboard-archive':'絵コンテを組む係',
+  'dispatcher-storyboard-submit-review':'絵コンテの提出',
+  'dispatcher-frame-submit':'フレームの発注',
+  'dispatcher-frame-collect':'フレームの回収',
+  'dispatcher-clip-submit':'映像の発注',
+  'dispatcher-clip-collect':'映像の回収',
+  'dispatcher-render-run':'公開版のレンダ',
+  'dispatcher-render-derive-review':'レビュー版のレンダ',
+  'dispatcher-final-validate':'完成の機械測定',
+  'dispatcher-final-submit-review':'完成の提出',
+  'dispatcher-publish-schedule':'YouTube へ予約投稿',
+  'dispatcher-rework-plan':'差し戻し対応係'
 };
 
 /* 稼働タブ（オーナー指定 2026-08-20）: 上に「正常終了か・異常があったか」だけを大きく出し、
@@ -4102,18 +4131,20 @@ function genfarmCard(gf){
 
 /* ══ 自動運転のいま（#330・オーナー要望 2026-08-24）═══════════════════════════
    「承認を押したのに生成機が動かない」とき、理由を3択に分解して見せる:
-   本当に暇 ／ 裏でAIが考え中 ／ 見張りが落ちている。今までは全部同じに見えたので、
+   本当に暇 ／ 裏でAIが考え中 ／ 進行係が落ちている。今までは全部同じに見えたので、
    オーナーは次の承認を押して様子を見る探り運転になっていた。
 
    データは既存の権限のまま読む（DB 変更なし）:
-     ・見張りの心拍   … system_heartbeat（誰でも読める・5分ごとに更新される1行）
+     ・進行係の心拍   … system_heartbeat（誰でも読める・5分ごとに更新される1行。
+                        2026-08-28 からレビュー見張りに代わって進行係が打つ）
      ・実行中のAI     … agent_runs の未終了行＋最新の途中経過（全チャンネル可ユーザー限定。
                         読めないユーザーではこの行だけ静かに消える）
      ・発注待ちの承認 … 絵コンテ承認済みなのに、承認より新しい発注記録が無い動画 */
 const AUTO_TTL_MS = 60000;
 /* 「いま動いている」側の言い方。ここに無い種類は下の記録側の対応表（RUN_KIND_JA）に
-   落として拾うので、新しい種類は原則あちらに足すだけでよい。 */
-const AUTO_RUN_JA = {'stock-keeper':'夜間の在庫番',
+   落として拾うので、新しい種類は原則あちらに足すだけでよい（制作の工程 dispatcher-* は
+   全部あちらにある）。 */
+const AUTO_RUN_JA = {
   'daily-log':'日次ログ同期', 'x-reply':'Xのリプ投稿', 'x-post-publish':'Xの投稿',
   'x-post-propose':'Xのネタ提案', 'weekly-review':'週次レビュー'};
 async function loadAutomationNow(force){
@@ -4154,15 +4185,16 @@ async function loadAutomationNow(force){
 }
 function automationCard(an){
   const mins = ts => Math.max(0, Math.round((Date.now() - new Date(ts)) / 60000));
-  /* 心拍。見張りは5分ごとに打つので、15分空いたら「落ちているかも」と言い切る */
+  /* 心拍。進行係は5分ごとに打つので、15分空いたら「落ちているかも」と言い切る
+     （2026-08-28 にレビュー見張りから進行係へ引き継いだ・打ち手は system_heartbeat.source） */
   let beat;
   if (!an.beat) {
-    beat = `<div class="gfhead warn"><span class="mk">–</span><span>見張りの心拍を読み込めませんでした</span></div>`;
+    beat = `<div class="gfhead warn"><span class="mk">–</span><span>進行係の心拍を読み込めませんでした</span></div>`;
   } else {
     const m = mins(an.beat.beat_at);
     beat = m < 15
-      ? `<div class="gfhead ok"><span class="mk">●</span><span>レビュー見張り: 稼働中（最終確認 ${m}分前）</span></div>`
-      : `<div class="gfhead bad"><span class="mk">⚠</span><span>レビュー見張り: <b>${m}分間 音沙汰がありません</b> — 止まっているかもしれません（自動の復旧を待っても直らなければ PC を確認）</span></div>`;
+      ? `<div class="gfhead ok"><span class="mk">●</span><span>進行係: 稼働中（最終確認 ${m}分前）</span></div>`
+      : `<div class="gfhead bad"><span class="mk">⚠</span><span>進行係: <b>${m}分間 音沙汰がありません</b> — 止まっているかもしれません（自動の復旧を待っても直らなければ PC を確認）</span></div>`;
   }
   const runs = an.runs.map(r => {
     const what = AUTO_RUN_JA[r.kind] || RUN_KIND_JA[r.kind] || r.kind;
@@ -4175,7 +4207,7 @@ function automationCard(an){
   const waiting = an.waiting.length
     ? `<div style="display:flex;gap:8px;align-items:baseline;font-size:var(--fs-sm)">
         <span>●</span><div>発注待ちの承認: <b>${an.waiting.length}件</b>
-        （${esc(an.waiting.map(v => v.seq).join('・'))}）— 5分以内に発注係が生成機へ送ります</div></div>`
+        （${esc(an.waiting.map(v => v.seq).join('・'))}）— 5分以内に進行係が生成機へ送ります</div></div>`
     : '';
   const idle = !runs && !waiting
     ? `<div class="noitem">いま動いている自動の作業はありません（承認・差し戻しを押せば5分以内に拾います）</div>` : '';
