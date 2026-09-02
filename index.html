@@ -1497,7 +1497,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/2 23:48';
+const BUILT_AT = '9/3 00:45';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1648,16 +1648,21 @@ const fullAccess = () => !state.me || state.me.full_access !== false;
 const visibleViews = () => VIEWS.filter(v => !v.fullOnly || fullAccess());
 const chMeta = slug => {
   const i = store.channels.findIndex(c => c.slug === slug);
+  /* 人間の承認が要るゲートは DB（channels.human_gates・059・#385）が正本。
+     正本は各チャンネルの pipeline.json で、DB とはスクリプトが突き合わせる。
+     CH_GATES は human_gates 列が無い旧DB向けの既定だけ。 */
+  const dbGates = (store.channels[i] || {}).human_gates;
   return { icon: CH_ICON[slug] || '🎬', accent: ACCENTS[i % ACCENTS.length] || 'var(--s1)',
            tint: TINTS[i % TINTS.length] || 'var(--surface-2)',
            name: (store.channels[i] || {}).name || slug,
-           gates: CH_GATES[slug] || ['script','storyboard','final'] };
+           gates: (Array.isArray(dbGates) && dbGates.length) ? dbGates
+                : (CH_GATES[slug] || ['script','storyboard','final']) };
 };
 
 /* ══ データ取得 ═════════════════════════════════════════════════ */
 async function loadBootstrap(){
   const [chs, accs] = await Promise.all([
-    q(sb.from('channels').select('slug,name,project_dir,publish_time_jst,status').order('slug')),
+    q(sb.from('channels').select('slug,name,project_dir,publish_time_jst,status,human_gates').order('slug')),
     q(sb.from('accounts').select('slug,channel,platform,handle,url,is_primary,kpi_media_key,status'))
   ]);
   store.accounts = accs;
@@ -2176,13 +2181,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/2 23:48') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/3 00:45') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/2 23:48') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/3 00:45') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
