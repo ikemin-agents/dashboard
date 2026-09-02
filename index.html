@@ -416,6 +416,10 @@ td.ttl .flags{margin-left:8px}
 .sbadge.work,.sbadge.rc,.sbadge.open{background:var(--fix-tint); color:var(--fix-ink)}
 /* AI審査だけが起点の作り直し（M051）。オーナーの指摘の直しより一段落ち着かせる */
 .sbadge.rcai{background:var(--surface-3); color:var(--ink-2)}
+/* 「この版は何の作り直しか」の札（オーナー要望 2026-09-02）。色の役割は上の2つと同じで、
+   あなたの指摘の直しはオレンジ、AI が見つけた不備の直しは無彩色に落とす */
+.sbadge.rwh{background:var(--fix-tint); color:var(--fix-ink)}
+.sbadge.rwai{background:var(--surface-3); color:var(--ink-2)}
 .sbadge.rv{background:var(--s1-tint); color:var(--s1-ink)}
 .sbadge.done{background:var(--done-tint); color:var(--done)}
 .sbadge.idea{background:var(--surface-2); color:var(--ink-2)}
@@ -750,6 +754,35 @@ details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:v
   display:inline-block; white-space:pre-wrap; word-break:break-word; font-weight:680}
 .resolved.open{color:var(--fix-ink); background:var(--fix-tint)}
 .resolved.closed{color:var(--done); background:var(--done-tint)}
+/* ── 対応結果（あなたが出した差し戻しの直下・オーナー要望 2026-09-02）──────────
+   小さな印だと読み飛ばされ、自分の指摘が「消えた」ように見えていた。吹き出しの中で
+   「直ったのか・まだなのか」を1ブロックとして言い切る。 */
+.rez{margin-top:8px; border-radius:var(--r-sm); padding:7px 11px; font-size:var(--fs-sm);
+  line-height:1.6; font-weight:680; word-break:break-word; display:flex; gap:7px; align-items:flex-start;
+  border-left:3px solid currentColor}
+.rez .rzm{flex:0 0 auto}
+.rez.done{color:var(--done); background:var(--done-tint)}
+.rez.open{color:var(--fix-ink); background:var(--fix-tint)}
+.rez.wont{color:var(--ink-2); background:var(--surface-3)}
+/* ── AI の記録（既定は閉じる・オーナー要望 2026-09-02）────────────────────
+   履歴の大半は AI どうしのやり取りで、人が読む必要はほとんど無い。1件1行に要約して畳む。 */
+.aifold{border:1px solid var(--border-2); border-radius:var(--r-md);
+  background:var(--surface-2); padding:9px 12px}
+.aifold>.dsum{text-transform:none; letter-spacing:.02em; color:var(--ink-2)}
+.aifold[open]>.dsum{margin-bottom:var(--sp-2)}
+.aifold[open]>.dsum::before{transform:rotate(90deg)}
+.ailog{display:grid; gap:5px}
+.ailine{display:flex; gap:8px; align-items:baseline; font-size:var(--fs-xs); line-height:1.6;
+  color:var(--ink-2); border-top:1px solid var(--border-2); padding-top:5px}
+.ailog>.ailine:first-child{border-top:none; padding-top:0}
+.ailine .d{flex:0 0 auto; color:var(--muted); font-variant-numeric:tabular-nums}
+.ailine .t{min-width:0; word-break:break-word}
+/* 提出コメントの「前回からの変更」だけは畳みの外に出す（何が変わった版かを開かずに読ませる） */
+.chg{background:var(--s1-tint); border-radius:var(--r-sm); padding:8px 11px; margin-bottom:8px}
+.chg .chgh{display:block; font-size:var(--fs-2xs); font-weight:700; color:var(--s1-ink);
+  letter-spacing:.06em; margin-bottom:3px}
+.chg .ctxt{font-weight:700; font-size:var(--fs-sm); line-height:1.7}
+.chg .ctxt p,.chg .ctxt li{margin:.15em 0}
 /* ── 書き込み: コメントと承認は別ブロック（#205）────────────────────
    誤タップ防止のため「テキストエリア＋コメントする」と「承認」を完全に分ける。
    承認は 1段目（承認ボタン）→ 2段目（メモ欄＋注意書き＋確定ボタン）の2段階で、
@@ -1464,7 +1497,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/2 12:07';
+const BUILT_AT = '9/2 15:37';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1576,13 +1609,15 @@ function loadUI(){
    pending = 承認待ち／【AI】修正中の行（レビュータブと左ナビのバッジ）
    board   = カンバン表示用のチャンネル全行（盤面は絞り込みが効かない全体表示）
    threads = 動画ごとのレビュー記録。詳細を開いた動画のぶんだけ貯める
-   byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため） */
+   byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため）
+   rework  = 動画ごとの「この版は何の作り直しか」（human / ai / null）。一覧の札に使う */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
-                board:{}, threads:{}, ops:null, analytics:{}, assets:{}, system:null, genfarm:null,
-                autonow:null };
+                board:{}, threads:{}, rework:{}, ops:null, analytics:{}, assets:{}, system:null,
+                genfarm:null, autonow:null };
 const clearVideoCaches = () => {
   store.byId = new Map();
   store.core = {}; store.facets = {}; store.pending = {}; store.board = {}; store.threads = {};
+  store.rework = {};
 };
 const resetStockFilters = () => {
   state.stockFilter=null; state.stockQ=''; state.stockGenre=''; state.stockSort=null; state.stockPage=0;
@@ -1836,6 +1871,56 @@ function gateStateMap(events){
    `author IN ('koike','kohnosuke')` で数えているのと同じ集合になる。 */
 const isAiAuthor = a => String(a || '').startsWith('ai:');
 
+/* 画面に出す AI の呼び名（用語集の「Claude係」の名前）。記録に残る英字の名前をそのまま
+   見せると何をした相手か分からないので、対応表を1か所に置く。表に無い相手は名前を出さない。 */
+const AI_ROLE_JA = {
+  'video-script-write':'台本係', 'video-script-clarity':'台本チェック係',
+  'video-check-compliance':'コンプラチェック係', 'content-compliance-reviewer':'コンプラチェック係',
+  'video-storyboard-design':'絵コンテ設計係', 'video-storyboard-build':'絵コンテを組む係',
+  'video-check-spec':'spec審査係', 'video-check-storyboard':'絵コンテ審査係',
+  'video-frame-reviewer':'絵コンテ審査係', 'video-check-final':'完成審査係',
+  'video-final-reviewer':'完成審査係', 'video-rework':'差し戻し対応係',
+  'video-topic-refill':'ネタ補充係', 'final-validate':'機械測定', 'dispatcher':'進行係',
+  'youtube-step':'作業係', 'youtube-stock-keeper':'夜間の在庫番', 'youtube-produce':'制作の進行',
+  'main-session':'制作の進行', 'backfill':'記録の後追い'
+};
+const aiRoleOf = a => AI_ROLE_JA[String(a || '').replace(/^ai:/, '')] || null;
+
+/* ── この版は何の作り直しか（オーナー要望 2026-09-02）────────────────────────
+   一覧で「自分の指摘を直した版」と「そうでない版」の区別が付かない、という困りごとへの答え。
+   現行版の提出（最新の request_review）の前に片付いた差し戻しの出どころで決める。
+   ⚠️ 提出の1つ前で切ってはいけない——同じ版を何度も出し直した記録が実在するので、
+      いちばん新しい「片付いた差し戻し」から遡って、その前の提出までを1回の作り直しとみなす。 */
+function reworkSrcOf(events){
+  const evs = events || [];
+  const done = e => e.kind === 'request_changes' && e.resolution_status && e.resolution_status !== 'open';
+  let sub = null;
+  for (const e of evs) if (e.kind === 'request_review' && (!sub || evNewer(e, sub))) sub = e;
+  if (!sub) return null;
+  let last = null;                                   /* この提出より前に片付いた最新の差し戻し */
+  for (const e of evs) if (done(e) && evNewer(sub, e) && (!last || evNewer(e, last))) last = e;
+  if (!last) return null;                            /* 1件も無い＝初回の提出 */
+  let anchor = null;                                 /* その差し戻しの1つ前の提出＝作り直しの起点 */
+  for (const e of evs) if (e.kind === 'request_review' && evNewer(last, e) && (!anchor || evNewer(e, anchor))) anchor = e;
+  const batch = evs.filter(e => done(e) && evNewer(sub, e) && (!anchor || evNewer(e, anchor)));
+  return batch.some(e => !isAiAuthor(e.author)) ? 'human' : 'ai';
+}
+/* 札は動画ごとに1回だけ計算して覚える（一覧は review_events を持っていないため） */
+const reworkOf = it => store.rework[it.id] || null;
+/* 承認待ちの動画のぶんだけ、札に要る最小の列をまとめて1回引く。本文は要らないので取らない
+   （履歴の本文まで取ると一覧が重くなる）。詳細を開いた動画は annotate が実データで上書きする。 */
+async function loadRework(items){
+  const ids = (items || []).filter(i => i._rv && !(i.id in store.rework)).map(i => i.id);
+  if (!ids.length) return;
+  for (const id of ids) store.rework[id] = null;     /* 取れなかったときに何度も引き直さない */
+  const rows = await q(sb.from('review_events')
+    .select('id,video_id,author,kind,resolution_status,created_at')
+    .in('video_id', ids).order('created_at', { ascending: true }));
+  const by = new Map();
+  for (const r of rows) { const a = by.get(r.video_id); if (a) a.push(r); else by.set(r.video_id, [r]); }
+  for (const id of ids) store.rework[id] = reworkSrcOf(by.get(id) || []);
+}
+
 /* 差し戻しの出どころ（DB 側 v_dashboard_list.rc_src と同じ規則・M051）。
    ①そのゲートに載っている未対応（open）の修正依頼の著者集合で決める
    ②1件も無ければ、状態を決めた最新の修正依頼の著者で決める */
@@ -1865,6 +1950,7 @@ function annotate(it, events){
   it._openH = open.filter(e => !isAiAuthor(e.author)).length;
   it._openAi= open.filter(e =>  isAiAuthor(e.author)).length;
   it._rcSrc = it._rc ? rcSrcOf(it._rc, events) : null;
+  store.rework[it.id] = reworkSrcOf(events);   /* 一覧の札を実データで上書きする */
   return it;
 }
 /* レビュー記録はゲートで切らず動画単位で持つ（#207）。台本→絵コンテ→完成を1本の時系列で
@@ -2090,13 +2176,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/2 12:07') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/2 15:37') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/2 12:07') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/2 15:37') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2143,8 +2229,15 @@ const stateBadgeOf = it =>
   : it._rc ? {cls:rcCls(it), gl:'↺', text:rcText(it)} : null;
 const openBadgeHTML = it => it._open
   ? `<span class="sbadge open" title="未対応の指摘 ${esc(openSplit(it, false) || it._open + '件')}">💬 指摘${it._open}件</span>` : '';
+/* 「この版は何の作り直しか」の札（オーナー要望 2026-09-02）。承認するかどうかを決める場面
+   でしか意味が無いので、承認待ちの動画にだけ出す。初回の提出は札なし。 */
+const REWORK_BADGE = {
+  human: {cls:'rwh',  gl:'↻', text:'あなたの指摘を直した版'},
+  ai:    {cls:'rwai', gl:'↻', text:'AI が見つけた不備を直した版'}
+};
+const reworkBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)]) : '';
 function flagsHTML(it){
-  const h = badgeHTML(stateBadgeOf(it)) + openBadgeHTML(it);
+  const h = badgeHTML(stateBadgeOf(it)) + reworkBadgeHTML(it) + openBadgeHTML(it);
   return h ? `<span class="flags">${h}</span>` : '';
 }
 /* 一覧の行に付けるバッジ一式（#206）。進行中（【AI】台本作成中 等）も含む stageBadge を使うので、
@@ -2155,7 +2248,7 @@ function flagsHTML(it){
 const quickOkHTML = it => it._rv
   ? `<button class="okbtn" data-act="approve-quick" data-key="${it.id}|${esc(it._rv)}"
       data-label="承認" title="${esc(GATE_LABEL[it._rv] || it._rv)}を承認">承認</button>` : '';
-const rowFlagsHTML = it => `<span class="flags">${badgeHTML(stageBadge(it))}${openBadgeHTML(it)}</span>`;
+const rowFlagsHTML = it => `<span class="flags">${badgeHTML(stageBadge(it))}${reworkBadgeHTML(it)}${openBadgeHTML(it)}</span>`;
 const pKeyOf = it => (it.stage === 'dropped' || it.stage === 'triage')
   ? it.stage : PSTAGES[displayIdx(it)].key;
 
@@ -2244,6 +2337,9 @@ const secOpen = s => !s.fold || !!state.secOpen[s.key];
 function groupSections(rows){
   const g = {};
   rows.forEach(it => { const k = sectionOf(it); (g[k] = g[k] || []).push(it); });
+  /* 承認待ちの中だけ「あなたの指摘を直した版」を先頭へ寄せる（オーナー要望 2026-09-02）。
+     Array#sort は安定なので、札が同じもの同士は DB が付けた並び（滞留の長い順）のまま。 */
+  if (g.rv) g.rv.sort((a, b) => (reworkOf(b) === 'human') - (reworkOf(a) === 'human'));
   return SECTIONS.map(s => Object.assign({}, s, {rows: g[s.key] || []})).filter(s => s.rows.length);
 }
 /* 見出しの共通部分（表の行とスマホのカード見出しで同じ文言・同じ開閉状態を使う） */
@@ -2336,7 +2432,7 @@ function stockCards(rows){
         <span class="scard-ttl">${esc(it.title)}</span>
         <span class="scard-days${it.days >= 7 ? ' slow' : ''}">${it.days >= 7 ? '⏳ ' : ''}滞留 ${it.days == null ? '—' : it.days + '日'}</span>
       </div>
-      <div class="sbadges">${badgeHTML(b)}${openBadgeHTML(it)}${quickOkHTML(it)}</div>
+      <div class="sbadges">${badgeHTML(b)}${reworkBadgeHTML(it)}${openBadgeHTML(it)}${quickOkHTML(it)}</div>
       ${progressDots(it)}
       ${extra ? `<div class="scard-extra">${extra}</div>` : ''}
     </article>`;
@@ -2473,6 +2569,10 @@ async function refreshStockTable(){
   try { core = await loadCore(state.ch); }
   catch (e) { $('#stocktable').innerHTML = errBox(e.message); return; }
   if (!$('#stocktable')) return;                     /* 待っている間に画面が変わった */
+  /* 札（この版は何の作り直しか）に要る記録を、承認待ちのぶんだけ先に取る。
+     取れなくても一覧は出す＝札が出ないだけで従来どおり読める */
+  try { await loadRework(core.items); } catch (_) { /* 札なしで続行 */ }
+  if (!$('#stocktable')) return;
 
   $('#stockchips').innerHTML = filterChips(store.facets[state.ch]);
   $('#stocktable').innerHTML = matrixTable(core) + pagerHTML(core);
@@ -3264,26 +3364,114 @@ function cmtBodyHTML(body){
       <span class="cmore"><span class="ctri">▸</span></span></summary>${full}</details>`;
 }
 
+/* ── 対応結果（オーナー要望 2026-09-02）──────────────────────────────────
+   自分が出した差し戻しが直ったのか・まだなのかを、吹き出しの中で言い切る。
+   小さな印だと読み飛ばされ、指摘そのものが消えたように見えていた。 */
+function rezHTML(e){
+  const st = e.resolution_status;
+  if (!st) return '';
+  const note = String(e.resolution_note || '').trim();
+  if (st === 'resolved') return `<div class="rez done"><span class="rzm">✓</span><span>${esc(note || RESOLUTION_LABEL.resolved)}</span></div>`;
+  if (st === 'wont_fix') return `<div class="rez wont"><span class="rzm">—</span><span>対応しない${note ? '：' + esc(note) : ''}</span></div>`;
+  return `<div class="rez open"><span class="rzm">⏳</span><span>AI が対応中</span></div>`;
+}
+
+/* ── AI の記録の1行要約（オーナー要望 2026-09-02）────────────────────────────
+   AI の指摘は JSON で保存されている。**そのまま画面に出さない**——出どころ・直す内容の
+   先頭1件・件数・対応結果だけを1行にたたむ。読めない JSON はその旨だけ出す。 */
+const AI_UNREADABLE = '（内容を読めない記録）';
+/* JSON なら中身・JSON でなければ null・壊れていれば false */
+function aiJSON(body){
+  const s = String(body || '').trim();
+  if (!s.startsWith('{')) return null;
+  try { const o = JSON.parse(s); return (o && typeof o === 'object') ? o : false; }
+  catch (_) { return false; }
+}
+/* 1行に収める（スマホ幅で2行を超えると畳んだ意味が無くなる） */
+const clip = (s, n) => { const t = String(s || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n) + '…' : t; };
+function aiChangesLine(e){
+  const o = aiJSON(e.body);
+  if (o === false) return AI_UNREADABLE;
+  const role = aiRoleOf(e.author);
+  const head = (o && o.source === 'final-validate') || role === '機械測定'
+    ? '機械測定' : (role ? `AI審査（${role}）` : 'AI審査');
+  let what = '';
+  if (o) {
+    const items = Array.isArray(o.items) ? o.items : [];
+    const first = items.length ? clip(items[0].fix || items[0].note, 60) : '';
+    what = first || clip(o.summary, 60);
+    if (first && items.length > 1) what += `ほか${items.length - 1}件`;
+  } else {
+    what = cmtPreview(e.body, 60);
+  }
+  const note = clip(e.resolution_note, 40);
+  const done = e.resolution_status && e.resolution_status !== 'open' && note ? ` → ${note}` : '';
+  return `${head}: ${what || '指摘あり'}${done}`;
+}
+/* 提出コメントの1行目に入っている版（「完成 v02｜承認をお願いします」） */
+const subVer = body => {
+  const m = /\bv(\d{1,3})\b/i.exec(String(body || '').split('\n')[0] || '');
+  return m ? 'v' + m[1] : '';
+};
+function aiSummaryLine(e){
+  const g = GATE_LABEL[e.gate] || e.gate || '—';
+  if (e.kind === 'request_changes') return aiChangesLine(e);
+  if (e.kind === 'approve')  { const r = aiRoleOf(e.author); return `承認印（${g}${r ? '・' + r : ''}）`; }
+  if (e.kind === 'request_review') { const v = subVer(e.body); return `提出（${g}${v ? ' ' + v : ''}）`; }
+  const t = cmtPreview(e.body, 80);
+  if (e.kind === 'reject') return `却下（${g}）${t ? '：' + t : ''}`;
+  return t || '（本文なし）';
+}
+
+/* 提出コメントの「## 前回からの変更」節だけを抜く（見出しから次の見出しの手前まで）。
+   何が変わった版なのかは畳みの外に出す＝開かなくても読める（オーナー要望 2026-09-02） */
+const CHG_RE = /(?:^|\n)[ \t]*#{1,6}[ \t]*前回からの変更[ \t]*\n([\s\S]*?)(?=\n[ \t]*#{1,6}[ \t]|$)/;
+function changeNote(body){
+  const m = CHG_RE.exec(String(body || '').replace(/\r\n?/g, '\n'));
+  return m ? m[1].trim() : '';
+}
+/* 上へ出した節は本文からは外す（同じ文が1つの吹き出しに2回出るのを止める。全文は上に残る） */
+const withoutChange = body => String(body || '').replace(/\r\n?/g, '\n').replace(CHG_RE, '\n').trim();
+
+/* アバターは吹き出しの外（左の列）ではなく名前の行に置く。吹き出しが幅を全部使えるので
+   長い提出コメントが読みやすく、スマホでは端から端まで伸びる（#266 オーナー要望） */
+function bubbleHTML(e, isSub){
+  const ai = isAiAuthor(e.author);
+  const who = ai ? '【AI】' + (aiRoleOf(e.author) || String(e.author).slice(3)) : String(e.author);
+  const chg = isSub ? changeNote(e.body) : '';
+  return `<div class="cmt ${ai ? 'ai' : ''}"><div class="bub">
+    <div class="who">${avatarOf(e.author)}<b>${esc(who)}</b>
+      <span class="gatechip">${esc(GATE_LABEL[e.gate] || e.gate || '—')}</span>
+      <span class="kindchip ${esc(e.kind)}">${KIND_LABEL[e.kind] || esc(e.kind)}</span>
+      <span>${esc(fmtDT(e.created_at) || '')}</span>
+      ${e.score != null ? `<span class="kindchip">score ${esc(e.score)}</span>` : ''}</div>
+    ${chg ? `<div class="chg"><span class="chgh">前回からの変更</span>
+      <div class="ctxt mdbody">${mdToHTML(chg)}</div></div>` : ''}
+    ${cmtBodyHTML(chg ? withoutChange(e.body) : e.body)}
+    ${rezHTML(e)}
+  </div></div>`;
+}
+
+/* ── 履歴（オーナー要望 2026-09-02）──────────────────────────────────────
+   常時出すのは「人が書いたもの」と「現行版の提出コメント1件」だけ。残りの AI の記録は
+   1件1行に要約して畳む（既定は閉じる）。実例では21件のうち人の書き込みが2件で、
+   自分の差し戻しが AI の記録に埋もれて「消えた」ように見えていた。 */
 function threadHTML(videoId){
   const evs = threadOf(videoId);
   if (!evs.length) return `<div class="noitem">この動画のレビュー記録はまだありません</div>`;
-  return `<div class="thread">${evs.map(e => {
-    const ai = String(e.author).startsWith('ai:');
-    /* アバターは吹き出しの外（左の列）ではなく名前の行に置く。吹き出しが幅を全部使えるので
-       長い提出コメントが読みやすく、スマホでは端から端まで伸びる（#266 オーナー要望） */
-    return `<div class="cmt ${ai ? 'ai' : ''}"><div class="bub">
-      <div class="who">${avatarOf(e.author)}<b>${ai ? '【AI】' + esc(String(e.author).slice(3)) : esc(e.author)}</b>
-        <span class="gatechip">${esc(GATE_LABEL[e.gate] || e.gate || '—')}</span>
-        <span class="kindchip ${esc(e.kind)}">${KIND_LABEL[e.kind] || esc(e.kind)}</span>
-        <span>${esc(fmtDT(e.created_at) || '')}</span>
-        ${e.score != null ? `<span class="kindchip">score ${esc(e.score)}</span>` : ''}</div>
-      ${cmtBodyHTML(e.body)}
-      ${e.resolution_status ? `<span class="resolved ${e.resolution_status === 'open' ? 'open' : 'closed'}">${
-        e.resolution_status === 'open' ? '⏳' : '✓'} ${
-        RESOLUTION_LABEL[e.resolution_status] || esc(e.resolution_status)}${
-        e.resolution_note ? '：' + esc(e.resolution_note) : ''}</span>` : ''}
-    </div></div>`;
-  }).join('')}</div>`;
+  let sub = null;                                   /* 現行版の提出＝最新の request_review */
+  for (const e of evs) if (e.kind === 'request_review' && (!sub || evNewer(e, sub))) sub = e;
+  const shown = [], folded = [];
+  for (const e of evs) (!isAiAuthor(e.author) || e === sub ? shown : folded).push(e);
+  const bubbles = shown.map(e => bubbleHTML(e, e === sub)).join('')
+    || `<div class="noitem">あなたの書き込みと提出コメントはまだありません</div>`;
+  const fold = folded.length ? `<details class="aifold">
+      <summary class="dsum">🤖 AI の記録<span class="n">（${folded.length}件）</span></summary>
+      <div class="ailog">${folded.map(e => `<div class="ailine">
+        <span class="d">${esc(fmtMD(e.created_at))}</span>
+        <span class="t">${esc(aiSummaryLine(e))}</span></div>`).join('')}</div>
+    </details>` : '';
+  return `<div class="thread">${bubbles}${fold}</div>`;
 }
 
 /* ══ ③ 分析 ════════════════════════════════════════════════════ */
