@@ -1579,7 +1579,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/3 22:31';
+const BUILT_AT = '9/3 23:19';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1632,6 +1632,13 @@ function fmtMD(iso){
   const d = new Date(iso); if (isNaN(d)) return '';
   const p = partsOf(d, {month:'numeric', day:'numeric'});
   return `${p.month}/${p.day}`;
+}
+/* 分析のグラフの横軸・ツールチップ用: 08/04(火) の形（オーナー指定 2026-09-03） */
+function fmtMDW(iso){
+  if (!iso) return '';
+  const d = new Date(iso); if (isNaN(d)) return '';
+  const p = partsOf(d, {month:'2-digit', day:'2-digit'});
+  return `${p.month}/${p.day}(${jstWD(d)})`;
 }
 function daysSince(iso){
   if (!iso) return null;
@@ -2265,13 +2272,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/3 22:31') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/3 23:19') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/3 22:31') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/3 23:19') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3645,20 +3652,27 @@ function niceTicks(min, max, target){
   return { lo, hi, ticks };
 }
 
-/* 横軸（日付）の目盛りを 3〜7 個ほど選ぶ。右端の日付は必ず入れる */
-function dateTicks(rows, W){
+/* 横軸（日付）: 毎日に目盛りを打つ（オーナー指定 2026-09-03）。ラベルは MM/DD(曜)。
+   1日あたりの幅で出し方を変える: 広ければ横書きで毎日 → 狭ければ斜め45°で毎日 →
+   さらに狭ければ斜めのまま間引く（目盛りの線は間引かない）。右端の日は必ずラベルを付ける。
+   返り値 { ticks:[{v,lb}], rot:斜めか, pb:横軸に要する下余白 } */
+function dateTicks(rows, plotW){
   const n = rows.length;
-  if (!n) return [];
-  const maxT = Math.max(2, Math.min(7, Math.floor(W / 64)));
-  const stride = Math.max(1, Math.ceil(n / maxT));
-  const out = [];
-  for (let i = 0; i < n; i += stride) out.push({ v: rows[i].d, lb: fmtMD(rows[i].t + 'T00:00:00+09:00') });
-  const last = rows[n - 1];
-  if (!out.length || out[out.length - 1].v !== last.d){
-    if (out.length > 1 && (last.d - out[out.length - 1].v) < stride * 0.6) out.pop();
-    out.push({ v: last.d, lb: fmtMD(last.t + 'T00:00:00+09:00') });
+  if (!n) return { ticks:[], rot:false, pb:26 };
+  const d0 = rows[0].d, d1 = rows[n - 1].d, span = Math.max(1, d1 - d0);
+  const per = plotW / span;                 /* 1日あたりの幅(px) */
+  const rot = per < 62;                     /* 横書きの MM/DD(曜) が並ばない */
+  const stride = rot ? Math.max(1, Math.ceil(15 / per)) : 1;
+  const lb = t => fmtMDW(t + 'T00:00:00+09:00');
+  const ticks = [];
+  for (let d = d0; d <= d1; d++){
+    const i = d - d0, isLast = d === d1;
+    const labeled = isLast || (i % stride === 0 && (d1 - d) >= stride * 0.6);
+    const row = rows.find(r => r.d === d);
+    const t = row ? row.t : jstAdd(rows[0].t, i);
+    ticks.push({ v:d, lb: labeled ? lb(t) : '' });
   }
-  return out;
+  return { ticks, rot, pb: rot ? 58 : 26 };
 }
 
 /* 薄い横グリッド線＋縦軸ラベル＋横軸の目盛り。グラフ本体より必ず後ろに沈める */
@@ -3676,10 +3690,14 @@ function axesSvg(g){
   s += `<line x1="${g.x0}" y1="${by.toFixed(1)}" x2="${(g.x0 + g.plotW).toFixed(1)}" y2="${by.toFixed(1)}"
       stroke-width="1" vector-effect="non-scaling-stroke" style="stroke:var(--axis)"/>`;
   (g.xTicks || []).forEach(t => {
-    const x = g.X(t.v);
-    s += `<line x1="${x.toFixed(1)}" y1="${by.toFixed(1)}" x2="${x.toFixed(1)}" y2="${(by + 3).toFixed(1)}"
-        stroke-width="1" vector-effect="non-scaling-stroke" style="stroke:var(--axis)"/>`
-      + `<text x="${x.toFixed(1)}" y="${(by + 15).toFixed(1)}" text-anchor="middle" font-size="9.5"
+    const x = g.X(t.v), tl = t.lb ? 4 : 2;
+    s += `<line x1="${x.toFixed(1)}" y1="${by.toFixed(1)}" x2="${x.toFixed(1)}" y2="${(by + tl).toFixed(1)}"
+        stroke-width="1" vector-effect="non-scaling-stroke" style="stroke:var(--axis)"/>`;
+    if (!t.lb) return;
+    s += g.xRot
+      ? `<text transform="translate(${x.toFixed(1)} ${(by + 8).toFixed(1)}) rotate(-45)" text-anchor="end" font-size="9.5"
+        font-family="system-ui,sans-serif" style="fill:var(--muted)">${esc(t.lb)}</text>`
+      : `<text x="${x.toFixed(1)}" y="${(by + 15).toFixed(1)}" text-anchor="middle" font-size="9.5"
         font-family="system-ui,sans-serif" style="fill:var(--muted)">${esc(t.lb)}</text>`;
   });
   return s;
@@ -3703,9 +3721,11 @@ const HOVER_G = color => `<g class="hov" style="display:none">
 
 /* ── 折れ線（登録者の推移）─────────────────────────────────── */
 function lineChart(rows, W, opt){
-  const H = opt.H || (W < 420 ? 170 : 210);
-  const PL = 46, PR = 14, PT = 21, PB = 26;
-  const plotW = Math.max(20, W - PL - PR), plotH = Math.max(20, H - PT - PB);
+  const PL = 46, PR = 14, PT = 21;
+  const plotW = Math.max(20, W - PL - PR);
+  const xt = dateTicks(rows, plotW);
+  const PB = xt.pb, H = (opt.H || (W < 420 ? 170 : 210)) + (PB - 26);
+  const plotH = Math.max(20, H - PT - PB);
   const vs = rows.map(r => r.v);
   const yr = niceTicks(opt.yFrom0 ? 0 : Math.min(...vs), Math.max(...vs), 4);
   const d0 = rows[0].d, d1 = rows[rows.length - 1].d, dspan = (d1 - d0) || 1;
@@ -3714,7 +3734,7 @@ function lineChart(rows, W, opt){
   const line = rows.map((r, i) => `${i ? 'L' : 'M'}${X(r.d).toFixed(1)} ${Y(r.v).toFixed(1)}`).join(' ');
   const area = `${line} L${X(d1).toFixed(1)} ${(PT + plotH).toFixed(1)} L${X(d0).toFixed(1)} ${(PT + plotH).toFixed(1)} Z`;
   const last = rows[rows.length - 1];
-  const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks:dateTicks(rows, W), yFmt:axNum };
+  const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks:xt.ticks, xRot:xt.rot, yFmt:axNum };
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
       aria-label="${esc(opt.label || '')}。${axNum(vs[0])}から${axNum(vs[vs.length - 1])}${esc(opt.unit || '')}へ。">
     ${axesSvg(g)}${unitSvg(2, PT - 9, opt.unit)}
@@ -3727,7 +3747,7 @@ function lineChart(rows, W, opt){
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
   const pts = rows.map(r => ({ x:X(r.d), y:Y(r.v),
-    html:`${esc(fmtMD(r.t + 'T00:00:00+09:00'))}　<b>${nf(r.v)}</b> ${esc(opt.unit || '')}` }));
+    html:`${esc(fmtMDW(r.t + 'T00:00:00+09:00'))}　<b>${nf(r.v)}</b> ${esc(opt.unit || '')}` }));
   return { html, pts };
 }
 
@@ -3735,9 +3755,10 @@ function lineChart(rows, W, opt){
    1つの絵に2つの縦軸を入れない（読み違いのもと）。単位の違う2つは上下の段に分け、
    横軸（日付）だけを共有する。 */
 function playsChart(rows, W, opt){
-  const H = W < 420 ? 218 : 250;
-  const PL = 46, PR = 14, PT = 21, GAP = 33, PB = 26;
+  const PL = 46, PR = 14, PT = 21, GAP = 33;
   const plotW = Math.max(20, W - PL - PR);
+  const xt = dateTicks(rows, plotW);
+  const PB = xt.pb, H = (W < 420 ? 218 : 250) + (PB - 26);
   const hTop = Math.max(24, Math.round((H - PT - GAP - PB) * 0.62));
   const hBot = Math.max(20, H - PT - GAP - PB - hTop);
   const yTop = PT, yBot = PT + hTop + GAP;
@@ -3748,13 +3769,13 @@ function playsChart(rows, W, opt){
   const cr = niceTicks(Math.min(...rows.map(r => r.cum)), Math.max(...rows.map(r => r.cum)), 2);
   const Yi = v => yTop + hTop - hTop * ((v - ir.lo) / ((ir.hi - ir.lo) || 1));
   const Yc = v => yBot + hBot - hBot * ((v - cr.lo) / ((cr.hi - cr.lo) || 1));
-  const xTicks = dateTicks(rows, W);
+  const xTicks = xt.ticks;
   const bw = Math.max(2, Math.min(22, plotW / Math.max(1, rows.length) - 2.5));
   const bars = rows.map(r => r.inc == null ? '' :
     `<path d="${barPath(X(r.d) - bw / 2, Yi(r.inc), bw, (yTop + hTop) - Yi(r.inc), 3)}" style="fill:${opt.color};opacity:.9"/>`).join('');
   const cline = rows.map((r, i) => `${i ? 'L' : 'M'}${X(r.d).toFixed(1)} ${Yc(r.cum).toFixed(1)}`).join(' ');
   const gTop = { x0:PL, y0:yTop, plotW, plotH:hTop, X, Y:Yi, yTicks:ir.ticks, xTicks:[], yFmt:axNum };
-  const gBot = { x0:PL, y0:yBot, plotW, plotH:hBot, X, Y:Yc, yTicks:cr.ticks, xTicks, yFmt:axNum };
+  const gBot = { x0:PL, y0:yBot, plotW, plotH:hBot, X, Y:Yc, yTicks:cr.ticks, xTicks, xRot:xt.rot, yFmt:axNum };
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
       aria-label="再生数の推移。上段は1日の増分、下段は累計。">
     ${axesSvg(gTop)}${unitSvg(2, yTop - 9, '回／日')}
@@ -3766,7 +3787,7 @@ function playsChart(rows, W, opt){
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
   const pts = rows.map(r => ({ x:X(r.d), y:Yc(r.cum),
-    html:`${esc(fmtMD(r.t + 'T00:00:00+09:00'))}　この日 <b>${r.inc == null ? '—' : '+' + nf(r.inc)}</b> 回　／　累計 <b>${nf(r.cum)}</b> 回` }));
+    html:`${esc(fmtMDW(r.t + 'T00:00:00+09:00'))}　この日 <b>${r.inc == null ? '—' : '+' + nf(r.inc)}</b> 回　／　累計 <b>${nf(r.cum)}</b> 回` }));
   return { html, pts };
 }
 
@@ -3785,7 +3806,7 @@ function scatterChart(items, W, opt){
   const xTicks = [];
   for (let k = 0; k <= 4; k++){
     const d = Math.round(d0 + (d1 - d0) * k / 4);
-    xTicks.push({ v:d, lb: fmtMD(new Date(d * DAY).toISOString()) });
+    xTicks.push({ v:d, lb: fmtMDW(new Date(d * DAY).toISOString()) });
   }
   const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks, yFmt:v => String(Math.round(v)) };
   const ty = Y(opt.thr);
@@ -3801,7 +3822,7 @@ function scatterChart(items, W, opt){
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
   const pts = items.map(i => ({ x:X(i.d), y:Y(i.v),
-    html:`<b>${esc(i.seq)}</b> ${esc(i.title)}<br>${esc(fmtMD(i.at))}　平均視聴率 <b>${i.v.toFixed(1)}</b>%` }));
+    html:`<b>${esc(i.seq)}</b> ${esc(i.title)}<br>${esc(fmtMDW(i.at))}　平均視聴率 <b>${i.v.toFixed(1)}</b>%` }));
   return { html, pts, mode:'xy' };
 }
 
