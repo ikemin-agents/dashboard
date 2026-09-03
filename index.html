@@ -359,26 +359,23 @@ td.dim{color:var(--muted)}
 .mtx tr.dropped td{color:var(--muted)}
 .mtx tbody tr{cursor:pointer}
 /* ── 一覧のセクション見出し（在庫・レビュー統合）────────────────────────
-   表の中では colspan で1行まるごと使う帯、スマホでは同じ体裁の見出しブロック。
-   畳めるもの（完了・ネタ案・没）は ▸ が付き、行ごと押すと開閉する。 */
-.mtx tbody tr.secrow{cursor:default; background:var(--surface-2)}
-.mtx tbody tr.secrow.foldable{cursor:pointer}
-.mtx tbody tr.secrow:hover td{background:var(--surface-2)}
-.mtx tbody tr.secrow td{position:static; padding:9px var(--sp-4); box-shadow:none;
-  border-top:1px solid var(--border); border-bottom:1px solid var(--border-2); background:var(--surface-2)}
-.mtx tbody tr.secrow+tr td{border-top:none}
+   表でもスマホカードでも同じ .csechead の帯を使う（2026-09-03 から）。
+   区画ごとに出す列が変わる＝区画ごとに別の <table> になったので、見出しは
+   表の中の行（colspan）ではなく表の手前に置く帯にした。
+   畳めるもの（完了・ネタ案・没）は ▸ が付き、帯を押すと開閉する。 */
 .csechead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:10px var(--sp-4);
   background:var(--surface-2); border-top:1px solid var(--border); border-bottom:1px solid var(--border-2)}
 .csechead.foldable{cursor:pointer}
-.secrow td,.csechead{font-size:var(--fs-sm)}
-.secrow .sn,.csechead .sn{font-weight:700; color:var(--ink); display:inline-flex; align-items:center; gap:6px}
-.secrow .tri,.csechead .tri{font-size:11px; color:var(--ink-2)}
-.secrow .n,.csechead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2);
+/* 表が横スクロールしているときも帯を表と同じ幅まで伸ばす（帯だけ短く切れて見えない） */
+.tblwrap.mtx>.csechead{min-width:1060px; box-sizing:border-box}
+.tblwrap.mtx>.csechead:first-child{border-top:none}
+.csechead{font-size:var(--fs-sm)}
+.csechead .sn{font-weight:700; color:var(--ink); display:inline-flex; align-items:center; gap:6px}
+.csechead .tri{font-size:11px; color:var(--ink-2)}
+.csechead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2);
   background:var(--surface-1); border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px}
-.secrow .hint,.csechead .hint{font-size:var(--fs-2xs); color:var(--muted)}
+.csechead .hint{font-size:var(--fs-2xs); color:var(--muted)}
 /* 見出しの左端の色帯で「誰の番か」を段そのものに持たせる（行の色帯と同じ割り当て） */
-.mtx tbody tr.secrow.s-rv td,.mtx tbody tr.secrow.s-triage td{box-shadow:inset 4px 0 0 var(--s1)}
-.mtx tbody tr.secrow.s-ai td{box-shadow:inset 4px 0 0 var(--fix)}
 .csechead.s-rv,.csechead.s-triage{box-shadow:inset 4px 0 0 var(--s1)}
 .csechead.s-ai{box-shadow:inset 4px 0 0 var(--fix)}
 .mtx th.sortable{cursor:pointer; user-select:none}
@@ -406,6 +403,12 @@ td.dim{color:var(--muted)}
 .okbtn:disabled{background:var(--done-tint); color:var(--done); cursor:default}
 /* 表では右端の専用列に、カードではバッジ行の右端に置く（オーナー指定 2026-08-20） */
 .mtx td.okcol,.mtx th.okcol{width:1%; white-space:nowrap; text-align:right; padding-left:var(--sp-3)}
+/* 状態・版・指摘は独立した列にする（オーナー要望 2026-09-03）。タイトルと同じマスに
+   流し込むとタイトルの長さでバッジの位置がずれて読めない、という困りごとへの答え。
+   幅は th 側で固定して、行が変わってもバッジの左端が必ず縦に揃うようにする。 */
+.mtx td.bcol{padding-right:var(--sp-2)}
+/* 列が3つ増えたぶんタイトルの下限を詰める（横スクロールを出す幅を広げない） */
+.mtx td.ttl{min-width:200px}
 .sbadges .okbtn{margin-left:auto}
 .sbadges,.flags{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
 .flags{display:inline-flex; vertical-align:middle}
@@ -431,6 +434,10 @@ td.ttl .flags{margin-left:8px}
 .mtx thead tr:first-child th{top:var(--stickytop, 0px)}
 .mtx thead tr:nth-child(2) th{top:calc(var(--stickytop, 0px) + var(--mtxrow1, 24px))}
 @media (max-width:1099.98px){ .tblwrap.mtx{overflow-x:auto} }
+/* 並べ替え・絞り込み中は区画が消えて全列（状態・版・指摘＋投稿日時・再生数・登録者増）を
+   1つの表に並べるので、収まる幅が約1220pxまで上がる。その分だけ横スクロールに切り替える
+   幅を広げる（sticky の列見出しはスクロール容器の中では効かないので、必要な幅でだけ譲る） */
+@media (min-width:1100px) and (max-width:1279.98px){ .tblwrap.mtx.wide{overflow-x:auto} }
 .emptyrow td{text-align:center; color:var(--muted); padding:26px; cursor:default}
 .emptyrow:hover td{background:transparent!important}
 
@@ -1497,7 +1504,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/3 00:45';
+const BUILT_AT = '9/3 21:27';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1505,7 +1512,7 @@ const STATUS_COLS = [
   {st:'投稿待ち',   sw:'--stg5'}, {st:'投稿済',    sw:'--stg6'}
 ];
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
-const SORT_LABEL = {seq:'seq', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
+const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','編集','投稿待ち'];
 const MONETIZE = [
   {nm:'早期アクセス（ファンファンディング）', subs:500,  plays:3000000},
@@ -2181,13 +2188,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/3 00:45') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/3 21:27') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/3 00:45') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/3 21:27') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2212,7 +2219,9 @@ function displayIdx(it){
    バッジは在庫の表・在庫カード・レビュー一覧・詳細で必ずこの2つの関数から作る（表記も寸法も1か所） */
 const stateCls = it => (it._rv || it.stage === 'triage') ? 'st-rv'
   : (it._rc ? 'st-rc' : (it._open ? 'st-open' : ''));
-const badgeHTML = b => b ? `<span class="sbadge ${b.cls}">${b.gl} ${esc(b.text)}</span>` : '';
+/* tip＝ツールチップ（title 属性）。列に出す文言は短く固定し、詳しい説明はこちらへ逃がす */
+const badgeHTML = b => b ? `<span class="sbadge ${b.cls}"${b.tip ? ` title="${esc(b.tip)}"` : ''}>${
+  b.gl ? b.gl + ' ' : ''}${esc(b.text)}</span>` : '';
 /* ── 差し戻しの直し中は「誰の指摘が起点か」で見せ方を分ける（M051）────────
    あなた（＋歯科医監修）の指摘が入っているものは今までどおりオレンジで目立たせ、
    AI審査だけが起点のもの（基準に届かず作り直しているだけ）は無彩色に落とす。
@@ -2220,7 +2229,8 @@ const badgeHTML = b => b ? `<span class="sbadge ${b.cls}">${b.gl} ${esc(b.text)}
 const rcAiOnly = it => it._rcSrc === 'ai';
 const rcText  = it => rcAiOnly(it) ? `AI審査で${GATE_LABEL[it._rc]}作り直し中`
                                    : `${AI_TAG}${GATE_LABEL[it._rc]}修正対応中`;
-const rcShort = it => rcAiOnly(it) ? 'AI審査で作り直し中' : `${AI_TAG}修正対応中`;
+/* 列に出す短い文言（オーナー要望 2026-09-03）。長い説明は tip（ツールチップ）に回す */
+const rcShort = it => rcAiOnly(it) ? '作り直し中' : 'AI修正中';
 const rcCls   = it => rcAiOnly(it) ? 'rcai' : 'rc';
 /* 未対応の指摘の内訳（M051）。b=true なら件数を太字にする（吹き出し用）、
    false なら title 属性に入れられる素のテキスト。0件の側は出さない。 */
@@ -2229,31 +2239,34 @@ const openSplit = (it, b) => {
   return [it._openH  ? `あなたの指摘 ${w(it._openH)}`  : '',
           it._openAi ? `AI審査 ${w(it._openAi)}` : ''].filter(Boolean).join('・');
 };
+/* ゲート名（完成／台本／絵コンテ）は工程7マスを見れば分かるので状態の文言には入れない。
+   知りたいときのためにツールチップには今までどおり全文を残す。 */
 const stateBadgeOf = it =>
-    it._rv ? {cls:'rv', gl:'●', text:`${GATE_LABEL[it._rv]}承認待ち`}
-  : it._rc ? {cls:rcCls(it), gl:'↺', text:rcText(it)} : null;
+    it._rv ? {cls:'rv', gl:'●', text:'承認待ち', tip:`${GATE_LABEL[it._rv]}承認待ち（あなたの番）`}
+  : it._rc ? {cls:rcCls(it), gl:'↺', text:rcShort(it), tip:rcText(it)} : null;
 const openBadgeHTML = it => it._open
-  ? `<span class="sbadge open" title="未対応の指摘 ${esc(openSplit(it, false) || it._open + '件')}">💬 指摘${it._open}件</span>` : '';
+  ? `<span class="sbadge open" title="未対応の指摘 ${esc(openSplit(it, false) || it._open + '件')}">💬 ${it._open}</span>` : '';
 /* 「この版は何の作り直しか」の札（オーナー要望 2026-09-02）。承認するかどうかを決める場面
    でしか意味が無いので、承認待ちの動画にだけ出す。初回の提出は札なし。 */
 const REWORK_BADGE = {
-  human: {cls:'rwh',  gl:'↻', text:'あなたの指摘を直した版'},
-  ai:    {cls:'rwai', gl:'↻', text:'AI が見つけた不備を直した版'}
+  human: {cls:'rwh',  gl:'↻', text:'差し戻し後', tip:'あなたの指摘を直した版'},
+  ai:    {cls:'rwai', gl:'↻', text:'AI指摘後',  tip:'AI が見つけた不備を直した版'}
 };
+/* 差し戻しが1件も無い＝初回の提出。表の「版」列だけは空欄にせず「初版」と書く
+   （空欄だと「取れなかった」のか「初版」なのか読めない）。
+   ⚠️ 版の番号（第N版）は一覧が引くビュー v_dashboard_list に無いので出さない＝由来だけ。 */
+const FIRST_BADGE = {cls:'idea', gl:'', text:'初版', tip:'差し戻しのない最初の提出'};
 const reworkBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)]) : '';
+const revBadgeHTML   = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)] || FIRST_BADGE) : '';
 function flagsHTML(it){
   const h = badgeHTML(stateBadgeOf(it)) + reworkBadgeHTML(it) + openBadgeHTML(it);
   return h ? `<span class="flags">${h}</span>` : '';
 }
-/* 一覧の行に付けるバッジ一式（#206）。進行中（【AI】台本作成中 等）も含む stageBadge を使うので、
-   PC の表とスマホの在庫カードで必ず同じバッジが出る（表だけ無印の行ができない）。
-   生成は badgeHTML / openBadgeHTML の2つだけを通す＝表記も寸法も1か所のまま。 */
 /* 承認待ちの行には、その場で通せるボタンを出す（オーナー要望 2026-08-20）。
    コメント無しの承認が普通なので、1タップで承認まで行く（数秒だけ取り消せる） */
 const quickOkHTML = it => it._rv
   ? `<button class="okbtn" data-act="approve-quick" data-key="${it.id}|${esc(it._rv)}"
       data-label="承認" title="${esc(GATE_LABEL[it._rv] || it._rv)}を承認">承認</button>` : '';
-const rowFlagsHTML = it => `<span class="flags">${badgeHTML(stageBadge(it))}${reworkBadgeHTML(it)}${openBadgeHTML(it)}</span>`;
 const pKeyOf = it => (it.stage === 'dropped' || it.stage === 'triage')
   ? it.stage : PSTAGES[displayIdx(it)].key;
 
@@ -2355,44 +2368,80 @@ function secHeadInner(s){
 const secAttrs = s => s.fold
   ? ` data-secfold="${s.key}" tabindex="0" role="button" aria-expanded="${secOpen(s)}"` : '';
 
+/* ── 進捗マトリクスの列（オーナー要望 2026-09-03）──────────────────────
+   状態・版・指摘をタイトルのマスから出して独立した列にした。ワッペンをタイトルの
+   後ろに流し込むと、タイトルの長さでワッペンの位置がずれて読めない、が理由。
+   '@' は工程7マスの位置を指す目印（列見出しの「工程」もここに掛かる）。
+   td を丸ごと返すのは、投稿日時・再生数・登録者増が値の有無で class を変えるため。
+   sort:1 の列だけ見出しを押して並べ替えできる（キー名は SORT_DB と揃える）。 */
+const MCOL = {
+  seq:   {sort:1, w:'70px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
+  title: {sort:1,                  td: it => `<td class="ttl">${esc(it.title)}</td>`},
+  state: {label:'状態', w:'112px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
+  rev:   {label:'版',   w:'104px', td: it => `<td class="bcol">${revBadgeHTML(it)}</td>`},
+  open:  {label:'指摘', w:'62px',  td: it => `<td class="bcol">${openBadgeHTML(it)}</td>`},
+  genre: {sort:1, w:'104px',       td: it => `<td><span class="genre">${esc(it.genreLabel)}</span></td>`},
+  days:  {sort:1, w:'68px', thx:' num',
+          td: it => `<td class="num">${it.days == null ? '—' : it.days + '日'}</td>`},
+  pub:   {label:'投稿日時', w:'142px',
+          td: it => `<td class="${it.resv || it.pub ? '' : 'dim'}">${
+            it.resv ? `<span class="resv">🗓 ${esc(it.resv)}</span>` : (esc(it.pub) || '—')}</td>`},
+  plays: {sort:1, w:'84px', thx:' num',
+          td: it => `<td class="num${it.plays == null ? ' dim' : ''}">${it.plays == null ? '—' : nf(it.plays)}</td>`},
+  subs:  {sort:1, w:'82px', thx:' num',
+          td: it => `<td class="num${it.subs == null ? ' dim' : ''}">${
+            it.subs == null ? '—' : (it.subs > 0 ? '+' : '') + it.subs}</td>`},
+  ok:    {label:'承認', thx:' okcol', td: it => `<td class="okcol">${quickOkHTML(it)}</td>`}
+};
+/* 区画ごとに出す列を変える。未投稿の区画には「—」しか入らない3列（投稿日時・再生数・
+   登録者増）を出さず、投稿済みの区画には意味を持たない3列（状態・版・承認）を出さない。
+   並べ替え・絞り込み中は区画そのものが消える（sectionsOff）ので、そのときだけ全列を出す。 */
+const COLS_FULL = ['seq','title','state','rev','open','genre','@','days','pub','plays','subs','ok'];
+const COLS_WIP  = ['seq','title','state','rev','open','genre','@','days','ok'];
+const COLS_DONE = ['seq','title','genre','@','days','pub','plays','subs'];
+const colsOfSec = s => s.key === 'done' ? COLS_DONE : COLS_WIP;
+const colCount  = cols => cols.length - 1 + PSTAGES.length;
+
+function colTH(k){
+  const c = MCOL[k], w = c.w ? ` style="width:${c.w}"` : '';
+  if (!c.sort) return `<th class="${(c.thx || '').trim()}"${w}>${esc(c.label || '')}</th>`;
+  const s = state.stockSort, on = s && s.key === k;
+  return `<th class="sortable${c.thx || ''}" data-sort="${k}"${w}>${SORT_LABEL[k]}${
+    on ? `<span class="ar">${s.dir === 'asc' ? '▲' : '▼'}</span>` : ''}</th>`;
+}
+function mtxHead(cols){
+  const gi = cols.indexOf('@'), right = cols.length - gi - 1;
+  return `<tr>${gi ? `<th class="pad" colspan="${gi}"></th>` : ''}<th class="grp" colspan="${
+      PSTAGES.length}">工程</th>${right ? `<th class="pad" colspan="${right}"></th>` : ''}</tr>
+    <tr>${cols.map(k => k === '@'
+      ? PSTAGES.map((s, j) => `<th class="st${j === 0 ? ' first' : (j === PSTAGES.length - 1 ? ' last' : '')}">${s.name}</th>`).join('')
+      : colTH(k)).join('')}</tr>`;
+}
+const mtxRow = (it, cols) => `<tr data-vid="${it.id}" tabindex="0" class="${
+    (it.stage === 'dropped' ? 'dropped ' : '') + stateCls(it)}">${
+    cols.map(k => k === '@' ? progressCells(it) : MCOL[k].td(it)).join('')}</tr>`;
+const mtxTable = (cols, body) => `<table><thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
+
 function matrixTable(core){
   const rows = core.items;         /* 絞り込み・並べ替え・ページ切りは DB 側で済んでいる */
+  /* 区画ごとに列が違う＝区画ごとに別の表にし、見出しは表の手前の帯（.csechead）に置く。
+     並べ替え・絞り込み中（sectionsOff）は区画を出さないので1つの表のまま＝列見出しを
+     押しての並べ替えは今までどおり効く（クリックの受け口は .mtx th.sortable のまま）。 */
+  const flat = !rows.length || sectionsOff();
+  const inner = !rows.length
+    ? mtxTable(COLS_FULL,
+        `<tr class="emptyrow"><td colspan="${colCount(COLS_FULL)}">条件に一致する動画はありません</td></tr>`)
+    : flat
+      ? mtxTable(COLS_FULL, rows.map(it => mtxRow(it, COLS_FULL)).join(''))
+      : groupSections(rows).map(s => {
+          const cols = colsOfSec(s);
+          const band = `<div class="csechead s-${s.key}${s.fold ? ' foldable' : ''}"${
+            secAttrs(s)}>${secHeadInner(s)}</div>`;
+          return band + (secOpen(s) ? mtxTable(cols, s.rows.map(it => mtxRow(it, cols)).join('')) : '');
+        }).join('');
 
-  const th = (k, extra = '') => {
-    const s = state.stockSort, on = s && s.key === k;
-    return `<th class="sortable${extra}" data-sort="${k}">${SORT_LABEL[k]}${
-      on ? `<span class="ar">${s.dir === 'asc' ? '▲' : '▼'}</span>` : ''}</th>`;
-  };
-  const head = `<tr>
-      <th class="pad" colspan="3"></th>
-      <th class="grp" colspan="${PSTAGES.length}">工程</th>
-      <th class="pad" colspan="5"></th></tr>
-    <tr>${th('seq')}${th('title')}${th('genre')}${
-      PSTAGES.map((s, j) => `<th class="st${j === 0 ? ' first' : (j === PSTAGES.length - 1 ? ' last' : '')}">${s.name}</th>`).join('')
-    }${th('days', ' num')}<th>投稿日時</th>${th('plays', ' num')}${th('subs', ' num')}<th class="okcol"></th></tr>`;
-
-  const COLS = 8 + PSTAGES.length;
-  const tr = it => `<tr data-vid="${it.id}" tabindex="0" class="${
-      (it.stage === 'dropped' ? 'dropped ' : '') + stateCls(it)}">
-      <td class="seq">${esc(it.seq)}</td>
-      <td class="ttl">${esc(it.title)}${rowFlagsHTML(it)}</td>
-      <td><span class="genre">${esc(it.genreLabel)}</span></td>
-      ${progressCells(it)}
-      <td class="num">${it.days == null ? '—' : it.days + '日'}</td>
-      <td class="${it.resv || it.pub ? '' : 'dim'}">${it.resv ? `<span class="resv">🗓 ${esc(it.resv)}</span>` : (esc(it.pub) || '—')}</td>
-      <td class="num${it.plays == null ? ' dim' : ''}">${it.plays == null ? '—' : nf(it.plays)}</td>
-      <td class="num${it.subs == null ? ' dim' : ''}">${it.subs == null ? '—' : (it.subs > 0 ? '+' : '') + it.subs}</td>
-      <td class="okcol">${quickOkHTML(it)}</td></tr>`;
-  const secTR = s => `<tr class="secrow s-${s.key}${s.fold ? ' foldable' : ''}"${secAttrs(s)}>
-      <td colspan="${COLS}">${secHeadInner(s)}</td></tr>`;
-
-  const body = !rows.length
-    ? `<tr class="emptyrow"><td colspan="${COLS}">条件に一致する動画はありません</td></tr>`
-    : sectionsOff() ? rows.map(tr).join('')
-    : groupSections(rows).map(s => secTR(s) + (secOpen(s) ? s.rows.map(tr).join('') : '')).join('');
-
-  return `<div class="tblwrap mtx${rows.length > 14 ? ' tall' : ''}">
-    <table><thead>${head}</thead><tbody>${body}</tbody></table></div>${stockCards(rows)}`;
+  return `<div class="tblwrap mtx${flat ? ' wide' : ''}${rows.length > 14 ? ' tall' : ''}">${
+    inner}</div>${stockCards(rows)}`;
 }
 
 /* 狭幅（スマホ）用のカード表示。表と同じ rows から描画し CSS で出し分ける */
@@ -2408,7 +2457,7 @@ function stageBadge(it){
   if (it.stage === 'idea')    return {cls:'idea', gl:'○', text:'ネタ案'};
   /* 投稿待ちは誰も作業していない（公開時刻待ち）ので【AI】は付けない */
   if (it.stage === 'queue')   return {cls:'work', gl:'●', text:'投稿待ち'};
-  return {cls:'work', gl:'●', text:`${AI_TAG}${PSTAGES[displayIdx(it)].work}`};
+  return {cls:'work', gl:'●', text:'AI作業中', tip:`${AI_TAG}${PSTAGES[displayIdx(it)].work}`};
 }
 function progressDots(it){
   const cur = displayIdx(it), done = it.stage === 'posted';
@@ -2454,9 +2503,9 @@ function stockCards(rows){
 const MARK_LEGEND = `<div class="legend2">
   <b>工程</b>
   <span class="lg"><span class="mark done">✓</span>完了</span>
-  <span class="lg"><span class="mark work">●</span>${AI_TAG}作業中<span class="ex">（AIが自動で進めています）</span></span>
-  <span class="lg"><span class="mark rc">↺</span>${AI_TAG}修正対応中<span class="ex">（あなたが出した指摘をAIが直しています）</span></span>
-  <span class="lg"><span class="mark rcai">↺</span>AI審査で作り直し中<span class="ex">（AIの審査が基準未達と判定。あなたの操作は要りません）</span></span>
+  <span class="lg"><span class="mark work">●</span>AI作業中<span class="ex">（AIが自動で進めています）</span></span>
+  <span class="lg"><span class="mark rc">↺</span>AI修正中<span class="ex">（あなたが出した指摘をAIが直しています）</span></span>
+  <span class="lg"><span class="mark rcai">↺</span>作り直し中<span class="ex">（AIの審査が基準未達と判定。あなたの操作は要りません）</span></span>
   <span class="lg"><span class="mark rv">●</span>承認待ち<span class="ex">（あなたの番）</span></span>
   <span class="lg"><span class="mark todo">·</span>未到達</span></div>`;
 
@@ -2478,9 +2527,9 @@ function kanbanView(items, slug){
               <span class="days ${c.days >= 7 ? 'slow' : ''}">${c.days >= 7 ? '⏳ ' : ''}滞留 ${c.days == null ? '—' : c.days + '日'}</span></div>
             <div class="ttl">${esc(c.title)}</div>
             <div class="meta">${gateChips(c, slug)}${c.resv ? `<span class="resv">🗓 ${esc(c.resv.slice(5))}</span>` : ''}${
-              c._rv ? `<span class="rvflag">● ${GATE_LABEL[c._rv]}承認待ち</span>` : ''}${
-              c._rc ? `<span class="rcflag${rcAiOnly(c) ? ' ai' : ''}">↺ ${esc(rcText(c))}</span>` : ''}${
-              c._open ? `<span class="rcflag" title="${esc(openSplit(c, false) || c._open + '件')}">💬 指摘${c._open}件</span>` : ''}</div>
+              c._rv ? `<span class="rvflag" title="${esc(GATE_LABEL[c._rv])}承認待ち（あなたの番）">● 承認待ち</span>` : ''}${
+              c._rc ? `<span class="rcflag${rcAiOnly(c) ? ' ai' : ''}" title="${esc(rcText(c))}">↺ ${esc(rcShort(c))}</span>` : ''}${
+              c._open ? `<span class="rcflag" title="未対応の指摘 ${esc(openSplit(c, false) || c._open + '件')}">💬 ${c._open}</span>` : ''}</div>
           </article>`).join('') + (rest > 0 ? `<div class="more">＋${rest}件</div>` : '');
     return `<div class="col">
       <div class="colhead"><span class="sw" style="background:var(${s.sw});margin:0"></span>
