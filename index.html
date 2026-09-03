@@ -324,7 +324,14 @@ td.dim{color:var(--muted)}
 .legend2 .lg{display:inline-flex; align-items:center; gap:6px}
 .legend2 b{color:var(--ink); font-weight:680; letter-spacing:.04em}
 
-.mtx table{min-width:1060px}
+/* ── 列幅は中身に左右させない（オーナー差し戻し 2026-09-03）────────────────
+   区画（あなたの番／AI作業中／完了…）が変わっても列の縦位置がずれないよう、
+   表は必ず1つ・列見出しも1つにし、幅は table-layout:fixed で先に決める。
+   幅の出どころは ①各列の th の style（JS 側 MCOL の w） ②.mtx th.st（工程7マス）
+   ③.mtx th.okcol（承認）の3つだけ。幅を書いていないタイトル列が残り幅を取る。
+   12列ぶんの合計が約1280pxなので、左右パディングを 14px → 10px に詰めて収める。 */
+.mtx table{table-layout:fixed; min-width:1280px}
+.mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
 .mtx th.st,.mtx td.st{width:40px; text-align:center; padding-left:2px; padding-right:2px;
   background:var(--stage-bg)}
 /* 工程の列見出しは 10px では読めない（オーナー指摘 #206）ので本文並みの 12.5px にする。
@@ -359,23 +366,28 @@ td.dim{color:var(--muted)}
 .mtx tr.dropped td{color:var(--muted)}
 .mtx tbody tr{cursor:pointer}
 /* ── 一覧のセクション見出し（在庫・レビュー統合）────────────────────────
-   表でもスマホカードでも同じ .csechead の帯を使う（2026-09-03 から）。
-   区画ごとに出す列が変わる＝区画ごとに別の <table> になったので、見出しは
-   表の中の行（colspan）ではなく表の手前に置く帯にした。
-   畳めるもの（完了・ネタ案・没）は ▸ が付き、帯を押すと開閉する。 */
+   表の中では colspan で1行まるごと使う帯、スマホでは同じ体裁の見出しブロック。
+   畳めるもの（完了・ネタ案・没）は ▸ が付き、行ごと押すと開閉する。
+   ⚠️ 区画ごとに表を分けない（オーナー差し戻し 2026-09-03）。分けると区画のあいだで
+      列幅が揃わず、状態・版・指摘の縦位置がずれる。 */
+.mtx tbody tr.secrow{cursor:default; background:var(--surface-2)}
+.mtx tbody tr.secrow.foldable{cursor:pointer}
+.mtx tbody tr.secrow:hover td{background:var(--surface-2)}
+.mtx tbody tr.secrow td{position:static; padding:9px var(--sp-4); box-shadow:none; overflow:visible;
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border-2); background:var(--surface-2)}
+.mtx tbody tr.secrow+tr td{border-top:none}
 .csechead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:10px var(--sp-4);
   background:var(--surface-2); border-top:1px solid var(--border); border-bottom:1px solid var(--border-2)}
 .csechead.foldable{cursor:pointer}
-/* 表が横スクロールしているときも帯を表と同じ幅まで伸ばす（帯だけ短く切れて見えない） */
-.tblwrap.mtx>.csechead{min-width:1060px; box-sizing:border-box}
-.tblwrap.mtx>.csechead:first-child{border-top:none}
-.csechead{font-size:var(--fs-sm)}
-.csechead .sn{font-weight:700; color:var(--ink); display:inline-flex; align-items:center; gap:6px}
-.csechead .tri{font-size:11px; color:var(--ink-2)}
-.csechead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2);
+.secrow td,.csechead{font-size:var(--fs-sm)}
+.secrow .sn,.csechead .sn{font-weight:700; color:var(--ink); display:inline-flex; align-items:center; gap:6px}
+.secrow .tri,.csechead .tri{font-size:11px; color:var(--ink-2)}
+.secrow .n,.csechead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2);
   background:var(--surface-1); border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px}
-.csechead .hint{font-size:var(--fs-2xs); color:var(--muted)}
+.secrow .hint,.csechead .hint{font-size:var(--fs-2xs); color:var(--muted)}
 /* 見出しの左端の色帯で「誰の番か」を段そのものに持たせる（行の色帯と同じ割り当て） */
+.mtx tbody tr.secrow.s-rv td,.mtx tbody tr.secrow.s-triage td{box-shadow:inset 4px 0 0 var(--s1)}
+.mtx tbody tr.secrow.s-ai td{box-shadow:inset 4px 0 0 var(--fix)}
 .csechead.s-rv,.csechead.s-triage{box-shadow:inset 4px 0 0 var(--s1)}
 .csechead.s-ai{box-shadow:inset 4px 0 0 var(--fix)}
 .mtx th.sortable{cursor:pointer; user-select:none}
@@ -402,13 +414,15 @@ td.dim{color:var(--muted)}
 .okbtn:hover{filter:brightness(1.07)}
 .okbtn:disabled{background:var(--done-tint); color:var(--done); cursor:default}
 /* 表では右端の専用列に、カードではバッジ行の右端に置く（オーナー指定 2026-08-20） */
-.mtx td.okcol,.mtx th.okcol{width:1%; white-space:nowrap; text-align:right; padding-left:var(--sp-3)}
+.mtx td.okcol,.mtx th.okcol{width:76px; white-space:nowrap; text-align:right}
 /* 状態・版・指摘は独立した列にする（オーナー要望 2026-09-03）。タイトルと同じマスに
    流し込むとタイトルの長さでバッジの位置がずれて読めない、という困りごとへの答え。
-   幅は th 側で固定して、行が変わってもバッジの左端が必ず縦に揃うようにする。 */
-.mtx td.bcol{padding-right:var(--sp-2)}
-/* 列が3つ増えたぶんタイトルの下限を詰める（横スクロールを出す幅を広げない） */
-.mtx td.ttl{min-width:200px}
+   幅は列側で固定してあるので、行が変わってもワッペンの左端と縦位置が必ず揃う。 */
+.mtx td.bcol{white-space:nowrap}
+.mtx td.bcol .sbadge{font-size:var(--fs-2xs); padding:3px 9px; gap:4px; max-width:100%}
+/* table-layout:fixed では td の min-width/max-width は効かないので、タイトル列は
+   列幅（残り幅）の中で折り返す */
+.mtx td.ttl{min-width:0; max-width:none}
 .sbadges .okbtn{margin-left:auto}
 .sbadges,.flags{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
 .flags{display:inline-flex; vertical-align:middle}
@@ -433,11 +447,10 @@ td.ttl .flags{margin-left:8px}
 .tblwrap.mtx{overflow:visible; max-height:none}
 .mtx thead tr:first-child th{top:var(--stickytop, 0px)}
 .mtx thead tr:nth-child(2) th{top:calc(var(--stickytop, 0px) + var(--mtxrow1, 24px))}
-@media (max-width:1099.98px){ .tblwrap.mtx{overflow-x:auto} }
-/* 並べ替え・絞り込み中は区画が消えて全列（状態・版・指摘＋投稿日時・再生数・登録者増）を
-   1つの表に並べるので、収まる幅が約1220pxまで上がる。その分だけ横スクロールに切り替える
-   幅を広げる（sticky の列見出しはスクロール容器の中では効かないので、必要な幅でだけ譲る） */
-@media (min-width:1100px) and (max-width:1279.98px){ .tblwrap.mtx.wide{overflow-x:auto} }
+/* 列が12本になって表の最小幅が 1060px → 1280px に上がったので、横スクロールへ切り替える
+   幅もそこへ合わせる（sticky の列見出しはスクロール容器の中では効かないので、
+   表が収まらない幅でだけ譲る）。 */
+@media (max-width:1279.98px){ .tblwrap.mtx{overflow-x:auto} }
 .emptyrow td{text-align:center; color:var(--muted); padding:26px; cursor:default}
 .emptyrow:hover td{background:transparent!important}
 
@@ -1504,7 +1517,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/3 21:28';
+const BUILT_AT = '9/3 21:43';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2188,13 +2201,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/3 21:28') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/3 21:43') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/3 21:28') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/3 21:43') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2368,39 +2381,42 @@ function secHeadInner(s){
 const secAttrs = s => s.fold
   ? ` data-secfold="${s.key}" tabindex="0" role="button" aria-expanded="${secOpen(s)}"` : '';
 
-/* ── 進捗マトリクスの列（オーナー要望 2026-09-03）──────────────────────
+/* ── 進捗マトリクスの列（オーナー要望 2026-09-03 / 同日の差し戻しを反映）────────
    状態・版・指摘をタイトルのマスから出して独立した列にした。ワッペンをタイトルの
    後ろに流し込むと、タイトルの長さでワッペンの位置がずれて読めない、が理由。
+   w＝その列の固定幅。table-layout:fixed なので、ここに書いた幅がそのまま列幅になる
+   （幅を書いていないタイトル列だけが残り幅を取る）。列幅が中身に左右されない＝
+   区画がどれでもワッペンの左端と縦位置が揃う。
    '@' は工程7マスの位置を指す目印（列見出しの「工程」もここに掛かる）。
-   td を丸ごと返すのは、投稿日時・再生数・登録者増が値の有無で class を変えるため。
+   td を丸ごと返すのは、投稿日時が値の有無で中身もツールチップも変わるため。
    sort:1 の列だけ見出しを押して並べ替えできる（キー名は SORT_DB と揃える）。 */
+/* 表の投稿日時は列幅を詰めてあるので年と曜日を落とす（全文はツールチップに残す）。
+   例: 2026-08-30(土) 18:00 → 08-30 18:00 */
+const shortDT = s => String(s || '').replace(/^\d{4}-/, '').replace(/\([日月火水木金土]\)/, '');
 const MCOL = {
-  seq:   {sort:1, w:'70px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
+  seq:   {sort:1, w:'66px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
   title: {sort:1,                  td: it => `<td class="ttl">${esc(it.title)}</td>`},
   state: {label:'状態', w:'112px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
-  rev:   {label:'版',   w:'104px', td: it => `<td class="bcol">${revBadgeHTML(it)}</td>`},
+  rev:   {label:'版',   w:'110px', td: it => `<td class="bcol">${revBadgeHTML(it)}</td>`},
   open:  {label:'指摘', w:'62px',  td: it => `<td class="bcol">${openBadgeHTML(it)}</td>`},
-  genre: {sort:1, w:'104px',       td: it => `<td><span class="genre">${esc(it.genreLabel)}</span></td>`},
-  days:  {sort:1, w:'68px', thx:' num',
-          td: it => `<td class="num">${it.days == null ? '—' : it.days + '日'}</td>`},
-  pub:   {label:'投稿日時', w:'142px',
-          td: it => `<td class="${it.resv || it.pub ? '' : 'dim'}">${
-            it.resv ? `<span class="resv">🗓 ${esc(it.resv)}</span>` : (esc(it.pub) || '—')}</td>`},
-  plays: {sort:1, w:'84px', thx:' num',
-          td: it => `<td class="num${it.plays == null ? ' dim' : ''}">${it.plays == null ? '—' : nf(it.plays)}</td>`},
-  subs:  {sort:1, w:'82px', thx:' num',
-          td: it => `<td class="num${it.subs == null ? ' dim' : ''}">${
-            it.subs == null ? '—' : (it.subs > 0 ? '+' : '') + it.subs}</td>`},
+  genre: {sort:1, w:'88px',        td: it => `<td><span class="genre">${esc(it.genreLabel)}</span></td>`},
+  days:  {sort:1, w:'56px', thx:' num',
+          td: it => `<td class="num">${it.days == null ? '' : it.days + '日'}</td>`},
+  pub:   {label:'投稿日時', w:'110px',
+          td: it => it.resv ? `<td title="${esc(it.resv)}"><span class="resv">🗓 ${esc(shortDT(it.resv))}</span></td>`
+                  : it.pub  ? `<td title="${esc(it.pub)}">${esc(shortDT(it.pub))}</td>` : '<td></td>'},
+  plays: {sort:1, w:'66px', thx:' num',
+          td: it => `<td class="num">${it.plays == null ? '' : nf(it.plays)}</td>`},
+  subs:  {sort:1, w:'54px', thx:' num',
+          td: it => `<td class="num">${it.subs == null ? '' : (it.subs > 0 ? '+' : '') + it.subs}</td>`},
   ok:    {label:'承認', thx:' okcol', td: it => `<td class="okcol">${quickOkHTML(it)}</td>`}
 };
-/* 区画ごとに出す列を変える。未投稿の区画には「—」しか入らない3列（投稿日時・再生数・
-   登録者増）を出さず、投稿済みの区画には意味を持たない3列（状態・版・承認）を出さない。
-   並べ替え・絞り込み中は区画そのものが消える（sectionsOff）ので、そのときだけ全列を出す。 */
-const COLS_FULL = ['seq','title','state','rev','open','genre','@','days','pub','plays','subs','ok'];
-const COLS_WIP  = ['seq','title','state','rev','open','genre','@','days','ok'];
-const COLS_DONE = ['seq','title','genre','@','days','pub','plays','subs'];
-const colsOfSec = s => s.key === 'done' ? COLS_DONE : COLS_WIP;
-const colCount  = cols => cols.length - 1 + PSTAGES.length;
+/* 列は全区画で共通の1セット（オーナー差し戻し 2026-09-03）。区画ごとに列を変えると
+   表を分けることになり、区画のあいだで列幅が揃わずワッペンの縦位置がずれる。
+   値が無いマスは「—」を並べず空欄にする（読むものが減るほうが速い）。
+   '@' は工程7マスの位置を指す目印。 */
+const MCOLS    = ['seq','title','state','rev','open','genre','@','days','pub','plays','subs','ok'];
+const colCount = cols => cols.length - 1 + PSTAGES.length;
 
 function colTH(k){
   const c = MCOL[k], w = c.w ? ` style="width:${c.w}"` : '';
@@ -2424,24 +2440,19 @@ const mtxTable = (cols, body) => `<table><thead>${mtxHead(cols)}</thead><tbody>$
 
 function matrixTable(core){
   const rows = core.items;         /* 絞り込み・並べ替え・ページ切りは DB 側で済んでいる */
-  /* 区画ごとに列が違う＝区画ごとに別の表にし、見出しは表の手前の帯（.csechead）に置く。
-     並べ替え・絞り込み中（sectionsOff）は区画を出さないので1つの表のまま＝列見出しを
-     押しての並べ替えは今までどおり効く（クリックの受け口は .mtx th.sortable のまま）。 */
-  const flat = !rows.length || sectionsOff();
-  const inner = !rows.length
-    ? mtxTable(COLS_FULL,
-        `<tr class="emptyrow"><td colspan="${colCount(COLS_FULL)}">条件に一致する動画はありません</td></tr>`)
-    : flat
-      ? mtxTable(COLS_FULL, rows.map(it => mtxRow(it, COLS_FULL)).join(''))
-      : groupSections(rows).map(s => {
-          const cols = colsOfSec(s);
-          const band = `<div class="csechead s-${s.key}${s.fold ? ' foldable' : ''}"${
-            secAttrs(s)}>${secHeadInner(s)}</div>`;
-          return band + (secOpen(s) ? mtxTable(cols, s.rows.map(it => mtxRow(it, cols)).join('')) : '');
-        }).join('');
+  const N = colCount(MCOLS);
+  /* 区画の見出しは表の中の帯行（全列 colspan）。表も列見出しも必ず1つに保つ
+     ＝どの区画の行でも列の縦位置が揃う（オーナー差し戻し 2026-09-03）。 */
+  const secTR = s => `<tr class="secrow s-${s.key}${s.fold ? ' foldable' : ''}"${secAttrs(s)}>
+      <td colspan="${N}">${secHeadInner(s)}</td></tr>`;
+  const body = !rows.length
+    ? `<tr class="emptyrow"><td colspan="${N}">条件に一致する動画はありません</td></tr>`
+    : sectionsOff() ? rows.map(it => mtxRow(it, MCOLS)).join('')
+    : groupSections(rows).map(s =>
+        secTR(s) + (secOpen(s) ? s.rows.map(it => mtxRow(it, MCOLS)).join('') : '')).join('');
 
-  return `<div class="tblwrap mtx${flat ? ' wide' : ''}${rows.length > 14 ? ' tall' : ''}">${
-    inner}</div>${stockCards(rows)}`;
+  return `<div class="tblwrap mtx${rows.length > 14 ? ' tall' : ''}">${
+    mtxTable(MCOLS, body)}</div>${stockCards(rows)}`;
 }
 
 /* 狭幅（スマホ）用のカード表示。表と同じ rows から描画し CSS で出し分ける */
