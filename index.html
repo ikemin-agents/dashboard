@@ -1579,7 +1579,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/3 23:20';
+const BUILT_AT = '9/3 23:42';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2272,13 +2272,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/3 23:20') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/3 23:42') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/3 23:20') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/3 23:42') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3793,22 +3793,21 @@ function playsChart(rows, W, opt){
 
 /* ── 公開順に見る平均視聴率（横軸＝公開日の実日付・縦軸＝%）───────── */
 function scatterChart(items, W, opt){
-  const H = W < 420 ? 190 : 230;
-  const PL = 46, PR = 14, PT = 21, PB = 26;
-  const plotW = Math.max(20, W - PL - PR), plotH = Math.max(20, H - PT - PB);
+  const PL = 46, PR = 14, PT = 21;
+  const plotW = Math.max(20, W - PL - PR);
   const ds = items.map(i => i.d);
   let d0 = Math.min(...ds), d1 = Math.max(...ds);
   if (d1 === d0) { d0 -= 1; d1 += 1; }
+  /* 横軸は推移グラフと同じ規則（毎日の目盛り・MM/DD(曜)・幅で斜め／間引き）に統一する（2026-09-03） */
+  const p0 = partsOf(new Date(d0 * DAY), {year:'numeric', month:'2-digit', day:'2-digit'});
+  const xt = dateTicks([{ d:d0, t:`${p0.year}-${p0.month}-${p0.day}` }, { d:d1, t:jstAdd(`${p0.year}-${p0.month}-${p0.day}`, d1 - d0) }], plotW);
+  const PB = xt.pb, H = (W < 420 ? 190 : 230) + (PB - 26);
+  const plotH = Math.max(20, H - PT - PB);
   const vs = items.map(i => i.v);
   const yr = niceTicks(Math.min(opt.thr, ...vs), Math.max(opt.thr, ...vs), 4);
   const X = d => PL + plotW * ((d - d0) / (d1 - d0));
   const Y = v => PT + plotH - plotH * ((v - yr.lo) / ((yr.hi - yr.lo) || 1));
-  const xTicks = [];
-  for (let k = 0; k <= 4; k++){
-    const d = Math.round(d0 + (d1 - d0) * k / 4);
-    xTicks.push({ v:d, lb: fmtMDW(new Date(d * DAY).toISOString()) });
-  }
-  const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks, yFmt:v => String(Math.round(v)) };
+  const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks:xt.ticks, xRot:xt.rot, yFmt:v => String(Math.round(v)) };
   const ty = Y(opt.thr);
   const thr = `<line x1="${PL}" y1="${ty.toFixed(1)}" x2="${(PL + plotW).toFixed(1)}" y2="${ty.toFixed(1)}"
       stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" style="stroke:var(--crit)"/>
