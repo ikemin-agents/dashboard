@@ -341,7 +341,7 @@ td.dim{color:var(--muted)}
    12列ぶんの合計が約1280pxなので、左右パディングを 14px → 10px に詰めて収める。 */
 .mtx table{table-layout:fixed; min-width:1280px}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
-.mtx th.st,.mtx td.st{width:40px; text-align:center; padding-left:2px; padding-right:2px;
+.mtx th.st,.mtx td.st{width:54px; text-align:center; padding-left:2px; padding-right:2px;
   background:var(--stage-bg)}
 /* 工程の列見出しは 10px では読めない（オーナー指摘 #206）ので本文並みの 12.5px にする。
    7列ぶんの幅は 1文字ずつ詰める（letter-spacing:-.02em）＋左右パディング 2px で吸収し、
@@ -1250,32 +1250,24 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .chchip[aria-pressed="false"]{color:var(--muted); background:transparent; border-style:dashed}
 .chchip[aria-pressed="false"] i{background:transparent}
 .chlegend .hint{font-size:var(--fs-2xs); color:var(--muted); font-weight:400}
-/* チャンネルの現在地（縦持ち）。大分類の行は帯、指標名は太字、期間・目安は薄字。
-   数字の下の補足（計測済 N 本など）は .sub で1行 */
-.nowtbl table{min-width:0}
-.nowtbl th, .nowtbl td{padding-left:10px; padding-right:10px}
-.nowtbl tbody th.lb{text-align:left; font-weight:680; color:var(--ink); white-space:nowrap}
-.nowtbl table{width:auto}
-.nowtbl td.why{color:var(--muted); font-size:var(--fs-2xs); white-space:normal; min-width:200px; max-width:360px; line-height:1.45}
-.nowtbl th.lb .subm{display:none; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; white-space:normal; line-height:1.4; margin-top:2px; max-width:150px}
-/* スマホでは「期間・目安」の列を畳み、指標名の下に小さく出す（列が画面の外に出るため） */
+/* チャンネルの現在地: 大分類ごとの小さな表を横に並べる。指標名の下に期間・目安を薄字で、
+   数字の下の補足（計測済 N 本など）は .sub で1行。幅が足りなければ表が次の段に折り返す */
+.nowgrid{display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:var(--sp-3)}
+.nowblk{border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; background:var(--surface-1); min-width:0}
+.nowblk table{width:100%; table-layout:auto}
+.nowblk th, .nowblk td{padding:7px 10px}
+.nowblk thead th{position:static; font-size:var(--fs-2xs); letter-spacing:.05em; text-transform:none; color:var(--ink);
+  background:var(--surface-2); border-bottom:1px solid var(--border)}
+.nowblk thead th.num{font-size:var(--fs-sm)}
+.nowblk tbody th.lb{text-align:left; font-weight:680; color:var(--ink); white-space:normal; vertical-align:top; line-height:1.3}
+.nowblk th.lb .subm{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; white-space:normal; line-height:1.35; margin-top:2px}
+.nowblk td.num{vertical-align:top; font-weight:600; white-space:nowrap}
+.nowblk td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:2px; white-space:nowrap}
 @media (max-width:640px){
-  .nowtbl table{width:100%}
-  .nowtbl td.why, .nowtbl thead th:nth-child(2){display:none}
-  .nowtbl th.lb .subm{display:block}
-  .nowtbl tbody th.lb{white-space:normal; vertical-align:top; width:34%}
-  .nowtbl th.lb .subm{max-width:none}
-  .nowtbl table td.num, .nowtbl table thead th.num{min-width:0; white-space:normal}
-  .nowtbl thead th.num .chcell{white-space:normal; display:inline}
-  .nowtbl td .sub{white-space:normal}
-  .nowtbl th, .nowtbl td{padding-left:7px; padding-right:7px}
-  .nowtbl td .sub.subw{display:none}   /* 「登録者 433/500・再生 74万/300万」は幅が足りないので畳む */
+  .nowgrid{grid-template-columns:1fr}
+  .nowblk td .sub{white-space:normal}
+  .nowblk td .sub.subw{display:none}   /* 「登録者 433/500・再生 74万/300万」は幅が足りないので畳む */
 }
-.nowtbl tr.grow th{background:var(--surface-2); color:var(--ink); font-weight:700; font-size:var(--fs-2xs);
-  letter-spacing:.07em; padding-top:6px; padding-bottom:6px; border-bottom:1px solid var(--border)}
-.nowtbl td.num, .nowtbl thead th.num{vertical-align:top; font-weight:600; min-width:150px; white-space:nowrap}
-.nowtbl td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:3px}
-.nowtbl td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:3px}
 .chcell{display:inline-flex; align-items:center; gap:2px; white-space:nowrap}
 /* 視聴の質: チャンネルごとの小さな表（旧 .substats の置き換え） */
 .qtbl{font-size:var(--fs-2xs); margin:6px 0 2px}
@@ -1627,7 +1619,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/4 09:26';
+const BUILT_AT = '9/4 22:00';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2347,13 +2339,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/4 09:26') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/4 22:00') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/4 09:26') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/4 22:00') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2540,7 +2532,7 @@ const secAttrs = s => s.fold
    例: 2026-08-30(土) 18:00 → 08-30 18:00 */
 const shortDT = s => String(s || '').replace(/^\d{4}-/, '').replace(/\([日月火水木金土]\)/, '');
 const MCOL = {
-  seq:   {sort:1, w:'66px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
+  seq:   {sort:1, w:'78px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
   title: {sort:1,                  td: it => `<td class="ttl">${esc(it.title)}</td>`},
   state: {label:'状態', w:'112px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
   rev:   {label:'版',   w:'110px', td: it => `<td class="bcol">${revBadgeHTML(it)}</td>`},
@@ -2553,7 +2545,7 @@ const MCOL = {
                   : it.pub  ? `<td title="${esc(it.pub)}">${esc(shortDT(it.pub))}</td>` : '<td></td>'},
   plays: {sort:1, w:'66px', thx:' num',
           td: it => `<td class="num">${it.plays == null ? '' : nf(it.plays)}</td>`},
-  subs:  {sort:1, w:'54px', thx:' num',
+  subs:  {sort:1, w:'78px', thx:' num',
           td: it => `<td class="num">${it.subs == null ? '' : (it.subs > 0 ? '+' : '') + it.subs}</td>`},
   ok:    {label:'承認', thx:' okcol', td: it => `<td class="okcol">${quickOkHTML(it)}</td>`}
 };
@@ -2576,13 +2568,20 @@ function mtxHead(cols){
   return `<tr>${gi ? `<th class="pad" colspan="${gi}"></th>` : ''}<th class="grp" colspan="${
       PSTAGES.length}">工程</th>${right ? `<th class="pad" colspan="${right}"></th>` : ''}</tr>
     <tr>${cols.map(k => k === '@'
-      ? PSTAGES.map((s, j) => `<th class="st${j === 0 ? ' first' : (j === PSTAGES.length - 1 ? ' last' : '')}">${s.name}</th>`).join('')
+      ? PSTAGES.map((s, j) => `<th class="st${j === 0 ? ' first' : (j === PSTAGES.length - 1 ? ' last' : '')}" title="${s.name}">${s.short}</th>`).join('')
       : colTH(k)).join('')}</tr>`;
 }
 const mtxRow = (it, cols) => `<tr data-vid="${it.id}" tabindex="0" class="${
     (it.stage === 'dropped' ? 'dropped ' : '') + stateCls(it)}">${
     cols.map(k => k === '@' ? progressCells(it) : MCOL[k].td(it)).join('')}</tr>`;
-const mtxTable = (cols, body) => `<table><thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
+/* 列幅は <colgroup> で決める。table-layout:fixed は「最初の行のセル」の幅しか見ないが、
+   最初の行は「工程」の帯（colspan）なので、2行目の th に書いた幅は無視されて全列が
+   均等割りになり、工程7マスが横に広がっていた（オーナー指摘 2026-09-04）。
+   col に幅を書けば行の中身に関係なく効く。幅を書かないタイトル列が残りを取る。 */
+const mtxCols = cols => `<colgroup>${cols.map(k => k === '@'
+    ? PSTAGES.map(() => '<col style="width:54px">').join('')
+    : `<col${MCOL[k].w ? ` style="width:${MCOL[k].w}"` : (k === 'ok' ? ' style="width:76px"' : '')}>`).join('')}</colgroup>`;
+const mtxTable = (cols, body) => `<table>${mtxCols(cols)}<thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
 
 function matrixTable(core){
   const rows = core.items;         /* 絞り込み・並べ替え・ページ切りは DB 側で済んでいる */
@@ -4193,16 +4192,18 @@ async function renderAnalytics(){
       { lb:'広告収益', note:'登録者 1,000 と再生 1,000万・低い方', cell: st => mnOf(st, MONETIZE[1]) }
     ]}
   ];
-  const nowRows = sers.length ? GROUPS.map(g => `<tr class="grow"><th colspan="${2 + sers.length}">${esc(g.nm)}</th></tr>` +
-    g.rows.map(r => `<tr><th class="lb">${esc(r.lb)}<span class="subm">${esc(r.note)}</span></th><td class="why">${esc(r.note)}</td>${
-      sers.map(s => `<td class="num" style="--chac:${s.color}">${r.cell(ST[s.ch])}</td>`).join('')}</tr>`).join('')).join('')
-    : `<tr class="emptyrow"><td colspan="3">表示するチャンネルがありません</td></tr>`;
+  /* 大分類ごとに小さな表を1つずつ作り、横に並べる（幅いっぱいに使って縦を短く・2026-09-04）。
+     各表: 見出し帯＝大分類名＋チャンネルの色チップ、行＝指標（名前の下に期間・目安）、列＝チャンネル */
+  const nowBlocks = sers.length ? GROUPS.map(g => `<div class="nowblk"><table>
+      <thead><tr><th>${esc(g.nm)}</th>${sers.map(s => `<th class="num" title="${esc(s.name)}"><span class="chcell">${chSw(s.color)}${s.icon}</span></th>`).join('')}</tr></thead>
+      <tbody>${g.rows.map(r => `<tr><th class="lb">${esc(r.lb)}<span class="subm">${esc(r.note)}</span></th>${
+        sers.map(s => `<td class="num">${r.cell(ST[s.ch])}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div>`).join('')
+    : `<div class="noitem">表示するチャンネルがありません</div>`;
   const nowCard = `<div class="card span2">
-      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>チャンネルの現在地</h2></div>
-      <p class="axnote">登録者と再生数は毎朝6時に取り込んだ実数。視聴の質は計測できた動画だけの値。収益化は2条件（登録者・再生数）の達成率のうち低い方</p>
-      <div class="tblwrap nowtbl"><table>
-        <thead><tr><th>指標</th><th>期間・目安</th>${sers.map(s => `<th class="num"><span class="chcell">${chSw(s.color)}${s.icon} ${esc(s.name)}</span></th>`).join('')}</tr></thead>
-        <tbody>${nowRows}</tbody></table></div>
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>チャンネルの現在地</h2>
+        <span class="axh">登録者と再生数は毎朝6時に取り込んだ実数。視聴の質は計測できた動画だけの値。収益化は2条件（登録者・再生数）の達成率のうち低い方。列の色チップ＝チャンネル（${sers.map(s => `${s.icon} ${esc(s.name)}`).join('・')}）</span></div>
+      <div class="nowgrid">${nowBlocks}</div>
     </div>`;
 
   /* ── 期間切替（登録者・再生数の2つのグラフで共有）───────────── */
