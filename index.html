@@ -218,6 +218,15 @@ body[data-chindep="1"] .chtab[data-ch]:hover{opacity:1}
 
 /* ═══ ナビ ══════════════════════════════════════════════════════ */
 .nav{background:var(--surface-1); border-top:1px solid var(--border-2)}
+/* 下ナビに残るのが「制作」1つだけになったら、ナビごと出さない（押す先が無い）。
+   チャンネル共通の画面（分析・運営）は広い画面でもスマホでもチャンネルタブの右に出る
+   （.navbtn.indep は常に display:none）ので、下ナビは本当に「制作」1つしか無い。
+   ⚠️ 「あなたの番」の件数（バッジ）はこのナビが持っていた。隠すぶん、チャンネルタブと
+      スマホのチャンネル選択に同じバッジを出す（下の .chtab .badge）。 */
+body[data-solonav="1"] .nav{display:none}
+.chtab .badge,.chpick .badge{background:var(--warn-tint); color:var(--ink); border:1px solid var(--border);
+  border-radius:var(--r-pill); font-size:var(--fs-2xs); padding:0 6px; font-weight:700; line-height:1.5;
+  margin-left:3px; flex:0 0 auto}
 .nav-in{max-width:min(2240px, 94vw); margin:0 auto; padding:0 var(--sp-5); display:flex; gap:var(--sp-1)}
 .navbtn{appearance:none; border:none; background:transparent; font-family:inherit; font-size:var(--fs-md);
   color:var(--ink-2); padding:12px 14px 10px; cursor:pointer; border-bottom:2px solid transparent;
@@ -244,7 +253,7 @@ main{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-6) var(--sp-5)
 .card{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   padding:var(--sp-5); box-shadow:var(--shadow-2); min-width:0}
 .stack{display:grid; gap:var(--sp-4); min-width:0}
-.stack>*, .kpis>*, .runs>*{min-width:0}
+.stack>*, .runs>*{min-width:0}
 .note{display:flex; gap:9px; align-items:flex-start; background:var(--surface-2); border:1px solid var(--border-2);
   border-radius:var(--r-md); padding:10px 13px; font-size:var(--fs-sm); color:var(--ink-2); margin-bottom:var(--sp-4)}
 .note b{color:var(--ink); font-weight:650}
@@ -1206,15 +1215,6 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .sysnotes{margin:var(--sp-3) 0 0; padding-left:1.25em; font-size:var(--fs-2xs); color:var(--ink-2); line-height:1.7}
 
 /* ═══ 分析 ══════════════════════════════════════════════════════ */
-.kpis{display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:var(--sp-2)}
-.kpi{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
-  padding:var(--sp-4) var(--sp-5); box-shadow:var(--shadow-2)}
-.kpi .lb{font-size:var(--fs-xs); color:var(--ink-2); margin-bottom:6px}
-.kpi .vl{font-size:1.7rem; font-weight:680; line-height:1.1; letter-spacing:-.015em}
-.kpi.hero{border-top:3px solid var(--chac)}
-.kpi.hero .vl{font-size:var(--fs-hero)}
-.kpi .dl{font-size:var(--fs-2xs); color:var(--ink-2); margin-top:6px; display:inline-flex; align-items:center; gap:5px}
-.kpi .dl .up{color:var(--up); font-weight:700}
 .spark{position:relative}
 .spark svg{display:block; overflow:visible}
 .sparkcap{font-size:var(--fs-xs); color:var(--ink-2); margin-top:10px; font-variant-numeric:tabular-nums}
@@ -1228,11 +1228,6 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .track .fill{height:100%; background:var(--meter-fill); border-radius:var(--r-pill); min-width:5px}
 .meterblk .cond{font-size:var(--fs-2xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
 .perftbl table{min-width:1000px}
-.substats{display:flex; flex-wrap:wrap; gap:var(--sp-3) var(--sp-6); margin:2px 0 var(--sp-2)}
-.substat{display:flex; flex-direction:column; gap:2px}
-.substat .k{font-size:var(--fs-2xs); color:var(--muted)}
-.substat .v{font-size:1.25rem; font-weight:680; font-variant-numeric:tabular-nums; letter-spacing:-.01em; line-height:1.1}
-.substat .v small{font-size:var(--fs-xs); font-weight:600; color:var(--ink-2)}
 .distwrap{overflow-x:auto; margin-top:var(--sp-2)}
 .dist{min-width:340px}
 .dist svg{display:block}
@@ -1243,7 +1238,36 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .minitbl{display:none; margin-top:10px; max-width:300px}
 .minitbl.show{display:block}
 
-/* ── 分析タブのレイアウト（2026-09-03 作り直し）──────────────────
+/* ── 凡例（チャンネルの色＝押すと表示のオン／オフ・2026-09-04）────────
+   色はチャンネル専用にしてあるので、押していない状態は色を抜いた白抜きで表す。 */
+.chlegend{display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2); margin:0 0 var(--sp-3)}
+.chchip{display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-family:inherit;
+  font-size:var(--fs-sm); font-weight:650; color:var(--ink); background:var(--surface-1);
+  border:1px solid var(--border); border-radius:var(--r-pill); padding:6px 14px; white-space:nowrap}
+.chchip:hover{background:var(--surface-2)}
+.chchip i{width:11px; height:11px; border-radius:3px; flex:0 0 auto; background:var(--chac);
+  box-shadow:inset 0 0 0 1.5px var(--chac)}
+.chchip[aria-pressed="false"]{color:var(--muted); background:transparent; border-style:dashed}
+.chchip[aria-pressed="false"] i{background:transparent}
+.chlegend .hint{font-size:var(--fs-2xs); color:var(--muted); font-weight:400}
+/* チャンネルの現在地（表）。数字の下に先週比などの補足を1行入れる */
+.nowtbl table{min-width:720px}
+.nowtbl td{vertical-align:top}
+.nowtbl td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:3px}
+.chcell{display:inline-flex; align-items:center; gap:2px; white-space:nowrap}
+/* 視聴の質: チャンネルごとの小さな表（旧 .substats の置き換え） */
+.qtbl{font-size:var(--fs-2xs); margin:6px 0 2px}
+.qtbl th,.qtbl td{padding:3px 8px 3px 0; border-bottom:none; white-space:nowrap}
+.qtbl thead th{position:static; background:transparent; color:var(--muted); font-size:var(--fs-2xs);
+  letter-spacing:.03em; text-transform:none; font-weight:600; padding-bottom:1px}
+.qtbl td{color:var(--ink); font-variant-numeric:tabular-nums}
+.qtbl tbody tr:hover td{background:transparent}
+.qtbl td:first-child{font-weight:650}
+/* 収益化の予実: チャンネルごとにひとかたまり */
+.monetch + .monetch{margin-top:var(--sp-5); padding-top:var(--sp-4); border-top:1px solid var(--border-2)}
+.monethd{font-size:var(--fs-sm); font-weight:680; display:flex; align-items:center; gap:2px}
+
+/* ── 分析タブのレイアウト（2026-09-03 作り直し / 09-04 横断化）──────
    PC は2列。表・分布・全件テーブルなど横幅の要るものは .span2 で2列ぶんを使う。 */
 .anagrid{display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-4); margin-top:var(--sp-3)}
 .anagrid>*{min-width:0}
@@ -1251,7 +1275,6 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .anahead{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; margin-top:var(--sp-4)}
 .anahead .chips{margin:0}
 .anarange{font-size:var(--fs-2xs); color:var(--muted)}
-.kpi .def{font-size:var(--fs-2xs); color:var(--muted); margin-top:5px; line-height:1.5}
 /* グラフは幅が決まってから中身を描く（drawSpark）。高さは SVG 側が決める */
 .chartwrap{position:relative; margin-top:var(--sp-2); min-width:0}
 .chartwrap svg{display:block; width:100%; height:auto; overflow:visible}
@@ -1264,9 +1287,6 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .qblk h3{font-size:var(--fs-sm); font-weight:680; margin:0 0 3px; display:flex; align-items:baseline;
   gap:8px; flex-wrap:wrap}
 .qblk h3 .goal{font-size:var(--fs-2xs); font-weight:600; color:var(--muted)}
-.qblk .substats{margin:6px 0 0}
-.qblk .substat .v{font-size:1.05rem}
-.qblk.big .substat .v{font-size:1.25rem}
 /* 収益化の到達見込み */
 .meterblk .pace{font-size:var(--fs-2xs); color:var(--ink-2); line-height:1.6; max-width:560px}
 /* 公開後7日の初速（横棒）。SVG ではなく素の要素なので幅にそのまま追従する */
@@ -1300,7 +1320,7 @@ details.guide .axnote{margin-top:var(--sp-2)}
   .qgrid{grid-template-columns:1fr}
 }
 @media (max-width:640px){
-  .kpis{grid-template-columns:1fr 1fr}
+  .chlegend .hint{flex:1 0 100%}
   .hbar{grid-template-columns:minmax(80px,1fr) minmax(40px,1.2fr) auto; font-size:var(--fs-2xs)}
   .hbar .hval{min-width:44px}
 }
@@ -1360,6 +1380,10 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .chtab.sys[aria-selected="true"]{font-size:var(--fs-sm)}
   .chtab.sys[aria-selected="true"] .lbl{display:inline}
   .syncchip{display:none}
+  /* 下の固定タブバーが無い（＝制作1つだけ）ときは、その分の余白も取らない */
+  body[data-solonav="1"] main{padding-bottom:var(--sp-6)}
+  body[data-solonav="1"] footer{padding-bottom:var(--sp-4)}
+  body[data-solonav="1"] #toast{bottom:16px}
   .nav{position:fixed; bottom:0; left:0; right:0; top:auto; border-top:1px solid var(--border);
     border-bottom:none; background:var(--surface-1); z-index:50; padding-bottom:env(safe-area-inset-bottom)}
   /* タブ数は権限で変わる（制限ありユーザーは「稼働」が出ない・#208 / #249 でシステムが増えた）。
@@ -1579,7 +1603,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/3 23:42';
+const BUILT_AT = '9/4 09:07';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1673,8 +1697,9 @@ async function q(builder){
 const state = {
   user:null, me:null, ch:null, view:'stock', stockView:'table', stockFilter:null,
   stockQ:'', stockGenre:'', stockSort:null, stockPage:0, detail:null, open:null,
-  /* 分析タブ: 推移グラフの期間（日数・0=全部）・動画別の成績の並べ替え・「表で見る」の開閉 */
-  anaRange:30, anaSort:null, anaTbl:{},
+  /* 分析タブ: 推移グラフの期間（日数・0=全部）・動画別の成績の並べ替え・「表で見る」の開閉・
+     凡例で消しているチャンネル（{slug:true} が非表示） */
+  anaRange:30, anaSort:null, anaTbl:{}, anaOff:{},
   filtersOpen:false, busy:false, lastSync:null,
   /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
   secOpen:{}
@@ -1720,7 +1745,9 @@ const resetStockFilters = () => {
 const VIEWS = [
   /* バッジ＝「あなたが動く番」の総数（承認待ち ＋ ネタの仕分け待ち・#314） */
   {key:'stock',     icon:'🗂', label:'制作', badge:() => pendingList(state.ch).length + triageCount(state.ch)},
-  {key:'analytics', icon:'📈', label:'分析'},
+  /* 分析はチャンネル横断の1画面（2026-09-04）。見えるチャンネルを色で重ねて出すので、
+     チャンネルタブの右（運営の左）の共通タブに置く。 */
+  {key:'analytics', icon:'📈', label:'分析', chIndep:true},
   /* 運営（オーナー決定 2026-08-24）＝ 稼働・システム・費用の3タブを1つに畳んだもの。
      3つとも「運営の内側」の話で、分かれていたのはデータの出どころが違うだけだった。
      中は上から「いま／お金／記録／調べる」。常に開くのは「いま」（自動運転・gen-farm）だけで、
@@ -2198,6 +2225,19 @@ async function loadAnalytics(ch){
   store.analytics[ch] = { kpi, pubs: primaryPubs, daily, mediaKey: primary ? primary.kpi_media_key : null };
   return store.analytics[ch];
 }
+/* 分析タブは見えるチャンネル全部を1画面に重ねる（2026-09-04）。チャンネルごとの取得を
+   並列で回して束ねるだけ（1本ぶんの取得と結果はまったく同じもの）。束ねたものは
+   ANA_ALL のキーで持つ（チャンネルごとのキャッシュもそのまま残る）。 */
+const ANA_ALL = '__all__';
+async function loadAnalyticsAll(){
+  if (store.analytics[ANA_ALL]) return store.analytics[ANA_ALL];
+  const slugs = store.channels.map(c => c.slug);
+  const got = await Promise.all(slugs.map(s => loadAnalytics(s)));
+  const out = {};
+  slugs.forEach((s, i) => { out[s] = got[i]; });
+  store.analytics[ANA_ALL] = out;
+  return out;
+}
 /* ══ シェル ═════════════════════════════════════════════════════ */
 function renderShell(){
   /* 見えないビューを選んだ状態が残らないようにする（権限が変わった場合の保険・#208） */
@@ -2206,11 +2246,17 @@ function renderShell(){
 
   /* いま見ているのがチャンネル共通の画面か（＝チャンネルタブが「戻り道」になる） */
   const indepNow = !!(views.find(x => x.key === state.view) || {}).chIndep;
+  /* 下ナビを隠すとき（残るのが「制作」1つだけのとき）は、「あなたの番」の件数を
+     チャンネルタブ側へ移す。数え方は下ナビのバッジとまったく同じ（いまのチャンネルぶん）。 */
+  const stockV = views.find(x => x.key === 'stock');
+  const soloNav = views.filter(x => !x.chIndep).length <= 1;
+  const stockN = (soloNav && stockV && stockV.badge) ? stockV.badge() : 0;
+  const stockBadge = stockN ? `<span class="badge">${stockN}</span>` : '';
   $('#chtabs').innerHTML = store.channels.map(c => {
     const m = chMeta(c.slug), on = state.ch === c.slug;
     return `<button class="chtab" role="tab" aria-selected="${on && !indepNow}" data-ch="${esc(c.slug)}"
        style="--chac:${m.accent}" title="${esc(c.name)}${indepNow ? 'の制作へ戻る' : ''}">
-      <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(c.name)}</button>`;
+      <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(c.name)}${on ? stockBadge : ''}</button>`;
   }).join('') || `<span class="chtab" aria-hidden="true">チャンネルなし</span>`;
 
   /* スマホ用: いま見ているチャンネルだけを出し、押すと他が開く（オーナー要望 2026-08-20）。
@@ -2223,6 +2269,7 @@ function renderShell(){
     return `<details class="chpick"><summary class="chcur" style="--chac:${m.accent}">
         <span class="chgo" data-ch="${esc(curCh.slug)}">
           <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(curCh.name)}</span>
+        ${stockBadge}
         ${others.length ? '<span class="tri" aria-label="ほかのチャンネルを選ぶ">▾</span>' : ''}</summary>
       ${others.length ? `<div class="chmenu">${others.map(c => {
         const om = chMeta(c.slug);
@@ -2249,6 +2296,10 @@ function renderShell(){
 
   const v = views.find(x => x.key === state.view);
   document.body.dataset.chindep = v && v.chIndep ? '1' : '0';
+  /* チャンネル共通の画面は広い画面でもスマホでもチャンネルタブの右に出るので、下ナビに
+     残るのはそのチャンネルの中の画面だけ。それが1つ（制作）しか無いなら押す先が無いので隠す。
+     「あなたの番」の件数は上のチャンネルタブへ移してある。 */
+  document.body.dataset.solonav = soloNav ? '1' : '0';
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   /* 詳細ビューが開いている間は #view-detail を優先表示（一覧は隠す） */
   if (state.detail != null) {
@@ -2272,13 +2323,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/3 23:42') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/4 09:07') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/3 23:42') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/4 09:07') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3610,12 +3661,14 @@ function threadHTML(videoId){
   return `<div class="thread">${bubbles}${fold}</div>`;
 }
 
-/* ══ ③ 分析 ════════════════════════════════════════════════════ */
-/* グラフは「幅が決まってから描く」。renderAnalytics が chartReg に build 関数を積み、
-   drawSpark() が実寸の幅で描き直す（初回描画と画面リサイズの両方が同じ道を通る）。
-   色は必ず CSS 変数か chMeta(ch).accent を使う（ダークテーマで反転するため）。
-   グラフの中で隣り合う塗りは「到達＝var(--good)」と「未達＝チャンネル色」の2色だけで、
-   var(--crit) は目安ラインの破線と文字にしか使わない（色覚差でも見分けられる組合せ）。 */
+/* ══ ③ 分析（チャンネル横断・2026-09-04）══════════════════════════
+   見えるチャンネルを1つの画面に重ねて出す。1チャンネルしか見えない人も同じコードが動く
+   （色が1色になるだけ）。
+   ・色＝チャンネル（chMeta(ch).accent）。最上部の凡例チップで表示のオン／オフ
+   ・「目安に到達／未達」は色ではなく 塗りつぶし／白抜き で表す（色はチャンネル専用にする）
+   ・var(--crit) は目安の破線と文字にしか使わない
+   グラフは「幅が決まってから描く」。renderAnalytics が chartReg に build 関数を積み、
+   drawSpark() が実寸の幅で描き直す（初回描画と画面リサイズの両方が同じ道を通る）。 */
 let chartReg = [];
 
 const ANA_DEF = {
@@ -3633,6 +3686,16 @@ const ANA_GOAL = {
   end:  {thr:0.85, step:0.1, dir:1,  unit:'',  fmt:v => v.toFixed(2)},
   loss: {thr:25,   step:5,   dir:-1, unit:'%', fmt:v => String(Math.round(v))}
 };
+
+/* いま凡例でオンにしているチャンネル（色と名前つき）。並びは常にチャンネルの並び順で固定
+   ＝オフにしても残ったチャンネルの色は変わらない */
+const anaChans = () => store.channels.filter(c => !state.anaOff[c.slug]);
+const anaSeries = () => anaChans().map(c => {
+  const m = chMeta(c.slug);
+  return { ch:c.slug, name:m.name, icon:m.icon, color:m.accent };
+});
+/* 表・吹き出しの中で使う色チップ */
+const chSw = color => `<i class="sw" style="background:${color}"></i>`;
 
 /* ── 目盛りの共通部品 ───────────────────────────────────────── */
 const dayNum = s => Math.round(new Date(String(s).slice(0, 10) + 'T00:00:00+09:00').getTime() / DAY);
@@ -3674,6 +3737,12 @@ function dateTicks(rows, plotW){
   }
   return { ticks, rot, pb: rot ? 58 : 26 };
 }
+/* 日付の並びの両端だけを dateTicks に渡す（横軸の規則を全グラフで同じにする） */
+const spanTicks = (d0, d1, plotW) => {
+  const p = partsOf(new Date(d0 * DAY), {year:'numeric', month:'2-digit', day:'2-digit'});
+  const t0 = `${p.year}-${p.month}-${p.day}`;
+  return dateTicks([{ d:d0, t:t0 }, { d:d1, t:jstAdd(t0, d1 - d0) }], plotW);
+};
 
 /* 薄い横グリッド線＋縦軸ラベル＋横軸の目盛り。グラフ本体より必ず後ろに沈める */
 function axesSvg(g){
@@ -3714,93 +3783,135 @@ function barPath(x, y, w, h, r){
     L${(x + w - r).toFixed(1)} ${y.toFixed(1)} Q${(x + w).toFixed(1)} ${y.toFixed(1)} ${(x + w).toFixed(1)} ${(y + r).toFixed(1)}
     L${(x + w).toFixed(1)} ${(y + h).toFixed(1)} Z`;
 }
-const HOVER_G = color => `<g class="hov" style="display:none">
+/* ホバーの十字線と印。チャンネルの数だけ印を置く（同じ日の全チャンネルを同時に示す） */
+const HOVER_G = colors => `<g class="hov" style="display:none">
     <line class="hl" stroke-width="1" vector-effect="non-scaling-stroke" style="stroke:var(--axis)"/>
-    <circle class="hd" r="4.5" stroke-width="2" vector-effect="non-scaling-stroke" style="fill:${color};stroke:var(--surface-1)"/>
+    ${colors.map(c => `<circle class="hd" r="4.5" stroke-width="2" vector-effect="non-scaling-stroke"
+      style="fill:${c};stroke:var(--surface-1)"/>`).join('')}
   </g>`;
 
-/* ── 折れ線（登録者の推移）─────────────────────────────────── */
-function lineChart(rows, W, opt){
+/* ── 折れ線（登録者の推移）チャンネルを重ねて描く ─────────────────
+   series = [{ch, name, color, rows:[{t, d, v}]}]（rows は日付の昇順） */
+function lineChart(series, W, opt){
   const PL = 46, PR = 14, PT = 21;
   const plotW = Math.max(20, W - PL - PR);
-  const xt = dateTicks(rows, plotW);
+  const all = series.reduce((s, x) => s.concat(x.rows), []);
+  const ds = all.map(r => r.d);
+  let d0 = Math.min(...ds), d1 = Math.max(...ds);
+  if (d1 === d0) { d0 -= 1; d1 += 1; }
+  const xt = spanTicks(d0, d1, plotW);
   const PB = xt.pb, H = (opt.H || (W < 420 ? 170 : 210)) + (PB - 26);
   const plotH = Math.max(20, H - PT - PB);
-  const vs = rows.map(r => r.v);
+  const vs = all.map(r => r.v);
   const yr = niceTicks(opt.yFrom0 ? 0 : Math.min(...vs), Math.max(...vs), 4);
-  const d0 = rows[0].d, d1 = rows[rows.length - 1].d, dspan = (d1 - d0) || 1;
-  const X = d => PL + plotW * ((d - d0) / dspan);
+  const X = d => PL + plotW * ((d - d0) / (d1 - d0));
   const Y = v => PT + plotH - plotH * ((v - yr.lo) / ((yr.hi - yr.lo) || 1));
-  const line = rows.map((r, i) => `${i ? 'L' : 'M'}${X(r.d).toFixed(1)} ${Y(r.v).toFixed(1)}`).join(' ');
-  const area = `${line} L${X(d1).toFixed(1)} ${(PT + plotH).toFixed(1)} L${X(d0).toFixed(1)} ${(PT + plotH).toFixed(1)} Z`;
-  const last = rows[rows.length - 1];
   const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks:xt.ticks, xRot:xt.rot, yFmt:axNum };
+  /* 面の塗りは1チャンネルのときだけ（重ねると濁って線が読めなくなる） */
+  const solo = series.length === 1;
+  const body = series.map(s => {
+    if (!s.rows.length) return '';
+    const line = s.rows.map((r, i) => `${i ? 'L' : 'M'}${X(r.d).toFixed(1)} ${Y(r.v).toFixed(1)}`).join(' ');
+    const last = s.rows[s.rows.length - 1];
+    const area = solo ? `<path d="${line} L${X(last.d).toFixed(1)} ${(PT + plotH).toFixed(1)}
+      L${X(s.rows[0].d).toFixed(1)} ${(PT + plotH).toFixed(1)} Z" style="fill:${s.color};opacity:.09"/>` : '';
+    return `${area}<path d="${line}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+        vector-effect="non-scaling-stroke" style="fill:none;stroke:${s.color}"/>
+      <circle cx="${X(last.d).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="4" stroke-width="2"
+        vector-effect="non-scaling-stroke" style="fill:${s.color};stroke:var(--surface-1)"/>`;
+  }).join('');
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
-      aria-label="${esc(opt.label || '')}。${axNum(vs[0])}から${axNum(vs[vs.length - 1])}${esc(opt.unit || '')}へ。">
+      aria-label="${esc(opt.label || '')}。${series.length}チャンネル。">
     ${axesSvg(g)}${unitSvg(2, PT - 9, opt.unit)}
-    <path d="${area}" style="fill:${opt.color};opacity:.09"/>
-    <path d="${line}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
-      vector-effect="non-scaling-stroke" style="fill:none;stroke:${opt.color}"/>
-    <circle cx="${X(last.d).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="4" stroke-width="2"
-      vector-effect="non-scaling-stroke" style="fill:${opt.color};stroke:var(--surface-1)"/>
-    ${HOVER_G(opt.color).replace('<line class="hl"', `<line class="hl" y1="${PT - 4}" y2="${PT + plotH}"`)}
+    ${body}
+    ${HOVER_G(series.map(s => s.color)).replace('<line class="hl"', `<line class="hl" y1="${PT - 4}" y2="${PT + plotH}"`)}
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
-  const pts = rows.map(r => ({ x:X(r.d), y:Y(r.v),
-    html:`${esc(fmtMDW(r.t + 'T00:00:00+09:00'))}　<b>${nf(r.v)}</b> ${esc(opt.unit || '')}` }));
+  /* ホバー: 同じ日の全チャンネルを1つの吹き出しにまとめる */
+  const days = [...new Set(ds)].sort((a, b) => a - b);
+  const pts = days.map(d => {
+    const hit = series.map(s => s.rows.find(r => r.d === d) || null);
+    const first = hit.find(Boolean);
+    const lines = series.map((s, i) => hit[i]
+      ? `${chSw(s.color)}${esc(s.name)}　<b>${nf(hit[i].v)}</b> ${esc(opt.unit || '')}`
+      : `${chSw(s.color)}${esc(s.name)}　—`).join('<br>');
+    return { x:X(d), y: first ? Y(first.v) : PT + plotH,
+             ys: hit.map(r => r ? Y(r.v) : null),
+             html:`${esc(fmtMDW((first ? first.t : '2000-01-01') + 'T00:00:00+09:00'))}<br>${lines}` };
+  });
   return { html, pts };
 }
 
 /* ── 再生数の推移: 上段＝1日の増分（棒）／下段＝累計（折れ線）───────────
    1つの絵に2つの縦軸を入れない（読み違いのもと）。単位の違う2つは上下の段に分け、
-   横軸（日付）だけを共有する。 */
-function playsChart(rows, W, opt){
+   横軸（日付）だけを共有する。棒はチャンネルごとに同じ日の中で横並び（積み上げない）。
+   series = [{ch, name, color, rows:[{t, d, inc, cum}]}] */
+function playsChart(series, W, opt){
   const PL = 46, PR = 14, PT = 21, GAP = 33;
   const plotW = Math.max(20, W - PL - PR);
-  const xt = dateTicks(rows, plotW);
+  const all = series.reduce((s, x) => s.concat(x.rows), []);
+  const ds = all.map(r => r.d);
+  let d0 = Math.min(...ds), d1 = Math.max(...ds);
+  if (d1 === d0) { d0 -= 1; d1 += 1; }
+  const xt = spanTicks(d0, d1, plotW);
   const PB = xt.pb, H = (W < 420 ? 218 : 250) + (PB - 26);
   const hTop = Math.max(24, Math.round((H - PT - GAP - PB) * 0.62));
   const hBot = Math.max(20, H - PT - GAP - PB - hTop);
   const yTop = PT, yBot = PT + hTop + GAP;
-  const d0 = rows[0].d, d1 = rows[rows.length - 1].d, dspan = (d1 - d0) || 1;
-  const X = d => PL + plotW * ((d - d0) / dspan);
-  const incs = rows.map(r => r.inc).filter(v => v != null);
+  const X = d => PL + plotW * ((d - d0) / (d1 - d0));
+  const incs = all.map(r => r.inc).filter(v => v != null);
+  const cums = all.map(r => r.cum);
   const ir = niceTicks(0, Math.max(1, ...incs), 3);
-  const cr = niceTicks(Math.min(...rows.map(r => r.cum)), Math.max(...rows.map(r => r.cum)), 2);
+  const cr = niceTicks(Math.min(...cums), Math.max(...cums), 2);
   const Yi = v => yTop + hTop - hTop * ((v - ir.lo) / ((ir.hi - ir.lo) || 1));
   const Yc = v => yBot + hBot - hBot * ((v - cr.lo) / ((cr.hi - cr.lo) || 1));
-  const xTicks = xt.ticks;
-  const bw = Math.max(2, Math.min(22, plotW / Math.max(1, rows.length) - 2.5));
-  const bars = rows.map(r => r.inc == null ? '' :
-    `<path d="${barPath(X(r.d) - bw / 2, Yi(r.inc), bw, (yTop + hTop) - Yi(r.inc), 3)}" style="fill:${opt.color};opacity:.9"/>`).join('');
-  const cline = rows.map((r, i) => `${i ? 'L' : 'M'}${X(r.d).toFixed(1)} ${Yc(r.cum).toFixed(1)}`).join(' ');
+  const n = Math.max(1, series.length);
+  const days = [...new Set(ds)].sort((a, b) => a - b);
+  /* 同じ日の中に n 本を横並びにする（棒どうしは 1.5px の隙間で分ける） */
+  const gw = Math.max(2.4, Math.min(22, plotW / Math.max(1, days.length) - 2.5));
+  const bw = Math.max(1.2, (gw - (n - 1) * 1.5) / n);
+  const bars = series.map((s, i) => s.rows.map(r => r.inc == null ? '' :
+    `<path d="${barPath(X(r.d) - gw / 2 + i * (bw + 1.5), Yi(r.inc), bw, (yTop + hTop) - Yi(r.inc), 3)}"
+       style="fill:${s.color};opacity:.9"/>`).join('')).join('');
+  const clines = series.map(s => s.rows.length
+    ? `<path d="${s.rows.map((r, i) => `${i ? 'L' : 'M'}${X(r.d).toFixed(1)} ${Yc(r.cum).toFixed(1)}`).join(' ')}"
+        stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+        vector-effect="non-scaling-stroke" style="fill:none;stroke:${s.color}"/>` : '').join('');
   const gTop = { x0:PL, y0:yTop, plotW, plotH:hTop, X, Y:Yi, yTicks:ir.ticks, xTicks:[], yFmt:axNum };
-  const gBot = { x0:PL, y0:yBot, plotW, plotH:hBot, X, Y:Yc, yTicks:cr.ticks, xTicks, xRot:xt.rot, yFmt:axNum };
+  const gBot = { x0:PL, y0:yBot, plotW, plotH:hBot, X, Y:Yc, yTicks:cr.ticks, xTicks:xt.ticks, xRot:xt.rot, yFmt:axNum };
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
-      aria-label="再生数の推移。上段は1日の増分、下段は累計。">
+      aria-label="再生数の推移。上段は1日の増分、下段は累計。${series.length}チャンネル。">
     ${axesSvg(gTop)}${unitSvg(2, yTop - 9, '回／日')}
     ${bars}
     ${axesSvg(gBot)}${unitSvg(2, yBot - 9, '累計 回')}
-    <path d="${cline}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
-      vector-effect="non-scaling-stroke" style="fill:none;stroke:${opt.color}"/>
-    ${HOVER_G(opt.color).replace('<line class="hl"', `<line class="hl" y1="${yTop - 4}" y2="${yBot + hBot}"`)}
+    ${clines}
+    ${HOVER_G(series.map(s => s.color)).replace('<line class="hl"', `<line class="hl" y1="${yTop - 4}" y2="${yBot + hBot}"`)}
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
-  const pts = rows.map(r => ({ x:X(r.d), y:Yc(r.cum),
-    html:`${esc(fmtMDW(r.t + 'T00:00:00+09:00'))}　この日 <b>${r.inc == null ? '—' : '+' + nf(r.inc)}</b> 回　／　累計 <b>${nf(r.cum)}</b> 回` }));
+  const pts = days.map(d => {
+    const hit = series.map(s => s.rows.find(r => r.d === d) || null);
+    const first = hit.find(Boolean);
+    const lines = series.map((s, i) => hit[i]
+      ? `${chSw(s.color)}${esc(s.name)}　この日 <b>${hit[i].inc == null ? '—' : '+' + nf(hit[i].inc)}</b> 回　／　累計 <b>${nf(hit[i].cum)}</b> 回`
+      : `${chSw(s.color)}${esc(s.name)}　—`).join('<br>');
+    return { x:X(d), y: first ? Yc(first.cum) : yBot + hBot,
+             ys: hit.map(r => r ? Yc(r.cum) : null),
+             html:`${esc(fmtMDW((first ? first.t : '2000-01-01') + 'T00:00:00+09:00'))}<br>${lines}` };
+  });
   return { html, pts };
 }
 
-/* ── 公開順に見る平均視聴率（横軸＝公開日の実日付・縦軸＝%）───────── */
+/* ── 公開順に見る平均視聴率（横軸＝公開日の実日付・縦軸＝%）─────────
+   点の色＝チャンネル、目安に到達＝塗りつぶし／未達＝白抜き。
+   items = [{d, at, v, seq, title, name, color}] */
 function scatterChart(items, W, opt){
   const PL = 46, PR = 14, PT = 21;
   const plotW = Math.max(20, W - PL - PR);
   const ds = items.map(i => i.d);
   let d0 = Math.min(...ds), d1 = Math.max(...ds);
   if (d1 === d0) { d0 -= 1; d1 += 1; }
-  /* 横軸は推移グラフと同じ規則（毎日の目盛り・MM/DD(曜)・幅で斜め／間引き）に統一する（2026-09-03） */
-  const p0 = partsOf(new Date(d0 * DAY), {year:'numeric', month:'2-digit', day:'2-digit'});
-  const xt = dateTicks([{ d:d0, t:`${p0.year}-${p0.month}-${p0.day}` }, { d:d1, t:jstAdd(`${p0.year}-${p0.month}-${p0.day}`, d1 - d0) }], plotW);
+  /* 横軸は推移グラフと同じ規則（毎日の目盛り・MM/DD(曜)・幅で斜め／間引き）に統一する */
+  const xt = spanTicks(d0, d1, plotW);
   const PB = xt.pb, H = (W < 420 ? 190 : 230) + (PB - 26);
   const plotH = Math.max(20, H - PT - PB);
   const vs = items.map(i => i.v);
@@ -3813,50 +3924,69 @@ function scatterChart(items, W, opt){
       stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" style="stroke:var(--crit)"/>
     <text x="${(PL + plotW).toFixed(1)}" y="${(ty - 5).toFixed(1)}" text-anchor="end" font-size="9.5" font-weight="700"
       font-family="system-ui,sans-serif" style="fill:var(--crit)">目安 ${opt.thr}%</text>`;
-  const dots = items.map(i => `<circle cx="${X(i.d).toFixed(1)}" cy="${Y(i.v).toFixed(1)}" r="4.5" stroke-width="2"
-      vector-effect="non-scaling-stroke" style="fill:${i.v >= opt.thr ? 'var(--good)' : opt.color};stroke:var(--surface-1)"/>`).join('');
+  const dots = items.map(i => {
+    const hit = i.v >= opt.thr;
+    return `<circle cx="${X(i.d).toFixed(1)}" cy="${Y(i.v).toFixed(1)}" r="4.5" stroke-width="2"
+      vector-effect="non-scaling-stroke"
+      style="fill:${hit ? i.color : 'var(--surface-1)'};stroke:${hit ? 'var(--surface-1)' : i.color}"/>`;
+  }).join('');
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
       aria-label="公開順に見る平均視聴率。${items.length}本。目安${opt.thr}%。">
     ${axesSvg(g)}${unitSvg(2, PT - 9, '%')}${thr}${dots}
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
   const pts = items.map(i => ({ x:X(i.d), y:Y(i.v),
-    html:`<b>${esc(i.seq)}</b> ${esc(i.title)}<br>${esc(fmtMDW(i.at))}　平均視聴率 <b>${i.v.toFixed(1)}</b>%` }));
+    html:`${chSw(i.color)}${esc(i.name)}<br><b>${esc(i.seq)}</b> ${esc(i.title)}<br>${esc(fmtMDW(i.at))}　平均視聴率 <b>${i.v.toFixed(1)}</b>%` }));
   return { html, pts, mode:'xy' };
 }
 
-/* ── ヒストグラム ───────────────────────────────────────────
-   到達ビンを var(--good)、未達ビンをチャンネル色で塗り、目安に破線を引く。
-   dir=1 は「閾値以上が到達」、dir=-1 は「閾値以下が到達」（冒頭の離脱は低いほど良い）。
-   values は呼び出し側で欠測を除いてある。 */
-function histogram(values, cfg, accent, W, H){
+/* ── ヒストグラム（チャンネルごとに同じ区分で横並び・積み上げない）─────
+   棒の色＝チャンネル。目安に到達した区分は塗りつぶし、未達は白抜き（輪郭だけ）。
+   groups = [{ch, name, color, values}]（values は欠測を除いてある） */
+function histogram(groups, cfg, W, H){
   const { thr, step, dir, fmt, unit } = cfg;
-  const dmin = Math.min(...values), dmax = Math.max(...values);
+  const all = groups.reduce((s, g) => s.concat(g.values), []);
+  const dmin = Math.min(...all), dmax = Math.max(...all);
   const lo = Math.min(thr, Math.floor(dmin / step + 1e-9) * step);
   const hi = Math.max(thr, Math.ceil(dmax / step - 1e-9) * step);
   const nb = Math.max(1, Math.round((hi - lo) / step));
-  const bins = new Array(nb).fill(0);
-  values.forEach(v => { let b = Math.floor((v - lo) / step + 1e-9); b = Math.min(nb - 1, Math.max(0, b)); bins[b]++; });
-  const maxc = Math.max(1, ...bins);
+  const binsOf = vals => {
+    const b = new Array(nb).fill(0);
+    vals.forEach(v => { let i = Math.floor((v - lo) / step + 1e-9); i = Math.min(nb - 1, Math.max(0, i)); b[i]++; });
+    return b;
+  };
+  const gb = groups.map(g => binsOf(g.values));
+  const maxc = Math.max(1, ...gb.map(b => Math.max(...b)));
   const PL = 26, PR = 10, PT = 24, PB = 26;
   const plotW = Math.max(20, W - PL - PR), plotH = Math.max(20, H - PT - PB);
-  const baseY = PT + plotH, bw = plotW / nb;
+  const baseY = PT + plotH, slot = plotW / nb;
   const X = v => PL + plotW * ((v - lo) / ((hi - lo) || 1));
   const yr = niceTicks(0, maxc, 2);
   const Y = c => baseY - plotH * ((c - yr.lo) / ((yr.hi - yr.lo) || 1));
   const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks:[], yFmt:v => String(Math.round(v)) };
-  const bars = bins.map((c, i) => {
-    if (!c) return '';
+  const n = Math.max(1, groups.length);
+  /* 区分の中を n 本に割る。区分どうしは 3px、チャンネルどうしは 1.5px あける */
+  const inner = Math.max(2, slot - 3);
+  const bw = Math.max(1.2, (inner - (n - 1) * 1.5) / n);
+  const showNum = bw >= 13;
+  let bars = '';
+  for (let i = 0; i < nb; i++){
     const binLo = lo + step * i, binHi = binLo + step;
-    /* 2px の隙間を空けて棒どうしを分ける（隣の色と溶け合わせない） */
-    const bx = PL + bw * i + 1.5, bwid = Math.max(2, bw - 3);
-    const by = Y(c), bh = Math.max(3, baseY - by);
     const hit = dir > 0 ? binLo >= thr - 1e-9 : binHi <= thr + 1e-9;
-    return `<g><path d="${barPath(bx, baseY - bh, bwid, bh, 4)}" style="fill:${hit ? 'var(--good)' : accent};opacity:.9">
-        <title>${fmt(binLo)}〜${fmt(binHi)}${unit}: ${c}本</title></path>
-      <text x="${(bx + bwid / 2).toFixed(1)}" y="${(baseY - bh - 5).toFixed(1)}" text-anchor="middle" font-size="10"
-        font-weight="700" font-family="system-ui,sans-serif" style="fill:var(--ink-2)">${c}</text></g>`;
-  }).join('');
+    groups.forEach((grp, k) => {
+      const c = gb[k][i];
+      if (!c) return;
+      const bx = PL + slot * i + 1.5 + k * (bw + 1.5);
+      const by = Y(c), bh = Math.max(3, baseY - by);
+      bars += `<g><path d="${barPath(bx, baseY - bh, bw, bh, 3)}" stroke-width="1.5"
+          vector-effect="non-scaling-stroke"
+          style="fill:${hit ? grp.color : 'var(--surface-1)'};opacity:${hit ? '.9' : '1'};stroke:${hit ? 'none' : grp.color}">
+          <title>${esc(grp.name)} ${fmt(binLo)}〜${fmt(binHi)}${unit}: ${c}本</title></path>`
+        + (showNum ? `<text x="${(bx + bw / 2).toFixed(1)}" y="${(baseY - bh - 5).toFixed(1)}" text-anchor="middle"
+          font-size="10" font-weight="700" font-family="system-ui,sans-serif" style="fill:var(--ink-2)">${c}</text>` : '')
+        + `</g>`;
+    });
+  }
   const stride = Math.max(1, Math.ceil(nb / Math.max(2, Math.floor(plotW / 42))));
   let ticks = '';
   for (let i = 0; i <= nb; i++){
@@ -3873,7 +4003,7 @@ function histogram(values, cfg, accent, W, H){
     <text x="${txr.toFixed(1)}" y="${PT - 12}" text-anchor="middle" font-size="9.5" font-weight="700"
       font-family="system-ui,sans-serif" style="fill:var(--crit)">目安 ${fmt(thr)}${unit}</text>`;
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
-      aria-label="分布。目安 ${fmt(thr)}${unit}。${values.length}本。">
+      aria-label="分布。目安 ${fmt(thr)}${unit}。${all.length}本。">
     ${axesSvg(g)}${unitSvg(1, PT - 8, '本')}${bars}${ticks}${thrLine}
   </svg>`;
   return { html, pts:[] };
@@ -3899,6 +4029,7 @@ function subsPerK(p){
 }
 
 const PERF_COLS = [
+  {k:'ch',    lb:'チャンネル', cls:'', tip:'どのチャンネルの動画か'},
   {k:'seq',   lb:'番号',   cls:'seq', tip:'動画の番号'},
   {k:'title', lb:'タイトル', cls:'ttl', tip:'公開時のタイトル'},
   {k:'published_at', lb:'公開日', cls:'dim', tip:'YouTube に公開された日'},
@@ -3912,96 +4043,142 @@ const PERF_COLS = [
   {k:'spk', lb:'千再生あたり登録', cls:'num', tip:ANA_DEF.spk}
 ];
 const perfVal = (p, k) => k === 'spk' ? subsPerK(p)
+  : k === 'ch' ? (p._chName || '')
   : k === 'title' ? (p.effective_title || '')
   : k === 'seq' ? String(p.seq || '')
   : k === 'published_at' ? (p.published_at ? new Date(p.published_at).getTime() : null)
   : numOrNull(p[k]);
 
-async function renderAnalytics(){
-  const el = $('#view-analytics');
-  if (!state.ch) { el.innerHTML = `<div class="noitem">動画チャンネルがありません</div>`; return; }
-  const m = chMeta(state.ch);
-  if (!store.analytics[state.ch]) el.innerHTML = loading();
-  let a;
-  try { a = await loadAnalytics(state.ch); }
-  catch (e) { el.innerHTML = errBox(e.message); return; }
-  chartReg = [];
-
-  const from = state.anaRange ? jstDateStr(-state.anaRange) : '0000-01-01';
-
-  /* ── 登録者（毎日1点） ── */
-  const subsAll = a.kpi.filter(r => r.follower_actual != null)
-    .map(r => ({ t:r.date, d:dayNum(r.date), v:Number(r.follower_actual) }));
-  const subs = subsAll.filter(r => r.t >= from);
-  const latestSubs = subsAll.length ? subsAll[subsAll.length - 1].v : null;
+/* 1チャンネルぶんの集計。画面のどの区画もここで出した値だけを読む */
+function anaStats(a){
+  const mean = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
   const backAt = (arr, days) => {
     const key = jstDateStr(-days), hit = arr.find(r => r.t >= key);
     return (hit && arr.length > 1) ? hit : null;
   };
+  const subsAll = a.kpi.filter(r => r.follower_actual != null)
+    .map(r => ({ t:r.date, d:dayNum(r.date), v:Number(r.follower_actual) }));
+  const latestSubs = subsAll.length ? subsAll[subsAll.length - 1].v : null;
   const s7 = backAt(subsAll, 7), s30 = backAt(subsAll, 30);
-  const subsDelta = (latestSubs != null && s7) ? latestSubs - s7.v : null;
-  const subsGain30 = (latestSubs != null && s30) ? latestSubs - s30.v : null;
 
-  /* ── 再生数（投稿ごとの累積を日ごとに足し上げる） ── */
+  /* 再生数（投稿ごとの累積を日ごとに足し上げる） */
   const byDate = new Map();
   a.daily.forEach(d => byDate.set(d.date, (byDate.get(d.date) || 0) + (Number(d.views) || 0)));
   const cumAll = [...byDate.keys()].sort().map(t => ({ t, d:dayNum(t), cum:byDate.get(t) }));
   cumAll.forEach((r, i) => { r.inc = i ? Math.max(0, r.cum - cumAll[i - 1].cum) : null; });
-  const cum = cumAll.filter(r => r.t >= from);
   const latestCum = cumAll.length ? cumAll[cumAll.length - 1].cum : null;
   const c7 = backAt(cumAll, 7), c30 = backAt(cumAll, 30);
-  const viewsDelta = (latestCum != null && c7) ? latestCum - c7.cum : null;
-  const viewsGain30 = (latestCum != null && c30) ? latestCum - c30.cum : null;
 
-  /* ── 投稿済の動画 ── */
   const posted = a.pubs.filter(p => p.status === '投稿済');
   const totalViews = posted.reduce((s, p) => s + (Number(p.views) || 0), 0);
   const vals = k => posted.map(p => numOrNull(p[k])).filter(v => v != null);
-  const rates = vals('avg_view_rate_pct'), hooks = vals('hook_awr'),
-        ends = vals('end_awr'), losses = vals('early_loss_pct');
-  const mean = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
-  const avgRate = mean(rates);
+  const rates = vals('avg_view_rate_pct');
   const since7 = Date.now() - 7 * DAY;
-  const weekPosts = posted.filter(p => p.published_at && new Date(p.published_at).getTime() >= since7).length;
 
-  /* ── ① 数字カード4枚 ── */
-  const tiles = [
-    {lb:'登録者数', vl: latestSubs == null ? '—' : nf(latestSubs),
-     dl: subsDelta == null ? '先週比データ蓄積待ち' : `${subsDelta >= 0 ? '▲ +' : '▼ '}${nf(subsDelta)} 人 先週比`,
-     df:'チャンネル登録者の実数。毎朝6時に更新', hero:true},
-    {lb:'総再生数（累計）', vl: nf(totalViews),
-     dl: viewsDelta == null ? '先週比データ蓄積待ち' : `${viewsDelta >= 0 ? '▲ +' : '▼ '}${nf(viewsDelta)} 回 先週比`,
-     df:`投稿済 ${posted.length} 本の再生数の合計`},
-    {lb:'平均視聴率', vl: avgRate == null ? '—' : avgRate.toFixed(1) + '%',
-     dl: avgRate == null ? '未計測' : `目安 70%`,
-     df: avgRate == null ? '計測できた動画がまだありません' : `動画の長さに対して平均で何%まで見られたか。計測済 ${rates.length} 本の平均`},
-    {lb:'直近7日の投稿', vl: weekPosts + ' 本', dl:'公開日ベース', df:'公開日が過去7日以内の動画の本数'}
-  ].map(t => `<div class="kpi ${t.hero ? 'hero' : ''}" style="--chac:${m.accent}">
-      <div class="lb">${t.lb}</div><div class="vl">${t.vl}</div>
-      <div class="dl">${esc(t.dl)}</div>
-      <div class="def">${esc(t.df)}</div></div>`).join('');
+  /* 投稿ごとの日次記録（公開後7日の初速に使う） */
+  const recs = new Map();
+  a.daily.forEach(d => {
+    if (!recs.has(d.publication_id)) recs.set(d.publication_id, []);
+    recs.get(d.publication_id).push(d);
+  });
+  recs.forEach(arr => arr.sort((x, y) => x.date < y.date ? -1 : 1));
 
-  /* ── 期間切替（登録者・再生数の2つのグラフで共有） ── */
+  return {
+    subsAll, cumAll, posted, totalViews, recs,
+    latestSubs, latestCum,
+    subsDelta: (latestSubs != null && s7) ? latestSubs - s7.v : null,
+    subsGain30: (latestSubs != null && s30) ? latestSubs - s30.v : null,
+    viewsDelta: (latestCum != null && c7) ? latestCum - c7.cum : null,
+    viewsGain30: (latestCum != null && c30) ? latestCum - c30.cum : null,
+    rates, hooks: vals('hook_awr'), ends: vals('end_awr'), losses: vals('early_loss_pct'),
+    avgRate: mean(rates),
+    weekPosts: posted.filter(p => p.published_at && new Date(p.published_at).getTime() >= since7).length
+  };
+}
+
+async function renderAnalytics(){
+  const el = $('#view-analytics');
+  if (!store.channels.length) { el.innerHTML = `<div class="noitem">動画チャンネルがありません</div>`; return; }
+  if (!store.analytics[ANA_ALL]) el.innerHTML = loading();
+  let A;
+  try { A = await loadAnalyticsAll(); }
+  catch (e) { el.innerHTML = errBox(e.message); return; }
+  chartReg = [];
+
+  const from = state.anaRange ? jstDateStr(-state.anaRange) : '0000-01-01';
+  const mean = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
+  const sers = anaSeries();                       /* 凡例でオンのチャンネル */
+  const ST = {};
+  store.channels.forEach(c => { ST[c.slug] = anaStats(A[c.slug] || { kpi:[], pubs:[], daily:[] }); });
+
+  /* ── 凡例（押すと表示のオン／オフ）────────────────────────── */
+  const legend = `<div class="chlegend">${store.channels.map(c => {
+      const m = chMeta(c.slug), on = !state.anaOff[c.slug];
+      return `<button class="chchip" data-anach="${esc(c.slug)}" aria-pressed="${on}" style="--chac:${m.accent}">
+        <i></i>${m.icon} ${esc(m.name)}</button>`;
+    }).join('')}
+    <span class="hint">チップを押すとそのチャンネルの表示を消せます・塗りつぶし＝目安に到達／白抜き＝未達</span></div>`;
+
+  /* ── ① チャンネルの現在地 ─────────────────────────────────── */
+  const dl = (v, unit) => v == null ? '<span class="sub">先週比データ蓄積待ち</span>'
+    : `<span class="sub">${v >= 0 ? '▲ +' : '▼ '}${nf(v)} ${unit} 先週比</span>`;
+  const nowRows = sers.map(s => {
+    const st = ST[s.ch];
+    const mn = MONETIZE.map(t => {
+      const p1 = Math.min(1, (st.latestSubs || 0) / t.subs), p2 = Math.min(1, st.totalViews / t.plays);
+      return Math.min(p1, p2) * 100;
+    });
+    return `<tr>
+      <td><span class="chcell">${chSw(s.color)}${s.icon} ${esc(s.name)}</span></td>
+      <td class="num">${st.latestSubs == null ? '—' : nf(st.latestSubs)}${dl(st.subsDelta, '人')}</td>
+      <td class="num">${nf(st.totalViews)}${dl(st.viewsDelta, '回')}</td>
+      <td class="num">${st.avgRate == null ? '—' : st.avgRate.toFixed(1) + '%'}<span class="sub">計測済 ${st.rates.length} 本</span></td>
+      <td class="num">${st.weekPosts} 本</td>
+      <td class="num">${mn[0].toFixed(1)}%</td>
+      <td class="num">${mn[1].toFixed(2)}%</td>
+    </tr>`;
+  }).join('') || `<tr class="emptyrow"><td colspan="7">表示するチャンネルがありません</td></tr>`;
+  const nowCard = `<div class="card span2">
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>チャンネルの現在地</h2></div>
+      <p class="axnote">登録者と累計再生は毎朝6時に取り込んだ実数。平均視聴率は計測できた動画だけの平均。収益化の2列は達成率（登録者と再生数のうち低い方）</p>
+      <div class="tblwrap nowtbl"><table>
+        <thead><tr><th>チャンネル</th><th class="num">登録者</th><th class="num">累計再生</th>
+          <th class="num">平均視聴率</th><th class="num">直近7日の投稿</th>
+          <th class="num">早期アクセス</th><th class="num">広告収益</th></tr></thead>
+        <tbody>${nowRows}</tbody></table></div>
+    </div>`;
+
+  /* ── 期間切替（登録者・再生数の2つのグラフで共有）───────────── */
   const ranges = [{v:30, lb:'30日'}, {v:90, lb:'90日'}, {v:0, lb:'全部'}];
   const rangeBtns = `<div class="chips rangebtns">${ranges.map(r =>
     `<button class="rgbtn" data-anarange="${r.v}" aria-pressed="${state.anaRange === r.v}">${r.lb}</button>`).join('')}</div>`;
 
-  /* ── ② 登録者の推移 ── */
+  /* ── ② 登録者の推移（チャンネルを重ねる）───────────────────── */
+  const subsSer = sers.map(s => ({ ...s, rows: ST[s.ch].subsAll.filter(r => r.t >= from) }))
+    .filter(s => s.rows.length >= 2);
   let subsCard;
-  if (subs.length >= 2) {
-    chartReg.push({ sel:'#c-subs', build: W => lineChart(subs, W, {color:m.accent, unit:'人', label:'登録者の推移'}) });
-    const step = Math.max(1, Math.ceil(subs.length / 8));
-    const mini = `<div class="tblwrap"><table><thead><tr><th>日付</th><th class="num">登録者</th></tr></thead><tbody>${
-      subs.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % step === 0)
-        .map(r => `<tr><td>${esc(fmtDate(r.t) || r.t)}</td><td class="num">${nf(r.v)}</td></tr>`).join('')}</tbody></table></div>`;
-    const first = subs[0], last = subs[subs.length - 1];
+  if (subsSer.length) {
+    chartReg.push({ sel:'#c-subs', build: W => lineChart(subsSer, W, {unit:'人', label:'登録者の推移'}) });
+    const days = [...new Set(subsSer.reduce((a2, s) => a2.concat(s.rows.map(r => r.t)), []))].sort();
+    const step = Math.max(1, Math.ceil(days.length / 8));
+    const pick = days.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % step === 0);
+    const mini = `<div class="tblwrap"><table><thead><tr><th>日付</th>${
+      subsSer.map(s => `<th class="num">${chSw(s.color)}${esc(s.name)}</th>`).join('')}</tr></thead><tbody>${
+      pick.map(t => `<tr><td>${esc(fmtDate(t) || t)}</td>${subsSer.map(s => {
+        const r = s.rows.find(x => x.t === t);
+        return `<td class="num">${r ? nf(r.v) : '—'}</td>`;
+      }).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const caps = subsSer.map(s => {
+      const f = s.rows[0], l = s.rows[s.rows.length - 1], d = l.v - f.v;
+      return `<div>${chSw(s.color)}${esc(s.name)}　${esc(fmtDate(f.t) || f.t)} <b>${nf(f.v)}</b> → ${esc(fmtDate(l.t) || l.t)} <b>${nf(l.v)}</b>（<span style="color:var(--up);font-weight:700">${d >= 0 ? '+' : ''}${nf(d)}</span>）</div>`;
+    }).join('');
     subsCard = `<div class="card">
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>登録者の推移</h2></div>
-        <p class="axnote">横軸＝日付・縦軸＝登録者数（人）。点にふれるとその日の数が出ます</p>
+        <p class="axnote">横軸＝日付・縦軸＝登録者数（人）。線の色＝チャンネル。点にふれるとその日の全チャンネルの数が出ます</p>
         <div class="chartwrap" id="c-subs"></div>
-        <div class="sparkcap">${esc(fmtDate(first.t) || first.t)} <b>${nf(first.v)}</b> → ${esc(fmtDate(last.t) || last.t)} <b>${nf(last.v)}</b>（<span style="color:var(--up);font-weight:700">${last.v - first.v >= 0 ? '+' : ''}${nf(last.v - first.v)}</span>）</div>
+        <div class="sparkcap">${caps}</div>
         <button class="tbltoggle" data-tbl="subs">${state.anaTbl.subs ? '表を閉じる' : '表で見る'}</button>
-        <div class="minitbl ${state.anaTbl.subs ? 'show' : ''}" data-tbl="subs">${mini}</div>
+        <div class="minitbl wide ${state.anaTbl.subs ? 'show' : ''}" data-tbl="subs">${mini}</div>
       </div>`;
   } else {
     subsCard = `<div class="card">
@@ -4010,17 +4187,25 @@ async function renderAnalytics(){
       </div>`;
   }
 
-  /* ── ② 再生数の推移 ── */
+  /* ── ② 再生数の推移 ────────────────────────────────────────── */
+  const cumSer = sers.map(s => ({ ...s, rows: ST[s.ch].cumAll.filter(r => r.t >= from) }))
+    .filter(s => s.rows.length >= 2);
   let playsCard;
-  if (cum.length >= 2) {
-    chartReg.push({ sel:'#c-plays', build: W => playsChart(cum, W, {color:m.accent}) });
-    const step = Math.max(1, Math.ceil(cum.length / 8));
-    const mini = `<div class="tblwrap"><table><thead><tr><th>日付</th><th class="num">この日</th><th class="num">累計</th></tr></thead><tbody>${
-      cum.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % step === 0)
-        .map(r => `<tr><td>${esc(fmtDate(r.t) || r.t)}</td><td class="num">${r.inc == null ? '—' : '+' + nf(r.inc)}</td><td class="num">${nf(r.cum)}</td></tr>`).join('')}</tbody></table></div>`;
+  if (cumSer.length) {
+    chartReg.push({ sel:'#c-plays', build: W => playsChart(cumSer, W, {}) });
+    const days = [...new Set(cumSer.reduce((a2, s) => a2.concat(s.rows.map(r => r.t)), []))].sort();
+    const step = Math.max(1, Math.ceil(days.length / 8));
+    const pick = days.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % step === 0);
+    const mini = `<div class="tblwrap"><table><thead><tr><th>日付</th>${
+      cumSer.map(s => `<th class="num" colspan="2">${chSw(s.color)}${esc(s.name)}</th>`).join('')}</tr>
+      <tr><th></th>${cumSer.map(() => `<th class="num">この日</th><th class="num">累計</th>`).join('')}</tr></thead><tbody>${
+      pick.map(t => `<tr><td>${esc(fmtDate(t) || t)}</td>${cumSer.map(s => {
+        const r = s.rows.find(x => x.t === t);
+        return `<td class="num">${r && r.inc != null ? '+' + nf(r.inc) : '—'}</td><td class="num">${r ? nf(r.cum) : '—'}</td>`;
+      }).join('')}</tr>`).join('')}</tbody></table></div>`;
     playsCard = `<div class="card">
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>再生数の推移</h2></div>
-        <p class="axnote">上段＝1日にどれだけ再生されたか（回／日）・下段＝それまでの合計（累計 回）。横軸はどちらも日付</p>
+        <p class="axnote">上段＝1日にどれだけ再生されたか（回／日・同じ日のチャンネルは横に並べています）・下段＝それまでの合計（累計 回）。横軸はどちらも日付</p>
         <div class="chartwrap" id="c-plays"></div>
         <button class="tbltoggle" data-tbl="plays">${state.anaTbl.plays ? '表を閉じる' : '表で見る'}</button>
         <div class="minitbl wide ${state.anaTbl.plays ? 'show' : ''}" data-tbl="plays">${mini}</div>
@@ -4032,54 +4217,25 @@ async function renderAnalytics(){
       </div>`;
   }
 
-  /* ── ③ 視聴の質（4つの分布） ── */
-  const qBlock = (id, title, key, values, big) => {
-    const cfg = ANA_GOAL[key];
-    const hit = values.filter(v => cfg.dir > 0 ? v >= cfg.thr : v <= cfg.thr).length;
-    const avg = mean(values);
-    const goalTxt = cfg.dir > 0 ? `${cfg.fmt(cfg.thr)}${cfg.unit}以上` : `${cfg.fmt(cfg.thr)}${cfg.unit}以下`;
-    if (!values.length) return `<div class="qblk${big ? ' big' : ''}">
-      <h3>${esc(title)}<span class="goal">目安 ${goalTxt}</span></h3>
-      <p class="defline">${esc(ANA_DEF[key])}</p>
-      <div class="noitem">計測できた動画がまだありません<span class="s">投稿済 ${posted.length} 本中 0 本</span></div></div>`;
-    chartReg.push({ sel:'#' + id, build: W => histogram(values, cfg, m.accent, W, big ? 190 : 158) });
-    return `<div class="qblk${big ? ' big' : ''}">
-      <h3>${esc(title)}<span class="goal">目安 ${goalTxt}</span></h3>
-      <p class="defline">${esc(ANA_DEF[key])}</p>
-      <p class="axnote">横軸＝${esc(title)}の区分（幅${cfg.fmt(cfg.step)}${cfg.unit}）・縦軸＝その区分に入る動画の本数</p>
-      <div class="substats">
-        <div class="substat"><span class="k">平均</span><span class="v">${cfg.fmt(avg)}<small>${cfg.unit}</small></span></div>
-        <div class="substat"><span class="k">目安に到達</span><span class="v">${hit}<small>本（${Math.round(hit / values.length * 100)}%）</small></span></div>
-        <div class="substat"><span class="k">計測済</span><span class="v">${values.length}<small>/${posted.length}本</small></span></div>
-      </div>
-      <div class="chartwrap" id="${id}"></div>
-      <div class="distlegend"><span><i style="background:var(--good)"></i>目安に到達</span><span><i style="background:${m.accent}"></i>未達</span><span style="color:var(--crit)">┊ 目安の線</span></div>
-    </div>`;
-  };
-  const qualCard = `<div class="card span2">
-      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>視聴の質</h2></div>
-      <div class="qgrid">
-        ${qBlock('c-h-rate', '平均視聴率', 'rate', rates, true)}
-        ${qBlock('c-h-hook', '冒頭の維持', 'hook', hooks, true)}
-        ${qBlock('c-h-end', '末尾の維持', 'end', ends, false)}
-        ${qBlock('c-h-loss', '冒頭の離脱', 'loss', losses, false)}
-      </div>
-    </div>`;
-
-  /* ── ④ 公開順に見る平均視聴率 ── */
-  const scat = posted.filter(p => p.published_at && numOrNull(p.avg_view_rate_pct) != null)
-    .map(p => ({ d: Math.round(new Date(p.published_at).getTime() / DAY), at:p.published_at,
-                 v:Number(p.avg_view_rate_pct), seq:p.seq, title:(p.effective_title || '').slice(0, 40) }))
+  /* ── ③ 公開順に見る平均視聴率 ──────────────────────────────── */
+  const scat = sers.reduce((acc, s) => acc.concat(
+    ST[s.ch].posted.filter(p => p.published_at && numOrNull(p.avg_view_rate_pct) != null)
+      .map(p => ({ d: Math.round(new Date(p.published_at).getTime() / DAY), at:p.published_at,
+                   v:Number(p.avg_view_rate_pct), seq:p.seq, name:s.name, color:s.color,
+                   title:(p.effective_title || '').slice(0, 40) }))), [])
     .sort((x, y) => x.d - y.d);
   let scatCard;
   if (scat.length) {
-    chartReg.push({ sel:'#c-scatter', build: W => scatterChart(scat, W, {color:m.accent, thr:70}) });
+    chartReg.push({ sel:'#c-scatter', build: W => scatterChart(scat, W, {thr:70}) });
     scatCard = `<div class="card span2">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>公開順に見る平均視聴率</h2></div>
       <p class="defline">${esc(ANA_DEF.rate)}</p>
-      <p class="axnote">横軸＝公開日・縦軸＝平均視聴率（%）。1つの点が動画1本。点にふれると番号とタイトルが出ます</p>
+      <p class="axnote">横軸＝公開日・縦軸＝平均視聴率（%）。1つの点が動画1本。点にふれるとチャンネル名・番号・タイトルが出ます</p>
       <div class="chartwrap" id="c-scatter"></div>
-      <div class="distlegend"><span><i style="background:var(--good)"></i>70%に到達</span><span><i style="background:${m.accent}"></i>未達</span><span style="color:var(--crit)">┈ 70%の線</span></div>
+      <div class="distlegend">${sers.map(s => `<span>${chSw(s.color)}${esc(s.name)}</span>`).join('')}
+        <span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝70%に到達</span>
+        <span><i class="sw" style="background:transparent;box-shadow:inset 0 0 0 2px var(--ink-2)"></i>白抜き＝未達</span>
+        <span style="color:var(--crit)">┈ 70%の線</span></div>
     </div>`;
   } else {
     scatCard = `<div class="card span2">
@@ -4087,59 +4243,98 @@ async function renderAnalytics(){
       <div class="noitem">計測できた動画がまだありません</div></div>`;
   }
 
-  /* ── ⑤ 収益化の予実（達成率は2条件のうち低い方） ── */
-  const subsNow = latestSubs || 0;
+  /* ── ④ 視聴の質（4つの分布・チャンネルごとに同じ区分で横並び）───── */
+  const qBlock = (id, title, key, pick, big) => {
+    const cfg = ANA_GOAL[key];
+    const groups = sers.map(s => ({ ...s, values: pick(ST[s.ch]) })).filter(g => g.values.length);
+    const goalTxt = cfg.dir > 0 ? `${cfg.fmt(cfg.thr)}${cfg.unit}以上` : `${cfg.fmt(cfg.thr)}${cfg.unit}以下`;
+    const head = `<h3>${esc(title)}<span class="goal">目安 ${goalTxt}</span></h3>
+      <p class="defline">${esc(ANA_DEF[key])}</p>`;
+    if (!groups.length) return `<div class="qblk${big ? ' big' : ''}">${head}
+      <div class="noitem">計測できた動画がまだありません</div></div>`;
+    chartReg.push({ sel:'#' + id, build: W => histogram(groups, cfg, W, big ? 190 : 158) });
+    const tbl = `<table class="qtbl"><thead><tr><th>チャンネル</th><th>平均</th><th>目安に到達</th><th>計測済</th></tr></thead><tbody>${
+      groups.map(g => {
+        const hit = g.values.filter(v => cfg.dir > 0 ? v >= cfg.thr : v <= cfg.thr).length;
+        return `<tr><td>${chSw(g.color)}${esc(g.name)}</td>
+          <td>${cfg.fmt(mean(g.values))}${cfg.unit}</td>
+          <td>${hit} 本（${Math.round(hit / g.values.length * 100)}%）</td>
+          <td>${g.values.length} / ${ST[g.ch].posted.length} 本</td></tr>`;
+      }).join('')}</tbody></table>`;
+    return `<div class="qblk${big ? ' big' : ''}">${head}
+      <p class="axnote">横軸＝${esc(title)}の区分（幅${cfg.fmt(cfg.step)}${cfg.unit}）・縦軸＝その区分に入る動画の本数</p>
+      ${tbl}
+      <div class="chartwrap" id="${id}"></div>
+      <div class="distlegend"><span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝目安に到達</span>
+        <span><i class="sw" style="background:transparent;box-shadow:inset 0 0 0 2px var(--ink-2)"></i>白抜き＝未達</span>
+        <span style="color:var(--crit)">┊ 目安の線</span></div>
+    </div>`;
+  };
+  const qualCard = `<div class="card span2">
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>視聴の質</h2></div>
+      <p class="axnote">棒の色＝チャンネル。同じ区分の棒は横に並べています（積み上げていません）</p>
+      <div class="qgrid">
+        ${qBlock('c-h-rate', '平均視聴率', 'rate', st => st.rates, true)}
+        ${qBlock('c-h-hook', '冒頭の維持', 'hook', st => st.hooks, true)}
+        ${qBlock('c-h-end', '末尾の維持', 'end', st => st.ends, false)}
+        ${qBlock('c-h-loss', '冒頭の離脱', 'loss', st => st.losses, false)}
+      </div>
+    </div>`;
+
+  /* ── ⑤ 収益化の予実（チャンネルごとにメーター2本）──────────── */
   const monet = `<div class="card"><div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>収益化の予実</h2></div>
     <p class="axnote">2つの条件（登録者・再生数）の両方を満たすと収益化。達成率は低い方の条件で出しています</p>
-    ${MONETIZE.map(t => {
-      const p1 = Math.min(1, subsNow / t.subs), p2 = Math.min(1, totalViews / t.plays), p = Math.min(p1, p2);
-      return `<div class="meterblk">
-        <div class="mh"><span class="nm">${esc(t.nm)}</span><span class="pc">${(p * 100).toFixed(1)}%</span></div>
-        <div class="track"><div class="fill" style="width:${Math.max(p * 100, 0.6).toFixed(2)}%"></div></div>
-        <div class="cond">登録者 ${nf(subsNow)} / ${nf(t.subs)}（${(p1 * 100).toFixed(1)}%）　・　再生 ${nf(totalViews)} / ${nf(t.plays)}（${(p2 * 100).toFixed(2)}%）</div>
-        <div class="pace">${esc(paceLine('登録者', subsNow, t.subs, subsGain30, '人'))}</div>
-        <div class="pace">${esc(paceLine('再生', totalViews, t.plays, viewsGain30, '回'))}</div>
-      </div>`;
-    }).join('')}</div>`;
+    ${sers.map(s => {
+      const st = ST[s.ch], subsNow = st.latestSubs || 0;
+      return `<div class="monetch"><div class="monethd">${chSw(s.color)}${s.icon} ${esc(s.name)}</div>
+        ${MONETIZE.map(t => {
+          const p1 = Math.min(1, subsNow / t.subs), p2 = Math.min(1, st.totalViews / t.plays), p = Math.min(p1, p2);
+          return `<div class="meterblk">
+            <div class="mh"><span class="nm">${esc(t.nm)}</span><span class="pc">${(p * 100).toFixed(1)}%</span></div>
+            <div class="track"><div class="fill" style="width:${Math.max(p * 100, 0.6).toFixed(2)}%;background:${s.color}"></div></div>
+            <div class="cond">登録者 ${nf(subsNow)} / ${nf(t.subs)}（${(p1 * 100).toFixed(1)}%）　・　再生 ${nf(st.totalViews)} / ${nf(t.plays)}（${(p2 * 100).toFixed(2)}%）</div>
+            <div class="pace">${esc(paceLine('登録者', subsNow, t.subs, st.subsGain30, '人'))}</div>
+            <div class="pace">${esc(paceLine('再生', st.totalViews, t.plays, st.viewsGain30, '回'))}</div>
+          </div>`;
+        }).join('')}</div>`;
+    }).join('') || `<div class="noitem">表示するチャンネルがありません</div>`}</div>`;
 
-  /* ── ⑥ 公開後7日の初速 ──────────────────────────────────
+  /* ── ⑥ 公開後7日の初速（チャンネル混在・新しい順）──────────────
      日次の記録は毎朝6時の1点なので「公開日+7日以降で最初に取れた記録の再生数」を初速とする。
      記録が公開日より後から始まっている古い動画は、7日目の値が作れないので出さない。 */
-  const firstRec = new Map();   /* 投稿ごとに、いちばん古い記録の日 */
-  const recs = new Map();       /* 投稿ごとの日次記録（日付順） */
-  a.daily.forEach(d => {
-    if (!recs.has(d.publication_id)) recs.set(d.publication_id, []);
-    recs.get(d.publication_id).push(d);
-  });
-  recs.forEach((arr, id) => { arr.sort((x, y) => x.date < y.date ? -1 : 1); firstRec.set(id, arr[0].date); });
   const today = jstDateStr(0);
   const velo = [];
-  posted.filter(p => p.published_at).sort((x, y) => new Date(y.published_at) - new Date(x.published_at)).forEach(p => {
-    const q0 = partsOf(new Date(p.published_at), {year:'numeric', month:'2-digit', day:'2-digit'});
-    const pdStr = `${q0.year}-${q0.month}-${q0.day}`;
-    const target = jstAdd(pdStr, 7);
-    const arr = recs.get(p.id) || [];
-    const fr = firstRec.get(p.id);
-    if (!arr.length || !fr || fr > jstAdd(pdStr, 1)) return;   /* 記録が公開に間に合っていない古い動画 */
-    const hit = arr.find(r => r.date >= target);
-    if (hit) velo.push({ p, v:Number(hit.views) || 0 });
-    else if (today < target) velo.push({ p, v:null });
+  sers.forEach(s => {
+    const st = ST[s.ch];
+    st.posted.filter(p => p.published_at).forEach(p => {
+      const q0 = partsOf(new Date(p.published_at), {year:'numeric', month:'2-digit', day:'2-digit'});
+      const pdStr = `${q0.year}-${q0.month}-${q0.day}`;
+      const target = jstAdd(pdStr, 7);
+      const arr = st.recs.get(p.id) || [];
+      if (!arr.length || arr[0].date > jstAdd(pdStr, 1)) return;   /* 記録が公開に間に合っていない古い動画 */
+      const hit = arr.find(r => r.date >= target);
+      if (hit) velo.push({ p, s, at:p.published_at, v:Number(hit.views) || 0 });
+      else if (today < target) velo.push({ p, s, at:p.published_at, v:null });
+    });
   });
+  velo.sort((x, y) => new Date(y.at) - new Date(x.at));
   const veloMax = Math.max(1, ...velo.map(x => x.v || 0));
   const veloCard = `<div class="card">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>公開後7日の初速</h2></div>
-      <p class="axnote">公開から7日たった時点の再生数。新しい動画が上。棒の長さは中でいちばん多い動画との比べ方</p>
+      <p class="axnote">公開から7日たった時点の再生数。チャンネルを混ぜて新しい動画が上。棒の色＝チャンネル・長さは中でいちばん多い動画との比べ方</p>
       ${velo.length ? `<div class="hbars">${velo.map(x => `<div class="hbar">
-          <span class="hlb"><b>${esc(x.p.seq)}</b> ${esc((x.p.effective_title || '').slice(0, 22))}</span>
-          <span class="htrack">${x.v == null ? '' : `<span class="hfill" style="width:${Math.max(1.5, x.v / veloMax * 100).toFixed(1)}%;background:${m.accent}"></span>`}</span>
+          <span class="hlb">${chSw(x.s.color)}<b>${esc(x.p.seq)}</b> ${esc((x.p.effective_title || '').slice(0, 22))}</span>
+          <span class="htrack">${x.v == null ? '' : `<span class="hfill" style="width:${Math.max(1.5, x.v / veloMax * 100).toFixed(1)}%;background:${x.s.color}"></span>`}</span>
           <span class="hval${x.v == null ? ' dim' : ''}">${x.v == null ? '7日未満' : nf(x.v)}</span>
         </div>`).join('')}</div>`
       : `<div class="noitem">まだ出せる動画がありません<span class="s">公開の日から日次の記録がそろっている動画が、公開7日を過ぎると出ます</span></div>`}
     </div>`;
 
-  /* ── ⑦ 動画別の成績（全件・列見出しで並べ替え） ── */
+  /* ── ⑦ 動画別の成績（全チャンネルを1つの表に・列見出しで並べ替え）── */
+  const allPosted = sers.reduce((acc, s) => acc.concat(
+    ST[s.ch].posted.map(p => ({ ...p, _chName:s.name, _chColor:s.color }))), []);
   const sk = state.anaSort || {k:'published_at', dir:-1};
-  const perf = posted.slice().sort((x, y) => {
+  const perf = allPosted.slice().sort((x, y) => {
     const a1 = perfVal(x, sk.k), b1 = perfVal(y, sk.k);
     if (a1 == null && b1 == null) return 0;
     if (a1 == null) return 1;          /* 値なしは常に下 */
@@ -4152,6 +4347,7 @@ async function renderAnalytics(){
   const rows = perf.length ? perf.map(p => {
     const spk = subsPerK(p);
     return `<tr>
+      <td><span class="chcell">${chSw(p._chColor)}${esc(p._chName)}</span></td>
       <td class="seq">${esc(p.seq)}</td><td class="ttl">${esc(p.effective_title)}</td>
       <td class="dim">${esc(fmtDate(p.published_at) || '—')}</td>
       <td class="num">${p.views == null ? '—' : nf(p.views)}</td>
@@ -4162,7 +4358,7 @@ async function renderAnalytics(){
       <td class="num">${p.engaged_rate_pct == null ? '—' : Number(p.engaged_rate_pct).toFixed(1) + '%'}</td>
       <td class="num">${p.subscribers_gained == null ? '—' : (p.subscribers_gained > 0 ? '+' : '') + p.subscribers_gained}</td>
       <td class="num">${spk == null ? '—' : spk.toFixed(1)}</td></tr>`;
-  }).join('') : `<tr class="emptyrow"><td colspan="11">投稿済の動画がありません</td></tr>`;
+  }).join('') : `<tr class="emptyrow"><td colspan="12">投稿済の動画がありません</td></tr>`;
   const heads = PERF_COLS.map(c => {
     const on = sk.k === c.k;
     return `<th class="${c.cls === 'num' ? 'num ' : ''}sortable${on ? ' on' : ''}" data-anasort="${c.k}"
@@ -4170,12 +4366,12 @@ async function renderAnalytics(){
   }).join('');
   const perfCard = `<div class="card span2">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>動画別の成績</h2></div>
-      <p class="axnote">列の名前を押すと並べ替わります。赤い字は目安を割った値（冒頭の維持1.8未満・末尾の維持0.85未満・冒頭の離脱25%超・平均視聴率70%未満）。値がないものは —</p>
+      <p class="axnote">上の凡例でチャンネルを絞り込めます。列の名前を押すと並べ替わります。赤い字は目安を割った値（冒頭の維持1.8未満・末尾の維持0.85未満・冒頭の離脱25%超・平均視聴率70%未満）。値がないものは —</p>
       <div class="tblwrap perftbl"><table>
         <thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
 
-  /* ── ⑧ 指標の読み方 ── */
+  /* ── ⑧ 指標の読み方 ────────────────────────────────────────── */
   const guide = `<details class="card span2 guide">
       <summary>指標の読み方</summary>
       <div class="tblwrap"><table>
@@ -4189,18 +4385,19 @@ async function renderAnalytics(){
         <tr><td>登録者数</td><td class="wrap">チャンネル登録者の実数</td><td>—</td></tr>
         <tr><td>再生数</td><td class="wrap">動画が再生された回数。累計はそれまでの合計</td><td>—</td></tr>
         </tbody></table></div>
-      <p class="axnote">数字はすべて毎朝6時に更新しています。計測できた動画だけを集計に入れています</p>
+      <p class="axnote">数字はすべて毎朝6時に更新しています。計測できた動画だけを集計に入れています。色はチャンネルを表し、塗りつぶし／白抜きが目安に到達したかどうかを表します</p>
     </details>`;
 
   el.innerHTML = `
     <div class="pagehead">
       <div class="eyebrow">分析</div>
-      <h1>${m.icon} ${esc(m.name)}</h1>
+      <h1>📈 チャンネル横断の成績</h1>
       <p>公開済みの動画とチャンネルの数字を毎朝6時に取り込んで集計しています。</p>
     </div>
-    <div class="kpis">${tiles}</div>
+    ${legend}
     <div class="anahead">${rangeBtns}<span class="anarange">推移のグラフは${esc(anaRangeLabel())}</span></div>
     <div class="anagrid">
+      ${nowCard}
       ${subsCard}
       ${playsCard}
       ${scatCard}
@@ -5280,7 +5477,10 @@ function bindHover(wrap, pts, mode){
   const vb = svg.viewBox.baseVal, W = vb.width, H = vb.height;
   if (!W || !H) return;
   const hov = svg.querySelector('.hov');
-  const hl = hov && hov.querySelector('.hl'), hd = hov && hov.querySelector('.hd');
+  const hl = hov && hov.querySelector('.hl');
+  /* 印はチャンネルの数だけある。点が {ys:[…]} を持っていれば全チャンネルぶんを同時に置く
+     （持っていなければ先頭の1つだけを使う＝散布図など1系列のグラフ） */
+  const hds = hov ? [...hov.querySelectorAll('.hd')] : [];
   const move = e => {
     const r = svg.getBoundingClientRect();
     const t = e.touches ? e.touches[0] : e;
@@ -5293,7 +5493,12 @@ function bindHover(wrap, pts, mode){
     if (hov) {
       hov.style.display = '';
       if (hl) { hl.setAttribute('x1', best.x); hl.setAttribute('x2', best.x); }
-      if (hd) { hd.setAttribute('cx', best.x); hd.setAttribute('cy', best.y); }
+      hds.forEach((hd, i) => {
+        const y = best.ys ? best.ys[i] : (i === 0 ? best.y : null);
+        if (y == null) { hd.style.display = 'none'; return; }
+        hd.style.display = '';
+        hd.setAttribute('cx', best.x); hd.setAttribute('cy', y);
+      });
     }
     showTip(best.html, r.left + best.x / W * r.width, r.top + best.y / H * r.height);
   };
@@ -5495,6 +5700,15 @@ document.addEventListener('click', e => {
     const box = document.querySelector('.minitbl[data-tbl="' + k + '"]');
     if (box) box.classList.toggle('show', state.anaTbl[k]);
     tgl.textContent = state.anaTbl[k] ? '表を閉じる' : '表で見る';
+    return;
+  }
+  /* 分析タブ 凡例チップ（チャンネルの表示オン／オフ）。全部消すと何も読めなくなるので、
+     残り1つになったチップの消灯だけは受け付けない */
+  const chc = e.target.closest('[data-anach]');
+  if (chc) {
+    const k = chc.dataset.anach, next = Object.assign({}, state.anaOff);
+    next[k] = !next[k];
+    if (store.channels.some(c => !next[c.slug])) { state.anaOff = next; renderAnalytics(); }
     return;
   }
   /* 分析タブ 推移グラフの期間切替（30日／90日／全部） */
