@@ -1621,7 +1621,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/4 23:12';
+const BUILT_AT = '9/4 23:27';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2341,13 +2341,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/4 23:12') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/4 23:27') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/4 23:12') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/4 23:27') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -4541,7 +4541,8 @@ const RUN_KIND_JA = {
   'dispatcher-storyboard-review':'絵コンテ審査係（旧）',
   'dispatcher-final-review':'完成審査係（旧）',
   'daily-log':'数字の記録', 'weekly-review':'週次レビュー', 'project-audit':'全体監査',
-  'x-reply':'Xのリプ返信', 'x-post-publish':'Xの投稿', 'x-post-propose':'Xの投稿ネタ選び',
+  'x-reply':'Xのリプ返信', 'x-post-publish':'Xの投稿（旧）', 'x-post-propose':'Xの投稿ネタ選び（旧）',
+  'x-article-scan':'記事ネタ集め', 'x-article-write':'記事の執筆と下書き',
   /* 進行係が動かす制作の工程（用語集の係の名前・工程表のラベルに合わせる） */
   'dispatcher-lease-reap':'期限切れの札の後片付け',
   'dispatcher-idea-generate':'ネタ補充係',
