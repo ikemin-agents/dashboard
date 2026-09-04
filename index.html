@@ -339,7 +339,7 @@ td.dim{color:var(--muted)}
    幅の出どころは ①各列の th の style（JS 側 MCOL の w） ②.mtx th.st（工程7マス）
    ③.mtx th.okcol（承認）の3つだけ。幅を書いていないタイトル列が残り幅を取る。
    12列ぶんの合計が約1280pxなので、左右パディングを 14px → 10px に詰めて収める。 */
-.mtx table{table-layout:fixed; min-width:1280px}
+.mtx table{table-layout:fixed; min-width:1440px}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
 .mtx th.st,.mtx td.st{width:54px; text-align:center; padding-left:2px; padding-right:2px;
   background:var(--stage-bg)}
@@ -459,7 +459,7 @@ td.ttl .flags{margin-left:8px}
 /* 列が12本になって表の最小幅が 1060px → 1280px に上がったので、横スクロールへ切り替える
    幅もそこへ合わせる（sticky の列見出しはスクロール容器の中では効かないので、
    表が収まらない幅でだけ譲る）。 */
-@media (max-width:1279.98px){ .tblwrap.mtx{overflow-x:auto} }
+@media (max-width:1439.98px){ .tblwrap.mtx{overflow-x:auto} }
 .emptyrow td{text-align:center; color:var(--muted); padding:26px; cursor:default}
 .emptyrow:hover td{background:transparent!important}
 
@@ -1252,7 +1252,7 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .chlegend .hint{font-size:var(--fs-2xs); color:var(--muted); font-weight:400}
 /* チャンネルの現在地: 大分類ごとの小さな表を横に並べる。指標名の下に期間・目安を薄字で、
    数字の下の補足（計測済 N 本など）は .sub で1行。幅が足りなければ表が次の段に折り返す */
-.nowgrid{display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:var(--sp-3)}
+.nowgrid{display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:var(--sp-3)}
 .nowblk{border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; background:var(--surface-1); min-width:0}
 .nowblk table{width:100%; table-layout:auto}
 .nowblk th, .nowblk td{padding:7px 10px}
@@ -1262,7 +1262,7 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .nowblk tbody th.lb{text-align:left; font-weight:680; color:var(--ink); white-space:normal; vertical-align:top; line-height:1.3}
 .nowblk th.lb .subm{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; white-space:normal; line-height:1.35; margin-top:2px}
 .nowblk td.num{vertical-align:top; font-weight:600; white-space:nowrap}
-.nowblk td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:2px; white-space:nowrap}
+.nowblk td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:2px; white-space:normal; line-height:1.35}
 @media (max-width:640px){
   .nowgrid{grid-template-columns:1fr}
   .nowblk td .sub{white-space:normal}
@@ -1621,7 +1621,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/4 23:27';
+const BUILT_AT = '9/5 08:54';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2341,13 +2341,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/4 23:27') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/5 08:54') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/4 23:27') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/5 08:54') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
