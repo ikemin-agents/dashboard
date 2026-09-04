@@ -1250,9 +1250,31 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .chchip[aria-pressed="false"]{color:var(--muted); background:transparent; border-style:dashed}
 .chchip[aria-pressed="false"] i{background:transparent}
 .chlegend .hint{font-size:var(--fs-2xs); color:var(--muted); font-weight:400}
-/* チャンネルの現在地（表）。数字の下に先週比などの補足を1行入れる */
-.nowtbl table{min-width:720px}
-.nowtbl td{vertical-align:top}
+/* チャンネルの現在地（縦持ち）。大分類の行は帯、指標名は太字、期間・目安は薄字。
+   数字の下の補足（計測済 N 本など）は .sub で1行 */
+.nowtbl table{min-width:0}
+.nowtbl th, .nowtbl td{padding-left:10px; padding-right:10px}
+.nowtbl tbody th.lb{text-align:left; font-weight:680; color:var(--ink); white-space:nowrap}
+.nowtbl table{width:auto}
+.nowtbl td.why{color:var(--muted); font-size:var(--fs-2xs); white-space:normal; min-width:200px; max-width:360px; line-height:1.45}
+.nowtbl th.lb .subm{display:none; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; white-space:normal; line-height:1.4; margin-top:2px; max-width:150px}
+/* スマホでは「期間・目安」の列を畳み、指標名の下に小さく出す（列が画面の外に出るため） */
+@media (max-width:640px){
+  .nowtbl table{width:100%}
+  .nowtbl td.why, .nowtbl thead th:nth-child(2){display:none}
+  .nowtbl th.lb .subm{display:block}
+  .nowtbl tbody th.lb{white-space:normal; vertical-align:top; width:34%}
+  .nowtbl th.lb .subm{max-width:none}
+  .nowtbl table td.num, .nowtbl table thead th.num{min-width:0; white-space:normal}
+  .nowtbl thead th.num .chcell{white-space:normal; display:inline}
+  .nowtbl td .sub{white-space:normal}
+  .nowtbl th, .nowtbl td{padding-left:7px; padding-right:7px}
+  .nowtbl td .sub.subw{display:none}   /* 「登録者 433/500・再生 74万/300万」は幅が足りないので畳む */
+}
+.nowtbl tr.grow th{background:var(--surface-2); color:var(--ink); font-weight:700; font-size:var(--fs-2xs);
+  letter-spacing:.07em; padding-top:6px; padding-bottom:6px; border-bottom:1px solid var(--border)}
+.nowtbl td.num, .nowtbl thead th.num{vertical-align:top; font-weight:600; min-width:150px; white-space:nowrap}
+.nowtbl td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:3px}
 .nowtbl td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:3px}
 .chcell{display:inline-flex; align-items:center; gap:2px; white-space:nowrap}
 /* 視聴の質: チャンネルごとの小さな表（旧 .substats の置き換え） */
@@ -1280,6 +1302,8 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .chartwrap svg{display:block; width:100%; height:auto; overflow:visible}
 /* 軸の説明と指標の1行定義。グラフの上に必ず置く */
 .axnote{font-size:var(--fs-2xs); color:var(--muted); margin:0 0 4px; line-height:1.6}
+/* 軸の説明をタイトルの横に置く（縦の場所をグラフに回す・2026-09-04）。.hint は全画面で隠す約束なので別クラス */
+.sectionhead .axh{font-size:var(--fs-2xs); color:var(--muted); line-height:1.5; flex:1 1 320px; min-width:0}
 .defline{font-size:var(--fs-xs); color:var(--ink-2); margin:0 0 4px; line-height:1.6}
 /* 視聴の質（4つの分布） */
 .qgrid{display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-5) var(--sp-6)}
@@ -1603,7 +1627,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/4 09:07';
+const BUILT_AT = '9/4 09:26';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -2323,13 +2347,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/4 09:07') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/4 09:26') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/4 09:07') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/4 09:26') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3800,10 +3824,11 @@ function lineChart(series, W, opt){
   let d0 = Math.min(...ds), d1 = Math.max(...ds);
   if (d1 === d0) { d0 -= 1; d1 += 1; }
   const xt = spanTicks(d0, d1, plotW);
-  const PB = xt.pb, H = (opt.H || (W < 420 ? 170 : 210)) + (PB - 26);
+  /* 縦は大きめに取り、目盛りは8本ほど。横に伸びるだけで傾きが読めない、との指摘（2026-09-04） */
+  const PB = xt.pb, H = (opt.H || (W < 420 ? 260 : 380)) + (PB - 26);
   const plotH = Math.max(20, H - PT - PB);
   const vs = all.map(r => r.v);
-  const yr = niceTicks(opt.yFrom0 ? 0 : Math.min(...vs), Math.max(...vs), 4);
+  const yr = niceTicks(opt.yFrom0 ? 0 : Math.min(...vs), Math.max(...vs), W < 420 ? 6 : 8);
   const X = d => PL + plotW * ((d - d0) / (d1 - d0));
   const Y = v => PT + plotH - plotH * ((v - yr.lo) / ((yr.hi - yr.lo) || 1));
   const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks:xt.ticks, xRot:xt.rot, yFmt:axNum };
@@ -3854,15 +3879,15 @@ function playsChart(series, W, opt){
   let d0 = Math.min(...ds), d1 = Math.max(...ds);
   if (d1 === d0) { d0 -= 1; d1 += 1; }
   const xt = spanTicks(d0, d1, plotW);
-  const PB = xt.pb, H = (W < 420 ? 218 : 250) + (PB - 26);
-  const hTop = Math.max(24, Math.round((H - PT - GAP - PB) * 0.62));
+  const PB = xt.pb, H = (W < 420 ? 320 : 430) + (PB - 26);
+  const hTop = Math.max(24, Math.round((H - PT - GAP - PB) * 0.55));
   const hBot = Math.max(20, H - PT - GAP - PB - hTop);
   const yTop = PT, yBot = PT + hTop + GAP;
   const X = d => PL + plotW * ((d - d0) / (d1 - d0));
   const incs = all.map(r => r.inc).filter(v => v != null);
   const cums = all.map(r => r.cum);
-  const ir = niceTicks(0, Math.max(1, ...incs), 3);
-  const cr = niceTicks(Math.min(...cums), Math.max(...cums), 2);
+  const ir = niceTicks(0, Math.max(1, ...incs), W < 420 ? 4 : 6);
+  const cr = niceTicks(Math.min(...cums), Math.max(...cums), W < 420 ? 4 : 6);
   const Yi = v => yTop + hTop - hTop * ((v - ir.lo) / ((ir.hi - ir.lo) || 1));
   const Yc = v => yBot + hBot - hBot * ((v - cr.lo) / ((cr.hi - cr.lo) || 1));
   const n = Math.max(1, series.length);
@@ -3912,10 +3937,10 @@ function scatterChart(items, W, opt){
   if (d1 === d0) { d0 -= 1; d1 += 1; }
   /* 横軸は推移グラフと同じ規則（毎日の目盛り・MM/DD(曜)・幅で斜め／間引き）に統一する */
   const xt = spanTicks(d0, d1, plotW);
-  const PB = xt.pb, H = (W < 420 ? 190 : 230) + (PB - 26);
+  const PB = xt.pb, H = (W < 420 ? 250 : 320) + (PB - 26);
   const plotH = Math.max(20, H - PT - PB);
   const vs = items.map(i => i.v);
-  const yr = niceTicks(Math.min(opt.thr, ...vs), Math.max(opt.thr, ...vs), 4);
+  const yr = niceTicks(Math.min(opt.thr, ...vs), Math.max(opt.thr, ...vs), W < 420 ? 5 : 7);
   const X = d => PL + plotW * ((d - d0) / (d1 - d0));
   const Y = v => PT + plotH - plotH * ((v - yr.lo) / ((yr.hi - yr.lo) || 1));
   const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks:xt.ticks, xRot:xt.rot, yFmt:v => String(Math.round(v)) };
@@ -4073,7 +4098,11 @@ function anaStats(a){
   const totalViews = posted.reduce((s, p) => s + (Number(p.views) || 0), 0);
   const vals = k => posted.map(p => numOrNull(p[k])).filter(v => v != null);
   const rates = vals('avg_view_rate_pct');
-  const since7 = Date.now() - 7 * DAY;
+  /* 直近7日＝今日を含む暦の7日間（公開日は日本時間の日付で数える） */
+  const wkFrom = jstDateStr(-6), wkTo = jstDateStr(0);
+  const pubDay = p => { const q = partsOf(new Date(p.published_at), {year:'numeric', month:'2-digit', day:'2-digit'}); return `${q.year}-${q.month}-${q.day}`; };
+  const postedDated = posted.filter(p => p.published_at);
+  const lastPub = postedDated.reduce((m, p) => (!m || new Date(p.published_at) > new Date(m.published_at)) ? p : m, null);
 
   /* 投稿ごとの日次記録（公開後7日の初速に使う） */
   const recs = new Map();
@@ -4091,8 +4120,13 @@ function anaStats(a){
     viewsDelta: (latestCum != null && c7) ? latestCum - c7.cum : null,
     viewsGain30: (latestCum != null && c30) ? latestCum - c30.cum : null,
     rates, hooks: vals('hook_awr'), ends: vals('end_awr'), losses: vals('early_loss_pct'),
-    avgRate: mean(rates),
-    weekPosts: posted.filter(p => p.published_at && new Date(p.published_at).getTime() >= since7).length
+    avgRate: mean(rates), hookAvg: mean(vals('hook_awr')),
+    rateGe70: rates.filter(v => v >= 70).length,
+    subsLatestT: subsAll.length ? subsAll[subsAll.length - 1].t : null, s7t: s7 ? s7.t : null, s30t: s30 ? s30.t : null,
+    cumLatestT: latestCum != null ? cumAll[cumAll.length - 1].t : null, c7t: c7 ? c7.t : null, c30t: c30 ? c30.t : null,
+    wkFrom, wkTo,
+    weekPosts: postedDated.filter(p => pubDay(p) >= wkFrom).length,
+    lastPub
   };
 }
 
@@ -4119,32 +4153,55 @@ async function renderAnalytics(){
     }).join('')}
     <span class="hint">チップを押すとそのチャンネルの表示を消せます・塗りつぶし＝目安に到達／白抜き＝未達</span></div>`;
 
-  /* ── ① チャンネルの現在地 ─────────────────────────────────── */
-  const dl = (v, unit) => v == null ? '<span class="sub">先週比データ蓄積待ち</span>'
-    : `<span class="sub">${v >= 0 ? '▲ +' : '▼ '}${nf(v)} ${unit} 先週比</span>`;
-  const nowRows = sers.map(s => {
-    const st = ST[s.ch];
-    const mn = MONETIZE.map(t => {
-      const p1 = Math.min(1, (st.latestSubs || 0) / t.subs), p2 = Math.min(1, st.totalViews / t.plays);
-      return Math.min(p1, p2) * 100;
-    });
-    return `<tr>
-      <td><span class="chcell">${chSw(s.color)}${s.icon} ${esc(s.name)}</span></td>
-      <td class="num">${st.latestSubs == null ? '—' : nf(st.latestSubs)}${dl(st.subsDelta, '人')}</td>
-      <td class="num">${nf(st.totalViews)}${dl(st.viewsDelta, '回')}</td>
-      <td class="num">${st.avgRate == null ? '—' : st.avgRate.toFixed(1) + '%'}<span class="sub">計測済 ${st.rates.length} 本</span></td>
-      <td class="num">${st.weekPosts} 本</td>
-      <td class="num">${mn[0].toFixed(1)}%</td>
-      <td class="num">${mn[1].toFixed(2)}%</td>
-    </tr>`;
-  }).join('') || `<tr class="emptyrow"><td colspan="7">表示するチャンネルがありません</td></tr>`;
+  /* ── ① チャンネルの現在地 ───────────────────────────────────
+     行＝指標（大分類ごとに見出し行）・列＝チャンネル の縦持ち。横持ちは列が15本になり
+     PC でも 1,955px で収まらなかった（2026-09-04）。各行に「いつからいつまで」「目安」を明記する。
+     期間は最初のチャンネルの記録日から取る（全チャンネル同じ朝に取り込むので一致する）。 */
+  const md = t => t ? fmtMDW(t + 'T00:00:00+09:00') : '—';
+  const st0 = sers.length ? ST[sers[0].ch] : null;
+  const span = (a, b) => (a && b) ? `${md(a)} → ${md(b)}` : '記録が2日分たまると出ます';
+  const delta = (v, unit) => v == null ? '—' : `${v >= 0 ? '+' : ''}${nf(v)} ${unit}`;
+  const mnOf = (st, t) => {
+    const p1 = Math.min(1, (st.latestSubs || 0) / t.subs), p2 = Math.min(1, st.totalViews / t.plays);
+    const pct = Math.min(p1, p2) * 100;
+    return `${pct.toFixed(pct < 1 ? 2 : 1)}%<span class="sub subw">登録者 ${nf(st.latestSubs || 0)}/${nf(t.subs)}・再生 ${axNum(st.totalViews)}/${axNum(t.plays)}</span>`;
+  };
+  /* 行の定義。cell(st) がチャンネル1つぶんのセル HTML を返す */
+  const GROUPS = [
+    { nm:'登録者', rows:[
+      { lb:'いま', note:`${st0 ? md(st0.subsLatestT) : '—'} の朝の実数`, cell: st => st.latestSubs == null ? '—' : `${nf(st.latestSubs)} 人` },
+      { lb:'先週比', note: st0 ? span(st0.s7t, st0.subsLatestT) : '—', cell: st => delta(st.subsDelta, '人') },
+      { lb:'直近30日', note: st0 ? span(st0.s30t, st0.subsLatestT) : '—', cell: st => delta(st.subsGain30, '人') }
+    ]},
+    { nm:'再生数', rows:[
+      { lb:'累計', note:'投稿済の動画の合計', cell: st => `${nf(st.totalViews)} 回` },
+      { lb:'先週比', note: st0 ? span(st0.c7t, st0.cumLatestT) : '—', cell: st => delta(st.viewsDelta, '回') },
+      { lb:'直近30日', note: st0 ? span(st0.c30t, st0.cumLatestT) : '—', cell: st => delta(st.viewsGain30, '回') }
+    ]},
+    { nm:'視聴の質', rows:[
+      { lb:'平均視聴率', note:'計測できた動画の平均・目安 70%', cell: st => st.avgRate == null ? '—' : `${st.avgRate.toFixed(1)}%<span class="sub">計測済 ${st.rates.length}/${st.posted.length} 本</span>` },
+      { lb:'70%に到達', note:'平均視聴率が目安を超えた本数', cell: st => st.rates.length ? `${st.rateGe70} 本<span class="sub">${Math.round(st.rateGe70 / st.rates.length * 100)}%</span>` : '—' },
+      { lb:'冒頭の維持', note:'計測できた動画の平均・目安 1.8', cell: st => st.hookAvg == null ? '—' : st.hookAvg.toFixed(2) }
+    ]},
+    { nm:'投稿', rows:[
+      { lb:'直近7日', note: st0 ? `${md(st0.wkFrom)} 〜 ${md(st0.wkTo)}（今日を含む7日間）` : '—', cell: st => `${st.weekPosts} 本` },
+      { lb:'投稿済', note:'これまでの合計', cell: st => `${st.posted.length} 本` },
+      { lb:'最新の公開', note:'日付と動画の番号', cell: st => st.lastPub ? `${esc(fmtMDW(st.lastPub.published_at))}<span class="sub">${esc(st.lastPub.seq)}</span>` : '—' }
+    ]},
+    { nm:'収益化までの達成率', rows:[
+      { lb:'早期アクセス', note:'登録者 500 と再生 300万・低い方', cell: st => mnOf(st, MONETIZE[0]) },
+      { lb:'広告収益', note:'登録者 1,000 と再生 1,000万・低い方', cell: st => mnOf(st, MONETIZE[1]) }
+    ]}
+  ];
+  const nowRows = sers.length ? GROUPS.map(g => `<tr class="grow"><th colspan="${2 + sers.length}">${esc(g.nm)}</th></tr>` +
+    g.rows.map(r => `<tr><th class="lb">${esc(r.lb)}<span class="subm">${esc(r.note)}</span></th><td class="why">${esc(r.note)}</td>${
+      sers.map(s => `<td class="num" style="--chac:${s.color}">${r.cell(ST[s.ch])}</td>`).join('')}</tr>`).join('')).join('')
+    : `<tr class="emptyrow"><td colspan="3">表示するチャンネルがありません</td></tr>`;
   const nowCard = `<div class="card span2">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>チャンネルの現在地</h2></div>
-      <p class="axnote">登録者と累計再生は毎朝6時に取り込んだ実数。平均視聴率は計測できた動画だけの平均。収益化の2列は達成率（登録者と再生数のうち低い方）</p>
+      <p class="axnote">登録者と再生数は毎朝6時に取り込んだ実数。視聴の質は計測できた動画だけの値。収益化は2条件（登録者・再生数）の達成率のうち低い方</p>
       <div class="tblwrap nowtbl"><table>
-        <thead><tr><th>チャンネル</th><th class="num">登録者</th><th class="num">累計再生</th>
-          <th class="num">平均視聴率</th><th class="num">直近7日の投稿</th>
-          <th class="num">早期アクセス</th><th class="num">広告収益</th></tr></thead>
+        <thead><tr><th>指標</th><th>期間・目安</th>${sers.map(s => `<th class="num"><span class="chcell">${chSw(s.color)}${s.icon} ${esc(s.name)}</span></th>`).join('')}</tr></thead>
         <tbody>${nowRows}</tbody></table></div>
     </div>`;
 
@@ -4173,8 +4230,8 @@ async function renderAnalytics(){
       return `<div>${chSw(s.color)}${esc(s.name)}　${esc(fmtDate(f.t) || f.t)} <b>${nf(f.v)}</b> → ${esc(fmtDate(l.t) || l.t)} <b>${nf(l.v)}</b>（<span style="color:var(--up);font-weight:700">${d >= 0 ? '+' : ''}${nf(d)}</span>）</div>`;
     }).join('');
     subsCard = `<div class="card">
-        <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>登録者の推移</h2></div>
-        <p class="axnote">横軸＝日付・縦軸＝登録者数（人）。線の色＝チャンネル。点にふれるとその日の全チャンネルの数が出ます</p>
+        <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>登録者の推移</h2>
+          <span class="axh">横軸＝日付・縦軸＝登録者数（人）。線の色＝チャンネル。点にふれるとその日の全チャンネルの数が出ます</span></div>
         <div class="chartwrap" id="c-subs"></div>
         <div class="sparkcap">${caps}</div>
         <button class="tbltoggle" data-tbl="subs">${state.anaTbl.subs ? '表を閉じる' : '表で見る'}</button>
@@ -4204,8 +4261,8 @@ async function renderAnalytics(){
         return `<td class="num">${r && r.inc != null ? '+' + nf(r.inc) : '—'}</td><td class="num">${r ? nf(r.cum) : '—'}</td>`;
       }).join('')}</tr>`).join('')}</tbody></table></div>`;
     playsCard = `<div class="card">
-        <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>再生数の推移</h2></div>
-        <p class="axnote">上段＝1日にどれだけ再生されたか（回／日・同じ日のチャンネルは横に並べています）・下段＝それまでの合計（累計 回）。横軸はどちらも日付</p>
+        <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>再生数の推移</h2>
+          <span class="axh">上段＝1日にどれだけ再生されたか（回／日・同じ日のチャンネルは横に並べています）・下段＝それまでの合計（累計 回）。横軸はどちらも日付</span></div>
         <div class="chartwrap" id="c-plays"></div>
         <button class="tbltoggle" data-tbl="plays">${state.anaTbl.plays ? '表を閉じる' : '表で見る'}</button>
         <div class="minitbl wide ${state.anaTbl.plays ? 'show' : ''}" data-tbl="plays">${mini}</div>
@@ -4228,9 +4285,8 @@ async function renderAnalytics(){
   if (scat.length) {
     chartReg.push({ sel:'#c-scatter', build: W => scatterChart(scat, W, {thr:70}) });
     scatCard = `<div class="card span2">
-      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>公開順に見る平均視聴率</h2></div>
-      <p class="defline">${esc(ANA_DEF.rate)}</p>
-      <p class="axnote">横軸＝公開日・縦軸＝平均視聴率（%）。1つの点が動画1本。点にふれるとチャンネル名・番号・タイトルが出ます</p>
+      <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>公開順に見る平均視聴率</h2>
+        <span class="axh">${esc(ANA_DEF.rate)}。横軸＝公開日・縦軸＝平均視聴率（%）。1つの点が動画1本。点にふれるとチャンネル名・番号・タイトルが出ます</span></div>
       <div class="chartwrap" id="c-scatter"></div>
       <div class="distlegend">${sers.map(s => `<span>${chSw(s.color)}${esc(s.name)}</span>`).join('')}
         <span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝70%に到達</span>
