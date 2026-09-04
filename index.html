@@ -1289,6 +1289,8 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .anahead{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; margin-top:var(--sp-4)}
 .anahead .chips{margin:0}
 .anarange{font-size:var(--fs-2xs); color:var(--muted)}
+.anarange.axlbl{margin-left:var(--sp-3)}
+.rgbtn .axsw{width:9px; height:9px; border-radius:3px; background:var(--chac); flex:0 0 auto}
 /* グラフは幅が決まってから中身を描く（drawSpark）。高さは SVG 側が決める */
 .chartwrap{position:relative; margin-top:var(--sp-2); min-width:0}
 .chartwrap svg{display:block; width:100%; height:auto; overflow:visible}
@@ -1619,7 +1621,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/4 22:56';
+const BUILT_AT = '9/4 23:12';
 /* カンバン列＝DB status そのもの */
 const STATUS_COLS = [
   {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
@@ -1715,7 +1717,7 @@ const state = {
   stockQ:'', stockGenre:'', stockSort:null, stockPage:0, detail:null, open:null,
   /* 分析タブ: 推移グラフの期間（日数・0=全部）・動画別の成績の並べ替え・「表で見る」の開閉・
      凡例で消しているチャンネル（{slug:true} が非表示） */
-  anaRange:30, anaSort:null, anaTbl:{}, anaOff:{},
+  anaRange:30, anaAxis:null, anaSort:null, anaTbl:{}, anaOff:{},
   filtersOpen:false, busy:false, lastSync:null,
   /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
   secOpen:{}
@@ -2339,13 +2341,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/4 22:56') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/4 23:12') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/4 22:56') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/4 23:12') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3826,26 +3828,32 @@ function lineChart(series, W, opt){
   /* 縦は大きめに取り、目盛りは8本ほど。横に伸びるだけで傾きが読めない、との指摘（2026-09-04） */
   const PB = xt.pb, H = (opt.H || (W < 420 ? 260 : 380)) + (PB - 26);
   const plotH = Math.max(20, H - PT - PB);
-  const vs = all.map(r => r.v);
+  /* 縦軸の範囲は「軸を合わせる」チャンネル（opt.axis）の値だけから決める。他のチャンネルは
+     薄い線で残し、範囲の外に出た部分は描画領域で切る（案②・2026-09-04）。軸の指定が無ければ全体 */
+  const main = series.find(x => x.ch === opt.axis) || null;
+  const vs = (main ? main.rows : all).map(r => r.v);
   const yr = niceTicks(opt.yFrom0 ? 0 : Math.min(...vs), Math.max(...vs), W < 420 ? 6 : 8);
   const X = d => PL + plotW * ((d - d0) / (d1 - d0));
   const Y = v => PT + plotH - plotH * ((v - yr.lo) / ((yr.hi - yr.lo) || 1));
   const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks:xt.ticks, xRot:xt.rot, yFmt:axNum };
+  const clipId = 'clip-' + (opt.id || 'line');
   /* 面の塗りは1チャンネルのときだけ（重ねると濁って線が読めなくなる） */
   const solo = series.length === 1;
   const body = series.map(s => {
     if (!s.rows.length) return '';
+    const faint = main && s.ch !== main.ch;
     const line = s.rows.map((r, i) => `${i ? 'L' : 'M'}${X(r.d).toFixed(1)} ${Y(r.v).toFixed(1)}`).join(' ');
     const last = s.rows[s.rows.length - 1];
     const area = solo ? `<path d="${line} L${X(last.d).toFixed(1)} ${(PT + plotH).toFixed(1)}
       L${X(s.rows[0].d).toFixed(1)} ${(PT + plotH).toFixed(1)} Z" style="fill:${s.color};opacity:.09"/>` : '';
-    return `${area}<path d="${line}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+    return `<g clip-path="url(#${clipId})" style="opacity:${faint ? .3 : 1}">${area}<path d="${line}" stroke-width="${faint ? 1.5 : 2}" stroke-linejoin="round" stroke-linecap="round"
         vector-effect="non-scaling-stroke" style="fill:none;stroke:${s.color}"/>
-      <circle cx="${X(last.d).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="4" stroke-width="2"
-        vector-effect="non-scaling-stroke" style="fill:${s.color};stroke:var(--surface-1)"/>`;
+      <circle cx="${X(last.d).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="${faint ? 3 : 4}" stroke-width="2"
+        vector-effect="non-scaling-stroke" style="fill:${s.color};stroke:var(--surface-1)"/></g>`;
   }).join('');
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
-      aria-label="${esc(opt.label || '')}。${series.length}チャンネル。">
+      aria-label="${esc(opt.label || '')}。${series.length}チャンネル。${main ? `縦軸は${esc(main.name)}の範囲。` : ''}">
+    <defs><clipPath id="${clipId}"><rect x="${PL - 6}" y="${PT - 6}" width="${plotW + 12}" height="${plotH + 8}"/></clipPath></defs>
     ${axesSvg(g)}${unitSvg(2, PT - 9, opt.unit)}
     ${body}
     ${HOVER_G(series.map(s => s.color)).replace('<line class="hl"', `<line class="hl" y1="${PT - 4}" y2="${PT + plotH}"`)}
@@ -3883,8 +3891,11 @@ function playsChart(series, W, opt){
   const hBot = Math.max(20, H - PT - GAP - PB - hTop);
   const yTop = PT, yBot = PT + hTop + GAP;
   const X = d => PL + plotW * ((d - d0) / (d1 - d0));
-  const incs = all.map(r => r.inc).filter(v => v != null);
-  const cums = all.map(r => r.cum);
+  /* 縦軸の範囲は「軸を合わせる」チャンネル（opt.axis）の値だけから決める（案②・2026-09-04） */
+  const main = series.find(x => x.ch === opt.axis) || null;
+  const base = main ? main.rows : all;
+  const incs = base.map(r => r.inc).filter(v => v != null);
+  const cums = base.map(r => r.cum);
   const ir = niceTicks(0, Math.max(1, ...incs), W < 420 ? 4 : 6);
   const cr = niceTicks(Math.min(...cums), Math.max(...cums), W < 420 ? 4 : 6);
   const Yi = v => yTop + hTop - hTop * ((v - ir.lo) / ((ir.hi - ir.lo) || 1));
@@ -3894,17 +3905,20 @@ function playsChart(series, W, opt){
   /* 同じ日の中に n 本を横並びにする（棒どうしは 1.5px の隙間で分ける） */
   const gw = Math.max(2.4, Math.min(22, plotW / Math.max(1, days.length) - 2.5));
   const bw = Math.max(1.2, (gw - (n - 1) * 1.5) / n);
-  const bars = series.map((s, i) => s.rows.map(r => r.inc == null ? '' :
+  const faintOf = s => main && s.ch !== main.ch;
+  const bars = series.map((s, i) => `<g clip-path="url(#clip-plays-top)" style="opacity:${faintOf(s) ? .3 : .9}">` + s.rows.map(r => r.inc == null ? '' :
     `<path d="${barPath(X(r.d) - gw / 2 + i * (bw + 1.5), Yi(r.inc), bw, (yTop + hTop) - Yi(r.inc), 3)}"
-       style="fill:${s.color};opacity:.9"/>`).join('')).join('');
+       style="fill:${s.color}"/>`).join('') + '</g>').join('');
   const clines = series.map(s => s.rows.length
-    ? `<path d="${s.rows.map((r, i) => `${i ? 'L' : 'M'}${X(r.d).toFixed(1)} ${Yc(r.cum).toFixed(1)}`).join(' ')}"
-        stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
-        vector-effect="non-scaling-stroke" style="fill:none;stroke:${s.color}"/>` : '').join('');
+    ? `<g clip-path="url(#clip-plays-bot)" style="opacity:${faintOf(s) ? .3 : 1}"><path d="${s.rows.map((r, i) => `${i ? 'L' : 'M'}${X(r.d).toFixed(1)} ${Yc(r.cum).toFixed(1)}`).join(' ')}"
+        stroke-width="${faintOf(s) ? 1.5 : 2}" stroke-linejoin="round" stroke-linecap="round"
+        vector-effect="non-scaling-stroke" style="fill:none;stroke:${s.color}"/></g>` : '').join('');
   const gTop = { x0:PL, y0:yTop, plotW, plotH:hTop, X, Y:Yi, yTicks:ir.ticks, xTicks:[], yFmt:axNum };
   const gBot = { x0:PL, y0:yBot, plotW, plotH:hBot, X, Y:Yc, yTicks:cr.ticks, xTicks:xt.ticks, xRot:xt.rot, yFmt:axNum };
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
-      aria-label="再生数の推移。上段は1日の増分、下段は累計。${series.length}チャンネル。">
+      aria-label="再生数の推移。上段は1日の増分、下段は累計。${series.length}チャンネル。${main ? `縦軸は${esc(main.name)}の範囲。` : ''}">
+    <defs><clipPath id="clip-plays-top"><rect x="${PL - 6}" y="${yTop - 6}" width="${plotW + 12}" height="${hTop + 6}"/></clipPath>
+      <clipPath id="clip-plays-bot"><rect x="${PL - 6}" y="${yBot - 6}" width="${plotW + 12}" height="${hBot + 8}"/></clipPath></defs>
     ${axesSvg(gTop)}${unitSvg(2, yTop - 9, '回／日')}
     ${bars}
     ${axesSvg(gBot)}${unitSvg(2, yBot - 9, '累計 回')}
@@ -4210,13 +4224,18 @@ async function renderAnalytics(){
   const ranges = [{v:30, lb:'30日'}, {v:90, lb:'90日'}, {v:0, lb:'全部'}];
   const rangeBtns = `<div class="chips rangebtns">${ranges.map(r =>
     `<button class="rgbtn" data-anarange="${r.v}" aria-pressed="${state.anaRange === r.v}">${r.lb}</button>`).join('')}</div>`;
+  /* 縦軸を合わせるチャンネル（案②・オーナー決定 2026-09-04）。表示中のチャンネルから選ぶ。
+     選んだものが消えていたら先頭に戻す。1チャンネルならボタンは出さない */
+  const axisCh = (sers.find(x => x.ch === state.anaAxis) || sers[0] || {}).ch || null;
+  const axisBtns = sers.length > 1 ? `<span class="anarange axlbl">縦軸を合わせる</span><div class="chips rangebtns">${sers.map(x =>
+    `<button class="rgbtn" data-anaaxis="${esc(x.ch)}" aria-pressed="${x.ch === axisCh}" style="--chac:${x.color}"><i class="axsw"></i>${x.icon} ${esc(x.name)}</button>`).join('')}</div>` : '';
 
   /* ── ② 登録者の推移（チャンネルを重ねる）───────────────────── */
   const subsSer = sers.map(s => ({ ...s, rows: ST[s.ch].subsAll.filter(r => r.t >= from) }))
     .filter(s => s.rows.length >= 2);
   let subsCard;
   if (subsSer.length) {
-    chartReg.push({ sel:'#c-subs', build: W => lineChart(subsSer, W, {unit:'人', label:'登録者の推移'}) });
+    chartReg.push({ sel:'#c-subs', build: W => lineChart(subsSer, W, {unit:'人', label:'登録者の推移', id:'subs', axis:axisCh}) });
     const days = [...new Set(subsSer.reduce((a2, s) => a2.concat(s.rows.map(r => r.t)), []))].sort();
     const step = Math.max(1, Math.ceil(days.length / 8));
     const pick = days.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % step === 0);
@@ -4232,7 +4251,7 @@ async function renderAnalytics(){
     }).join('');
     subsCard = `<div class="card">
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>登録者の推移</h2>
-          <span class="axh">横軸＝日付・縦軸＝登録者数（人）。線の色＝チャンネル。点にふれるとその日の全チャンネルの数が出ます</span></div>
+          <span class="axh">横軸＝日付・縦軸＝登録者数（人）。縦軸の範囲は上で選んだチャンネルに合わせ、他のチャンネルは薄い線。点にふれるとその日の全チャンネルの数が出ます</span></div>
         <div class="chartwrap" id="c-subs"></div>
         <div class="sparkcap">${caps}</div>
         <button class="tbltoggle" data-tbl="subs">${state.anaTbl.subs ? '表を閉じる' : '表で見る'}</button>
@@ -4250,7 +4269,7 @@ async function renderAnalytics(){
     .filter(s => s.rows.length >= 2);
   let playsCard;
   if (cumSer.length) {
-    chartReg.push({ sel:'#c-plays', build: W => playsChart(cumSer, W, {}) });
+    chartReg.push({ sel:'#c-plays', build: W => playsChart(cumSer, W, {axis:axisCh}) });
     const days = [...new Set(cumSer.reduce((a2, s) => a2.concat(s.rows.map(r => r.t)), []))].sort();
     const step = Math.max(1, Math.ceil(days.length / 8));
     const pick = days.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % step === 0);
@@ -4263,7 +4282,7 @@ async function renderAnalytics(){
       }).join('')}</tr>`).join('')}</tbody></table></div>`;
     playsCard = `<div class="card">
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>再生数の推移</h2>
-          <span class="axh">上段＝1日にどれだけ再生されたか（回／日・同じ日のチャンネルは横に並べています）・下段＝それまでの合計（累計 回）。横軸はどちらも日付</span></div>
+          <span class="axh">上段＝1日にどれだけ再生されたか（回／日・同じ日のチャンネルは横に並べています）・下段＝それまでの合計（累計 回）。横軸はどちらも日付。縦軸の範囲は上で選んだチャンネルに合わせ、他は薄く</span></div>
         <div class="chartwrap" id="c-plays"></div>
         <button class="tbltoggle" data-tbl="plays">${state.anaTbl.plays ? '表を閉じる' : '表で見る'}</button>
         <div class="minitbl wide ${state.anaTbl.plays ? 'show' : ''}" data-tbl="plays">${mini}</div>
@@ -4452,7 +4471,7 @@ async function renderAnalytics(){
       <p>公開済みの動画とチャンネルの数字を毎朝6時に取り込んで集計しています。</p>
     </div>
     ${legend}
-    <div class="anahead">${rangeBtns}<span class="anarange">推移のグラフは${esc(anaRangeLabel())}</span></div>
+    <div class="anahead">${rangeBtns}<span class="anarange">推移のグラフは${esc(anaRangeLabel())}</span>${axisBtns}</div>
     <div class="anagrid">
       ${nowCard}
       ${subsCard}
@@ -5771,6 +5790,8 @@ document.addEventListener('click', e => {
   /* 分析タブ 推移グラフの期間切替（30日／90日／全部） */
   const rb = e.target.closest('[data-anarange]');
   if (rb) { state.anaRange = Number(rb.dataset.anarange); renderAnalytics(); return; }
+  const ab = e.target.closest('[data-anaaxis]');
+  if (ab) { state.anaAxis = ab.dataset.anaaxis; renderAnalytics(); return; }
   /* 分析タブ 動画別の成績の並べ替え（同じ列をもう一度押すと昇順・降順が入れ替わる） */
   const sh = e.target.closest('th[data-anasort]');
   if (sh) {
