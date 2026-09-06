@@ -1639,7 +1639,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/6 00:52';
+const BUILT_AT = '9/6 21:04';
 /* カンバン列。st＝DB status そのもの（絞り込みに使うので変えない）・lb＝画面に出す名前。
    DB の「編集中」は用語集の正式名では「レンダ」なので、表示だけ差し替える（#440 低13） */
 const STATUS_COLS = [
@@ -1984,7 +1984,7 @@ async function loadItemBySeq(ch, seq){
 async function loadThread(videoId){
   if (store.threads[videoId]) return store.threads[videoId];
   store.threads[videoId] = await q(sb.from('review_events')
-    .select('id,video_id,gate,author,kind,body,score,resolution_status,resolved_by,resolution_note,resolved_at,created_at')
+    .select('id,video_id,gate,author,kind,body,score,resolution_status,resolved_by,resolution_note,resolved_at,revision,created_at')
     .eq('video_id', videoId).order('created_at', { ascending: true }));
   return store.threads[videoId];
 }
@@ -2011,8 +2011,13 @@ const evNewer = (a, b) => {
    気づきにくい壊れ方をするので、created_at の比較で最新を選ぶ方式に変えた。 */
 function gateStateMap(events){
   const last = new Map();
+  /* ビュー（060/068）と同じ除外: 解決済みの差し戻しは「直し中」と読まない、古い版の提出は
+     「承認待ち」と読まない。現行版は記録の中でいちばん大きい版で代用する（画面は版の表を持たない）。 */
+  const maxRev = Math.max(0, ...(events || []).map(e => Number(e.revision) || 0));
   for (const e of (events || [])) {
     if (!STATE_KINDS.includes(e.kind)) continue;
+    if (e.kind === 'request_changes' && e.resolved_at) continue;
+    if (e.kind === 'request_review' && e.revision != null && Number(e.revision) < maxRev) continue;
     const k = e.video_id + '|' + e.gate;
     const prev = last.get(k);
     if (!prev || evNewer(e, prev)) last.set(k, e);
@@ -2368,13 +2373,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/6 00:52') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/6 21:04') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/6 00:52') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/6 21:04') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
