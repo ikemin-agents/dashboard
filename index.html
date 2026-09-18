@@ -1592,7 +1592,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/10 21:44';
+const BUILT_AT = '9/18 09:10';
 /* カンバン列。st＝DB status そのもの（絞り込みに使うので変えない）・lb＝画面に出す名前。
    DB の「編集中」は用語集の正式名では「レンダ」なので、表示だけ差し替える（#440 低13） */
 const STATUS_COLS = [
@@ -1718,7 +1718,7 @@ function loadUI(){
    byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため）
    rework  = 動画ごとの「この版は何の作り直しか」（human / ai / null）。一覧の札に使う */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
-                board:{}, threads:{}, rework:{}, ops:null, analytics:{}, assets:{}, system:null,
+                board:{}, threads:{}, rework:{}, rvRev:{}, ops:null, analytics:{}, assets:{}, system:null,
                 genfarm:null, autonow:null };
 const clearVideoCaches = () => {
   store.byId = new Map();
@@ -2032,12 +2032,24 @@ async function loadRework(items){
   if (!ids.length) return;
   for (const id of ids) store.rework[id] = null;     /* 取れなかったときに何度も引き直さない */
   const rows = await q(sb.from('review_events')
-    .select('id,video_id,author,kind,resolution_status,created_at')
+    .select('id,video_id,gate,kind,revision,author,resolution_status,created_at')
     .in('video_id', ids).order('created_at', { ascending: true }));
   const by = new Map();
   for (const r of rows) { const a = by.get(r.video_id); if (a) a.push(r); else by.set(r.video_id, [r]); }
-  for (const id of ids) store.rework[id] = reworkSrcOf(by.get(id) || []);
+  for (const id of ids) { store.rework[id] = reworkSrcOf(by.get(id) || []); rememberSubmitted(id, by.get(id) || []); }
 }
+/* 画面に出ている提出物の版（ゲートごとの最後の request_review の版）を覚える。承認するとき
+   DB へ渡し、押した瞬間に裏で新しい版が提出されていたら断ってもらう（073・#502）。
+   表示された時点の値を渡すのが要点なので、押す直前に引き直さない */
+function rememberSubmitted(vid, events){
+  const m = {};
+  for (const e of events || []) if (e.kind === 'request_review' && e.revision != null) m[e.gate] = e.revision;
+  store.rvRev[Number(vid)] = m;
+}
+const submittedRevOf = (vid, gate) => {
+  const m = store.rvRev[Number(vid)];
+  return m && m[gate] != null ? m[gate] : null;
+};
 
 /* 差し戻しの出どころ（DB 側 v_dashboard_list.rc_src と同じ規則・M051）。
    ①そのゲートに載っている未対応（open）の修正依頼の著者集合で決める
@@ -2069,6 +2081,7 @@ function annotate(it, events){
   it._openAi= open.filter(e =>  isAiAuthor(e.author)).length;
   it._rcSrc = it._rc ? rcSrcOf(it._rc, events) : null;
   store.rework[it.id] = reworkSrcOf(events);   /* 一覧の札を実データで上書きする */
+  rememberSubmitted(it.id, events);
   return it;
 }
 /* レビュー記録はゲートで切らず動画単位で持つ（#207）。台本→絵コンテ→完成を1本の時系列で
@@ -2326,13 +2339,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/10 21:44') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/18 09:10') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/10 21:44') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/18 09:10') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2654,9 +2667,15 @@ const MARK_LEGEND = `<div class="legend2">
   <span class="lg"><span class="mark rv">●</span>承認待ち<span class="ex">（あなたの番）</span><span class="exs">（あなたの番）</span></span>
   <span class="lg"><span class="mark todo">·</span>未到達</span></div>`;
 
+/* ゲートが「いまの版で」承認済みか。approved_*_at は初回承認の時刻で版を知らない（差し戻しで
+   版が進んでも残る）ので、そのゲートが承認待ち（*_state === 'review'）なら承認済みとは見せない
+   （BZ0051 で第2版の承認が第4版の「✓完成」に見えていた・2026-09-18） */
+function gateApproved(it, g){
+  return !!it[GATE_COLUMN_FIELD[g]] && it[g + '_state'] !== 'review';
+}
 function gateChips(it, slug){
   return chMeta(slug).gates.map(g => {
-    const on = !!it[GATE_COLUMN_FIELD[g]];
+    const on = gateApproved(it, g);
     return `<span class="gate ${on ? 'on' : ''}">${on ? '✓ ' : ''}${GATE_LABEL[g]}</span>`;
   }).join('');
 }
@@ -2808,7 +2827,9 @@ function sentenceWrap(s){
 function timelineRows(it){
   const cur = displayIdx(it);
   const stamp = {
-    1: it.approved_script_at, 2: it.approved_storyboard_at, 4: it.approved_final_at,
+    1: gateApproved(it, 'script')     ? it.approved_script_at     : null,
+    2: gateApproved(it, 'storyboard') ? it.approved_storyboard_at : null,
+    4: gateApproved(it, 'final')      ? it.approved_final_at      : null,
     6: it.published_at || it.scheduled_at || it.posted_date
   };
   return PSTAGES.map((s, j) => {
@@ -3356,6 +3377,8 @@ function rpcErrText(error, act){
     return 'このアカウントには書き込み権限がありません（ダッシュボードの許可リストを確認してください）';
   if (code === 'P0002' || /video not found/i.test(raw))
     return '対象の動画が見つかりませんでした。再読み込みしてからやり直してください';
+  if (code === 'P0003' || /stale review/i.test(raw))
+    return '見ていた提出物より新しい版が出ています。画面を再読み込みして、新しい版を確認してから承認してください';
   if (code === '22001' || /too long/i.test(raw))
     return '本文が長すぎます（4000文字以内で入力してください）';
   /* 予約済み・投稿済みの動画は没にできない（reject_video の 55000・M023） */
@@ -3501,10 +3524,15 @@ async function submitComment(box, key){
    詳細でメモを開いて書いてあれば、その内容を添えて承認する。 */
 async function approveNow(vid, gate, note){
   const gname = GATE_LABEL[gate] || gate;
+  /* 見ていた提出物の版を添える。裏で新しい版が提出されていたら DB が P0003 で断る（073・#502） */
   const { data, error } = await sb.rpc('approve_gate',
-    { p_video_id: Number(vid), p_gate: gate, p_note: note || null });
+    { p_video_id: Number(vid), p_gate: gate, p_note: note || null,
+      p_expected_revision: submittedRevOf(vid, gate) });
   if (error) {
     markApproved(vid, gate, false);              /* ボタンを押せる状態に戻す */
+    if (error.code === 'P0003') {                /* 古い版を見ていた: 次の描画で新しい版を出す */
+      store.pending = {}; store.threads = {}; store.rvRev = {};
+    }
     toast(rpcErrText(error, 'approve'));
     return;
   }
@@ -3522,7 +3550,8 @@ async function approveNow(vid, gate, note){
   }
   markApproved(vid, gate, true);
   renderShell();
-  toast((data && data.already_approved) ? `${gname}は既に承認済みです` : `${gname}を承認しました`);
+  const rev = data && data.target_revision ? `第${data.target_revision}版の` : '';
+  toast((data && data.already_approved) ? `${rev}${gname}は既に承認済みです` : `${rev}${gname}を承認しました`);
 }
 /* 承認した動画のボタンを、画面を作り直さずにその場で書き換える（表の行・スマホのカード・詳細） */
 function markApproved(vid, gate, done){
