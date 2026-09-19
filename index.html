@@ -547,54 +547,85 @@ td.ttl .flags{margin-left:8px}
      スタイルシート末尾の専用ブロックに置く（#205） */
 }
 
-/* ═══ 詳細ビュー（履歴付き全画面遷移・#200） ══════════════════════ */
+/* ═══ 詳細ビュー（レビュー画面・#200 → 2026-09-20 に並びを組み替え・#509 段1）══════
+   見本（dashboard/review-mockup.html）と同じ並びにする。
+     ・上に細いヘッダ1行（← 一覧／番号／タイトル／札）。戻る手段は左上の1つだけ
+     ・PC（900px 以上）は2列: 左＝レビュー素材（動画は画面の高さいっぱい）・
+       右＝修正の入力欄／あなたの指摘／畳んだ項目
+     ・下端に固定のバー（没にする・修正を依頼・承認）。iPhone の下端の安全域を足す
+     ・カードの囲み（旧 .dcard / .dhead / .dbody）はやめて余白を詰める
+   ⚠️ 下端のバーは position:fixed なので、祖先に transform / filter / contain を持たせない
+   （持たせるとバーがビューポートではなくその祖先に貼り付く）。開くときの動きも不透明度だけ。 */
+:root{--dhdr-h:46px; --dbar-h:62px}
 .dview{max-width:100%; margin:0 auto; animation:detailin .18s ease-out}
+@keyframes detailin{from{opacity:.45}to{opacity:1}}
+.dview.hasbar{padding-bottom:calc(var(--dbar-h) + env(safe-area-inset-bottom) + var(--sp-3))}
 
-/* ═══ 詳細を広い画面で2カラムに（#203）
-   左＝メタ情報（フック／工程タイムライン／メトリクス／メモ）・右＝レビュー（素材＋履歴＋入力）。
-   横幅を「1行を長くする」のではなく「情報を並べる」ことに使う。本文の行長は .cmt .bub の
-   max-width で 92ch に抑える（読み物は45〜75文字/行を超えると視線の戻りで読みにくくなる） ═══ */
-@media (min-width:1240px){
-  /* レビュー中の動画だけ2カラム（レビュー節が無い動画は従来どおり1カラムで詰める）。
-     行スパンではなく「左列を1つのラッパにまとめて2要素を横に並べる」形にする
-     （grid-row の span で伸ばすと空の暗黙行ぶんカード下部が大きく空く） */
-  .dbody:has(.dsec-review){display:grid; grid-template-columns:minmax(340px,470px) minmax(0,1fr);
-    gap:var(--sp-4) var(--sp-8); align-items:start}
-  .dbody:has(.dsec-review) > .dsec-review{border-top:none!important; padding-top:0!important; margin-bottom:0}
-  /* メモ・没理由は横に長い地の文なので、狭い左列に押し込めず上段で全幅に使う */
-  .dbody:has(.dsec-review) > .dsec-note{grid-column:1 / -1}
-  /* 「いま決めること」は2カラムの上に全幅で置く（何を決めるのかを先に読ませる） */
-  .dbody > .decide{grid-column:1 / -1}
-  .dbody > .decide .abox{max-width:980px}
-  /* レビュー節が無い動画は1カラム。全幅に伸ばすと行が長くなりすぎるので上限を置く */
-  .dbody:not(:has(.dsec-review)){max-width:980px}
+/* ── 上の細いヘッダ1行 ─────────────────────────────────────────
+   top のオフセット --stickytop は JS がサイトヘッダーの実高さを測って入れる（詳細表示中は
+   タブが隠れてヘッダーが低くなるので、開閉のたびに測り直す・#331） */
+.dtop{position:sticky; top:var(--stickytop, 0px); z-index:36;
+  background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-md);
+  height:var(--dhdr-h); display:flex; align-items:center; gap:var(--sp-2);
+  padding:0 var(--sp-2) 0 var(--sp-1); overflow:hidden; margin-bottom:var(--sp-3)}
+.dback{font-family:inherit; font-size:var(--fs-sm); color:var(--ink-2); background:none;
+  border:none; cursor:pointer; padding:6px 10px; border-radius:var(--r-sm); flex:0 0 auto;
+  min-height:38px; white-space:nowrap}
+.dback:hover{background:var(--surface-2); color:var(--ink)}
+.dtop .seqn{font-size:var(--fs-sm); font-weight:700; letter-spacing:.02em; flex:0 0 auto;
+  font-variant-numeric:tabular-nums}
+.dtop .ttl{font-size:var(--fs-sm); color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; min-width:0; flex:1 1 auto}
+.dtop .tags{display:flex; gap:5px; flex:0 0 auto; align-items:center}
+.dtop .tags .sbadge{font-size:var(--fs-2xs); padding:2px 9px; gap:4px}
+/* 狭い画面ではタイトルを優先する。チャンネル名と指摘の札は右列（工程の名前・指摘の本文）で分かる */
+@media (max-width:899px){ .dtop .tags .chip,.dtop .tags .flags{display:none} }
+
+/* ── 2列の骨組み ──────────────────────────────────────────────
+   左列の幅は画面の高さから 9:16 で逆算する（縦長の動画がいちばん大きく出る幅）。
+   画像・PDF・テキストの素材でも同じ幅に収まるので、ゲートによって崩れない。 */
+.dwrap{display:grid; align-items:start; gap:var(--sp-4) var(--sp-5);
+  grid-template-columns:clamp(300px, calc((100dvh - var(--dhdr-h) - var(--dbar-h) - 104px) * 0.5625), 46vw)
+                        minmax(340px, 1fr)}
+.dwrap.solo{grid-template-columns:minmax(0,1fr); max-width:980px}
+@media (max-width:899px){
+  .dwrap{grid-template-columns:minmax(0,1fr); gap:var(--sp-3)}
 }
-@keyframes detailin{from{transform:translateY(8px);opacity:.5}to{transform:none;opacity:1}}
-/* 「一覧に戻る」はどこまで下がっても押せるよう、サイトヘッダー直下に貼り付ける（#331）。
-   帯（.backbar）にページ背景を敷いて、下から上がってくるカードが文字に重ならないようにする。
-   top のオフセット --stickytop は JS がヘッダーの実高さを測って入れる（詳細表示中はタブが
-   隠れてヘッダーが低くなるので、開閉のたびに測り直す） */
-.backbar{position:sticky; top:var(--stickytop, 0px); z-index:35; background:var(--page);
-  padding:var(--sp-2) 0 var(--sp-3)}
-.backbtn{display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-sm);
-  border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
-  padding:8px 16px; cursor:pointer; transition:background .12s}
-.backbtn:hover{background:var(--surface-3)}
-/* overflow:hidden は付けない（#205）: 祖先がスクロールコンテナになると子孫の position:sticky が
-   ビューポートに貼り付かなくなり、承認バーのスクロール追従が死ぬ。角の処理は .dhead 側の
-   border-radius で行う（.dbody 側は背景を持たないのでカードの角丸をはみ出さない） */
-.dcard{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
-  box-shadow:var(--shadow-2)}
-.dhead{display:flex; align-items:flex-start; gap:var(--sp-3); padding:var(--sp-4) var(--sp-5);
-  border-bottom:1px solid var(--border); background:var(--surface-1);
-  border-radius:var(--r-lg) var(--r-lg) 0 0}
-.dhead .seqn{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
-.dhead h3{margin:2px 0 0; font-size:var(--fs-lg); font-weight:700; line-height:var(--lh-tight)}
-.dhead .meta{display:flex; gap:7px; flex-wrap:wrap; margin-top:8px; align-items:center}
-/* 詳細ヘッダーは小さいチップが並ぶ行なので、その行の中で揃うようバッジも同寸法に落とす
-   （「同じ行に並ぶものは同じ大きさ」。一覧の行・カードでは既定サイズのまま） */
-.dhead .meta .sbadge{font-size:var(--fs-2xs); padding:2px 9px; gap:4px}
-.dbody{padding:var(--sp-4) var(--sp-5) var(--sp-8)}
+
+/* 左: レビュー素材。はみ出すぶんは左列の中だけでスクロールする（右の入力欄は動かない） */
+.dstage{min-width:0; position:sticky;
+  top:calc(var(--stickytop, 0px) + var(--dhdr-h) + var(--sp-3));
+  max-height:calc(100dvh - var(--stickytop, 0px) - var(--dhdr-h) - var(--dbar-h) - var(--sp-6));
+  overflow:auto; overscroll-behavior:contain}
+/* 中の素材が自前のスクロール枠を持つと入れ子になるので、左列では枠の高さ制限を外す */
+.dstage .pageview{max-height:none; grid-template-columns:minmax(0,1fr)}
+.dstage .mdbody,.dstage .atext{max-height:none}
+@media (max-width:899px){
+  .dstage{position:static; max-height:none; overflow:visible}
+}
+
+/* ── 右列 ── */
+.dside{display:flex; flex-direction:column; gap:var(--sp-3); min-width:0}
+.dside .dsec{margin-bottom:0}
+.folds{display:flex; flex-direction:column; gap:var(--sp-2)}
+.folds>*{margin-bottom:0!important}
+
+/* ── 下端の固定バー ─────────────────────────────────────────── */
+.dbar{position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:var(--surface-1); border-top:1px solid var(--border); box-shadow:var(--shadow-2);
+  display:flex; gap:var(--sp-2); align-items:center;
+  padding:var(--sp-2) var(--sp-4); padding-bottom:calc(var(--sp-2) + env(safe-area-inset-bottom))}
+.dbar .btn{flex:1 1 0; justify-content:center; text-align:center; min-height:44px}
+/* 没は控えめに（枠だけ・押したくならない見た目）。確認の手順は従来どおり2段階 */
+.dbar .btn.kill{flex:0 0 auto; background:transparent; color:var(--ink-2); border-color:var(--border)}
+.dbar .btn.kill:hover{background:var(--crit-tint); color:var(--crit); border-color:var(--crit)}
+/* 「修正を依頼」は常に色つき、入力欄に文字があるとき濃くする（見本と同じ） */
+.btn.soft.on{background:var(--fix); border-color:transparent; color:#fff}
+.btn.soft.on:hover{background:var(--fix); filter:brightness(1.06)}
+@media (max-width:899px){
+  .dbar{padding-left:var(--sp-3); padding-right:var(--sp-3)}
+  .dbar .btn{font-size:var(--fs-xs); padding:9px 8px}
+}
 .dsec{margin-bottom:var(--sp-5)}
 .dsec h4{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.09em;
   text-transform:uppercase; margin:0 0 var(--sp-2)}
@@ -624,41 +655,18 @@ td.ttl .flags{margin-left:8px}
 /* 詳細ビュー表示中は一覧ナビ／チャンネルタブを隠して全画面に見せる */
 body.detail-open .chrow, body.detail-open .nav{display:none}
 @media (max-width:680px){
-  .dhead{padding:var(--sp-3) var(--sp-4)}
-  /* 下は詰める（#205 オーナー指摘: ボツボタンの下に空白が余る）。
-     承認バーが sticky で最後に来るので、その下に余白を残す必要がない */
-  .dbody{padding:var(--sp-3) var(--sp-4) 0}
   .mgrid{grid-template-columns:repeat(2,1fr)}
   body.detail-open main{padding-bottom:0}
 }
 /* ── スマホ: 詳細も画面端まで（#205）──────────────────────────────
    一覧（.stockcards）と同じく main の左右パディングを消して端から端まで使う。
-   カード／囲みは左右の枠線と角丸を落として全幅に伸ばし、地の文だけ縁に貼り付かないよう
-   最小の内側パディング（--dpad）を残す。 */
+   横スクロールは出さない（min-width:0 と overflow-wrap で受ける）。 */
 @media (max-width:640px){
   :root{--dpad:11px}
   /* main は max-width:94vw（左右3vwの余白）なので、詳細表示中だけ解除しないと端に届かない */
   body.detail-open main{max-width:none; padding-left:0; padding-right:0}
-  .dview{max-width:none}
-  .backbtn{margin-left:var(--dpad)}
-  .dcard{border-radius:0; border-left-width:0; border-right-width:0}
-  .dhead{padding-left:var(--dpad); padding-right:var(--dpad)}
-  .dbody{padding-left:0; padding-right:0}
-  .dbody .hook,.dbody .asset,.dbody .wbox,.dbody .abox,
-  .dbody .noitem,.dbody .loadbox,.dbody .dstate{
-    border-radius:0; border-left-width:0; border-right-width:0}
-  .dbody .dsec>h4,.dbody .blk>h4,.dbody .tl .row,.dbody .dhint,
-  .dbody .ytlink,.dbody .thread,.dbody .dstate,.dbody .rjbox{
-    padding-left:var(--dpad); padding-right:var(--dpad)}
-  .dbody .rjbox{margin-left:0; margin-right:0}
-  .dbody .mgrid .m{border-radius:0}
-  .dcard,.dhead{border-radius:0}
-  /* 「いま決めること」は詳細の先頭に置く枠（オーナー決定 2026-09-06）。スマホでは画面幅を
-     使い切り、2つのボタンを横に並べて指で押せる大きさにする */
-  .dbody .abox{padding:var(--sp-3) var(--dpad)}
-  .dbody .decide .wbox{margin-left:0; margin-right:0}
-  .dchead .dcb{width:100%}
-  .dchead .dcb>.btn{flex:1 1 0; padding-top:11px; padding-bottom:11px; justify-content:center}
+  .dview{max-width:none; padding-left:var(--dpad); padding-right:var(--dpad)}
+  .dwrap{gap:var(--sp-3)}
 }
 tr.dropped td{color:var(--muted)}
 
@@ -773,16 +781,21 @@ tr.dropped td{color:var(--muted)}
 .ailog>.ailine:first-child{border-top:none; padding-top:0}
 .ailine .d{flex:0 0 auto; color:var(--muted); font-variant-numeric:tabular-nums}
 .ailine .t{min-width:0; word-break:break-word}
-/* ── いま決めること（オーナー決定 2026-09-06）─────────────────────────
-   詳細の先頭に置く枠。中身は「何を決めるのか（ゲート名＋版）」「その版で何を変えたのか
-   （1点1行）」「メモ」「承認／修正を依頼」だけ。定型の呼びかけ・番号・置き場は出さない。
-   承認バーの画面下端への貼り付きはやめてこの枠の中に入れる（決める材料と操作を1か所に置く）。 */
-.decide{margin:0 0 var(--sp-5)}
-.decide .abox{margin:0}
-.decide .wbox{margin-top:var(--sp-2)}
-.dchead{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; width:100%}
-.dchead .dcg{font-size:var(--fs-lg); font-weight:700; line-height:1.3; margin-right:auto}
-.dchead .dcb{display:flex; gap:var(--sp-2); flex-wrap:wrap}
+/* ── いま決めること（オーナー決定 2026-09-06 → 2026-09-20 に並びを見本へ・#509 段1）──
+   右列の先頭に置く。中身は「何を決めるのか（ゲート名＋版）」「その版で何を変えたのか
+   （1点1行）」「メモ」「修正を依頼するときの入力欄」。定型の呼びかけ・番号・置き場は出さない。
+   3つのボタン（没・修正を依頼・承認）は下端の固定バー（.dbar）へ移した。
+   ⚠️ .decide は「決める枠ひとそろい」の器でもある——書き込みの囲み（.abox / .wbox / .rjbox）と
+   下端のバーはここを親にして互いを引き当てる（actBox / writeGroup / decideGroup）。 */
+.decide{display:flex; flex-direction:column; gap:var(--sp-2); margin:0}
+/* 枠を重ねない（カードの中のカードにしない）。読ませたい「変更」だけが面を持つ */
+.decide .abox{margin:0; border:none; background:transparent; box-shadow:none; padding:0;
+  justify-items:stretch}
+.decide .wbox{margin-top:0}
+/* 没の欄は「開いたときだけ出る理由の入力」。1段目のボタンは下端のバーにあるので、
+   閉じているあいだは仕切り線も余白も持たせない */
+.decide .rjbox{margin:0; padding:0; border-top:none}
+.dcg{font-size:var(--fs-lg); font-weight:700; line-height:1.3}
 /* 変更の行はこの枠でいちばん読ませたいので、承認の色（--s1）で1枚の面にする */
 .dcchg{width:100%; background:var(--s1-tint); border-radius:var(--r-sm); padding:8px 11px;
   font-size:var(--fs-sm); line-height:1.7; word-break:break-word}
@@ -896,6 +909,14 @@ tr.dropped td{color:var(--muted)}
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .avid{width:100%; max-width:250px; aspect-ratio:9/16; display:block; margin:11px 12px;
   border-radius:var(--r-sm); background:#000}
+/* 左のレビュー素材の列に置かれた動画は、画面の高さいっぱいまで大きく出す（縦長 9:16 前提）。
+   高さを先に決めて幅は成り行きにするので、横長の動画でも枠からはみ出さない */
+.dstage .avid{max-width:100%; width:auto; aspect-ratio:9/16; margin:var(--sp-2) auto;
+  height:calc(100dvh - var(--stickytop, 0px) - var(--dhdr-h) - var(--dbar-h) - 128px);
+  max-height:none; min-height:280px; object-fit:contain}
+@media (max-width:899px){
+  .dstage .avid{height:auto; width:min(100%, calc(62dvh * 9 / 16))}
+}
 .afiles{display:grid; gap:6px; padding:10px 12px; font-size:var(--fs-xs); background:var(--surface-1)}
 .afiles a{color:var(--s1); word-break:break-all}
 
@@ -1420,35 +1441,22 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   details.opsec{padding-left:var(--sp-4); padding-right:var(--sp-4)}
   details.opsec>.runs{margin-left:calc(-1 * var(--sp-4)); margin-right:calc(-1 * var(--sp-4))}
 }
-/* ═══ スマホ: レビュー履歴も詳細の他ブロックと同じ「端まで1枚」に揃える（#207）
-   ⚠️ .dsec-history の基本定義（枠線・角丸・内側余白）はスタイルシートの前方にあり
-      詳細度も同じなので、詳細ビューのスマホ用ブロック（max-width:640px・前方）ではなく
-      必ずここ＝基本定義より後ろに置く。中身の .thread は既存の共通ルールで
-      左右 --dpad が付くため、囲み側の左右パディングは 0 にして二重にしない ═══ */
+/* ═══ スマホの詳細まわりの微調整（#207 / #266 / #509 段1）══════════════════
+   ⚠️ .dsec-history / .cmt .bub の基本定義はスタイルシートの前方にあり詳細度も同じなので、
+      上書きは必ずここ＝基本定義より後ろに置く。
+   2026-09-20 に詳細を1枚の器（.dview に --dpad の余白）へ組み替えたので、囲みごとに
+   左右の枠線を落とす「端まで1枚」の指定は不要になった（余白は器が持つ）。 ═══ */
 @media (max-width:640px){
-  .dbody .dsec-history{border-radius:0; border-left-width:0; border-right-width:0;
-    padding-left:0; padding-right:0}
-  .dbody .dsec-history>.dsum{padding-left:var(--dpad); padding-right:var(--dpad)}
-  /* 素材の版バー・旧版の畳みも同じ扱い（#209）。中の .asset は既存ルールで全幅になる */
-  .dbody .verbar{padding-left:var(--dpad); padding-right:var(--dpad)}
-  .dbody .oldver{border-radius:0; border-left-width:0; border-right-width:0;
-    padding-left:0; padding-right:0}
-  .dbody .oldver>.dsum{padding-left:var(--dpad); padding-right:var(--dpad)}
   /* ── 入力欄をタップしたときに画面が動くのを止める（オーナー要望 2026-08-20）──────
      iPhone は「文字が16pxより小さい入力欄」に合わせて自動で拡大する。これが
      タップした瞬間に画面がグイッと動く正体なので、スマホでは入力欄だけ16pxにする
      （拡大が起きなければ、戻るときの揺れも起きない）。 */
   .wbox .wta,.abox .ata,.rjbox .rta,.toolbar input[type="search"],.toolbar select,.fld input{
     font-size:16px}
-  /* ブラウザが入力欄を見せようとして画面を送るとき、下に余白を残す */
-  .wbox .wta{scroll-margin-bottom:104px}
-
-  /* ── コメントを画面いっぱいに（#266 オーナー要望 2026-08-19）────────────────
-     .thread の左右余白と吹き出しの左右の枠線・角丸を落として、他のブロック（素材・履歴）と
-     同じく端から端まで使う。内側は地の文が縁に貼り付かないぶんだけ（--dpad）残す */
-  .dbody .thread{padding-left:0; padding-right:0}
-  .dbody .cmt .bub{max-width:none; border-radius:0; border-left-width:0; border-right-width:0;
-    padding-left:var(--dpad); padding-right:var(--dpad)}
+  /* ブラウザが入力欄を見せようとして画面を送るとき、下端のバーのぶん余白を残す */
+  .wbox .wta{scroll-margin-bottom:calc(var(--dbar-h) + 52px)}
+  /* 吹き出しは狭い画面では幅いっぱいに使う（92ch の上限は横長の画面のためのもの） */
+  .dside .cmt .bub{max-width:none}
 }
 /* ═══ PC（広い画面）だけ本文フォントを少し大きく（#203）
    root を 16→17px にして rem ベースの --fs-* を一律 +約1px。スマホ層(≤680px)は
@@ -1585,7 +1593,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/20 00:58';
+const BUILT_AT = '9/20 01:05';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2340,13 +2348,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/20 00:58') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/20 01:05') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/20 00:58') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/20 01:05') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2832,32 +2840,33 @@ function timelineRows(it){
   }).join('');
 }
 
+/* 畳んだ項目の共通の形（右列の下に並べる details）。既存の履歴の畳みと同じ作法に揃える */
+const foldHTML = (label, body, sub) =>
+  `<details class="dsec dsec-history dsec-mat"><summary class="dsum">${esc(label)}${
+    sub ? `<span class="n">${esc(sub)}</span>` : ''}</summary>${body}</details>`;
+
+/* ── 詳細（レビュー画面）の組み立て（#509 段1・見本 dashboard/review-mockup.html）──────
+   並びは見本のとおり:
+     ヘッダ1行 → PC は2列（左＝レビュー素材・右＝入力欄／あなたの指摘／畳んだ項目）→ 下端の固定バー。
+   スマホは同じ順で縦1列になる（grid の列を1本にするだけ）。
+   ⚠️ 送信の仕組み（approve_gate / request_changes / reject_video の呼び出し、版のずれで
+   断られたときの描き直し、没の2段階）は動かしていない——置き場所だけを変えている。 */
 function detailHTML(it){
   const m = chMeta(it.channel), cur = displayIdx(it);
   const curName = cur < 0 ? (it.stage === 'triage' ? '仕分け待ち' : '没') : PSTAGES[cur].name;
-
-  const metrics = (it.plays != null || it.avg_view_rate_pct != null || it.subs != null) ? `
-    <div class="dsec"><h4>メトリクス${it.measured_date ? `（${esc(fmtDate(it.measured_date) || it.measured_date)} 計測）` : ''}</h4>
-      <div class="mgrid">
-        <div class="m"><div class="k">再生数</div><div class="v">${it.plays == null ? '—' : nf(it.plays)}</div></div>
-        <div class="m"><div class="k">平均視聴率</div><div class="v">${it.avg_view_rate_pct == null ? '—' : Number(it.avg_view_rate_pct).toFixed(1) + '%'}</div></div>
-        <div class="m"><div class="k">登録者増</div><div class="v">${it.subs == null ? '—' : (it.subs > 0 ? '+' : '') + it.subs}</div></div>
-      </div>
-      ${it.youtube_url ? `<a class="ytlink" href="${esc(it.youtube_url)}" target="_blank" rel="noopener noreferrer">${esc(it.youtube_url)}</a>` : ''}
-    </div>` : '';
-
-  const dropped = it.stage === 'dropped'
-    ? `<div class="dsec dsec-note"><h4>没理由</h4><div class="hook">${esc(sentenceWrap(it.decision_note || it.note || '（記録なし）'))}</div></div>` : '';
-
-  const noteBlk = it.note ? `<div class="dsec dsec-note"><h4>メモ</h4><div class="hook">${esc(sentenceWrap(it.note))}</div></div>` : '';
-
-  /* ── いま決めること（オーナー決定 2026-09-06）────────────────────────────
-     詳細の先頭に「決める枠」を1つだけ置く。承認待ちなら ゲート名＋版・その版で変えたこと・
-     メモ・承認／修正を依頼。承認待ちでなければ、現状を言う1行だけに落とす。
-     文言は差し戻しの出どころで分ける（M051）——あなたの指摘の直しなのか、
-     AI審査が基準未達と見て勝手に作り直しているのかで、読む人のすることが違う */
   const rvGate = it._rv || it._rc;
   const evs = threadOf(it.id);
+
+  /* 履歴は2つに分ける（オーナー決定 2026-09-06）。「あなたの指摘」は全文のまま右列に出し、
+     「AI の記録」は1件1行に畳んで下の畳みへ回す。時系列には混ぜない。
+     ゲートが1つしか無い動画（02の完成だけ）では毎行に同じ札を出しても読み分けに使えない */
+  const showGate = new Set(evs.map(e => e.gate)).size > 1;
+  const you   = evs.length ? youHTML(evs, showGate) : '';
+  const ailog = evs.length ? aiLogHTML(evs) : '';
+
+  /* 承認待ちなら「決める枠」（ゲート名＋版・変えたこと・メモ・入力欄）と下端のバー。
+     承認待ちでなければ現状を言う1行だけ。文言は差し戻しの出どころで分ける（M051）——
+     あなたの指摘の直しなのか、AI審査が基準未達と見て作り直しているのかで、読む人のすることが違う */
   const decide = it._rv
     ? decideHTML(it, it._rv, changeLines(evs))
     : `<div class="decide">${it._rc
@@ -2866,54 +2875,66 @@ function detailHTML(it){
             : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${GATE_LABEL[it._rc]}）。直り次第、新しい版で出し直します。</div>`)
         : `<div class="dstate">● いまは「${esc(curName)}」の工程です。</div>`}</div>`;
 
-  /* ── 履歴は2つに分ける（オーナー決定 2026-09-06）─────────────────────────
-     「あなたの指摘」は既定で開いて全文のまま・「AI の記録」は既定で閉じて1件1行。
-     時系列に混ぜない。承認するとゲート状態（_rv/_rc）が消えてレビュー節が閉じるので、
-     履歴は記録が1件でもあれば必ず出す（レビュー節が無い動画は左のメタ列に置く）。 */
-  const history = evs.length ? historyHTML(evs) : '';
+  /* 左列＝いま見るべき素材（承認待ち／AI修正中のゲートのもの）。台本(.md)・絵コンテ(画像)・
+     完成(mp4) のどれでも assetsHTML が同じ形で描く。素材が無いゲートでは左列を畳んで1列にする */
+  const stage = rvGate ? `<div class="dstage">
+      <div class="assets" data-assets="${esc(it.id + '|' + rvGate)}" data-ch="${esc(it.channel)}"
+           data-seq="${esc(it.seq)}" data-gate="${esc(rvGate)}">
+        <div class="loadbox">素材を読み込み中…</div></div></div>` : '';
 
-  const review = rvGate ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
-      ${reviewPanel(it, rvGate, history)}</div>` : '';
-
-  /* 承認待ちでなくても素材を見られる畳み（#360）。レビュー節に出ているゲートは重複しない */
-  const materials = materialsHTML(it, rvGate);
-
-  /* ネタの仕分け（#314）。ゲートを持たないので review 節とは排他で、同じ位置に出す */
+  /* ネタの仕分け（#314）。ゲートを持たないので決める枠とは排他 */
   const triage = it.stage === 'triage'
-    ? `<div class="dsec dsec-review" style="border-top:1px solid var(--border);padding-top:var(--sp-4)">
-        <h4>ネタの仕分け</h4>
+    ? `<div class="dsec">
         <div class="dstate rv">● <b>あなたの番</b>です。台本の型に乗らなかったので、AIは起草せずここへ回しました。</div>
-        ${triagePanel(it)}${history}</div>`
+        ${triagePanel(it)}</div>`
     : '';
 
-  return `<div class="dview">
-    <div class="backbar"><button class="backbtn" data-close="1" aria-label="一覧に戻る">← 一覧に戻る</button></div>
-    <article class="dcard" role="region" aria-label="${esc(it.title)} の詳細">
-      <div class="dhead">
-        <div style="flex:1 1 auto;min-width:0">
-          <div class="seqn">${esc(it.seq)}</div>
-          <h3>${esc(it.title)}</h3>
-          <div class="meta">
-            <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(m.name)}</span>
-            <span class="genre">${esc(it.genreLabel)}</span>
-            <span class="gbadge"><i style="background:${it._rv ? 'var(--s1)'
-              : (it.stage === 'posted' || it.stage === 'dropped') ? 'var(--done)' : 'var(--fix)'}"></i>${curName}</span>
-            <span class="wait">滞留 ${it.days == null ? '—' : it.days + '日'}</span>
-            ${flagsHTML(it)}
-          </div>
-        </div>
-        <button class="iconbtn" data-close="1" aria-label="閉じる">✕</button>
+  /* 畳んだ項目（既定は畳む）。並びは AI の記録 → 素材（絵コンテ・完成）→ 工程の履歴 → フック */
+  const metrics = (it.plays != null || it.avg_view_rate_pct != null || it.subs != null)
+    ? foldHTML(`数字${it.measured_date ? `（${fmtDate(it.measured_date) || it.measured_date} 計測）` : ''}`, `
+      <div class="mgrid">
+        <div class="m"><div class="k">再生数</div><div class="v">${it.plays == null ? '—' : nf(it.plays)}</div></div>
+        <div class="m"><div class="k">平均視聴率</div><div class="v">${it.avg_view_rate_pct == null ? '—' : Number(it.avg_view_rate_pct).toFixed(1) + '%'}</div></div>
+        <div class="m"><div class="k">登録者増</div><div class="v">${it.subs == null ? '—' : (it.subs > 0 ? '+' : '') + it.subs}</div></div>
       </div>
-      <div class="dbody">
-        ${it.stage === 'triage' ? '' : decide}${dropped}${noteBlk}
-        <div class="dcol-meta">
-          <div class="dsec"><h4>フック</h4><div class="hook">${esc(it.hook || '（未設定）')}</div></div>
-          <div class="dsec"><h4>工程タイムライン</h4><div class="tl">${timelineRows(it)}</div>
-            <div class="dhint">日付は承認ポイント・公開時刻の実記録のみ表示（記録が無い工程は —）</div></div>
-          ${metrics}${materials}${(rvGate || it.stage === 'triage') ? '' : history}
-        </div>${review}${triage}
+      ${it.youtube_url ? `<a class="ytlink" href="${esc(it.youtube_url)}" target="_blank" rel="noopener noreferrer">${esc(it.youtube_url)}</a>` : ''}`)
+    : '';
+  const dropped = it.stage === 'dropped'
+    ? foldHTML('没にした理由', `<div class="hook">${esc(sentenceWrap(it.decision_note || it.note || '（記録なし）'))}</div>`)
+    : '';
+  const noteBlk = it.note
+    ? foldHTML('メモ', `<div class="hook">${esc(sentenceWrap(it.note))}</div>`) : '';
+
+  const folds = `<div class="folds">
+    ${ailog}
+    ${materialsHTML(it, rvGate)}
+    ${foldHTML('工程の履歴', `<div class="tl">${timelineRows(it)}</div>
+      <div class="dhint">日付は承認ポイント・公開時刻の実記録のみ表示（記録が無い工程は —）</div>`,
+      cur < 0 ? '' : curName)}
+    ${foldHTML('フック', `<div class="hook">${esc(it.hook || '（未設定）')}</div>`)}
+    ${metrics}${dropped}${noteBlk}
+  </div>`;
+
+  return `<div class="dview${it._rv ? ' hasbar' : ''}" role="region" aria-label="${esc(it.title)} の詳細">
+    <div class="dtop">
+      <button class="dback" data-close="1" aria-label="一覧に戻る">← 一覧</button>
+      <span class="seqn">${esc(it.seq)}</span>
+      <span class="ttl">${esc(it.title)}</span>
+      <span class="tags">
+        <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(m.name)}</span>
+        <span class="gbadge"><i style="background:${it._rv ? 'var(--s1)'
+          : (it.stage === 'posted' || it.stage === 'dropped') ? 'var(--done)' : 'var(--fix)'}"></i>${esc(curName)}</span>
+        ${flagsHTML(it)}
+      </span>
+    </div>
+    <div class="dwrap${stage ? '' : ' solo'}">
+      ${stage}
+      <div class="dside">
+        ${it.stage === 'triage' ? triage : decide}
+        ${you}
+        ${folds}
       </div>
-    </article>
+    </div>
   </div>`;
 }
 
@@ -2952,7 +2973,7 @@ async function openDetail(vid, gate){
   dv.innerHTML = detailHTML(it);
   syncStickyOffsets();          /* タブが隠れてヘッダーが低くなるので測り直す（戻るボタンの貼り付き位置） */
   window.scrollTo(0, 0);
-  dv.querySelector('.backbtn')?.focus();
+  dv.querySelector('.dback')?.focus();
   mountAllAssets(dv);
   armLazyAssets(dv);            /* 畳んである素材は開かれた時点で読みに行く（#360） */
 }
@@ -3095,6 +3116,15 @@ function assetsHTML(files){
   return head + assetBlocksHTML(files.filter(isLatest)) + olds;
 }
 
+/* ── 動画の枠（#509 段1）────────────────────────────────────────
+   いまはブラウザ既定の操作バー（controls）のまま。あとの段で「気になる場所をタップして
+   指摘を足す」自前の操作バーに差し替えるので、動画まわりの DOM はこの1か所にまとめておく。 */
+function videoBlockHTML(f){
+  return `<div class="asset">${assetHead(f)}${f.url
+    ? `<video class="avid" controls preload="metadata" playsinline src="${esc(f.url)}"></video>`
+    : `<div class="afiles">この動画の署名URLを取得できませんでした</div>`}</div>`;
+}
+
 function assetBlocksHTML(files){
   if (!files.length) return NO_ASSET;
   /* `…_p01.jpg` 形式は資料の「ページ」（絵コンテの各ページ等）。サムネ格子ではなく
@@ -3113,11 +3143,7 @@ function assetBlocksHTML(files){
       return `<div class="asset">${assetHead(f)}<pre class="atext">${
         f.text != null ? esc(f.text) : esc(f.err || '（本文が空です）')}</pre></div>`;
     }
-    if (f.kind === 'video') {
-      return `<div class="asset">${assetHead(f)}${f.url
-        ? `<video class="avid" controls preload="metadata" playsinline src="${esc(f.url)}"></video>`
-        : `<div class="afiles">この動画の署名URLを取得できませんでした</div>`}</div>`;
-    }
+    if (f.kind === 'video') return videoBlockHTML(f);
     return null;
   }).filter(Boolean);
 
@@ -3205,75 +3231,52 @@ function armLazyAssets(root){
   });
 }
 
-/* ── いま決めること（オーナー決定 2026-09-06）────────────────────────────
-   詳細の先頭に置く枠。中身は4つだけ——**ゲート名＋版**／**この版で変えたこと**／メモ／
-   **承認と修正を依頼の2つのボタン**。「承認をお願いします」「決めてほしいこと」「そのほか」
-   といった定型文と、動画の番号・素材の置き場は画面に出さない（オーナーが読むのは
-   「何が変わったか」だけで、残りは毎回同じ文だった）。
-   誤タップ防止（#205）は維持: 修正の依頼は「修正を依頼 → 入力欄が開く → 依頼する」の2段階、
-   没はさらに慎重（理由が空のあいだ確定ボタンを押せない）。承認だけは1タップだが、
-   押したあと数秒は「取り消す」で無かったことにできる（#205 / 2026-08-20）。 */
+/* ── いま決めること（オーナー決定 2026-09-06 → 並びは 2026-09-20 に見本へ・#509 段1）──────
+   右列の先頭に置く枠。中身は**ゲート名＋版**／**この版で変えたこと**／メモ／
+   **修正を依頼するときの入力欄（自由記述）**。「承認をお願いします」「決めてほしいこと」
+   「そのほか」といった定型文と、動画の番号・素材の置き場は画面に出さない。
+   3つのボタン（没にする・修正を依頼・承認）は下端の固定バー（.dbar）に1列で並べる。
+   誤タップ防止（#205）:
+     ・没は2段階（バーのボタンで理由の欄が開き、理由が空のあいだ確定ボタンを押せない）
+     ・修正の依頼は「入力欄に書いてから押す」（空のまま押しても送らず、入力欄に案内を出す）
+     ・承認は1タップだが、押したあと数秒は「取り消す」で無かったことにできる（2026-08-20）
+   ⚠️ この4つ（.abox / .wbox / .rjbox / .dbar）は必ず同じ .decide の直下に置く——
+   バーのボタンは自分の外にある囲みを .decide 経由で引き当てる（actBox / writeGroup）。 */
 function decideHTML(it, gate, changes){
   const key = it.id + '|' + gate;
   const gname = GATE_LABEL[gate] || gate;
   const caution = GATE_CAUTION[gate] || null;
   const pid = `ap-${it.id}-${gate}`;
-  const fid = `fx-${it.id}-${gate}`;
+  const rid = `rj-${it.id}-${gate}`;
   const sub = latestSub(threadOf(it.id));
   const ver = subRevLabel(sub);
   const measure = sub ? measureNote(sub.body) : [];
   return `<div class="decide">
     <div class="abox" data-abox="${esc(key)}">
-      <div class="dchead">
-        <div class="dcg">${esc(gname)}${ver ? ' ' + esc(ver) : ''}</div>
-        <div class="dcb">
-          <button class="btn primary" data-act="approve-quick" data-key="${esc(key)}"
-            data-label="${esc(gname)}を承認">${esc(gname)}を承認</button>
-          <button class="btn soft" data-act="fix-open" data-key="${esc(key)}"
-            aria-expanded="false" aria-controls="${fid}">修正を依頼</button>
-        </div>
-      </div>
+      <div class="dcg">${esc(gname)}${ver ? ' ' + esc(ver) : ''}</div>
       ${changes.length ? `<div class="dcchg"><span class="k">変更</span>${
         changes.length === 1 ? esc(changes[0])
           : `<ul>${changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`}</div>` : ''}
       ${measure.length ? `<div class="acaution">⚠ 基準に届かないまま出しています：${
         esc(measure.join('／'))}</div>` : ''}
       ${caution ? `<div class="acaution">⚠ ${esc(caution)}</div>` : ''}
-      <details class="afold"><summary class="dsum">メモを付ける（任意）</summary>
+      <details class="afold"><summary class="dsum">承認にメモを付ける（任意）</summary>
         <textarea class="ata" id="${pid}-note" rows="2" aria-label="承認メモ（任意）"
           placeholder="残したいメモがあれば入力（空欄のままで構いません）"></textarea></details>
       <div class="wmsg" data-slot="approve" hidden></div>
     </div>
-    <div class="wbox fixbox" id="${fid}" data-wbox="${esc(key)}" hidden>
-      <h4 class="wh">修正を依頼</h4>
+    <div class="wbox fixbox" data-wbox="${esc(key)}">
+      <h4 class="wh">修正を依頼するとき</h4>
       <textarea class="wta" rows="3" aria-label="直してほしい点"
         placeholder="直してほしい点を入力（Ctrl + Enter で送信）"></textarea>
       <div class="wmsg" data-slot="comment" hidden></div>
       <div class="wact">
-        <span class="whint">AI が直して、新しい版で出し直します</span>
-        <button class="btn" data-act="fix-cancel">キャンセル</button>
-        <button class="btn soft" data-act="comment" data-key="${esc(key)}">この内容で依頼する</button>
-      </div></div></div>`;
-}
-
-/* ── レビュー節（素材・履歴・没）────────────────────────────────
-   承認と修正の依頼は詳細の先頭の「いま決めること」に移したので、ここには残らない。 */
-function reviewPanel(it, gate, histHTML){
-  const key = it.id + '|' + gate;
-  const rid = `rj-${it.id}-${gate}`;
-  /* 並び順は「素材 → あなたの指摘 → AI の記録 → 没」。
-     履歴の HTML は detailHTML から受け取る（無ければ空文字） */
-  return `<div class="blk"><h4>レビュー素材</h4>
-      <div class="assets" data-assets="${esc(key)}" data-ch="${esc(it.channel)}"
-           data-seq="${esc(it.seq)}" data-gate="${esc(gate)}">
-        <div class="loadbox">素材を読み込み中…</div></div></div>
-    ${histHTML || ''}
+        <span class="whint">書いてから下の「修正を依頼」を押すと、AI が直して新しい版で出し直します</span>
+      </div></div>
     <div class="rjbox" data-rjbox="${esc(key)}">
-      <button class="btn rjopen" data-act="reject-open" data-key="${esc(key)}"
-        aria-expanded="false" aria-controls="${rid}">このネタを没にする</button>
       <div class="rjpanel" id="${rid}" hidden>
         <div class="rjwarn">⚠ この動画の制作を止めて<b>ネタごと没</b>にします。表現を直したいだけなら、
-          いちばん上の「修正を依頼」で伝えてください。没の取り消しはダッシュボードからはできません。</div>
+          上の入力欄に書いて「修正を依頼」で伝えてください。没の取り消しはダッシュボードからはできません。</div>
         <label class="alb" for="${rid}-reason">没にする理由（必須）</label>
         <textarea class="rta" id="${rid}-reason" rows="2" aria-label="没にする理由（必須）"
           placeholder="例: 検証できないネタだった／類似動画が伸びていない"></textarea>
@@ -3283,7 +3286,14 @@ function reviewPanel(it, gate, histHTML){
           <button class="btn" data-act="reject-cancel">キャンセル</button>
           <button class="btn danger" data-act="reject-confirm" data-key="${esc(key)}" disabled>この理由で没にする</button>
         </div>
-      </div></div>`;
+      </div></div>
+    <div class="dbar" data-dbar="${esc(key)}">
+      <button class="btn kill" data-act="reject-open" data-key="${esc(key)}"
+        aria-expanded="false" aria-controls="${rid}">没にする</button>
+      <button class="btn soft" data-act="comment" data-key="${esc(key)}">修正を依頼</button>
+      <button class="btn primary" data-act="approve-quick" data-key="${esc(key)}"
+        data-label="${esc(gname)}を承認">${esc(gname)}を承認</button>
+    </div></div>`;
 }
 
 /* ── ネタの仕分けパネル（#314）──────────────────────────────────────
@@ -3394,12 +3404,24 @@ function rpcErrText(error, act){
                              : 'コメントを送信できませんでした。時間をおいて再度お試しください';
 }
 
-/* コメント欄（.wbox）・承認欄（.abox）・没欄（.rjbox）は別ブロックだが、
-   二重送信ガードは3つまとめてかける（どれか送信中は全部の操作を止める） */
+/* コメント欄（.wbox）・承認欄（.abox）・没欄（.rjbox）・下端の固定バー（.dbar）は
+   別ブロックだが、二重送信ガードはまとめてかける（どれか送信中は全部の操作を止める）。
+   詳細の決める枠は .decide が器、ネタの仕分け（#314）は器を持たないので親要素で束ねる */
+const decideGroup = box => box.closest('.decide') || box.parentElement;
 function writeGroup(box){
-  const p = box.parentElement;
-  const found = p ? [...p.querySelectorAll('[data-wbox],[data-abox],[data-rjbox]')] : [];
+  const p = decideGroup(box);
+  const found = p ? [...p.querySelectorAll('[data-wbox],[data-abox],[data-rjbox],[data-dbar]')] : [];
   return found.length ? found : [box];
+}
+/* 下端のバーのボタンは囲みの外にあるので、同じ決める枠の中から相手の囲みを引く（#509 段1）。
+   囲みの中のボタン（キャンセル・確定）は従来どおり自分の囲みを返す */
+function actBox(btn, act){
+  const inBox = btn.closest('[data-wbox],[data-abox],[data-rjbox]');
+  if (inBox) return inBox;
+  const g = btn.closest('.decide');
+  if (!g) return null;
+  return g.querySelector(
+    /^reject-/.test(act) ? '[data-rjbox]' : (act === 'comment') ? '[data-wbox]' : '[data-abox]');
 }
 function wboxBusy(box, busy, label){
   const boxes = writeGroup(box);
@@ -3435,44 +3457,27 @@ function wboxMsg(box, text, isErr, slot){
   m.hidden = !text;
 }
 
-/* 「修正を依頼」の2段階目を開く／閉じる（オーナー決定 2026-09-06）。誤タップ防止の作法は
-   没の枠と同じ——ボタンを押して初めて入力欄が出る。枠は「いま決めること」の中の .wbox */
-const fixBoxOf = box => (box.closest('.decide') || document).querySelector('.wbox');
-function openFixPanel(box){
-  if (box.dataset.busy === '1') return;
-  const fx = fixBoxOf(box);
-  if (!fx) return;
-  fx.hidden = false;
-  const btn = box.querySelector('[data-act="fix-open"]');
-  if (btn) btn.setAttribute('aria-expanded', 'true');
-  wboxMsg(fx, '', false, 'comment');
-  fx.querySelector('.wta')?.focus();
+/* 没の2段階目を開く／閉じる。1段目のボタンが囲みの中（ネタの仕分け）なら開いている間は隠して
+   押し先を1つに絞る。下端の固定バーにあるとき（レビュー画面）は隠さず、もう一度押すと閉じる */
+const rejectOpenBtn = box => (decideGroup(box) || box).querySelector('[data-act="reject-open"]');
+function toggleRejectPanel(box){
+  const panel = box.querySelector('.rjpanel');
+  if (panel && !panel.hidden) closeRejectPanel(box); else openRejectPanel(box);
 }
-function closeFixPanel(box){
-  if (box.dataset.busy === '1') return;
-  const fx = fixBoxOf(box);
-  if (!fx) return;
-  const ta = fx.querySelector('.wta'); if (ta) ta.value = '';
-  wboxMsg(fx, '', false, 'comment');
-  fx.hidden = true;
-  const btn = (box.closest('.decide') || document).querySelector('[data-act="fix-open"]');
-  if (btn) { btn.setAttribute('aria-expanded', 'false'); btn.focus(); }
-}
-
-/* 承認の2段階目を開く／閉じる。1段目のボタンは開いている間は隠して、押し先を1つに絞る */
 function openRejectPanel(box){
   if (box.dataset.busy === '1') return;
-  const panel = box.querySelector('.rjpanel'), btn = box.querySelector('[data-act="reject-open"]');
+  const panel = box.querySelector('.rjpanel'), btn = rejectOpenBtn(box);
   if (!panel) return;
   wboxMsg(box, '', false, 'reject');
   panel.hidden = false;
-  if (btn) { btn.hidden = true; btn.setAttribute('aria-expanded', 'true'); }
+  if (btn) { if (box.contains(btn)) btn.hidden = true; btn.setAttribute('aria-expanded', 'true'); }
   syncRejectReady(box);
+  panel.scrollIntoView({ block: 'nearest' });
   panel.querySelector('.rta')?.focus();
 }
 function closeRejectPanel(box){
   if (box.dataset.busy === '1') return;
-  const panel = box.querySelector('.rjpanel'), btn = box.querySelector('[data-act="reject-open"]');
+  const panel = box.querySelector('.rjpanel'), btn = rejectOpenBtn(box);
   if (panel) {
     panel.hidden = true;
     const ta = panel.querySelector('.rta'); if (ta) ta.value = '';
@@ -3500,7 +3505,13 @@ async function submitComment(box, key){
   const [vid, gate] = key.split('|');
   const ta = box.querySelector('.wta');
   const body = ((ta && ta.value) || '').trim();
-  if (!body) { wboxMsg(box, 'コメントを入力してください', true, 'comment'); if (ta) ta.focus(); return; }
+  /* 空のまま「修正を依頼」を押しても送らない（下端のバーの誤タップよけ）。
+     入力欄は画面の上の方にあることがあるので、案内と一緒にそこまで送る */
+  if (!body) {
+    wboxMsg(box, '直してほしい点を入力してください', true, 'comment');
+    if (ta) { ta.scrollIntoView({ block: 'center' }); ta.focus(); }
+    return;
+  }
   wboxMsg(box, '', false, 'comment');
   wboxBusy(box, true, 'comment');
   const { error } = await sb.rpc('request_changes',
@@ -3558,8 +3569,10 @@ function markApproved(vid, gate, done){
 function quickApprove(key, btn){
   const [vidS, gate] = String(key).split('|');
   const gname = GATE_LABEL[gate] || gate;
-  /* 詳細のメモ欄（同じ動画・同じゲートのもの）に書いてあれば添える */
-  const box = btn && btn.closest('[data-abox]');
+  /* 詳細のメモ欄（同じ動画・同じゲートのもの）に書いてあれば添える。
+     承認ボタンは下端の固定バー＝承認欄の外にあるので、決める枠（.decide）ごしに引く */
+  const box = btn && (btn.closest('[data-abox]')
+    || (btn.closest('.decide') || document).querySelector('[data-abox]'));
   const ta = box && box.querySelector('.ata');
   const note = ((ta && ta.value) || '').trim();
   if (btn) { btn.disabled = true; btn.textContent = '承認しました'; }
@@ -3766,13 +3779,8 @@ function aiLogHTML(evs){
         <span class="t">${esc(aiSummaryLine(e))}</span></div>`).join('')}</div>
     </details>`;
 }
-function historyHTML(events){
-  const evs = events || [];
-  if (!evs.length) return '';
-  /* ゲートが1つしか無い動画（02の完成だけ）では、毎行に同じ札を出しても読み分けに使えない */
-  const gates = new Set(evs.map(e => e.gate));
-  return youHTML(evs, gates.size > 1) + aiLogHTML(evs);
-}
+/* ⚠️ この2つは detailHTML が別々に置く——「あなたの指摘」は右列にそのまま、
+   「AI の記録」は下の畳んだ項目へ。まとめて返す historyHTML は 2026-09-20 に廃止（#509 段1）。 */
 
 /* ══ ③ 分析（チャンネル横断・2026-09-04）══════════════════════════
    見えるチャンネルを1つの画面に重ねて出す。1チャンネルしか見えない人も同じコードが動く
@@ -5809,12 +5817,11 @@ document.addEventListener('click', e => {
     const act = wbtn.dataset.act;
     /* 承認は一覧の行にもボタンがある（囲みの外なので box 判定より先に処理する） */
     if (act === 'approve-quick') { quickApprove(wbtn.dataset.key, wbtn); return; }
-    const box = wbtn.closest('[data-wbox],[data-abox],[data-rjbox]');
+    /* 下端の固定バーのボタンは囲みの外にあるので、決める枠ごしに相手の囲みを引く（#509 段1） */
+    const box = actBox(wbtn, act);
     if (box) {
       if (act === 'comment')              submitComment(box, wbtn.dataset.key);
-      else if (act === 'fix-open')        openFixPanel(box);
-      else if (act === 'fix-cancel')      closeFixPanel(box);
-      else if (act === 'reject-open')     openRejectPanel(box);
+      else if (act === 'reject-open')     toggleRejectPanel(box);
       else if (act === 'reject-cancel')   closeRejectPanel(box);
       else if (act === 'reject-confirm')  submitReject(box, wbtn.dataset.key);
       else if (act === 'triage-retype')   submitTriage(box, wbtn.dataset.key, 'retype');
@@ -5960,6 +5967,12 @@ document.addEventListener('input', e => {
   if (e.target.classList && e.target.classList.contains('rta')) {
     const box = e.target.closest('[data-rjbox]');
     if (box) syncRejectReady(box);
+    return;
+  }
+  /* 下端のバーの「修正を依頼」は常に色つきで、入力欄に文字があるあいだだけ濃くする（#509 段1） */
+  if (e.target.classList && e.target.classList.contains('wta')) {
+    const g = e.target.closest('.decide');
+    if (g) g.querySelector('.dbar [data-act="comment"]')?.classList.toggle('on', !!e.target.value.trim());
   }
 });
 document.addEventListener('change', e => {
