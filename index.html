@@ -142,7 +142,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 
 /* ═══ ヘッダー ══════════════════════════════════════════════════ */
 .topbar{position:sticky; top:0; z-index:40; background:var(--surface-1); border-bottom:1px solid var(--border)}
-.topbar-in{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-5) 0}
+.topbar-in{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) 0}
 .brandrow{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap}
 .brand{font-size:var(--fs-lg); font-weight:680; letter-spacing:.005em; line-height:1.2; margin-right:auto}
 /* サブタイトル「YOUTUBE PRODUCTION」は PC/スマホとも非表示（ヘッダーを詰める・#202） */
@@ -230,7 +230,7 @@ body[data-solonav="1"] .nav{display:none}
 .chtab .badge,.chpick .badge{background:var(--warn-tint); color:var(--ink); border:1px solid var(--border);
   border-radius:var(--r-pill); font-size:var(--fs-2xs); padding:0 6px; font-weight:700; line-height:1.5;
   margin-left:3px; flex:0 0 auto}
-.nav-in{max-width:min(2240px, 94vw); margin:0 auto; padding:0 var(--sp-5); display:flex; gap:var(--sp-1)}
+.nav-in{max-width:none; margin:0 auto; padding:0 var(--sp-5); display:flex; gap:var(--sp-1)}
 .navbtn{appearance:none; border:none; background:transparent; font-family:inherit; font-size:var(--fs-md);
   color:var(--ink-2); padding:12px 14px 10px; cursor:pointer; border-bottom:2px solid transparent;
   display:inline-flex; align-items:center; gap:7px; transition:color .12s; position:relative}
@@ -241,7 +241,7 @@ body[data-solonav="1"] .nav{display:none}
   border-radius:var(--r-pill); font-size:var(--fs-2xs); padding:0 6px; font-weight:700; line-height:1.5}
 
 /* ═══ レイアウト ════════════════════════════════════════════════ */
-main{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-width:0}
+main{max-width:none; margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-width:0}
 .view{display:none; min-width:0}
 .view.active{display:block}
 .pagehead{margin-bottom:var(--sp-5)}
@@ -476,7 +476,15 @@ td.ttl .flags{margin-left:8px}
 /* 列が12本になって表の最小幅が 1060px → 1280px に上がったので、横スクロールへ切り替える
    幅もそこへ合わせる（sticky の列見出しはスクロール容器の中では効かないので、
    表が収まらない幅でだけ譲る）。 */
-@media (max-width:1439.98px){ .tblwrap.mtx{overflow-x:auto} }
+/* 2026-09-19（#506 中5）: 横スクロール容器の中では sticky の基準が容器になるので、ページ用の
+   --stickytop を足したままだと列見出しが容器の中で下がって先頭行を覆い、1本目が押せなくなる。
+   容器になる幅では top を 0 起点に戻す。画面を横いっぱいに使うようにしたので（同日）、
+   表（min 1280px）が収まらなくなる幅は 1440 → 1360 に下がった */
+@media (max-width:1359.98px){
+  .tblwrap.mtx{overflow-x:auto}
+  .mtx thead tr:first-child th{top:0}
+  .mtx thead tr:nth-child(2) th{top:var(--mtxrow1, 24px)}
+}
 .emptyrow td{text-align:center; color:var(--muted); padding:26px; cursor:default}
 .emptyrow:hover td{background:transparent!important}
 
@@ -652,20 +660,7 @@ tr.dropped td{color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--surface-1); color:var(--ink); font-weight:680;
   box-shadow:inset 0 0 0 1px var(--border)}
 
-/* ═══ カンバン ══════════════════════════════════════════════════ */
-.kanban{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(186px,1fr);
-  gap:var(--sp-2); overflow-x:auto; padding-bottom:var(--sp-2)}
-.col{background:var(--surface-2); border:1px solid var(--border-2); border-radius:var(--r-md); padding:9px;
-  display:flex; flex-direction:column; gap:var(--sp-2); min-height:120px}
-.colhead{display:flex; align-items:baseline; gap:var(--sp-2); padding:2px 3px 7px; border-bottom:1px solid var(--border)}
-.colhead .nm{font-size:var(--fs-xs); font-weight:680; color:var(--ink-2); margin-right:auto}
-.colhead .ct{font-size:1.3rem; font-weight:680; line-height:1}
-.vcard{background:var(--surface-1); border:1px solid var(--border-2); border-radius:var(--r-sm);
-  padding:9px 10px; display:grid; gap:6px; box-shadow:var(--shadow-1)}
-.vcard .top{display:flex; align-items:baseline; gap:var(--sp-2)}
-.vcard .seq{font-size:var(--fs-2xs); font-weight:700; letter-spacing:.04em; color:var(--muted); font-variant-numeric:tabular-nums}
-.vcard .ttl{font-size:var(--fs-sm); line-height:1.45}
-.vcard .meta{display:flex; flex-wrap:wrap; gap:4px; align-items:center}
+/* ═══ 小さいチップ（工程・滞留・予約日・承認待ち・差し戻し）═══ */
 .gate{font-size:var(--fs-2xs); border-radius:5px; padding:1px 6px; border:1px solid var(--border);
   color:var(--muted); white-space:nowrap}
 .gate.on{background:var(--done-tint); border-color:transparent; color:var(--done); font-weight:680}
@@ -673,8 +668,7 @@ tr.dropped td{color:var(--muted)}
 .days.slow{color:var(--ink); background:var(--warn-tint); border-radius:5px; padding:1px 6px}
 .resv{font-size:var(--fs-2xs); background:var(--warn-tint); border-radius:5px; padding:1px 7px;
   color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap}
-/* カンバンのカードは小さいチップの集合という別の密度なので寸法は据え置き。ただし枠線は使わず
-   tint＋文字色（.resv と同じ作り）に揃える・色は一覧のバッジと同じ割り当て */
+/* 枠線は使わず tint＋文字色（.resv と同じ作り）に揃える・色は一覧のバッジと同じ割り当て */
 .rvflag{font-size:var(--fs-2xs); background:var(--s1-tint); border:none;
   border-radius:5px; padding:1px 7px; color:var(--s1-ink); font-weight:680; white-space:nowrap}
 .rcflag{font-size:var(--fs-2xs); background:var(--fix-tint); border:none;
@@ -683,16 +677,6 @@ tr.dropped td{color:var(--muted)}
 .more{font-size:var(--fs-xs); color:var(--ink-2); text-align:center; padding:7px;
   border:1px dashed var(--border); border-radius:var(--r-sm)}
 .empty{font-size:var(--fs-xs); color:var(--muted); text-align:center; padding:16px 6px}
-details.dropped-fold{margin-top:var(--sp-3); border:1px solid var(--border); border-radius:var(--r-md);
-  background:var(--surface-1); padding:0 var(--sp-4)}
-details.dropped-fold summary{cursor:pointer; padding:12px 0; font-size:var(--fs-sm); color:var(--ink-2);
-  list-style:none; display:flex; align-items:center; gap:var(--sp-2)}
-details.dropped-fold summary::-webkit-details-marker{display:none}
-details.dropped-fold summary .tri{transition:transform .15s}
-details.dropped-fold[open] summary .tri{transform:rotate(90deg)}
-details.dropped-fold .body{padding:0 0 var(--sp-4); font-size:var(--fs-sm); color:var(--ink-2)}
-details.dropped-fold .row{display:flex; gap:9px; align-items:baseline; padding:7px 0; border-top:1px solid var(--border-2)}
-details.dropped-fold .row .seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
 .reason{font-size:var(--fs-2xs); color:var(--muted); margin-left:auto}
 
 /* ═══ レビュー ══════════════════════════════════════════════════ */
@@ -1342,7 +1326,7 @@ details.guide .axnote{margin-top:var(--sp-2)}
 
 /* フッターは1行に収める（#205 オーナー指摘: やけに長い・空白が多い）。
    下の余白はスマホの固定タブバーを避ける最小限だけ残す */
-footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4);
+footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4);
   color:var(--muted); font-size:var(--fs-2xs); border-top:1px solid var(--border-2);
   letter-spacing:.02em; line-height:1.7}
 
@@ -1386,7 +1370,6 @@ footer{max-width:min(2240px, 94vw); margin:0 auto; padding:var(--sp-3) var(--sp-
   .navbtn[aria-selected="true"]{border-bottom-color:transparent; border-top-color:var(--ink)}
   .navbtn .ni{font-size:1.15rem}
   .navbtn .badge{position:absolute; transform:translate(12px,-9px)}
-  .kanban{grid-auto-columns:minmax(196px,196px)}
   .tblwrap.tall{max-height:none}
   #toast{bottom:78px}
   footer{padding-bottom:72px}   /* 固定タブバー(≈64px)を避ける最小限 */
@@ -1592,14 +1575,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/18 09:10';
-/* カンバン列。st＝DB status そのもの（絞り込みに使うので変えない）・lb＝画面に出す名前。
-   DB の「編集中」は用語集の正式名では「レンダ」なので、表示だけ差し替える（#440 低13） */
-const STATUS_COLS = [
-  {st:'案',        sw:'--stg1'}, {st:'台本作成中', sw:'--stg2'},
-  {st:'素材制作中', sw:'--stg3'}, {st:'編集中',    sw:'--stg4', lb:'レンダ中'},
-  {st:'投稿待ち',   sw:'--stg5'}, {st:'投稿済',    sw:'--stg6'}
-];
+const BUILT_AT = '9/19 11:46';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -1685,7 +1661,7 @@ async function q(builder){
 
 /* ══ 状態 ═══════════════════════════════════════════════════════ */
 const state = {
-  user:null, me:null, ch:null, view:'stock', stockView:'table', stockFilter:null,
+  user:null, me:null, ch:null, view:'stock', stockFilter:null,
   stockQ:'', stockGenre:'', stockSort:null, stockPage:0, detail:null, open:null,
   /* 分析タブ: 推移グラフの期間（日数・0=全部）・動画別の成績の並べ替え・「表で見る」の開閉・
      凡例で消しているチャンネル（{slug:true} が非表示） */
@@ -1713,7 +1689,6 @@ function loadUI(){
    facets  = 絞り込みUIの母数（工程チップの件数・ジャンル候補）。チャンネル全行の
              短い3列だけ
    pending = 承認待ち／【AI】修正中の行（レビュータブと左ナビのバッジ）
-   board   = カンバン表示用のチャンネル全行（盤面は絞り込みが効かない全体表示）
    threads = 動画ごとのレビュー記録。詳細を開いた動画のぶんだけ貯める
    byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため）
    rework  = 動画ごとの「この版は何の作り直しか」（human / ai / null）。一覧の札に使う */
@@ -1905,15 +1880,6 @@ async function loadPending(ch){
 const pendingList = ch => ((store.pending[ch] || {}).rv) || [];
 const triageCount = ch => ((store.pending[ch] || {}).triage) || 0;
 const changesList = ch => ((store.pending[ch] || {}).rc) || [];
-
-/* カンバンは盤面全体（各列の件数と滞留上位）を見せる表示で、絞り込みもページングも
-   持たない。表（既定）とは別にチャンネル全行を取る。 */
-async function loadBoard(ch){
-  if (store.board[ch]) return store.board[ch];
-  store.board[ch] = (await q(sb.from('v_dashboard_list').select('*').eq('channel', ch)
-    .order('sort_rank').order('sort_key2', { nullsFirst:false }).order('id'))).map(mapRow);
-  return store.board[ch];
-}
 
 /* 一覧に載っていない動画（別ページ・レビュータブ経由・ディープリンク）も開けるよう、
    索引に無ければ1行だけ取りに行く */
@@ -2339,13 +2305,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/18 09:10') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/19 11:46') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/18 09:10') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/19 11:46') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2596,7 +2562,7 @@ function matrixTable(core){
     : groupSections(rows).map(s =>
         secTR(s) + (secOpen(s) ? s.rows.map(it => mtxRow(it, MCOLS)).join('') : '')).join('');
 
-  return `<div class="tblwrap mtx${rows.length > 14 ? ' tall' : ''}">${
+  return `<div class="tblwrap mtx xscroll${rows.length > 14 ? ' tall' : ''}">${
     mtxTable(MCOLS, body)}</div>${stockCards(rows)}`;
 }
 
@@ -2680,34 +2646,6 @@ function gateChips(it, slug){
   }).join('');
 }
 
-function kanbanView(items, slug){
-  const cols = STATUS_COLS.map(s => {
-    const list = items.filter(i => i.status === s.st).sort((a, b) => (b.days || 0) - (a.days || 0));
-    const shown = list.slice(0, 4), rest = list.length - shown.length;
-    const body = !list.length ? `<div class="empty">仕掛かりなし</div>`
-      : shown.map(c => `
-          <article class="vcard">
-            <div class="top"><span class="seq">${esc(c.seq)}</span>
-              <span class="days ${c.days >= 7 ? 'slow' : ''}">${c.days >= 7 ? '⏳ ' : ''}滞留 ${c.days == null ? '—' : c.days + '日'}</span></div>
-            <div class="ttl">${esc(c.title)}</div>
-            <div class="meta">${gateChips(c, slug)}${c.resv ? `<span class="resv">🗓 ${esc(c.resv.slice(5))}</span>` : ''}${
-              c._rv ? `<span class="rvflag" title="${esc(GATE_LABEL[c._rv])}承認待ち（あなたの番）">● 承認待ち</span>` : ''}${
-              c._rc ? `<span class="rcflag${rcAiOnly(c) ? ' ai' : ''}" title="${esc(rcText(c))}">↺ ${esc(rcShort(c))}</span>` : ''}${
-              c._open ? `<span class="rcflag" title="未対応の指摘 ${esc(openSplit(c, false) || c._open + '件')}">💬 ${c._open}</span>` : ''}</div>
-          </article>`).join('') + (rest > 0 ? `<div class="more">＋${rest}件</div>` : '');
-    return `<div class="col">
-      <div class="colhead"><span class="sw" style="background:var(${s.sw});margin:0"></span>
-        <span class="nm">${s.lb || s.st}</span><span class="ct tnum">${list.length}</span></div>${body}</div>`;
-  }).join('');
-  const drop = items.filter(i => i.stage === 'dropped');
-  return `<div class="kanban">${cols}</div>
-    <details class="dropped-fold">
-      <summary><span class="tri">▸</span>没 ${drop.length}件を表示</summary>
-      <div class="body">${drop.length ? drop.map(x => `<div class="row"><span class="seq">${esc(x.seq)}</span><span>${esc(x.title)}</span><span class="reason">${esc(x.decision_note || x.note || '')}</span></div>`).join('')
-        : '<div class="empty">没はありません</div>'}</div>
-    </details>`;
-}
-
 /* ページ送り（#215 Phase 2）。並び順は DB 側（sort_rank）で付けているので、
    1ページ目に必ず「承認待ち（あなたの番）」が来る。 */
 function pagerHTML(core){
@@ -2725,13 +2663,11 @@ async function renderStock(){
   const el = $('#view-stock');
   if (!state.ch) { el.innerHTML = `<div class="noitem">動画チャンネルがありません</div>`; return; }
   const m = chMeta(state.ch);
-  const isTable = state.stockView === 'table';
   if (!store.facets[state.ch]) { el.innerHTML = loading(); }
-  let facets, boardItems;
+  let facets;
   try {
     facets = await loadFacets(state.ch);
     await loadPending(state.ch);                       /* 左ナビの承認待ちバッジ用 */
-    if (!isTable) boardItems = await loadBoard(state.ch);
   } catch (e) { el.innerHTML = errBox(e.message); return; }
 
   const droppedN = facets.filter(f => f.stage_key === 'dropped').length;
@@ -2752,13 +2688,7 @@ async function renderStock(){
       <h2>進捗マトリクス</h2>
       <span class="hint">${sectionsOff() ? '絞り込み・並べ替え中はセクションを外して一覧で出しています'
         : '承認したものは【AI】作業中に残ります'}</span>
-      <span class="spacer"></span>
-      <div class="seg" role="group" aria-label="表示切替">
-        <button data-stockview="table" aria-pressed="${isTable}">表</button>
-        <button data-stockview="kanban" aria-pressed="${!isTable}">カンバン</button>
-      </div>
     </div>
-    ${isTable ? `
       <div class="filterbar">
         <button class="filtoggle" id="filtoggle" aria-expanded="${state.filtersOpen}" aria-controls="filterbox">絞り込み <span class="fcaret">▾</span></button>
         <span class="cond" id="stockcond"></span>
@@ -2776,9 +2706,9 @@ async function renderStock(){
         <div id="stockchips"></div>
       </div>
       ${MARK_LEGEND}
-      <div id="stocktable">${loading()}</div>` : kanbanView(boardItems, state.ch)}`;
+      <div id="stocktable">${loading()}</div>`;
 
-  if (isTable) await refreshStockTable();
+  await refreshStockTable();
 }
 
 async function refreshStockTable(){
@@ -5854,8 +5784,8 @@ document.addEventListener('click', e => {
     refreshStockTable(); return;
   }
 
-  const segBtn = e.target.closest('[data-stockview]');
-  if (segBtn) { state.stockView = segBtn.dataset.stockview; renderStock(); return; }
+
+
 
   const filT = e.target.closest('#filtoggle');
   if (filT) {
