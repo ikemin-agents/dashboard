@@ -1585,7 +1585,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/20 00:42';
+const BUILT_AT = '9/20 00:58';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -1918,6 +1918,18 @@ async function loadThread(videoId){
   return store.threads[videoId];
 }
 
+/* いまの版の番号を DB に聞く（一覧のビューが古い版の提出を除くのに使っているのと同じ窓口）。
+   画面は版の表そのものを読めないので、番号だけを返すこの窓口を通す。覚えずに毎回聞くのは、
+   詳細を開き直したときに必ず最新で判定するため（1件ぶんの軽い問い合わせ）。
+   答えが得られなければ null を返し、呼び出し側は従来どおりレビュー記録から代用する。 */
+async function loadCurRev(videoId){
+  try {
+    const { data, error } = await sb.rpc('dashboard_current_revision', { p_video_id: Number(videoId) });
+    if (error) return null;
+    return data == null ? null : Number(data);
+  } catch (_) { return null; }
+}
+
 /* ── ゲートの状態（#205）─────────────────────────────────────────
    video×gate ごとに「最後に状態を決めたイベント」で決まる2状態。
      review  = 承認待ち（AIが提出済み・あなたの番）
@@ -1938,11 +1950,14 @@ const evNewer = (a, b) => {
    「最後に出てきたイベント」を現在の状態としていたため、取得クエリの .order() が
    唯一の順序保証になっていた。そこを触ると *エラーを出さずに古い状態を表示し続ける* という
    気づきにくい壊れ方をするので、created_at の比較で最新を選ぶ方式に変えた。 */
-function gateStateMap(events){
+function gateStateMap(events, curRev){
   const last = new Map();
   /* ビュー（060/068）と同じ除外: 解決済みの差し戻しは「直し中」と読まない、古い版の提出は
-     「承認待ち」と読まない。現行版は記録の中でいちばん大きい版で代用する（画面は版の表を持たない）。 */
-  const maxRev = Math.max(0, ...(events || []).map(e => Number(e.revision) || 0));
+     「承認待ち」と読まない。現行版 curRev は DB に聞いた値を使う（loadCurRev）。
+     聞けなかったときだけ、記録の中でいちばん大きい版で代用する——代用だと作り直しの最中
+     （版は上がったがレビュー記録はまだ前の版まで）に古い提出を承認待ちと読んでしまう。 */
+  const maxRev = curRev != null ? Number(curRev)
+                                : Math.max(0, ...(events || []).map(e => Number(e.revision) || 0));
   for (const e of (events || [])) {
     if (!STATE_KINDS.includes(e.kind)) continue;
     if (e.kind === 'request_changes' && e.resolved_at) continue;
@@ -2027,7 +2042,9 @@ async function loadRework(items){
    表示された時点の値を渡すのが要点なので、押す直前に引き直さない */
 function rememberSubmitted(vid, events){
   const m = {};
-  for (const e of events || []) if (e.kind === 'request_review' && e.revision != null) m[e.gate] = e.revision;
+  /* 版の押印が入る前の古い提出は版が空。DB 側も空を第1版として扱うので、画面も 1 として
+     覚える——空のまま送ると承認が「版を名乗らない」扱いになり、何度読み直しても断られる */
+  for (const e of events || []) if (e.kind === 'request_review') m[e.gate] = e.revision == null ? 1 : Number(e.revision);
   store.rvRev[Number(vid)] = m;
 }
 const submittedRevOf = (vid, gate) => {
@@ -2053,9 +2070,9 @@ function rcSrcOf(gate, events){
    ビューと同じ）。_rv=承認待ちのゲート / _rc=直し中のゲート / _open=未対応の指摘件数
    （_openH=あなたの指摘 / _openAi=AI審査の指摘）/ _rcSrc=差し戻しの出どころ。
    没にした動画はどちらのキューにも出さない（#203） */
-function annotate(it, events){
+function annotate(it, events, curRev){
   let rv = null, rc = null;
-  for (const p of gateStateMap(events).values()) { if (p.st === 'review') rv = p.gate; else rc = p.gate; }
+  for (const p of gateStateMap(events, curRev).values()) { if (p.st === 'review') rv = p.gate; else rc = p.gate; }
   const drop = it.stage === 'dropped';
   const open = drop ? [] : (events || []).filter(e => e.resolution_status === 'open');
   it._rv    = drop ? null : rv;
@@ -2323,13 +2340,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/20 00:42') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/20 00:58') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/20 00:42') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/20 00:58') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2920,16 +2937,17 @@ async function openDetail(vid, gate){
   document.body.style.overflow = '';
   if (!store.threads[id] || !store.byId.get(id)) dv.innerHTML = loading();
 
-  let it, evs;
+  let it, evs, curRev = null;
   try {
     it = await loadItem(id);
-    if (it) evs = await loadThread(id);
+    if (it) { evs = await loadThread(id); curRev = await loadCurRev(id); }
   } catch (e) { dv.innerHTML = errBox(e.message); return; }
   if (!it) { closeDetail(); return; }
   if (state.detail !== id) return;             /* 待っている間に別の動画へ移った */
 
-  /* 入口（在庫／レビュー）に依らずレビューパネルが出るよう、保留ゲートを都度算出 */
-  annotate(it, evs);
+  /* 入口（在庫／レビュー）に依らずレビューパネルが出るよう、保留ゲートを都度算出。
+     いまの版を添えるのは、一覧と同じ基準で「古い版の提出」を承認待ちから外すため */
+  annotate(it, evs, curRev);
 
   dv.innerHTML = detailHTML(it);
   syncStickyOffsets();          /* タブが隠れてヘッダーが低くなるので測り直す（戻るボタンの貼り付き位置） */
@@ -3343,8 +3361,18 @@ function rpcErrText(error, act){
     return 'このアカウントには書き込み権限がありません（ダッシュボードの許可リストを確認してください）';
   if (code === 'P0002' || /video not found/i.test(raw))
     return '対象の動画が見つかりませんでした。再読み込みしてからやり直してください';
-  if (code === 'P0003' || /stale review/i.test(raw))
-    return '見ていた提出物より新しい版が出ています。画面を再読み込みして、新しい版を確認してから承認してください';
+  /* 承認が断られる理由は3つあり、次にすることが違うので文言を分ける。
+     3つとも同じ P0003 で返る（画面がその場で取り直す仕掛けを共有するため）ので、
+     見分けは DB が付けてくる日本語の本文で行う（074）。
+     ①作り直しの最中だった: 待つしかない ②見ていた版より新しい提出が来た: 新しい方を見て押し直す
+     ③どの版に付けるか分からなかった: 読み込み直せば直る */
+  if (code === 'P0003' || /stale review/i.test(raw)) {
+    const cur = raw.match(/いまの版は第(\d+)版/);
+    if (cur) return `いま第${cur[1]}版を作り直しています。出来上がるまでお待ちください（この画面は自動で新しくなります）`;
+    if (/より新しい版/.test(raw))
+      return '見ていたものより新しい版が出来ています。新しい方を見てから承認してください（この画面は自動で新しくなります）';
+    return 'どの版に承認するかを確かめられませんでした。画面を新しくしてからもう一度お試しください';
+  }
   if (code === '22001' || /too long/i.test(raw))
     return '本文が長すぎます（4000文字以内で入力してください）';
   /* 予約済み・投稿済みの動画は没にできない（reject_video の 55000・M023） */
