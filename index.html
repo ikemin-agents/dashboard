@@ -356,14 +356,17 @@ td.dim{color:var(--muted)}
    幅の出どころは ①各列の th の style（JS 側 MCOL の w） ②.mtx th.st（工程7マス）
    ③.mtx th.okcol（承認）の3つだけ。幅を書いていないタイトル列が残り幅を取る。
    12列ぶんの合計が約1280pxなので、左右パディングを 14px → 10px に詰めて収める。 */
-.mtx table{table-layout:fixed; min-width:1440px}
+/* 2026-09-19: ジャンル列を外し工程マスを 46px に詰めたので、さらに投稿日時 120px・再生数 84px に
+   広げた（予約の日時と7桁の再生数が切れていた）ので、固定列の合計は 1098px。タイトルに 230px を
+   残して最小幅は 1330px（幅 1390px 以上の画面なら横スクロールなしで収まる） */
+.mtx table{table-layout:fixed; min-width:1330px}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
-.mtx th.st,.mtx td.st{width:54px; text-align:center; padding-left:2px; padding-right:2px;
+.mtx th.st,.mtx td.st{width:46px; text-align:center; padding-left:2px; padding-right:2px;
   background:var(--stage-bg)}
 /* 工程の列見出しは 10px では読めない（オーナー指摘 #206）ので本文並みの 12.5px にする。
    7列ぶんの幅は 1文字ずつ詰める（letter-spacing:-.02em）＋左右パディング 2px で吸収し、
    横スクロールを出さない。最長は「絵コンテ」「投稿待ち」の4文字＝約 52px。 */
-.mtx thead th.st{letter-spacing:-.02em; text-transform:none; font-size:12.5px; color:var(--ink);
+.mtx thead th.st{letter-spacing:-.04em; text-transform:none; font-size:11.5px; color:var(--ink);
   background:var(--stage-bg-h); font-weight:700}
 .mtx th.st.first,.mtx td.st.first{border-left:1px solid var(--stage-line)}
 .mtx th.st.last,.mtx td.st.last{border-right:1px solid var(--stage-line)}
@@ -419,9 +422,9 @@ td.dim{color:var(--muted)}
 .mtx th.sortable{cursor:pointer; user-select:none}
 .mtx th.sortable:hover{color:var(--ink)}
 .mtx th .ar{font-size:9px; margin-left:3px; color:var(--ink)}
-.mtx th:first-child,.mtx td:first-child{position:sticky; left:0; z-index:1;
+.mtx thead tr:nth-child(2) th:first-child,.mtx tbody td:first-child{position:sticky; left:0; z-index:1;
   background:var(--surface-1); box-shadow:1px 0 0 var(--border-2)}
-.mtx thead th:first-child{background:var(--surface-2); z-index:3}
+.mtx thead tr:nth-child(2) th:first-child{background:var(--surface-2); z-index:3}
 .mtx tbody tr:hover td:first-child{background:var(--surface-2)}
 /* 行の左端に状態の色帯（#205）。一覧に戻ったとき「どれが自分の番／どれがコメント済みか」を
    スクロールしながら色だけで拾えるようにする。sticky 1列目の区切り影と重ねて出す */
@@ -441,6 +444,12 @@ td.dim{color:var(--muted)}
 .okbtn:disabled{background:var(--done-tint); color:var(--done); cursor:default}
 /* 表では右端の専用列に、カードではバッジ行の右端に置く（オーナー指定 2026-08-20） */
 .mtx td.okcol,.mtx th.okcol{width:76px; white-space:nowrap; text-align:right}
+/* 表が横スクロールになる幅でも承認ボタンが切れないよう、右端に貼り付ける（オーナー指摘 2026-09-19）。
+   左端の番号列と同じ作り */
+.mtx td.okcol,.mtx th.okcol{position:sticky; right:0; z-index:1;
+  background:var(--surface-1); box-shadow:-1px 0 0 var(--border-2)}
+.mtx thead th.okcol{background:var(--surface-2); z-index:3}
+.mtx tbody tr:hover td.okcol{background:var(--surface-2)}
 /* 状態・版・指摘は独立した列にする（オーナー要望 2026-09-03）。タイトルと同じマスに
    流し込むとタイトルの長さでバッジの位置がずれて読めない、という困りごとへの答え。
    幅は列側で固定してあるので、行が変わってもワッペンの左端と縦位置が必ず揃う。 */
@@ -479,8 +488,8 @@ td.ttl .flags{margin-left:8px}
 /* 2026-09-19（#506 中5）: 横スクロール容器の中では sticky の基準が容器になるので、ページ用の
    --stickytop を足したままだと列見出しが容器の中で下がって先頭行を覆い、1本目が押せなくなる。
    容器になる幅では top を 0 起点に戻す。画面を横いっぱいに使うようにしたので（同日）、
-   表（min 1280px）が収まらなくなる幅は 1440 → 1360 に下がった */
-@media (max-width:1359.98px){
+   表（min 1330px）が収まらなくなる幅は 1390 未満だけになった */
+@media (max-width:1389.98px){
   .tblwrap.mtx{overflow-x:auto}
   .mtx thead tr:first-child th{top:0}
   .mtx thead tr:nth-child(2) th{top:var(--mtxrow1, 24px)}
@@ -1575,7 +1584,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/19 11:46';
+const BUILT_AT = '9/19 12:22';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2305,13 +2314,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/19 11:46') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/19 12:22') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/19 11:46') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/19 12:22') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2506,10 +2515,10 @@ const MCOL = {
   genre: {sort:1, w:'136px',        td: it => `<td><span class="genre">${esc(it.genreLabel)}</span></td>`},
   days:  {sort:1, w:'56px', thx:' num',
           td: it => `<td class="num">${it.days == null ? '' : it.days + '日'}</td>`},
-  pub:   {label:'投稿日時', w:'110px',
+  pub:   {label:'投稿日時', w:'120px',
           td: it => it.resv ? `<td title="${esc(it.resv)}"><span class="resv">🗓 ${esc(shortDT(it.resv))}</span></td>`
                   : it.pub  ? `<td title="${esc(it.pub)}">${esc(shortDT(it.pub))}</td>` : '<td></td>'},
-  plays: {sort:1, w:'66px', thx:' num',
+  plays: {sort:1, w:'84px', thx:' num',
           td: it => `<td class="num">${it.plays == null ? '' : nf(it.plays)}</td>`},
   subs:  {sort:1, w:'78px', thx:' num',
           td: it => `<td class="num">${it.subs == null ? '' : (it.subs > 0 ? '+' : '') + it.subs}</td>`},
@@ -2519,7 +2528,8 @@ const MCOL = {
    表を分けることになり、区画のあいだで列幅が揃わずワッペンの縦位置がずれる。
    値が無いマスは「—」を並べず空欄にする（読むものが減るほうが速い）。
    '@' は工程7マスの位置を指す目印。 */
-const MCOLS    = ['seq','title','state','rev','open','genre','@','days','pub','plays','subs','ok'];
+/* ジャンルの列は外した（オーナー指示 2026-09-19・承認の判断に使わない。絞り込みのジャンル選択は残す） */
+const MCOLS    = ['seq','title','state','rev','open','@','days','pub','plays','subs','ok'];
 const colCount = cols => cols.length - 1 + PSTAGES.length;
 
 function colTH(k){
@@ -2545,7 +2555,7 @@ const mtxRow = (it, cols) => `<tr data-vid="${it.id}" tabindex="0" class="${
    均等割りになり、工程7マスが横に広がっていた（オーナー指摘 2026-09-04）。
    col に幅を書けば行の中身に関係なく効く。幅を書かないタイトル列が残りを取る。 */
 const mtxCols = cols => `<colgroup>${cols.map(k => k === '@'
-    ? PSTAGES.map(() => '<col style="width:54px">').join('')
+    ? PSTAGES.map(() => '<col style="width:46px">').join('')
     : `<col${MCOL[k].w ? ` style="width:${MCOL[k].w}"` : (k === 'ok' ? ' style="width:76px"' : '')}>`).join('')}</colgroup>`;
 const mtxTable = (cols, body) => `<table>${mtxCols(cols)}<thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
 
