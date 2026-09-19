@@ -443,7 +443,7 @@ td.dim{color:var(--muted)}
 .okbtn:hover{filter:brightness(1.07)}
 .okbtn:disabled{background:var(--done-tint); color:var(--done); cursor:default}
 /* 表では右端の専用列に、カードではバッジ行の右端に置く（オーナー指定 2026-08-20） */
-.mtx td.okcol,.mtx th.okcol{width:76px; white-space:nowrap; text-align:right}
+.mtx td.okcol,.mtx th.okcol{width:76px; white-space:nowrap; text-align:center}
 /* 表が横スクロールになる幅でも承認ボタンが切れないよう、右端に貼り付ける（オーナー指摘 2026-09-19）。
    左端の番号列と同じ作り */
 .mtx td.okcol,.mtx th.okcol{position:sticky; right:0; z-index:1;
@@ -1585,7 +1585,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/19 23:36';
+const BUILT_AT = '9/19 23:41';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2323,13 +2323,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/19 23:36') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/19 23:41') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/19 23:36') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/19 23:41') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
