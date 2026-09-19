@@ -357,9 +357,9 @@ td.dim{color:var(--muted)}
    ③.mtx th.okcol（承認）の3つだけ。幅を書いていないタイトル列が残り幅を取る。
    12列ぶんの合計が約1280pxなので、左右パディングを 14px → 10px に詰めて収める。 */
 /* 2026-09-19: ジャンル・投稿日時・再生数・登録者増の列を外し、工程マスを 46px に詰めた。
-   固定列の合計は 816px。タイトルに 230px を残して最小幅は 1050px
-   （幅 1110px 以上の画面なら横スクロールなしで収まる） */
-.mtx table{table-layout:fixed; min-width:1050px}
+   固定列の合計は 830px。タイトルに 230px を残して最小幅は 1064px
+   （幅 1124px 以上の画面なら横スクロールなしで収まる） */
+.mtx table{table-layout:fixed; min-width:1064px}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
 .mtx th.st,.mtx td.st{width:46px; text-align:center; padding-left:2px; padding-right:2px;
   background:var(--stage-bg)}
@@ -488,8 +488,8 @@ td.ttl .flags{margin-left:8px}
 /* 2026-09-19（#506 中5）: 横スクロール容器の中では sticky の基準が容器になるので、ページ用の
    --stickytop を足したままだと列見出しが容器の中で下がって先頭行を覆い、1本目が押せなくなる。
    容器になる幅では top を 0 起点に戻す。画面を横いっぱいに使うようにしたので（同日）、
-   表（min 1050px）が収まらなくなる幅は 1110 未満だけになった */
-@media (max-width:1109.98px){
+   表（min 1064px）が収まらなくなる幅は 1124 未満だけになった */
+@media (max-width:1123.98px){
   .tblwrap.mtx{overflow-x:auto}
   .mtx thead tr:first-child th{top:0}
   .mtx thead tr:nth-child(2) th{top:var(--mtxrow1, 24px)}
@@ -1584,7 +1584,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/19 23:09';
+const BUILT_AT = '9/19 23:18';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2314,13 +2314,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/19 23:09') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/19 23:18') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/19 23:09') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/19 23:18') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2375,15 +2375,22 @@ const openBadgeHTML = it => it._open
 /* 「この版は何の作り直しか」の札（オーナー要望 2026-09-02）。承認するかどうかを決める場面
    でしか意味が無いので、承認待ちの動画にだけ出す。初回の提出は札なし。 */
 const REWORK_BADGE = {
-  human: {cls:'rwh',  gl:'↻', text:'差し戻し後', tip:'あなたの指摘を直した版'},
-  ai:    {cls:'rwai', gl:'↻', text:'AI指摘後',  tip:'AI が見つけた不備を直した版'}
+  human: {cls:'rwh',  gl:'↻', text:'指摘を反映', tip:'あなたの指摘を直した版'},
+  ai:    {cls:'rwai', gl:'↻', text:'AIが修正',  tip:'AI が自分で不備を見つけて直した版（あなたの指摘とは無関係）'}
 };
 /* 差し戻しが1件も無い＝初回の提出。表の「版」列だけは空欄にせず「初版」と書く
    （空欄だと「取れなかった」のか「初版」なのか読めない）。
-   ⚠️ 版の番号（第N版）は一覧が引くビュー v_dashboard_list に無いので出さない＝由来だけ。 */
-const FIRST_BADGE = {cls:'idea', gl:'', text:'初版', tip:'差し戻しのない最初の提出'};
+   版の番号（v1・v2…）は、承認待ちの提出物の版（loadRework が覚えた rvRev＝承認のとき DB へ渡すのと
+   同じ値）を頭に付ける（オーナー要望 2026-09-19）。版はあなたの指摘でも AI の自己修正でも1つ進む。
+   番号が取れない古い記録は由来だけを出す。 */
+const FIRST_BADGE = {cls:'idea', gl:'', text:'', tip:'差し戻しのない最初の提出'};
 const reworkBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)]) : '';
-const revBadgeHTML   = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)] || FIRST_BADGE) : '';
+const revBadgeHTML   = it => {
+  if (!it._rv) return '';
+  const b = REWORK_BADGE[reworkOf(it)] || FIRST_BADGE, n = submittedRevOf(it.id, it._rv);
+  const text = [n != null ? 'v' + n : '', b.text].filter(Boolean).join(' ') || '初版';
+  return badgeHTML(Object.assign({}, b, {text, tip:(n != null ? `第${n}版・` : '') + b.tip}));
+};
 function flagsHTML(it){
   const h = badgeHTML(stateBadgeOf(it)) + reworkBadgeHTML(it) + openBadgeHTML(it);
   return h ? `<span class="flags">${h}</span>` : '';
@@ -2510,7 +2517,7 @@ const MCOL = {
   seq:   {sort:1, w:'78px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
   title: {sort:1,                  td: it => `<td class="ttl">${esc(it.title)}</td>`},
   state: {label:'状態', w:'112px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
-  rev:   {label:'版',   w:'110px', td: it => `<td class="bcol">${revBadgeHTML(it)}</td>`},
+  rev:   {label:'版',   w:'124px', td: it => `<td class="bcol">${revBadgeHTML(it)}</td>`},
   open:  {label:'指摘', w:'62px',  td: it => `<td class="bcol">${openBadgeHTML(it)}</td>`},
   genre: {sort:1, w:'136px',        td: it => `<td><span class="genre">${esc(it.genreLabel)}</span></td>`},
   days:  {sort:1, w:'56px', thx:' num',
@@ -3471,10 +3478,11 @@ async function approveNow(vid, gate, note){
       p_expected_revision: submittedRevOf(vid, gate) });
   if (error) {
     markApproved(vid, gate, false);              /* ボタンを押せる状態に戻す */
-    if (error.code === 'P0003') {                /* 古い版を見ていた: 次の描画で新しい版を出す */
-      store.pending = {}; store.threads = {}; store.rvRev = {};
-    }
     toast(rpcErrText(error, 'approve'));
+    /* 古い版を見ていた: **その場で取り直して描き直す**（#506 高1）。版の記憶だけ捨てて画面を
+       そのままにすると、もう一度押したとき版が空で送られ、DB の照合を素通りして
+       見ていない新しい版に承認が付く */
+    if (error.code === 'P0003') await refreshAfterWrite(false);
     return;
   }
   /* ⚠️ ここで画面を作り直さない（オーナー指定 2026-08-20）。一覧を描き直すと
