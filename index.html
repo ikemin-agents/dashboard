@@ -357,9 +357,9 @@ td.dim{color:var(--muted)}
    ③.mtx th.okcol（承認）の3つだけ。幅を書いていないタイトル列が残り幅を取る。
    12列ぶんの合計が約1280pxなので、左右パディングを 14px → 10px に詰めて収める。 */
 /* 2026-09-19: ジャンル・投稿日時・再生数・登録者増の列を外し、工程マスを 46px に詰めた。
-   固定列の合計は 830px。タイトルに 230px を残して最小幅は 1064px
-   （幅 1124px 以上の画面なら横スクロールなしで収まる） */
-.mtx table{table-layout:fixed; min-width:1064px}
+   固定列の合計は 956px。タイトルに 230px を残して最小幅は 1186px
+   （幅 1246px 以上の画面なら横スクロールなしで収まる） */
+.mtx table{table-layout:fixed; min-width:1186px}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
 .mtx th.st,.mtx td.st{width:46px; text-align:center; padding-left:2px; padding-right:2px;
   background:var(--stage-bg)}
@@ -454,6 +454,7 @@ td.dim{color:var(--muted)}
    流し込むとタイトルの長さでバッジの位置がずれて読めない、という困りごとへの答え。
    幅は列側で固定してあるので、行が変わってもワッペンの左端と縦位置が必ず揃う。 */
 .mtx td.bcol{white-space:nowrap}
+.mtx .revnum{font-weight:680; color:var(--ink); font-variant-numeric:tabular-nums}
 .mtx td.bcol .sbadge{font-size:var(--fs-2xs); padding:3px 9px; gap:4px; max-width:100%}
 /* table-layout:fixed では td の min-width/max-width は効かないので、タイトル列は
    列幅（残り幅）の中で折り返す */
@@ -488,8 +489,8 @@ td.ttl .flags{margin-left:8px}
 /* 2026-09-19（#506 中5）: 横スクロール容器の中では sticky の基準が容器になるので、ページ用の
    --stickytop を足したままだと列見出しが容器の中で下がって先頭行を覆い、1本目が押せなくなる。
    容器になる幅では top を 0 起点に戻す。画面を横いっぱいに使うようにしたので（同日）、
-   表（min 1064px）が収まらなくなる幅は 1124 未満だけになった */
-@media (max-width:1123.98px){
+   表（min 1186px）が収まらなくなる幅は 1246 未満だけになった */
+@media (max-width:1245.98px){
   .tblwrap.mtx{overflow-x:auto}
   .mtx thead tr:first-child th{top:0}
   .mtx thead tr:nth-child(2) th{top:var(--mtxrow1, 24px)}
@@ -1584,7 +1585,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/19 23:18';
+const BUILT_AT = '9/19 23:36';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -1702,12 +1703,12 @@ function loadUI(){
    byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため）
    rework  = 動画ごとの「この版は何の作り直しか」（human / ai / null）。一覧の札に使う */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
-                board:{}, threads:{}, rework:{}, rvRev:{}, ops:null, analytics:{}, assets:{}, system:null,
+                board:{}, threads:{}, rework:{}, looks:{}, rvRev:{}, ops:null, analytics:{}, assets:{}, system:null,
                 genfarm:null, autonow:null };
 const clearVideoCaches = () => {
   store.byId = new Map();
   store.core = {}; store.facets = {}; store.pending = {}; store.board = {}; store.threads = {};
-  store.rework = {};
+  store.rework = {}; store.looks = {};
 };
 const resetStockFilters = () => {
   state.stockFilter=null; state.stockQ=''; state.stockGenre=''; state.stockSort=null; state.stockPage=0;
@@ -2011,7 +2012,15 @@ async function loadRework(items){
     .in('video_id', ids).order('created_at', { ascending: true }));
   const by = new Map();
   for (const r of rows) { const a = by.get(r.video_id); if (a) a.push(r); else by.set(r.video_id, [r]); }
-  for (const id of ids) { store.rework[id] = reworkSrcOf(by.get(id) || []); rememberSubmitted(id, by.get(id) || []); }
+  for (const id of ids) {
+    const evs = by.get(id) || [];
+    store.rework[id] = reworkSrcOf(evs); rememberSubmitted(id, evs);
+    const it = (items || []).find(i => i.id === id), cur = it ? it._rv + '|' + submittedRevOf(id, it._rv) : '';
+    const seen = new Set(evs.filter(e => !isAiAuthor(e.author) && (e.kind === 'approve' || e.kind === 'request_changes'))
+      .map(e => e.gate + '|' + (e.revision == null ? 1 : e.revision)));
+    seen.delete(cur);
+    store.looks[id] = seen.size + 1;
+  }
 }
 /* 画面に出ている提出物の版（ゲートごとの最後の request_review の版）を覚える。承認するとき
    DB へ渡し、押した瞬間に裏で新しい版が提出されていたら断ってもらう（073・#502）。
@@ -2314,13 +2323,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/19 23:18') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/19 23:36') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/19 23:18') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/19 23:36') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2375,21 +2384,28 @@ const openBadgeHTML = it => it._open
 /* 「この版は何の作り直しか」の札（オーナー要望 2026-09-02）。承認するかどうかを決める場面
    でしか意味が無いので、承認待ちの動画にだけ出す。初回の提出は札なし。 */
 const REWORK_BADGE = {
-  human: {cls:'rwh',  gl:'↻', text:'指摘を反映', tip:'あなたの指摘を直した版'},
-  ai:    {cls:'rwai', gl:'↻', text:'AIが修正',  tip:'AI が自分で不備を見つけて直した版（あなたの指摘とは無関係）'}
+  human: {cls:'rwh',  gl:'↻', text:'あなたの指摘', tip:'あなたの指摘を直して出し直した版'},
+  ai:    {cls:'rwai', gl:'↻', text:'AIの指摘',   tip:'AI の点検で出た指摘を直して出し直した版（あなたの指摘は関係していない）'}
 };
 /* 差し戻しが1件も無い＝初回の提出。表の「版」列だけは空欄にせず「初版」と書く
    （空欄だと「取れなかった」のか「初版」なのか読めない）。
    版の番号（v1・v2…）は、承認待ちの提出物の版（loadRework が覚えた rvRev＝承認のとき DB へ渡すのと
    同じ値）を頭に付ける（オーナー要望 2026-09-19）。版はあなたの指摘でも AI の自己修正でも1つ進む。
    番号が取れない古い記録は由来だけを出す。 */
-const FIRST_BADGE = {cls:'idea', gl:'', text:'', tip:'差し戻しのない最初の提出'};
+const FIRST_BADGE = {cls:'idea', gl:'', text:'初回', tip:'差し戻しのない最初の提出'};
 const reworkBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)]) : '';
-const revBadgeHTML   = it => {
+/* 承認待ちの行に出す3つ（オーナー要望 2026-09-19）。直すのは毎回 AI なので「AIが修正」では何も
+   伝わらない。要るのは ①版の番号 ②今回**誰の指摘**を直した版か ③**あなたが見るのは何回目**か */
+const revNumHTML = it => {
+  const n = it._rv ? submittedRevOf(it.id, it._rv) : null;
   if (!it._rv) return '';
-  const b = REWORK_BADGE[reworkOf(it)] || FIRST_BADGE, n = submittedRevOf(it.id, it._rv);
-  const text = [n != null ? 'v' + n : '', b.text].filter(Boolean).join(' ') || '初版';
-  return badgeHTML(Object.assign({}, b, {text, tip:(n != null ? `第${n}版・` : '') + b.tip}));
+  return n != null ? `<span class="revnum" title="第${n}版（あなたの指摘でも AI の指摘でも、直すたびに1つ進む）">v${n}</span>`
+    : '<span title="版の番号が記録に無い（古い提出）">—</span>';
+};
+const srcBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)] || FIRST_BADGE) : '';
+const looksHTML = it => {
+  const n = it._rv ? store.looks[it.id] : null;
+  return n ? `<span title="あなたがこの動画を見るのは${n}回目（これまでに承認か修正依頼をした回数＋今回）">${n}回目</span>` : '';
 };
 function flagsHTML(it){
   const h = badgeHTML(stateBadgeOf(it)) + reworkBadgeHTML(it) + openBadgeHTML(it);
@@ -2517,7 +2533,9 @@ const MCOL = {
   seq:   {sort:1, w:'78px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
   title: {sort:1,                  td: it => `<td class="ttl">${esc(it.title)}</td>`},
   state: {label:'状態', w:'112px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
-  rev:   {label:'版',   w:'124px', td: it => `<td class="bcol">${revBadgeHTML(it)}</td>`},
+  rev:   {label:'版',   w:'52px',  td: it => `<td class="num">${revNumHTML(it)}</td>`},
+  src:   {label:'直した指摘', w:'128px', td: it => `<td class="bcol">${srcBadgeHTML(it)}</td>`},
+  looks: {label:'確認', w:'70px', td: it => `<td class="num">${looksHTML(it)}</td>`},
   open:  {label:'指摘', w:'62px',  td: it => `<td class="bcol">${openBadgeHTML(it)}</td>`},
   genre: {sort:1, w:'136px',        td: it => `<td><span class="genre">${esc(it.genreLabel)}</span></td>`},
   days:  {sort:1, w:'56px', thx:' num',
@@ -2537,7 +2555,7 @@ const MCOL = {
    '@' は工程7マスの位置を指す目印。 */
 /* ジャンルの列は外した（オーナー指示 2026-09-19・承認の判断に使わない。絞り込みのジャンル選択は残す） */
 /* 投稿日時・再生数・登録者増も外した（同日・数字は分析タブで見る） */
-const MCOLS    = ['seq','title','state','rev','open','@','days','ok'];
+const MCOLS    = ['seq','title','state','rev','src','looks','open','@','days','ok'];
 const colCount = cols => cols.length - 1 + PSTAGES.length;
 
 function colTH(k){
