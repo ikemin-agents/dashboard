@@ -1585,7 +1585,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/19 23:41';
+const BUILT_AT = '9/20 00:42';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2323,13 +2323,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/19 23:41') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/20 00:42') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/19 23:41') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/20 00:42') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3010,7 +3010,7 @@ window.addEventListener('popstate', e => {
 
 /* ── 素材の描画 ─────────────────────────────────────────────── */
 const NO_ASSET = `<div class="noitem">まだ素材がありません
-  <span class="s">今夜の制作でここに入ります</span></div>`;
+  <span class="s">制作が進むとここに入ります</span></div>`;
 
 function assetHead(f){
   return `<div class="ahead"><span class="anm">${esc(f.name)}</span>
@@ -3784,7 +3784,8 @@ const goalVid = p => goalCh(p.channel) && !ANA_GOAL_NG_GENRE.test(p.genre || '')
 /* 目安の値を文にするときの共通表記（例: 70% / 1.8 / 0.85 / 25%） */
 const goalTxt = k => `${ANA_GOAL[k].fmt(ANA_GOAL[k].thr)}${ANA_GOAL[k].unit}`;
 /* グラフの下・表の下に添える1行（線の対象が02だけであることの説明） */
-const ANA_GOAL_SCOPE = '歯科医番長は目安の線の対象外（根拠のデータが世界のバズ雑学のみ）';
+/* チャンネルを名指ししない（足すたびに直し忘れる・#506 中8）。線を当てるのは ANA_GOAL_CHANNELS だけ */
+const ANA_GOAL_SCOPE = '目安の線は世界のバズ雑学だけに当てています（根拠のデータが世界のバズ雑学のみ）';
 
 /* いま凡例でオンにしているチャンネル（色と名前つき）。並びは常にチャンネルの並び順で固定
    ＝オフにしても残ったチャンネルの色は変わらない */
@@ -4661,7 +4662,8 @@ const RUN_KIND_JA = {
   'dispatcher-final-validate':'完成の機械測定',
   'dispatcher-final-submit-review':'完成の提出',
   'dispatcher-publish-schedule':'YouTube へ予約投稿',
-  'dispatcher-rework-plan':'差し戻し対応係'
+  'dispatcher-rework-plan':'差し戻し対応係',
+  'dispatcher-storage-archive':'公開後の保管', 'dispatcher-storage-walk':'保存先の見回り'
 };
 
 /* 稼働タブ（オーナー指定 2026-08-20）: 上に「正常終了か・異常があったか」だけを大きく出し、
@@ -5556,7 +5558,7 @@ function recordSection(ops, an){
 
   return `<details class="opsec"${(nErr || nWarn) ? ' open' : ''}>
     <summary>🌙 実行記録<span class="s ${head.cls}">${esc(head.text)}</span></summary>
-    <p class="opsnote">夜間の制作やXの投稿など、自動で走った仕事の結果です。
+    <p class="opsnote">動画の制作やXの投稿など、自動で走った仕事の結果です。
       行を押すと中身が見られます（異常があった回は最初から開いています）。</p>
     ${ops.runs.length ? `<div class="runs">${runs}</div>`
       : `<div class="noitem">まだ記録がありません</div>`}</details>`;
