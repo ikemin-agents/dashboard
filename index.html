@@ -920,6 +920,123 @@ tr.dropped td{color:var(--muted)}
 .afiles{display:grid; gap:6px; padding:10px 12px; font-size:var(--fs-xs); background:var(--surface-1)}
 .afiles a{color:var(--s1); word-break:break-all}
 
+/* ═══ 完成動画のタップ入力（#509 段4・見本 dashboard/review-mockup.html）═══════
+   完成の承認待ちで mp4 を見ているときだけ出る。動画の気になる場所をタップ → 赤丸のピン →
+   右列の入力シートに時刻とシーンが入る、という流れ。ブラウザ既定の操作バー（controls）は
+   タップを吸ってしまうので、再生・コマ送り・シークを自前で持つ。
+   ⚠️ 見た目の正本は見本のファイル。ここは同じ値を本体のトークンで書き直したもの。 */
+.vidbox{position:relative; margin:var(--sp-2) auto; background:#000; border-radius:var(--r-md);
+  overflow:hidden; border:1px solid var(--border); max-width:100%;
+  height:calc(100dvh - var(--stickytop, 0px) - var(--dhdr-h) - var(--dbar-h) - 216px);
+  min-height:280px; aspect-ratio:9/16}
+.vidbox video{display:block; width:100%; height:100%; object-fit:contain; background:#000}
+.hitlayer{position:absolute; inset:0; touch-action:manipulation}
+.hitlayer.on{cursor:crosshair}
+.pin{position:absolute; width:30px; height:30px; margin:-15px 0 0 -15px; border-radius:var(--r-pill);
+  border:2.5px solid #ff3b30; background:rgba(255,59,48,.22); cursor:grab;
+  box-shadow:0 0 0 2px rgba(255,255,255,.55); touch-action:none}
+.pin.drag{cursor:grabbing}
+.pin::after{content:''; position:absolute; inset:-9px; border-radius:var(--r-pill)}
+/* 自前の操作バー */
+/* 左列は動画の幅ちょうど（≒390px）しかない。ボタンと棒を1行に詰めるとシークの棒が 60px 弱に
+   潰れて 57秒の動画を探れないので、**棒だけを下の行に落として全幅を渡す**（見本は左列が広い
+   前提で1行に並べていた。持ち物と動きは見本のまま・置き方だけ幅に合わせた） */
+.ctrls{display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:var(--sp-2) 0 0;
+  background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:var(--sp-2)}
+.cbtn{font-family:inherit; font-size:var(--fs-sm); border:1px solid var(--border); background:var(--surface-2);
+  color:var(--ink); border-radius:var(--r-sm); min-width:44px; height:36px; cursor:pointer; padding:0 8px}
+.cbtn:hover{background:var(--surface-3)}
+.cbtn.play{min-width:46px; font-size:var(--fs-md)}
+.ctime{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums; flex:0 0 auto}
+.seek{position:relative; flex:1 0 100%; order:1; height:36px; cursor:pointer; touch-action:none}
+.ctime{margin-left:auto}
+.seek .tptrack{position:absolute; left:0; right:0; top:50%; height:6px; margin-top:-3px;
+  background:var(--surface-3); border-radius:var(--r-pill); overflow:hidden}
+.seek .tpfill{position:absolute; left:0; top:0; bottom:0; width:0; background:var(--s1)}
+.seek .tpmark{position:absolute; top:50%; width:3px; height:14px; margin-top:-7px; margin-left:-1.5px;
+  background:#ff3b30; border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,.5)}
+.seek .knob{position:absolute; top:50%; width:13px; height:13px; margin:-6.5px 0 0 -6.5px;
+  border-radius:var(--r-pill); background:var(--s1); border:2px solid var(--surface-1)}
+@media (max-width:899px){
+  .vidbox{height:auto; width:min(100%, calc(60dvh * 9 / 16))}
+  body.sheetopen .vidbox{width:min(100%, calc(44dvh * 9 / 16))}
+}
+/* ── 右列: 入力シート・入口の行・指摘の一覧・メモ ──
+   自由記述の囲み（.wbox）の中身を入れ替える形で入る。囲みの面が二重に見えないよう、
+   タップ入力のときだけ囲みの背景と枠を外す（二重送信の止め方・案内の出し先は段1のまま） */
+.wbox.tapon{background:transparent; border:none; padding:0}
+.tapbox{display:flex; flex-direction:column; gap:var(--sp-3); min-width:0}
+.sheet{background:var(--surface-1); border:1px solid var(--s1); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-2); padding:var(--sp-3) var(--sp-3) var(--sp-3)}
+.sheet .at{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:var(--sp-3)}
+.sheet .at .t{font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums}
+.sheet .at .sc{font-size:var(--fs-xs); color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.tagrow{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:var(--sp-3)}
+.tagbtn{font-family:inherit; font-size:var(--fs-xs); border:1px solid var(--border); background:var(--surface-1);
+  color:var(--ink-2); border-radius:var(--r-pill); padding:0 13px; height:36px; cursor:pointer}
+.tagbtn:hover{background:var(--surface-2); color:var(--ink)}
+.tagbtn[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--page); font-weight:650}
+.noteinput{font-family:inherit; font-size:var(--fs-md); width:100%; border:1px solid var(--border);
+  border-radius:var(--r-md); padding:10px 13px; background:var(--surface-1); color:var(--ink);
+  min-height:44px; margin-bottom:var(--sp-3)}
+.sheet .sacts{display:flex; gap:var(--sp-2)}
+.sheet .sacts .btn{flex:1 1 auto; min-height:44px}
+.btn.ghost{background:transparent; color:var(--ink-2)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.sm{padding:5px 11px; font-size:var(--fs-xs); min-height:32px; border-radius:var(--r-sm)}
+/* 入口は2つだけ（動画のタップ＝案内・いまの画面＝ボタン）。PC は横に2つ、
+   スマホは案内を1行・ボタンを1行にして押す先を大きく取る */
+.addrow{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-2)}
+.addrow .btn{min-height:44px; white-space:normal; line-height:1.3}
+.addrow .ahint{display:flex; align-items:center; justify-content:center; text-align:center; min-height:44px;
+  border:1px dashed var(--border); border-radius:var(--r-md); color:var(--muted); font-size:var(--fs-xs); padding:4px 8px}
+@media (max-width:899px){ .addrow{grid-template-columns:minmax(0,1fr)} }
+.nhd{display:flex; align-items:baseline; gap:var(--sp-2); font-size:var(--fs-md); font-weight:680}
+.nhd .n{font-size:var(--fs-xs); color:var(--muted); font-weight:400; margin-left:auto}
+.nlist{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
+.nitem{display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:var(--sp-3);
+  align-items:start; padding:var(--sp-2); border:1px solid var(--border); border-radius:var(--r-md);
+  background:var(--surface-1); cursor:pointer; min-height:56px}
+.nitem:hover{background:var(--surface-2)}
+.nitem.cur{border-color:var(--s1); background:var(--s1-tint)}
+.nitem .th{width:44px; height:78px; border-radius:var(--r-sm); object-fit:cover; background:var(--surface-3);
+  display:block; border:1px solid var(--border-2)}
+.nitem .noth{width:44px; height:78px; border-radius:var(--r-sm); background:var(--surface-3);
+  display:grid; place-items:center; font-size:var(--fs-2xs); color:var(--muted); text-align:center; line-height:1.2}
+.nitem .meta{min-width:0}
+.nitem .l1{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:3px}
+.nitem .tt{font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums}
+.nitem .sc{font-size:var(--fs-2xs); color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.nitem .note{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere}
+.nitem .rowacts{display:flex; flex-direction:column; gap:4px}
+.gbadge.fix{background:var(--fix-tint); color:var(--fix-ink); border-color:transparent}
+.tpempty{font-size:var(--fs-sm); color:var(--muted); border:1px dashed var(--border);
+  border-radius:var(--r-md); padding:var(--sp-4); text-align:center; line-height:var(--lh-tight)}
+.memo{font-family:inherit; font-size:var(--fs-md); width:100%; border:1px solid var(--border);
+  border-radius:var(--r-md); padding:10px 13px; background:var(--surface-1); color:var(--ink);
+  min-height:76px; resize:vertical}
+.lbl{font-size:var(--fs-2xs); color:var(--muted); font-weight:700; letter-spacing:.07em;
+  display:block; margin-bottom:5px}
+/* 過去の指摘（「あなたの指摘」の中）を項目ごとに出す行。いまの版のものは押すとその時刻へ飛ぶ */
+.nrec{display:flex; gap:7px; align-items:baseline; font-size:var(--fs-sm); line-height:var(--lh-tight);
+  padding:5px 2px; border-top:1px solid var(--border-2); flex-wrap:wrap}
+.nrec:first-child{border-top:none}
+.nrec .tt{font-weight:700; font-variant-numeric:tabular-nums; flex:0 0 auto}
+.nrec .sc{font-size:var(--fs-2xs); color:var(--muted); flex:0 0 auto}
+.nrec .note{color:var(--ink-2); min-width:0; overflow-wrap:anywhere}
+.nrec.jump{cursor:pointer; border-radius:var(--r-sm)}
+.nrec.jump:hover{background:var(--s1-tint)}
+/* スマホでは入力シートを下からせり上げる（動画を隠しすぎない高さ） */
+@media (max-width:899px){
+  .sheet.float{position:fixed; left:0; right:0; z-index:60;
+    bottom:calc(var(--dbar-h) + env(safe-area-inset-bottom));
+    border-radius:var(--r-lg) var(--r-lg) 0 0; border-width:1px 0 0;
+    border-top:2px solid var(--s1); max-height:46dvh; overflow:auto;
+    padding:var(--sp-3) var(--sp-4) var(--sp-4)}
+  body.sheetopen .dview.hasbar{padding-bottom:calc(var(--dbar-h) + 46dvh + env(safe-area-inset-bottom))}
+}
+
 /* ═══ 運営（旧: 稼働／システム／費用）════════════════════════════ */
 /* 折りたたみ節。カード1枚の見た目のまま、見出し行を押すと開く。右端の小さい字は
    畳んだままでも分かってほしい要約（エラー件数・今月の請求額）。異常なら色を付ける。 */
@@ -1593,7 +1710,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/20 01:05';
+const BUILT_AT = '9/20 09:03';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -1918,11 +2035,24 @@ async function loadItemBySeq(ch, seq){
 
 /* レビュー記録は「開いた動画のぶんだけ」取る（#215 Phase 2）。全件先読み（旧
    loadReviews の .limit(3000)）をやめたので、件数が増えても上限に静かに当たらない。 */
+const RE_COLS = 'id,video_id,gate,author,kind,body,score,resolution_status,' +
+                'resolved_by,resolution_note,resolved_at,revision,created_at';
+/* 「その列はまだ無い」型の断り方（PostgREST は 42703 のこともスキーマ写しの取り違えのこともある） */
+const noSuchColumn = err => {
+  const s = ((err && err.code) || '') + ' ' + String((err && (err.message || err.hint)) || '');
+  return /\b42703\b/.test(s) || /\bPGRST(100|200|202|204)\b/.test(s)
+      || /does not exist|not find the .* column|unknown column/i.test(s);
+};
 async function loadThread(videoId){
   if (store.threads[videoId]) return store.threads[videoId];
-  store.threads[videoId] = await q(sb.from('review_events')
-    .select('id,video_id,gate,author,kind,body,score,resolution_status,resolved_by,resolution_note,resolved_at,revision,created_at')
-    .eq('video_id', videoId).order('created_at', { ascending: true }));
+  const get = cols => sb.from('review_events').select(cols)
+    .eq('video_id', videoId).order('created_at', { ascending: true });
+  /* 構造化された指摘（notes）はまだ列が無い DB でも動く——列なしで断られたら抜いて引き直す。
+     ここで諦めると詳細画面がまるごと出なくなるので、退避は必ず持たせる（#509 段4） */
+  let { data, error } = await get(RE_COLS + ',notes');
+  if (error && noSuchColumn(error)) ({ data, error } = await get(RE_COLS));
+  if (error) throw new Error(error.message || String(error));
+  store.threads[videoId] = data || [];
   return store.threads[videoId];
 }
 
@@ -2348,13 +2478,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/20 01:05') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/20 09:03') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/20 01:05') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/20 09:03') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -2861,7 +2991,7 @@ function detailHTML(it){
      「AI の記録」は1件1行に畳んで下の畳みへ回す。時系列には混ぜない。
      ゲートが1つしか無い動画（02の完成だけ）では毎行に同じ札を出しても読み分けに使えない */
   const showGate = new Set(evs.map(e => e.gate)).size > 1;
-  const you   = evs.length ? youHTML(evs, showGate) : '';
+  const you   = evs.length ? youHTML(evs, showGate, it) : '';
   const ailog = evs.length ? aiLogHTML(evs) : '';
 
   /* 承認待ちなら「決める枠」（ゲート名＋版・変えたこと・メモ・入力欄）と下端のバー。
@@ -2952,6 +3082,9 @@ async function openDetail(vid, gate){
   const id = Number(vid);
   const dv = $('#view-detail');
   state.detail = id;
+  /* 描き直すたびにタップ入力は組み直す（下書きは localStorage から戻る・#509 段4） */
+  tap = null; curItem = null;
+  document.body.classList.remove('sheetopen');
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   dv.classList.add('active');
   document.body.classList.add('detail-open');
@@ -2970,6 +3103,7 @@ async function openDetail(vid, gate){
      いまの版を添えるのは、一覧と同じ基準で「古い版の提出」を承認待ちから外すため */
   annotate(it, evs, curRev);
 
+  curItem = it;                 /* 素材は非同期で届くので、届いた時点の「何を見ているか」の控え */
   dv.innerHTML = detailHTML(it);
   syncStickyOffsets();          /* タブが隠れてヘッダーが低くなるので測り直す（戻るボタンの貼り付き位置） */
   window.scrollTo(0, 0);
@@ -2982,6 +3116,8 @@ async function openDetail(vid, gate){
 function closeDetail(scrollY){
   const wasOpen = state.detail != null;
   state.detail = null;
+  tap = null; curItem = null;
+  document.body.classList.remove('sheetopen');
   const dv = $('#view-detail');
   dv.classList.remove('active');
   dv.innerHTML = '';
@@ -3095,12 +3231,12 @@ function mdToHTML(src){
 const assetVer = name => { const m = /_v(\d+)/i.exec(String(name)); return m ? m[1] : null; };
 const verNum = v => Number(v);
 
-function assetsHTML(files){
+function assetsHTML(files, tapMode){
   if (!files.length) return NO_ASSET;
   /* 版の一覧（新しい順）。同じ番号は表記のばらつき（v1/v01）を避けて数値で束ねる */
   const vs = [...new Set(files.map(f => assetVer(f.name)).filter(v => v != null))]
     .sort((a, b) => verNum(b) - verNum(a));
-  if (!vs.length) return assetBlocksHTML(files);          /* 版なし＝従来どおり全部表示 */
+  if (!vs.length) return assetBlocksHTML(files, tapMode);  /* 版なし＝従来どおり全部表示 */
 
   const latest = vs[0];
   const isLatest = f => { const v = assetVer(f.name); return v == null || verNum(v) === verNum(latest); };
@@ -3113,19 +3249,45 @@ function assetsHTML(files){
       <summary class="dsum">以前の版（v${esc(v)}）<span class="n">（${list.length}件）</span></summary>
       <div class="assets">${assetBlocksHTML(list)}</div></details>`;
   }).join('');
-  return head + assetBlocksHTML(files.filter(isLatest)) + olds;
+  /* 自前の操作バー（タップ入力）は最新版の動画にだけ付ける。以前の版は見るだけ */
+  return head + assetBlocksHTML(files.filter(isLatest), tapMode) + olds;
 }
 
-/* ── 動画の枠（#509 段1）────────────────────────────────────────
-   いまはブラウザ既定の操作バー（controls）のまま。あとの段で「気になる場所をタップして
-   指摘を足す」自前の操作バーに差し替えるので、動画まわりの DOM はこの1か所にまとめておく。 */
-function videoBlockHTML(f){
-  return `<div class="asset">${assetHead(f)}${f.url
-    ? `<video class="avid" controls preload="metadata" playsinline src="${esc(f.url)}"></video>`
-    : `<div class="afiles">この動画の署名URLを取得できませんでした</div>`}</div>`;
+/* ── 動画の枠（#509 段1 → 段4 でタップ入力）───────────────────────────────
+   tapMode が無ければブラウザ既定の操作バー（controls）のまま（台本・絵コンテ・以前の版）。
+   'edit'（完成の承認待ち）と 'view'（見るだけ）では自前の操作バーに差し替える——既定の
+   操作バーは画面の下半分のタップを吸ってしまい、「気になる場所を指す」ができないため。
+   ⚠️ crossorigin はサムネイルの切り出し（canvas）に要るが、これを付けたせいで動画が
+   読めなくなる取りこぼしがありうるので、armTap 側に「外して読み直す」退避を置いてある。 */
+function videoBlockHTML(f, tapMode){
+  if (!f.url) return `<div class="asset">${assetHead(f)}
+    <div class="afiles">この動画の署名URLを取得できませんでした</div></div>`;
+  if (!tapMode) return `<div class="asset">${assetHead(f)}
+    <video class="avid" controls preload="metadata" playsinline src="${esc(f.url)}"></video></div>`;
+  return `<div class="asset" data-tapvid="${esc(tapMode)}" data-vname="${esc(f.name)}">
+    ${assetHead(f)}
+    <div class="vidbox" data-vbox>
+      <video preload="metadata" playsinline disablepictureinpicture crossorigin="anonymous"
+             src="${esc(f.url)}"></video>
+      <div class="hitlayer${tapMode === 'edit' ? ' on' : ''}" data-hit></div>
+      <div class="pin" data-pin hidden></div>
+    </div>
+    <div class="ctrls">
+      <button class="cbtn play" type="button" data-cbtn="play" aria-label="再生・一時停止">▶</button>
+      <button class="cbtn" type="button" data-cbtn="back" aria-label="0.5秒もどる">−0.5s</button>
+      <button class="cbtn" type="button" data-cbtn="fwd" aria-label="0.5秒すすむ">+0.5s</button>
+      <div class="seek" data-seek role="slider" aria-label="再生位置" tabindex="0"
+           aria-valuemin="0" aria-valuenow="0" aria-valuemax="100">
+        <div class="tptrack"><div class="tpfill" data-fill></div></div>
+        <div data-marks></div>
+        <div class="knob" data-knob style="left:0"></div>
+      </div>
+      <span class="ctime" data-ctime>0:00 / 0:00</span>
+      <button class="cbtn" type="button" data-cbtn="mute" aria-label="消音">🔊</button>
+    </div></div>`;
 }
 
-function assetBlocksHTML(files){
+function assetBlocksHTML(files, tapMode){
   if (!files.length) return NO_ASSET;
   /* `…_p01.jpg` 形式は資料の「ページ」（絵コンテの各ページ等）。サムネ格子ではなく
      縦スクロールのビューアで見せる（#203） */
@@ -3143,7 +3305,7 @@ function assetBlocksHTML(files){
       return `<div class="asset">${assetHead(f)}<pre class="atext">${
         f.text != null ? esc(f.text) : esc(f.err || '（本文が空です）')}</pre></div>`;
     }
-    if (f.kind === 'video') return videoBlockHTML(f);
+    if (f.kind === 'video') return videoBlockHTML(f, tapMode);
     return null;
   }).filter(Boolean);
 
@@ -3182,7 +3344,12 @@ async function mountAssets(node){
   const { ch, seq, gate } = node.dataset;
   try {
     const a = await loadAssets(ch, seq, gate);
-    if (node.isConnected) node.innerHTML = assetsHTML(a.files);
+    if (!node.isConnected) return;
+    /* シーンの時刻表は読む素材ではなく画面の裏方なので、素材の一覧には出さない（#509 段4） */
+    const shown = a.files.filter(f => !RE_TIMELINE.test(f.name));
+    const tapMode = tapModeFor(node, shown);
+    node.innerHTML = assetsHTML(shown, tapMode);
+    if (tapMode) armTap(node, a.files, tapMode);
   } catch (e) {
     if (node.isConnected) node.innerHTML = `<div class="noitem">素材を読み込めませんでした
       <span class="s">${esc(e.message || String(e))}</span></div>`;
@@ -3231,6 +3398,612 @@ function armLazyAssets(root){
   });
 }
 
+/* ══ 完成動画のタップ入力（#509 段4）══════════════════════════════════════════
+   「完成」の承認待ちで mp4 を見ているときだけ出る。動画の気になる場所をタップすると、その
+   再生位置とシーン名が入った入力シートが開き、定型の言葉＋一言で指摘を1件にする。送るのは
+   修正依頼の受け口に添える `p_notes`（**形の正本は DB 側の検証関数**・画面はそれに合わせる）。
+   **静止画は送らない**——サムネイルは画面の中で「どの指摘のことか」を見分けるためだけに作る。
+   見た目と操作の正本は `dashboard/review-mockup.html`（オーナー承認済みの見本）。 */
+
+/* 定型の言葉。2組をここ1か所に置く（画面の組み立てに直接書かない）。
+   入口は「動画をタップして場所を指す」（picture）と「いまの画面にコメント」（whole）の2つだけ
+   （オーナー決定 2026-09-20）。**音・ナレーションの入口は廃止**——絵の話も音の話も同じ
+   「いまの画面」に書けるよう、whole の言葉に音のぶんを混ぜてある。 */
+const NOTE_TAGS = {
+  picture: ['文字が読めない', '動きが不自然', 'ナレーションとずれ', 'つなぎ目が変', '絵が弱い'],
+  whole:   ['絵が弱い', 'テンポが遅い', 'つなぎ目が変', '話が分かりにくい',
+            '読み間違い', '声が不自然', '間が長い', 'BGM・効果音', 'この場面は作り直し']
+};
+const NOTE_TAGS_ALL = [...new Set([...NOTE_TAGS.picture, ...NOTE_TAGS.whole])];
+const NOTE_KIND_LABEL = {picture:'', whole:'▣ いまの画面 ・ '};
+/* 廃止した種類（'audio'）が下書きや過去の指摘に残っていたら「いまの画面」として読む。
+   **落とさない**——書いた本人には消える理由が無い（受け口は 'audio' を弾くので送る前に直す） */
+const normKind = k => (k === 'picture' ? 'picture' : 'whole');
+/* 受け口と同じ上限。送ってから断られないよう画面の側でも先に止める（正本は DB の検証関数） */
+const NOTE_LIM = {items:50, tag:100, note:500, memo:2000, title:100};
+/* 動画と同じフォルダに置かれるシーンの時刻表。内部ファイルなので素材の一覧には出さない */
+const RE_TIMELINE = /^scenes_timeline_v(\d+)\.json$/i;
+const TL_TOL = 1.0;        /* 表の尺と動画の尺がこれを超えて食い違ったら時刻表は使わない（秒） */
+const TAP_DRAFT = 'dash.notes.v1.';   /* 送る前の下書きの置き場（動画＋ゲート＋版ごとに1つ） */
+
+/* いま開いている動画（素材が非同期で届くので、届いた時点の「何を見ているか」をここから引く） */
+let curItem = null;
+/* 組み立て中の指摘ひとそろい。画面に1つしか出ないので1つだけ持つ */
+let tap = null;
+
+const fmtT = t => {
+  if (!isFinite(t) || t < 0) t = 0;
+  const m = Math.floor(t / 60), s = Math.floor(t % 60);
+  return m + ':' + (s < 10 ? '0' : '') + s;
+};
+
+/* この素材の箱をタップ入力にするか。完成の mp4 のときだけで、承認待ちの左列なら書ける
+   （'edit'）、それ以外の場所（見るだけの畳み・承認待ちでない動画）は操作バーだけ（'view'） */
+function tapModeFor(node, files){
+  if (node.dataset.gate !== 'final') return null;
+  if (!files.some(f => f.kind === 'video' && f.url)) return null;
+  const it = curItem;
+  return (node.closest('.dstage') && it && it._rv === 'final') ? 'edit' : 'view';
+}
+
+/* ── 自前の操作バー ──────────────────────────────────────────────────
+   ブラウザ既定の操作バーは画面の下半分のタップを吸うので、再生・0.5秒送り・シーク・消音を
+   自前で持つ。ピンの座標は「映像そのものの領域」に対する 0〜1 で、object-fit:contain の
+   余白は除く（枠と動画の縦横比が違っても指した場所がずれない）。余白のタップは受け付けない。 */
+function armVideoBar(el){
+  const $$ = s => el.querySelector(s);
+  const v = $$('video'), box = $$('[data-vbox]'), pin = $$('[data-pin]');
+  const seek = $$('[data-seek]'), fill = $$('[data-fill]'), knob = $$('[data-knob]');
+  const marks = $$('[data-marks]'), lbl = $$('[data-ctime]');
+  const play = $$('[data-cbtn="play"]'), mute = $$('[data-cbtn="mute"]');
+  const ctl = { el, video: v, box, pin, canvas: true };
+
+  const dur = () => (v.duration && isFinite(v.duration)) ? v.duration : 0;
+  const paint = () => {
+    const p = dur() ? (v.currentTime / dur()) : 0;
+    fill.style.width = (p * 100) + '%';
+    knob.style.left = (p * 100) + '%';
+    seek.setAttribute('aria-valuenow', String(Math.round(p * 100)));
+    lbl.textContent = fmtT(v.currentTime) + ' / ' + fmtT(dur());
+  };
+  ctl.paint = paint;
+  ctl.dur = dur;
+  /* crossorigin はサムネイルの切り出しに要るが、これのせいで動画が読めなくなることがある。
+     読めなかったら**外して読み直す**（そのぶんサムネイルは作れないので「画なし」になる） */
+  v.addEventListener('error', () => {
+    if (v.dataset.noco === '1') return;
+    v.dataset.noco = '1'; ctl.canvas = false;
+    const t = v.currentTime;
+    v.removeAttribute('crossorigin');
+    v.load();
+    v.addEventListener('loadedmetadata', () => { try { v.currentTime = t; } catch (_) {} }, { once: true });
+  });
+  const syncPlay = () => { play.textContent = v.paused ? '▶' : '❚❚'; };
+  play.addEventListener('click', () => { if (v.paused) v.play().catch(() => {}); else v.pause(); });
+  v.addEventListener('play', syncPlay);
+  v.addEventListener('pause', syncPlay);
+  $$('[data-cbtn="back"]').addEventListener('click', () => { v.currentTime = Math.max(0, v.currentTime - 0.5); });
+  $$('[data-cbtn="fwd"]').addEventListener('click', () => { v.currentTime = Math.min(dur(), v.currentTime + 0.5); });
+  mute.addEventListener('click', () => { v.muted = !v.muted; mute.textContent = v.muted ? '🔇' : '🔊'; });
+  v.addEventListener('timeupdate', paint);
+  v.addEventListener('loadedmetadata', () => { paint(); ctl.onmeta && ctl.onmeta(); });
+
+  const seekAt = e => {
+    const r = seek.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    v.currentTime = p * dur(); paint();
+  };
+  let seeking = false;
+  seek.addEventListener('pointerdown', e => { seeking = true; seek.setPointerCapture(e.pointerId); seekAt(e); e.preventDefault(); });
+  seek.addEventListener('pointermove', e => { if (seeking) seekAt(e); });
+  seek.addEventListener('pointerup', e => { seeking = false; try { seek.releasePointerCapture(e.pointerId); } catch (_) {} });
+  seek.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft')  { v.currentTime = Math.max(0, v.currentTime - 0.5); e.preventDefault(); }
+    if (e.key === 'ArrowRight') { v.currentTime = Math.min(dur(), v.currentTime + 0.5); e.preventDefault(); }
+  });
+  /* 指摘の位置を目盛りの上に赤い印で置く（どこに何件あるかが一目で分かる） */
+  ctl.marks = rows => {
+    marks.textContent = '';
+    for (const r of rows) {
+      const d = document.createElement('div');
+      d.className = 'tpmark';
+      d.style.left = (dur() ? (r.t / dur() * 100) : 0) + '%';
+      d.title = fmtT(r.t);
+      marks.appendChild(d);
+    }
+  };
+  /* 映像の実領域（余白を除いたところ）。読めないあいだは null */
+  const area = () => {
+    const r = v.getBoundingClientRect(), vw = v.videoWidth || 0, vh = v.videoHeight || 0;
+    if (!vw || !vh || !r.width || !r.height) return null;
+    const s = Math.min(r.width / vw, r.height / vh);
+    return { r, w: vw * s, h: vh * s };
+  };
+  ctl.point = e => {
+    const a = area();
+    if (!a) return null;
+    const x = (e.clientX - a.r.left - (a.r.width - a.w) / 2) / a.w;
+    const y = (e.clientY - a.r.top  - (a.r.height - a.h) / 2) / a.h;
+    return (x < 0 || x > 1 || y < 0 || y > 1) ? null : { x, y };
+  };
+  ctl.showPin = (x, y) => {
+    const a = area(), b = box.getBoundingClientRect();
+    if (!a || !b.width || !b.height) { pin.hidden = true; return; }
+    const px = (a.r.left - b.left) + (a.r.width - a.w) / 2 + x * a.w;
+    const py = (a.r.top  - b.top)  + (a.r.height - a.h) / 2 + y * a.h;
+    pin.style.left = (px / b.width * 100) + '%';
+    pin.style.top  = (py / b.height * 100) + '%';
+    pin.hidden = false;
+  };
+  ctl.hidePin = () => { pin.hidden = true; };
+  /* いまのコマを小さな JPEG に切り出す（画面に出すだけ・送らない）。
+     crossorigin を外していたら canvas が汚れて読めないので、その場合は作らない */
+  ctl.thumb = (x, y) => {
+    if (!ctl.canvas) return null;
+    try {
+      const vw = v.videoWidth || 0, vh = v.videoHeight || 0;
+      if (!vw || !vh) return null;
+      const w = 180, h = Math.max(1, Math.round(w * vh / vw));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const g = c.getContext('2d');
+      g.drawImage(v, 0, 0, w, h);
+      if (x != null) {
+        g.beginPath();
+        g.arc(x * w, y * h, Math.max(8, Math.round(w * 0.075)), 0, Math.PI * 2);
+        g.lineWidth = Math.max(2, Math.round(w / 110));
+        g.strokeStyle = '#ff3b30'; g.fillStyle = 'rgba(255,59,48,.22)';
+        g.fill(); g.stroke();
+      }
+      return c.toDataURL('image/jpeg', 0.72);
+    } catch (_) { ctl.canvas = false; return null; }
+  };
+  syncPlay(); paint();
+  return ctl;
+}
+
+/* ── シーンの時刻表 ─────────────────────────────────────────────────
+   動画と同じ版の表だけを使う。無い・読めない・尺が動画と 1.0 秒を超えて食い違うときは
+   使わない（**推測した時刻表は指摘を別の場面に付けてしまう**）。使わないときは時刻だけ。 */
+function tapTimeline(files, videoName){
+  const m = /_v(\d+)\./i.exec(String(videoName || ''));
+  const want = m ? Number(m[1]) : null;
+  for (const f of files) {
+    const t = RE_TIMELINE.exec(f.name || '');
+    if (!t || f.text == null) continue;
+    if (want != null && Number(t[1]) !== want) continue;
+    try {
+      const o = JSON.parse(f.text);
+      const rows = (o && Array.isArray(o.scenes) ? o.scenes : [])
+        .filter(s => s && s.start != null && s.end != null)
+        .map(s => ({ n: Number(s.n), title: String(s.title == null ? '' : s.title),
+                     start: Number(s.start), end: Number(s.end) }))
+        .filter(s => isFinite(s.start) && isFinite(s.end));
+      if (!rows.length) return null;
+      return { duration: Number(o.duration) || null, scenes: rows };
+    } catch (_) { return null; }
+  }
+  return null;
+}
+const tapScene = t => {
+  const tl = tap && tap.tl;
+  if (!tl) return null;
+  return tl.scenes.find(s => t >= s.start && t < s.end) || tl.scenes[tl.scenes.length - 1] || null;
+};
+/* シートと一覧に出す「いつ・どこ」の1行 */
+function tapWhere(kind, t, scene, title){
+  const head = NOTE_KIND_LABEL[kind] || '';
+  if (scene == null) return head ? head.replace(/\s*・\s*$/, '') : '';
+  return head + 'シーン' + scene + (title ? '「' + title + '」' : '');
+}
+
+/* ── 下書き（送る前に画面を閉じても消えない）──────────────────────────────
+   動画・ゲート・版をまとめた鍵で localStorage に持つ。**静止画は保存しない**（大きすぎる／
+   送りもしない）ので、開き直したサムネイルは「画なし」になる。版が変われば古いぶんは捨てる。 */
+const tapDraftKey = () => TAP_DRAFT + tap.key;
+function tapDraftSave(){
+  if (!tap) return;
+  try {
+    /* 何も書いていない状態を残さない（送ったあとに空の下書きが生き返って見える） */
+    if (!tap.items.length && !tapMemoVal()) { localStorage.removeItem(tapDraftKey()); return; }
+    localStorage.setItem(tapDraftKey(), JSON.stringify({
+      v: 1, at: Date.now(), memo: tapMemoVal(),
+      items: tap.items.map(r => ({ id:r.id, kind:normKind(r.kind), t:r.t, scene:r.scene,
+        scene_title:r.scene_title, pin:r.pin, tag:r.tag, note:r.note }))
+    }));
+  } catch (_) {}                              /* 容量切れ・無効化は黙って諦める（入力は続く） */
+}
+function tapDraftLoad(){
+  try {
+    const mine = tapDraftKey(), pre = TAP_DRAFT + tap.vid + '|' + tap.gate + '|';
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(pre) && k !== mine) localStorage.removeItem(k);
+    }
+    const o = JSON.parse(localStorage.getItem(mine) || 'null');
+    return (o && o.v === 1 && Array.isArray(o.items)) ? o : null;
+  } catch (_) { return null; }
+}
+function tapDraftDrop(){ try { localStorage.removeItem(tapDraftKey()); } catch (_) {} }
+
+/* ── 右列の入力（シート・入口の行・指摘の一覧・メモ）────────────────────────
+   置き場所は修正依頼の囲み（.wbox）の中。自由記述の一式と入れ替えるだけにしてあるので、
+   二重送信の止め方・案内の出し先・下端のバーからの引き当ては段1のまま動く。 */
+function tapPanelHTML(it){
+  const id = `tp-${it.id}`;
+  return `<div class="tapbox" data-tapbox hidden>
+    <div class="sheet" data-sheet hidden>
+      <div class="at"><span class="t" data-stime>0:00</span>
+        <span class="sc" data-sscene></span>
+        <span class="gbadge fix" data-smode hidden>直しています</span></div>
+      <div class="tagrow" data-tagrow></div>
+      <input class="noteinput" type="text" data-snote maxlength="120" aria-label="指摘の一言"
+        placeholder="上の言葉を押すとここに入ります。続けて書き足せます（マイクで話しても可）">
+      <div class="sacts">
+        <button class="btn primary" type="button" data-tapact="add">この指摘を足す</button>
+        <button class="btn ghost" type="button" data-tapact="cancel">やめる</button>
+      </div></div>
+    <div class="nhd">指摘<span class="n" data-ncount>0件</span></div>
+    <div class="addrow">
+      <div class="ahint">場所を指すときは動画をタップ</div>
+      <button class="btn" type="button" data-tapact="add-whole">＋ いまの画面にコメント</button>
+    </div>
+    <div class="nlist" data-nlist></div>
+    <div><label class="lbl" for="${id}-memo">全体へのメモ（任意）</label>
+      <textarea class="memo" id="${id}-memo" data-memo maxlength="${NOTE_LIM.memo}"
+        placeholder="全体を通して気になったことがあれば"></textarea></div>
+  </div>`;
+}
+
+const tapEl = s => tap && tap.panel ? tap.panel.querySelector(s) : null;
+const tapMemoVal = () => { const t = tapEl('[data-memo]'); return ((t && t.value) || '').trim(); };
+
+/* 入力欄の文から、定型の言葉（札）と残りの一言を分ける（見本と同じ分け方） */
+function tapSplit(v){
+  let rest = v || '';
+  const tags = [];
+  for (const name of NOTE_TAGS_ALL) {
+    if (rest.indexOf(name) >= 0) { tags.push(name); rest = rest.replace(name, ''); }
+  }
+  rest = rest.replace(/\s{2,}/g, ' ').replace(/^[\s、。・,.]+/, '').trim();
+  return { tag: tags.length ? tags.join('・') : null, note: rest };
+}
+
+function tapBuildTags(){
+  const row = tapEl('[data-tagrow]');
+  const input = tapEl('[data-snote]');
+  row.textContent = '';
+  for (const name of (NOTE_TAGS[normKind(tap.draft.kind)] || NOTE_TAGS.picture)) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tagbtn'; b.textContent = name;
+    b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => {
+      /* 押した言葉を入力欄に入れる（もう一度押すと外す）。そのまま書き足せる */
+      let v = input.value || '';
+      if (v.indexOf(name) >= 0) v = v.replace(name, '').replace(/\s{2,}/g, ' ').replace(/^\s+/, '');
+      else v = (v && !/\s$/.test(v) ? v + ' ' : v) + name + ' ';
+      input.value = v;
+      tapSyncTags();
+      input.focus({ preventScroll: true });
+      try { input.setSelectionRange(v.length, v.length); } catch (_) {}
+    });
+    row.appendChild(b);
+  }
+}
+function tapSyncTags(){
+  const input = tapEl('[data-snote]'), v = (input && input.value) || '';
+  tapEl('[data-tagrow]').querySelectorAll('.tagbtn').forEach(b =>
+    b.setAttribute('aria-pressed', v.indexOf(b.textContent) >= 0 ? 'true' : 'false'));
+  const add = tapEl('[data-tapact="add"]');
+  if (add) {
+    add.disabled = !v.trim();
+    add.textContent = tap.draft && tap.draft.editId ? 'この指摘を直す' : 'この指摘を足す';
+  }
+}
+const tapMobile = () => window.innerWidth < 900;
+function tapOpenSheet(){
+  const sc = tapScene(tap.draft.t);
+  tapBuildTags();
+  tapEl('[data-stime]').textContent = fmtT(tap.draft.t);
+  tapEl('[data-sscene]').textContent =
+    tapWhere(normKind(tap.draft.kind), tap.draft.t, sc ? sc.n : null, sc ? sc.title : null);
+  tapEl('[data-smode]').hidden = !tap.draft.editId;
+  const input = tapEl('[data-snote]');
+  input.value = [tap.draft.tag ? tap.draft.tag.split('・').join(' ') : '', tap.draft.note || '']
+    .filter(Boolean).join(' ');
+  tapSyncTags();
+  const sheet = tapEl('[data-sheet]');
+  sheet.hidden = false;
+  sheet.classList.toggle('float', tapMobile());
+  document.body.classList.toggle('sheetopen', tapMobile());
+  if (!tapMobile()) input.focus({ preventScroll: true });
+}
+function tapCloseSheet(){
+  const sheet = tapEl('[data-sheet]');
+  if (sheet) { sheet.hidden = true; sheet.classList.remove('float'); }
+  document.body.classList.remove('sheetopen');
+  tap.draft = null;
+  tap.ctl.hidePin();
+}
+/* 動画のタップ（場所つき）／入口のボタン（場所なし）からの下書き開始 */
+function tapStart(kind, p){
+  if (!tap || tap.mode !== 'edit') return;
+  if (tap.items.length >= NOTE_LIM.items && !(tap.draft && tap.draft.editId)) {
+    toast(`指摘は1回に${NOTE_LIM.items}件までです`); return;
+  }
+  tap.ctl.video.pause();
+  const t = Math.round(tap.ctl.video.currentTime * 100) / 100;
+  const keep = tap.draft || {};
+  tap.draft = { t, kind, x: p ? p.x : null, y: p ? p.y : null,
+                tag: null, note: '', editId: keep.editId || null };
+  if (p) tap.ctl.showPin(p.x, p.y); else tap.ctl.hidePin();
+  tapOpenSheet();
+}
+function tapAdd(){
+  if (!tap || !tap.draft) return;
+  const input = tapEl('[data-snote]');
+  const sp = tapSplit(input.value);
+  if (!sp.tag && !sp.note) return;
+  const d = tap.draft, sc = tapScene(d.t), kind = normKind(d.kind);
+  const rec = {
+    id: d.editId || tap.nextId++,
+    t: Math.round(d.t * 100) / 100,
+    kind,
+    scene: sc ? sc.n : null,
+    scene_title: sc ? (sc.title || null) : null,
+    pin: kind === 'picture' && d.x != null ? { x: Math.round(d.x * 1000) / 1000, y: Math.round(d.y * 1000) / 1000 } : null,
+    tag: sp.tag ? sp.tag.slice(0, NOTE_LIM.tag) : null,
+    note: sp.note ? sp.note.slice(0, NOTE_LIM.note) : null,
+    /* 「いまの画面」でも静止画は撮る（赤丸は付けない）——どの場面のことかを一覧で見分けるため */
+    thumb: tap.ctl.thumb(kind === 'picture' ? d.x : null, d.y)
+  };
+  const at = tap.items.findIndex(r => r.id === rec.id);
+  if (at >= 0) tap.items[at] = rec; else tap.items.push(rec);
+  tap.items.sort((a, b) => a.t - b.t);
+  tapCloseSheet();
+  tapPaint();
+}
+function tapGoto(t, pin){
+  if (!tap) return;
+  tap.ctl.video.pause();
+  try { tap.ctl.video.currentTime = t; } catch (_) {}
+  if (pin) tap.ctl.showPin(pin.x, pin.y); else tap.ctl.hidePin();
+  tap.ctl.paint();
+}
+function tapEdit(id){
+  const r = tap.items.find(x => x.id === id);
+  if (!r) return;
+  tapGoto(r.t, r.pin);
+  tap.draft = { t:r.t, kind:normKind(r.kind), x:r.pin ? r.pin.x : null, y:r.pin ? r.pin.y : null,
+                tag:r.tag, note:r.note, editId:r.id };
+  tapOpenSheet();
+}
+
+/* 一覧・件数・目盛りの印・下端のバーを、いまの指摘の数に合わせて描き直す */
+function tapPaint(){
+  if (!tap || !tap.panel) return;
+  const list = tapEl('[data-nlist]');
+  list.textContent = '';
+  tapEl('[data-ncount]').textContent = tap.items.length + '件';
+  if (!tap.items.length) {
+    const e = document.createElement('div');
+    e.className = 'tpempty';
+    e.textContent = 'まだ指摘はありません。足した指摘がここに並びます';
+    list.appendChild(e);
+  }
+  for (const r of tap.items) {
+    const row = document.createElement('div');
+    row.className = 'nitem';
+    row.dataset.nid = String(r.id);
+    if (r.thumb) {
+      const img = document.createElement('img');
+      img.className = 'th'; img.src = r.thumb; img.alt = fmtT(r.t) + ' の場面';
+      row.appendChild(img);
+    } else {
+      const nt = document.createElement('div');
+      nt.className = 'noth';
+      nt.textContent = '画なし';
+      row.appendChild(nt);
+    }
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const l1 = document.createElement('div');
+    l1.className = 'l1';
+    const tt = document.createElement('span'); tt.className = 'tt'; tt.textContent = fmtT(r.t);
+    l1.appendChild(tt);
+    /* 一覧は「場所を指していない指摘」に印を1つ付けるだけにする（シートの長い札は使わない） */
+    if (normKind(r.kind) !== 'picture') {
+      const k = document.createElement('span'); k.className = 'sc'; k.textContent = '▣ 画面全体';
+      l1.appendChild(k);
+    }
+    const where = tapWhere('picture', r.t, r.scene, r.scene_title);
+    if (where) { const s = document.createElement('span'); s.className = 'sc'; s.textContent = where; l1.appendChild(s); }
+    if (r.tag) { const g = document.createElement('span'); g.className = 'gbadge fix'; g.textContent = r.tag; l1.appendChild(g); }
+    meta.appendChild(l1);
+    if (r.note) { const n = document.createElement('div'); n.className = 'note'; n.textContent = r.note; meta.appendChild(n); }
+    row.appendChild(meta);
+    const acts = document.createElement('div');
+    acts.className = 'rowacts';
+    for (const [lbl, act] of [['直す', 'edit'], ['消す', 'del']]) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn sm'; b.textContent = lbl;
+      b.dataset.tapact = act; b.dataset.nid = String(r.id);
+      acts.appendChild(b);
+    }
+    row.appendChild(acts);
+    list.appendChild(row);
+  }
+  tap.ctl.marks(tap.items);
+  tapDraftSave();
+  tapSyncBar();
+}
+/* 下端のバー: 件数つきの「修正を依頼」と、指摘が無いときだけ主役になる「承認」 */
+function tapSyncBar(){
+  const bar = tap && tap.panel && tap.panel.closest('.decide');
+  if (!bar) return;
+  const n = tap.items.length, filled = n > 0 || !!tapMemoVal();
+  const req = bar.querySelector('.dbar [data-act="comment"]');
+  const apv = bar.querySelector('.dbar [data-act="approve-quick"]');
+  if (req && !req.dataset.lbl) { req.textContent = `修正を依頼（${n}件）`; req.classList.toggle('on', filled); }
+  if (apv) apv.classList.toggle('primary', n === 0);
+}
+function tapMark(id){
+  tapEl('[data-nlist]').querySelectorAll('.nitem').forEach(r =>
+    r.classList.toggle('cur', r.dataset.nid === String(id)));
+}
+
+/* ── 組み立て（素材が届いてから呼ばれる）──────────────────────────────── */
+function armTap(node, files, mode){
+  const el = node.querySelector('[data-tapvid]');
+  if (!el) return;
+  const ctl = armVideoBar(el);
+  if (mode !== 'edit') return;                 /* 見るだけの場所は操作バーまで */
+  const it = curItem;
+  const panel = document.querySelector('#view-detail .decide [data-tapbox]');
+  if (!it || !panel) return;
+  const box = panel.closest('[data-wbox]');
+  const rev = submittedRevOf(it.id, 'final');
+
+  tap = { mode:'edit', vid: it.id, gate:'final', rev: rev == null ? 1 : rev,
+          key: it.id + '|final|' + (rev == null ? 1 : rev),
+          asset: el.dataset.vname || null, items: [], nextId: 1, draft: null,
+          tl: null, ctl, panel, box };
+
+  /* 時刻表は動画の尺と突き合わせてから使う。読めるようになるのはメタデータが届いてから */
+  const cand = tapTimeline(files, el.dataset.vname);
+  const useTL = () => {
+    if (!cand) return;
+    const d = ctl.dur();
+    if (cand.duration != null && d && Math.abs(cand.duration - d) > TL_TOL) { tap.tl = null; return; }
+    tap.tl = cand;
+  };
+  if (ctl.video.readyState >= 1) useTL(); else ctl.onmeta = useTL;
+
+  /* 自由記述の一式を引っ込めてタップ入力に差し替える（mp4 が無ければここへ来ないので、
+     そのときは段1の自由記述のまま残る） */
+  box.querySelectorAll('[data-freefix]').forEach(n => { n.hidden = true; });
+  box.classList.add('tapon');
+  panel.hidden = false;
+
+  /* 動画のタップ・ピンのドラッグ */
+  el.querySelector('[data-hit]').addEventListener('click', e => {
+    const p = ctl.point(e);
+    if (!p) return;                            /* 余白（object-fit の黒帯）は受け付けない */
+    tapStart('picture', p);
+  });
+  let dragging = false;
+  ctl.pin.addEventListener('pointerdown', e => {
+    dragging = true; ctl.pin.classList.add('drag');
+    ctl.pin.setPointerCapture(e.pointerId); e.stopPropagation(); e.preventDefault();
+  });
+  ctl.pin.addEventListener('pointermove', e => {
+    if (!dragging || !tap.draft) return;
+    const p = ctl.point(e);
+    if (!p) return;
+    tap.draft.x = p.x; tap.draft.y = p.y; ctl.showPin(p.x, p.y);
+  });
+  ctl.pin.addEventListener('pointerup', e => {
+    dragging = false; ctl.pin.classList.remove('drag');
+    try { ctl.pin.releasePointerCapture(e.pointerId); } catch (_) {}
+    e.stopPropagation();
+  });
+  ctl.pin.addEventListener('click', e => e.stopPropagation());
+
+  /* 右列（押す先はすべてこの中なので、引き当ては1か所にまとめる） */
+  panel.addEventListener('click', e => {
+    const b = e.target.closest('[data-tapact]');
+    if (b) {
+      const a = b.dataset.tapact;
+      if (a === 'add-whole')      tapStart('whole', null);
+      else if (a === 'add')       tapAdd();
+      else if (a === 'cancel')    tapCloseSheet();
+      else if (a === 'edit')      { e.stopPropagation(); tapEdit(Number(b.dataset.nid)); }
+      else if (a === 'del') {
+        e.stopPropagation();
+        const id = Number(b.dataset.nid);
+        tap.items = tap.items.filter(r => r.id !== id);
+        if (tap.draft && tap.draft.editId === id) tapCloseSheet();
+        tapPaint();
+      }
+      return;
+    }
+    const row = e.target.closest('.nitem');
+    if (row) {
+      const r = tap.items.find(x => x.id === Number(row.dataset.nid));
+      if (r) { tapGoto(r.t, r.pin); tapMark(r.id); }
+    }
+  });
+  panel.addEventListener('input', e => {
+    if (e.target.matches('[data-snote]')) tapSyncTags();
+    if (e.target.matches('[data-memo]'))  { tapDraftSave(); tapSyncBar(); }
+  });
+
+  /* 送る前に閉じた下書きを戻す（静止画は保存していないのでサムネイルは「画なし」になる） */
+  const d = tapDraftLoad();
+  if (d) {
+    tap.items = d.items.filter(r => r && r.t != null).map(r => ({ thumb: null, ...r }))
+      .sort((a, b) => a.t - b.t);         /* 足したときと同じ時刻順に並べ直してから出す */
+    tap.nextId = Math.max(0, ...tap.items.map(r => Number(r.id) || 0)) + 1;
+    const m = tapEl('[data-memo]');
+    if (m && d.memo) m.value = d.memo;
+  }
+  tapPaint();
+}
+/* いまこの動画・このゲートでタップ入力が動いているか（下端のバーの送り先を決める） */
+const tapActive = key => !!(tap && tap.mode === 'edit' && tap.key.startsWith(String(key) + '|'));
+
+/* ── 送る ────────────────────────────────────────────────────────────
+   本文（p_body）は受け口が notes から自動で作るので渡さない。全体へのメモは notes.memo に
+   入れる。版は承認と同じ「見ていた版」を添え、裏で新しい版が出ていたら断ってもらう。 */
+function tapNotes(){
+  const memo = tapMemoVal();
+  return {
+    v: 1,
+    asset: tap.asset,
+    memo: memo ? memo.slice(0, NOTE_LIM.memo) : null,
+    items: tap.items.slice().sort((a, b) => a.t - b.t).map((r, i) => ({
+      id: i + 1,                                  /* 送るときに時刻順で振り直す */
+      kind: normKind(r.kind),
+      t: Math.round(r.t * 100) / 100,
+      scene: r.scene == null ? null : Number(r.scene),
+      scene_title: r.scene_title ? String(r.scene_title).slice(0, NOTE_LIM.title) : null,
+      pin: normKind(r.kind) === 'picture' && r.pin ? { x: r.pin.x, y: r.pin.y } : null,
+      tag: r.tag ? String(r.tag).slice(0, NOTE_LIM.tag) : null,
+      note: r.note ? String(r.note).slice(0, NOTE_LIM.note) : null
+    }))
+  };
+}
+async function submitTapChanges(box, key){
+  if (box.dataset.busy === '1' || !tapActive(key)) return;
+  const [vidS, gate] = String(key).split('|');
+  /* 1件も無くメモも空なら送らない（下端のバーの誤タップよけ・自由記述のときと同じ作法） */
+  if (!tap.items.length && !tapMemoVal()) {
+    wboxMsg(box, '直してほしい場所を動画から選ぶか、下のメモに書いてください', true, 'comment');
+    const m = tapEl('[data-memo]');
+    if (m) { m.scrollIntoView({ block: 'center' }); m.focus(); }
+    return;
+  }
+  wboxMsg(box, '', false, 'comment');
+  wboxBusy(box, true, 'comment');
+  const { error } = await sb.rpc('request_changes', {
+    p_video_id: Number(vidS), p_gate: gate, p_body: null,
+    p_notes: tapNotes(), p_expected_revision: submittedRevOf(vidS, gate)
+  });
+  if (error) {
+    wboxBusy(box, false, 'comment');
+    /* 古い版を見ていた: 承認と同じくその場で取り直して描き直す（#506 高1と同じ理由）。
+       描き直すと囲みごと作り直されて案内が消えるので、そのときだけ画面の外（トースト）で言う */
+    if (error.code === 'P0003') { toast(rpcErrText(error, 'comment')); await refreshAfterWrite(false); return; }
+    wboxMsg(box, rpcErrText(error, 'comment'), true, 'comment');
+    return;
+  }
+  tapDraftDrop();
+  tap = null;
+  document.body.classList.remove('sheetopen');
+  await refreshAfterWrite(false);
+  toast('修正を依頼しました');
+}
+
 /* ── いま決めること（オーナー決定 2026-09-06 → 並びは 2026-09-20 に見本へ・#509 段1）──────
    右列の先頭に置く枠。中身は**ゲート名＋版**／**この版で変えたこと**／メモ／
    **修正を依頼するときの入力欄（自由記述）**。「承認をお願いします」「決めてほしいこと」
@@ -3266,11 +4039,12 @@ function decideHTML(it, gate, changes){
       <div class="wmsg" data-slot="approve" hidden></div>
     </div>
     <div class="wbox fixbox" data-wbox="${esc(key)}">
-      <h4 class="wh">修正を依頼するとき</h4>
-      <textarea class="wta" rows="3" aria-label="直してほしい点"
+      <h4 class="wh" data-freefix>修正を依頼するとき</h4>
+      <textarea class="wta" data-freefix rows="3" aria-label="直してほしい点"
         placeholder="直してほしい点を入力（Ctrl + Enter で送信）"></textarea>
+      ${gate === 'final' ? tapPanelHTML(it) : ''}
       <div class="wmsg" data-slot="comment" hidden></div>
-      <div class="wact">
+      <div class="wact" data-freefix>
         <span class="whint">書いてから下の「修正を依頼」を押すと、AI が直して新しい版で出し直します</span>
       </div></div>
     <div class="rjbox" data-rjbox="${esc(key)}">
@@ -3377,11 +4151,14 @@ function rpcErrText(error, act){
      ①作り直しの最中だった: 待つしかない ②見ていた版より新しい提出が来た: 新しい方を見て押し直す
      ③どの版に付けるか分からなかった: 読み込み直せば直る */
   if (code === 'P0003' || /stale review/i.test(raw)) {
+    /* 文言は「次にすること」で分ける。承認だけでなく修正の依頼もこの経路を通る（#509 段4） */
+    const apv = act === 'approve';
     const cur = raw.match(/いまの版は第(\d+)版/);
     if (cur) return `いま第${cur[1]}版を作り直しています。出来上がるまでお待ちください（この画面は自動で新しくなります）`;
     if (/より新しい版/.test(raw))
-      return '見ていたものより新しい版が出来ています。新しい方を見てから承認してください（この画面は自動で新しくなります）';
-    return 'どの版に承認するかを確かめられませんでした。画面を新しくしてからもう一度お試しください';
+      return `見ていたものより新しい版が出来ています。新しい方を見てから${
+        apv ? '承認' : 'もう一度指摘'}してください（この画面は自動で新しくなります）`;
+    return `どの版${apv ? 'に承認するか' : 'への指摘か'}を確かめられませんでした。画面を新しくしてからもう一度お試しください`;
   }
   if (code === '22001' || /too long/i.test(raw))
     return '本文が長すぎます（4000文字以内で入力してください）';
@@ -3391,6 +4168,8 @@ function rpcErrText(error, act){
   if (code === '22023')
     return /reason is empty/i.test(raw)  ? '没にする理由を入力してください'
          : /body is empty/i.test(raw)    ? 'コメントを入力してください'
+         /* 指摘の形が受け口の決まりに合わなかった（件数・文字数の上限、欠けた項目など） */
+         : /invalid notes/i.test(raw)    ? '指摘の中身を受け付けてもらえませんでした。件数や文字数を減らすか、画面を新しくしてやり直してください'
          /* triage_idea の action 不正（#314）。ボタン以外から呼ばれたときだけ出る */
          : /invalid action/i.test(raw)   ? '操作の指定が不正です。画面を再読み込みしてやり直してください'
                                          : '対象の承認ポイントが不正です（台本 / 絵コンテ / 完成のいずれか）';
@@ -3428,7 +4207,7 @@ function wboxBusy(box, busy, label){
   boxes.forEach(b => {
     b.dataset.busy = busy ? '1' : '0';
     b.querySelectorAll('button').forEach(btn => { btn.disabled = busy; });
-    b.querySelectorAll('.wta,.ata,.rta').forEach(ta => { ta.disabled = busy; });
+    b.querySelectorAll('.wta,.ata,.rta,.memo,.noteinput').forEach(ta => { ta.disabled = busy; });
   });
   const btn = label && boxes.map(b => b.querySelector(`[data-act="${label}"]`)).find(Boolean);
   if (btn) {
@@ -3569,6 +4348,10 @@ function markApproved(vid, gate, done){
 function quickApprove(key, btn){
   const [vidS, gate] = String(key).split('|');
   const gname = GATE_LABEL[gate] || gate;
+  /* 指摘を書いたまま承認を押したら1回だけ聞く。押し間違いなら戻れるし、
+     わざと「送らずに承認」したい回もあるので止めはしない（#509 段4） */
+  if (tapActive(key) && tap.items.length
+      && !window.confirm(`指摘が ${tap.items.length} 件残っています。送らずに承認しますか`)) return;
   /* 詳細のメモ欄（同じ動画・同じゲートのもの）に書いてあれば添える。
      承認ボタンは下端の固定バー＝承認欄の外にあるので、決める枠（.decide）ごしに引く */
   const box = btn && (btn.closest('[data-abox]')
@@ -3757,17 +4540,48 @@ function changeLines(events){
    出さない）。「AI の記録」は審査・機械測定・提出をまとめて1件1行に畳む（既定は閉じる）。
    時系列に混ぜない——混ぜると自分の指摘が AI の記録に埋もれて「消えた」ように見えていた。 */
 const newestFirst = rows => rows.slice().sort((a, b) => evNewer(a, b) ? -1 : 1);
-function youHTML(evs, showGate){
+/* 構造化して送った指摘（notes）は、本文の写しではなく**項目ごとに**出す。いま画面に出ている
+   動画と同じ版に付いた指摘なら、行を押すとその時刻へ飛んでピンが出る（#509 段4）。
+   notes を持たない記録（自由記述・これまでのぶん）は今までどおり本文をそのまま。 */
+function notesOf(e){
+  const n = e && e.notes;
+  const o = (typeof n === 'string') ? (() => { try { return JSON.parse(n); } catch (_) { return null; } })() : n;
+  return (o && typeof o === 'object' && Array.isArray(o.items)) ? o : null;
+}
+function youNotesHTML(o, live){
+  const rows = o.items.map(r => {
+    const where = tapWhere(normKind(r.kind), r.t, r.scene == null ? null : r.scene, r.scene_title);
+    const jump = live && r.t != null;
+    return `<div class="nrec${jump ? ' jump' : ''}"${jump
+        ? ` data-njump="${esc(String(r.t))}"${r.pin ? ` data-npin="${esc(r.pin.x + ',' + r.pin.y)}"` : ''}`
+        : ''}>
+      <span class="tt">${esc(fmtT(Number(r.t)))}</span>
+      ${where ? `<span class="sc">${esc(where)}</span>` : ''}
+      ${r.tag ? `<span class="gbadge fix">${esc(r.tag)}</span>` : ''}
+      ${r.note ? `<span class="note">${esc(r.note)}</span>` : ''}</div>`;
+  }).join('');
+  return rows + (o.memo ? `<div class="nrec"><span class="sc">全体へのメモ</span>
+    <span class="note">${esc(o.memo)}</span></div>` : '');
+}
+function youHTML(evs, showGate, it){
   const rows = newestFirst(evs.filter(e => !isAiAuthor(e.author)
     && (e.kind === 'request_changes' || e.kind === 'comment')));
   if (!rows.length) return '';
-  return `<div class="dsec dsec-you"><h4>あなたの指摘</h4><div class="thread">${rows.map(e => `
+  /* 飛べるのは「いま左列に出ている完成動画」と同じ版に付いた指摘だけ */
+  const liveRev = it && it._rv === 'final' ? submittedRevOf(it.id, 'final') : null;
+  return `<div class="dsec dsec-you"><h4>あなたの指摘</h4><div class="thread">${rows.map(e => {
+    const o = notesOf(e);
+    const live = !!(o && liveRev != null && e.gate === 'final'
+      && Number(e.revision == null ? 1 : e.revision) === Number(liveRev));
+    return `
     <div class="cmt"><div class="bub">
       <div class="who"><span>${esc(fmtDT(e.created_at) || '')}</span>${
         e.revision == null ? '' : `<span>（v${esc(String(e.revision).padStart(2, '0'))}）</span>`}${
         showGate ? `<span class="gatechip">${esc(GATE_LABEL[e.gate] || e.gate || '—')}</span>` : ''}</div>
-      <div class="ctxt mdbody">${mdToHTML(e.body)}</div>
-    </div></div>`).join('')}</div></div>`;
+      ${o ? `<div class="ctxt">${youNotesHTML(o, live)}</div>`
+          : `<div class="ctxt mdbody">${mdToHTML(e.body)}</div>`}
+    </div></div>`;
+  }).join('')}</div></div>`;
 }
 function aiLogHTML(evs){
   const rows = newestFirst(evs.filter(e => isAiAuthor(e.author) || e.kind === 'request_review'));
@@ -5820,13 +6634,22 @@ document.addEventListener('click', e => {
     /* 下端の固定バーのボタンは囲みの外にあるので、決める枠ごしに相手の囲みを引く（#509 段1） */
     const box = actBox(wbtn, act);
     if (box) {
-      if (act === 'comment')              submitComment(box, wbtn.dataset.key);
+      /* 完成のタップ入力が動いていれば構造化した指摘を送る。それ以外は従来の自由記述 */
+      if (act === 'comment')              (tapActive(wbtn.dataset.key) ? submitTapChanges : submitComment)(box, wbtn.dataset.key);
       else if (act === 'reject-open')     toggleRejectPanel(box);
       else if (act === 'reject-cancel')   closeRejectPanel(box);
       else if (act === 'reject-confirm')  submitReject(box, wbtn.dataset.key);
       else if (act === 'triage-retype')   submitTriage(box, wbtn.dataset.key, 'retype');
       else if (act === 'triage-produce')  submitTriage(box, wbtn.dataset.key, 'produce');
     }
+    return;
+  }
+
+  /* 過去の指摘（同じ版のもの）を押したら、左列の動画をその時刻へ動かしてピンを出す（#509 段4） */
+  const jrow = e.target.closest('[data-njump]');
+  if (jrow && tap) {
+    const p = (jrow.dataset.npin || '').split(',').map(Number);
+    tapGoto(Number(jrow.dataset.njump), p.length === 2 && isFinite(p[0]) ? { x:p[0], y:p[1] } : null);
     return;
   }
 
@@ -6000,7 +6823,17 @@ document.addEventListener('keydown', e => {
   if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pushDetail(row.dataset.vid, row.dataset.gate); }
 });
 window.addEventListener('scroll', hideTip, { passive: true });
-let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { drawSpark(); syncStickyOffsets(); }, 120); });
+let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { drawSpark(); syncStickyOffsets(); tapRelayout(); }, 120); });
+/* 幅が変わるとシートの出し方（せり上がり／その場）とピンの置き場所が変わる（#509 段4） */
+function tapRelayout(){
+  if (!tap || tap.mode !== 'edit' || !tap.panel) return;
+  const sheet = tapEl('[data-sheet]');
+  if (sheet && !sheet.hidden) {
+    sheet.classList.toggle('float', tapMobile());
+    document.body.classList.toggle('sheetopen', tapMobile());
+  }
+  if (tap.draft && tap.draft.x != null) tap.ctl.showPin(tap.draft.x, tap.draft.y);
+}
 
 /* ══ 認証 ═══════════════════════════════════════════════════════ */
 $('#loginform').addEventListener('submit', async ev => {
