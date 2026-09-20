@@ -568,10 +568,12 @@ td.ttl .flags{margin-left:8px}
   background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-md);
   height:var(--dhdr-h); display:flex; align-items:center; gap:var(--sp-2);
   padding:0 var(--sp-2) 0 var(--sp-1); overflow:hidden; margin-bottom:var(--sp-3)}
-.dback{font-family:inherit; font-size:var(--fs-sm); color:var(--ink-2); background:none;
-  border:none; cursor:pointer; padding:6px 10px; border-radius:var(--r-sm); flex:0 0 auto;
-  min-height:38px; white-space:nowrap}
-.dback:hover{background:var(--surface-2); color:var(--ink)}
+/* ボタンと分かる形にする（枠・地・太字）。文字だけだと押せると気づかれなかった（オーナー指摘 2026-09-20） */
+.dback{font-family:inherit; font-size:var(--fs-sm); font-weight:650; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--border); cursor:pointer; padding:6px 14px; border-radius:var(--r-md); flex:0 0 auto;
+  min-height:38px; white-space:nowrap; box-shadow:var(--shadow-1)}
+.dback:hover{background:var(--surface-3)}
+@media (max-width:899px){ .dback-l{display:none} }
 .dtop .seqn{font-size:var(--fs-sm); font-weight:700; letter-spacing:.02em; flex:0 0 auto;
   font-variant-numeric:tabular-nums}
 .dtop .ttl{font-size:var(--fs-sm); color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
@@ -1722,7 +1724,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/20 14:57';
+const BUILT_AT = '9/20 15:02';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2490,13 +2492,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/20 14:57') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/20 15:02') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/20 14:57') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/20 15:02') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3059,7 +3061,7 @@ function detailHTML(it){
 
   return `<div class="dview${it._rv ? ' hasbar' : ''}" role="region" aria-label="${esc(it.title)} の詳細">
     <div class="dtop">
-      <button class="dback" data-close="1" aria-label="一覧に戻る">← 一覧</button>
+      <button class="dback" data-close="1" aria-label="一覧に戻る">← 一覧<span class="dback-l">に戻る</span></button>
       <span class="seqn">${esc(it.seq)}</span>
       <span class="ttl">${esc(it.title)}</span>
       <span class="tags">
