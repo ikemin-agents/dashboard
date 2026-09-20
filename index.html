@@ -1674,7 +1674,7 @@ const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗'};
 const ACCENTS = ['var(--s1)','var(--s2)','var(--stg5)','var(--warn)','var(--good)'];
 const TINTS   = ['var(--s1-tint)','var(--s2-tint)','var(--stage-bg)','var(--warn-tint)','var(--good-tint)'];
 /* チャンネル別の承認ゲート（DB に列が無いため UI 側の定義。既定は3ゲート） */
-const CH_GATES = {'buzz-zatsugaku':['final'], 'dental':['script','storyboard','final']};
+const CH_GATES = {'buzz-zatsugaku':['final'], 'dental':['final']};
 const GATE_LABEL = {script:'台本', storyboard:'絵コンテ', final:'完成'};
 const GATE_COL = {script:1, storyboard:2, final:4};
 const GATE_COLUMN_FIELD = {script:'approved_script_at', storyboard:'approved_storyboard_at', final:'approved_final_at'};
@@ -1710,7 +1710,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/20 09:03';
+const BUILT_AT = '9/20 11:02';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2478,13 +2478,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/20 09:03') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/20 11:02') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/20 09:03') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/20 11:02') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
