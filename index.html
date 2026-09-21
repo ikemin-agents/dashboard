@@ -1636,7 +1636,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
    --sv-chrome（ヘッダー＋工程の帯＋下端バーの実高さ）は JS が測って入れる。 ═══ */
 .sview{--sv-flow-h:40px; --sv-chrome:200px; --side-w:0px;
   --script-w:420px; --mat-min:340px;
-  --pane-h:min(calc(100dvh - var(--sv-chrome) - 158px), 720px);
+  /* --pane-full = 欄そのものの高さ。動画はその 80%（2026-09-21 オーナー指摘・参照画像の
+     枚数が増える見込みなので、縮めたぶんの幅を素材の欄へ回す） */
+  --pane-full:min(calc(100dvh - var(--sv-chrome) - 158px), 720px);
+  --pane-h:calc(var(--pane-full) * .8);
   --video-w:calc(var(--pane-h) * 9 / 16)}
 .sview .sv-flow{position:sticky; top:calc(var(--stickytop, 0px) + var(--dhdr-h)); z-index:35;
   height:var(--sv-flow-h); display:flex; align-items:center; gap:var(--sp-4);
@@ -1747,11 +1750,11 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-scrhd{height:18px; line-height:18px; align-items:center}
 .sview .sv-script{min-width:0; min-height:0; display:flex; flex-direction:column; gap:var(--sp-2)}
 .sview .sv-script>.shd{display:flex; align-items:center; gap:var(--sp-2); font-size:var(--fs-xs);
+  font-family:inherit; background:none; border:none; width:100%; text-align:left;
   font-weight:700; letter-spacing:.08em; color:var(--muted); padding:0 2px; list-style:none;
   cursor:default; height:18px; line-height:18px}
-.sview .sv-script>.shd::-webkit-details-marker{display:none}
 .sview .sv-script>.shd .n{font-weight:400; letter-spacing:0; margin-left:auto}
-.sview .sv-script:not([open])>.sv-scriptlist{display:none}
+.sview .sv-script.closed>.sv-scriptlist{display:none}
 .sview .sv-scriptlist{max-height:min(38dvh, 340px); overflow-y:auto; scrollbar-width:thin;
   display:flex; flex-direction:column}
 /* 台本の1行 = 開始フレームのサムネ ｜ シーン番号・時刻・指摘の数 ｜ ナレーション */
@@ -1798,8 +1801,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-now .nar{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight);
   margin-bottom:var(--sp-2); overflow-wrap:anywhere}
 .sview .sv-shelf{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
-.sview .sv-shelfrow{display:flex; gap:var(--sp-2); overflow-x:auto; overflow-y:hidden;
-  padding-bottom:4px; scrollbar-width:thin; -webkit-overflow-scrolling:touch; align-items:flex-start}
+/* 参照画像が増えたら**横スクロールではなく折り返して複数行**に並べる（オーナー指摘 2026-09-21）。
+   入りきらないぶんは素材の欄（.sv-now）の中だけを縦にスクロールする */
+.sview .sv-shelfrow{display:flex; flex-wrap:wrap; gap:var(--sp-2); padding-bottom:4px;
+  align-items:flex-start; min-width:0}
 .sview .sv-refbox{border:none; background:transparent; padding:var(--sp-2) 0 0;
   border-top:1px solid var(--border-2); min-width:0; --ref-h:var(--slot-h)}
 .sview .sv-refbox .refhd{display:flex; align-items:baseline; gap:6px; font-size:var(--fs-xs);
@@ -1950,15 +1955,17 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 @media (min-width:1700px){
   /* 台本はサムネつきの行になったので少し広く取る（目安 420px 前後） */
   .sview{--script-w:clamp(360px, 17vw, 460px); --mat-min:340px;
-    --pane-h:min(calc(100dvh - var(--sv-chrome) - 158px),
-      calc((100vw - var(--side-w) - var(--script-w) - var(--mat-min) - 136px) / 2 * 16 / 9));
+    --pane-full:min(calc(100dvh - var(--sv-chrome) - 158px),
+      calc((100vw - var(--side-w) - var(--script-w) - var(--mat-min) - 136px) / 2 * 16 / 9 / .8));
+    --pane-h:calc(var(--pane-full) * .8);
     --video-w:calc(var(--pane-h) * 9 / 16)}
+  /* 真ん中は「動画2本 → そのすぐ下に再生の操作」で上詰め。台本と素材は①の下端まで伸ばす */
   .sview .sv-sec.sa .sv-stage{grid-template-columns:var(--script-w) auto minmax(0,1fr);
-    grid-template-rows:18px var(--pane-h) 52px}
-  .sview .sv-sec.sa .sv-script{grid-column:1; grid-row:1 / span 2}
+    grid-template-rows:18px var(--pane-h) 56px minmax(0,1fr)}
+  .sview .sv-sec.sa .sv-script{grid-column:1; grid-row:1 / -1}
   .sview .sv-sec.sa .sv-screens{grid-column:2; grid-row:1 / span 2}
-  .sview .sv-sec.sa .sv-matcol{grid-column:3; grid-row:1 / span 2}
-  .sview .sv-sec.sa .sv-ctrls-slot{grid-column:1 / -1; grid-row:3}
+  .sview .sv-sec.sa .sv-matcol{grid-column:3; grid-row:1 / -1}
+  .sview .sv-sec.sa .sv-ctrls-slot{grid-column:2; grid-row:3}
 }
 /* 1200〜1399px: ②③は右に縦積み（ページの縦スクロールは許す） */
 @media (min-width:1200px) and (max-width:1399px){
@@ -1972,28 +1979,32 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 /* 900〜1699px: 台本と素材は同じ場所をタブで入れ替える（3列だと動画が小さくなりすぎる） */
 @media (min-width:900px) and (max-width:1699px){
   .sview{--script-w:clamp(300px, 26vw, 420px);
-    --pane-h:min(calc(100dvh - var(--sv-chrome) - 162px), 720px,
-      calc((100vw - var(--side-w) - var(--script-w) - 120px) / 2 * 16 / 9));
+    --pane-full:min(calc(100dvh - var(--sv-chrome) - 162px), 720px,
+      calc((100vw - var(--side-w) - var(--script-w) - 120px) / 2 * 16 / 9 / .8));
+    --pane-h:calc(var(--pane-full) * .8);
     --video-w:calc(var(--pane-h) * 9 / 16)}
   .sview .sv-sec.sa .sv-stage{grid-template-columns:minmax(0, var(--script-w)) auto;
-    grid-template-rows:22px var(--pane-h) 52px}
+    grid-template-rows:22px var(--pane-h) 56px minmax(0,1fr)}
   .sview .sv-sec.sa .sv-mattabs{display:flex; grid-column:1; grid-row:1}
-  .sview .sv-sec.sa .sv-script,.sview .sv-sec.sa .sv-matcol{grid-column:1; grid-row:2}
+  .sview .sv-sec.sa .sv-script,.sview .sv-sec.sa .sv-matcol{grid-column:1; grid-row:2 / -1}
   .sview .sv-sec.sa .sv-screens{grid-column:2; grid-row:1 / span 2}
-  .sview .sv-sec.sa .sv-ctrls-slot{grid-column:1 / -1; grid-row:3}
+  .sview .sv-sec.sa .sv-ctrls-slot{grid-column:2; grid-row:3}
   .sview .sv-sec.sa .sv-script>.shd,.sview .sv-sec.sa .sv-matcol>.sv-colhd{display:none}
   .sview .sv-scrhd{height:22px; line-height:22px}
   .sview .sv-stage[data-mat="mat"] .sv-script{display:none}
   .sview .sv-stage[data-mat="script"] .sv-matcol{display:none}
 }
-/* 900px 以上の共通: 台本・動画・素材の上下端をそろえる */
+/* 900px 以上の共通: 4つの欄の上端をそろえ、台本と素材は①の下端まで伸ばす
+   （真ん中＝動画と再生の操作は短くてよい＝上詰め） */
 @media (min-width:900px){
-  .sview .sv-scriptlist{height:var(--pane-h); max-height:none; overflow-y:auto}
-  .sview .sv-screens{grid-template-columns:repeat(2, var(--video-w)); gap:12px}
+  .sview .sv-script,.sview .sv-matcol{min-height:0}
+  .sview .sv-scriptlist{flex:1 1 0; height:auto; max-height:none; min-height:0; overflow-y:auto}
+  .sview .sv-screens{grid-template-columns:repeat(2, var(--video-w)); gap:12px; align-self:start}
   .sview .vidbox{height:var(--pane-h); width:var(--video-w); aspect-ratio:auto; min-height:0}
-  .sview .sv-now{height:var(--pane-h); overflow-y:auto; scrollbar-width:thin;
-    --slot-h:calc((var(--pane-h) - 176px) / 2)}
-  .sview .sv-ctrls-slot{align-self:stretch}
+  /* 素材の画像も欄の高さの 80%（参照画像が増えても折り返しで収める） */
+  .sview .sv-now{flex:1 1 auto; height:auto; min-height:0; overflow-y:auto; scrollbar-width:thin;
+    --slot-h:calc((var(--pane-full) - 176px) / 2 * .8)}
+  .sview .sv-ctrls-slot{align-self:start}
   .sview .sv-viewswitch{display:none}
 }
 /* ── スマホ（900px 未満）: ① → ② → ③ の縦1列 ── */
@@ -2016,7 +2027,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-script>.shd{cursor:pointer; min-height:44px; height:auto; font-size:var(--fs-sm);
     color:var(--ink); line-height:1.4}
   .sview .sv-script>.shd::before{content:'▸'; font-size:12px; color:var(--ink-2); margin-right:4px}
-  .sview .sv-script[open]>.shd::before{content:'▾'}
+  .sview .sv-script:not(.closed)>.shd::before{content:'▾'}
   .sview .sv-viewswitch{display:flex; align-items:center; gap:var(--sp-2); min-width:0}
   .sview .sv-viewswitch .seg{display:flex; flex:1 1 auto; background:var(--surface-2);
     border:1px solid var(--border); border-radius:var(--r-md); padding:3px; gap:3px; min-width:0}
@@ -2034,11 +2045,11 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-stage[data-cmp="off"][data-view="ref"] .sv-screen.final{display:none}
   .sview .sv-stage[data-cmp="on"] .sv-screens{grid-template-columns:repeat(2, minmax(0,1fr));
     gap:var(--sp-2)}
-  .sview .vidbox{height:auto; width:min(100%, calc(52dvh * 9 / 16)); aspect-ratio:9/16; margin:0 auto}
+  .sview .vidbox{height:auto; width:min(100%, calc(42dvh * 9 / 16)); aspect-ratio:9/16; margin:0 auto}
   .sview .sv-stage[data-cmp="on"] .vidbox{width:100%}
-  body.sheetopen .sview .vidbox{width:min(100%, calc(40dvh * 9 / 16))}
+  body.sheetopen .sview .vidbox{width:min(100%, calc(34dvh * 9 / 16))}
   body.sheetopen .sview .sv-stage[data-cmp="on"] .vidbox{width:100%}
-  .sview .sv-now{--slot-h:160px}
+  .sview .sv-now{--slot-h:128px}
   .sview .cbtn,.sview .tagbtn{height:44px}
   .sview .btn.sm{min-height:44px}
   .sview .sheet.float{border-top-color:var(--act-line)}
@@ -2168,7 +2179,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/21 15:03';
+const BUILT_AT = '9/21 15:18';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2936,13 +2947,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/21 15:03') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/21 15:18') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/21 15:03') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/21 15:18') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -4715,7 +4726,9 @@ function sceneDetailHTML(it){
       <span class="sv-watchbar" data-sv-watchbar></span><b data-sv-watchpct>0%</b></span>
     <span class="bf next" data-sv-next></span></div>`;
   const decide = it._rv === 'final'
-    ? decideHTML(it, 'final', changeLines(evs), barFacts)
+    /* 「変更」の欄はこの画面には出さない（内部の言葉が並んで意味が取れない・オーナー指摘
+       2026-09-21）。`changeLines` と旧画面（台本・絵コンテ）はそのまま */
+    ? decideHTML(it, 'final', [], barFacts, true)
     : `<div class="decide">${it._rc
         ? (rcAiOnly(it)
             ? `<div class="dstate rcai">↺ AI審査の指摘で${GATE_LABEL[it._rc]}を作り直しています。あなたの操作は要りません。</div>`
@@ -4752,10 +4765,10 @@ function sceneDetailHTML(it){
             <button type="button" data-svact="tab-mat" aria-pressed="true">素材</button>
             <button type="button" data-svact="tab-script" aria-pressed="false">台本</button>
           </div>
-          <details class="sv-script" open>
-            <summary class="shd">台本<span class="n" data-sv-scriptmeta>—</span></summary>
+          <div class="sv-script">
+            <button class="shd" type="button" data-svact="script-toggle">台本<span class="n" data-sv-scriptmeta>—</span></button>
             <div class="sv-scriptlist" data-sv-scriptlist></div>
-          </details>
+          </div>
           <div class="sv-screens">
             <div class="sv-screen final" data-sv-screenfinal>
               <div class="sv-scrhd"><span class="scrttl">完成動画</span>
@@ -5325,7 +5338,7 @@ async function armScene(node, files, mode, ctl){
       + (sv.scenes.length ? ' ・ シーン ' + sv.scenes.length : ' ・ シーンの区切りは不明');
     svBuildScript();
     /* 台本は広い画面では開いたまま。スマホだけ最初は畳む（開いたあとは畳み直さない） */
-    if (!sv.booted) q('.sv-script').open = window.innerWidth >= 900;
+    if (!sv.booted) q('.sv-script').classList.toggle('closed', window.innerWidth < 900);
     svSyncScene(true);
     svPaintWatch();
     svPaintBar();
@@ -5386,12 +5399,14 @@ async function armScene(node, files, mode, ctl){
     else if (a === 'lbox-prev')  { e.stopPropagation(); svStepLbox(-1); }
     else if (a === 'lbox-next')  { e.stopPropagation(); svStepLbox(1); }
     else if (a === 'lbox-close') { e.stopPropagation(); svCloseLbox(); }
+    /* 台本の畳みはスマホだけ（広い画面では見出しを押しても何も起きない）。
+       ⚠️ details を使わないのは、ブラウザが中身を1枚の箱で包むため——欄の高さが決まっていても
+       中の一覧が縮まず、台本が①の下端をはみ出す（2026-09-21 実測） */
+    else if (a === 'script-toggle' && window.innerWidth < 900) {
+      q('.sv-script').classList.toggle('closed');
+    }
   });
   q('[data-sv-lbox]').addEventListener('click', e => { if (e.target === q('[data-sv-lbox]')) svCloseLbox(); });
-  /* 広い画面では台本を畳ませない（見出しは押しても何も起きない） */
-  q('.sv-script').addEventListener('click', e => {
-    if (e.target.closest('summary') && window.innerWidth >= 900) e.preventDefault();
-  });
 
   node.hidden = true;
   svRelayout();
@@ -5408,7 +5423,7 @@ async function armScene(node, files, mode, ctl){
      ・承認は1タップだが、押したあと数秒は「取り消す」で無かったことにできる（2026-08-20）
    ⚠️ この4つ（.abox / .wbox / .rjbox / .dbar）は必ず同じ .decide の直下に置く——
    バーのボタンは自分の外にある囲みを .decide 経由で引き当てる（actBox / writeGroup）。 */
-function decideHTML(it, gate, changes, barFacts){
+function decideHTML(it, gate, changes, barFacts, plain){
   const key = it.id + '|' + gate;
   const gname = GATE_LABEL[gate] || gate;
   const caution = GATE_CAUTION[gate] || null;
@@ -5416,7 +5431,9 @@ function decideHTML(it, gate, changes, barFacts){
   const rid = `rj-${it.id}-${gate}`;
   const sub = latestSub(threadOf(it.id));
   const ver = subRevLabel(sub);
-  const measure = sub ? measureNote(sub.body) : [];
+  /* plain＝内部の言葉を画面に出さない画面（シーン素材つきの承認画面）。申し送りは残すが、
+     中に混ざる内部の識別子（resolution-v1 のような括弧書き）は落とす */
+  const measure = (sub ? measureNote(sub.body) : []).map(s => plain ? plainWords(s) : s).filter(Boolean);
   return `<div class="decide">
     <div class="abox" data-abox="${esc(key)}">
       <div class="dcg">${esc(gname)}${ver ? ' ' + esc(ver) : ''}</div>
@@ -5462,6 +5479,20 @@ function decideHTML(it, gate, changes, barFacts){
       <button class="btn primary" data-act="approve-quick" data-key="${esc(key)}"
         data-label="${esc(gname)}を承認">${esc(gname)}を承認</button>
     </div></div>`;
+}
+
+/* 画面に出す文から**内部の言葉**を落とす（#519 のシーン素材つきの承認画面だけで使う）。
+   言い換えの対応表は持たないので、**内部の識別子や英語の判定語が混ざった括弧書きは丸ごと外す**
+   （`（final-validate）` `（should / pass の判定は mid_decay_pct）` など）。英字が3文字以上
+   続く中身を「内部の言葉」とみなす。数字と単位だけの括弧書き（`（目安 1.8）`）は残す。
+   地の文に裸で混ざった `resolution-v1` の形も外す。 */
+function plainWords(s){
+  return String(s == null ? '' : s)
+    .replace(/[（(][^（()）]*[A-Za-z]{3,}[^（()）]*[）)]/g, '')
+    .replace(/(^|[\s、。・])[A-Za-z][A-Za-z0-9._-]*-v\d+(?=$|[\s、。・])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s*([、。])\s*/g, '$1')
+    .trim();
 }
 
 /* ── ネタの仕分けパネル（#314）──────────────────────────────────────
