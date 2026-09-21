@@ -1634,9 +1634,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
    区画は3つ: ① 素材・作ったもの ② 私の指摘 ③ 経緯・履歴。
    広い画面ではページ全体を縦に動かさず、②の一覧・③の中・台本だけが内側でスクロールする。
    --sv-chrome（ヘッダー＋工程の帯＋下端バーの実高さ）は JS が測って入れる。 ═══ */
-.sview{--sv-flow-h:40px; --sv-chrome:200px; --band-h:64px; --side-w:0px;
-  --script-w:340px; --mat-min:340px;
-  --pane-h:min(calc(100dvh - var(--sv-chrome) - 240px), 640px);
+.sview{--sv-flow-h:40px; --sv-chrome:200px; --side-w:0px;
+  --script-w:420px; --mat-min:340px;
+  --pane-h:min(calc(100dvh - var(--sv-chrome) - 158px), 720px);
   --video-w:calc(var(--pane-h) * 9 / 16)}
 .sview .sv-flow{position:sticky; top:calc(var(--stickytop, 0px) + var(--dhdr-h)); z-index:35;
   height:var(--sv-flow-h); display:flex; align-items:center; gap:var(--sp-4);
@@ -1738,20 +1738,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-refctrls .seek{position:relative; flex:1 1 auto; height:36px; cursor:pointer;
   touch-action:none; min-width:60px; order:0}
 
-/* ── シーンの帯（全シーンの開始フレーム）── */
-.sview .sv-band{flex:0 0 auto; display:flex; gap:5px; overflow-x:auto; overflow-y:hidden;
-  padding:0; align-items:center; scrollbar-width:thin; -webkit-overflow-scrolling:touch}
-.sview .sv-bcell{flex:0 0 auto; position:relative; width:calc(var(--band-h) * 9 / 16);
-  height:var(--band-h); border-radius:var(--r-sm); border:2px solid transparent;
-  background:var(--surface-3); padding:0; cursor:pointer; overflow:hidden; display:block}
-.sview .sv-bcell img{display:block; width:100%; height:100%; object-fit:cover}
-.sview .sv-bcell .bno{position:absolute; left:0; right:0; bottom:0; font-size:9px; line-height:14px;
-  background:rgba(0,0,0,.6); color:#fff; text-align:center; font-variant-numeric:tabular-nums}
-.sview .sv-bcell .bnone{display:grid; place-items:center; width:100%; height:100%;
-  font-size:var(--fs-2xs); color:var(--muted)}
-.sview .sv-bcell[aria-current="true"]{border-color:var(--act-line); box-shadow:0 0 0 2px var(--act-soft)}
-
-/* ── 欄の見出し・台本 ── */
+/* ── 欄の見出し・台本 ──
+   ⚠️ シーンの帯（再生の操作の下のサムネの列）は 2026-09-21 に廃止した（オーナー指摘）。
+   開始フレームのサムネは**台本の各行の左**に付いている。空いた高さは動画・台本・素材へ回した。 */
 .sview .sv-colhd{font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em; color:var(--muted);
   padding:0 2px; display:flex; align-items:center; gap:var(--sp-2); height:18px; line-height:18px}
 .sview .sv-colhd .n{font-weight:400; letter-spacing:0; margin-left:auto}
@@ -1765,25 +1754,36 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-script:not([open])>.sv-scriptlist{display:none}
 .sview .sv-scriptlist{max-height:min(38dvh, 340px); overflow-y:auto; scrollbar-width:thin;
   display:flex; flex-direction:column}
-.sview .sv-sline{display:grid; grid-template-columns:30px 40px minmax(0,1fr); gap:var(--sp-2);
-  align-items:baseline; font-family:inherit; text-align:left; background:transparent; border:none;
+/* 台本の1行 = 開始フレームのサムネ ｜ シーン番号・時刻・指摘の数 ｜ ナレーション */
+.sview .sv-sline{--sth:56px;
+  display:grid; grid-template-columns:calc(var(--sth) * 9 / 16) 46px minmax(0,1fr); gap:var(--sp-2);
+  align-items:start; font-family:inherit; text-align:left; background:transparent; border:none;
   border-left:3px solid transparent; border-bottom:1px solid var(--border-2);
   padding:7px 8px 7px 6px; cursor:pointer; color:var(--ink-2); font-size:var(--fs-sm);
-  line-height:var(--lh-tight); min-height:36px}
+  line-height:var(--lh-tight); min-height:calc(var(--sth) + 14px)}
 .sview .sv-sline:last-child{border-bottom:none}
 .sview .sv-sline:hover{background:var(--surface-2)}
+/* サムネと「素材なし」の面は同じ大きさ（前回統一した見た目の小さい版） */
+.sview .sv-sline .sth,.sview .sv-sline .sthnone{width:100%; height:var(--sth);
+  border-radius:4px; border:1px solid var(--border-2); background:var(--surface-3); display:block}
+.sview .sv-sline .sth{object-fit:cover}
+.sview .sv-sline .sthnone{background:var(--surface-2); color:var(--muted);
+  display:grid; place-items:center; text-align:center; font-size:9px; line-height:1.15;
+  white-space:pre-line}
+.sview .sv-sline .smeta{display:flex; flex-direction:column; gap:2px; min-width:0}
 .sview .sv-sline .sn{font-size:var(--fs-xs); font-weight:700; color:var(--muted);
   font-variant-numeric:tabular-nums}
 .sview .sv-sline .stm{font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums}
+/* そのシーンに前回の指摘が何件あるか（帯の印から移した） */
+.sview .sv-sline .nmark{align-self:flex-start; font-size:9px; line-height:15px; font-weight:700;
+  background:var(--mark); color:#fff; border-radius:var(--r-pill); padding:0 6px; white-space:nowrap}
 .sview .sv-sline[aria-current="true"]{background:var(--act-soft); border-left-color:var(--act-line);
   color:var(--ink)}
 .sview .sv-sline[aria-current="true"] .sn{color:var(--sub-ink)}
 .sview .sv-none{font-size:var(--fs-sm); color:var(--muted); padding:2px; line-height:var(--lh-tight)}
-/* 台本・シーンの帯の中の「素材なし」（欄いっぱいの面にする＝枠は残る） */
-.sview .sv-scriptlist>.sv-nomat,.sview .sv-band>.sv-nomat{flex:1 1 auto; align-self:stretch;
+/* 台本の中の「素材なし」（欄いっぱいの面にする＝枠は残る） */
+.sview .sv-scriptlist>.sv-nomat{flex:1 1 auto; align-self:stretch;
   border-radius:var(--r-sm); min-height:44px}
-/* 帯の「素材なし」はサムネと同じ高さにする（下の欄の位置がずれないように） */
-.sview .sv-band>.sv-nomat{min-height:var(--band-h); height:var(--band-h)}
 /* 素材表が無いときのナレーションの場所（行の形は保ったまま「素材なし」と書く） */
 .sview .sv-sline .snone{color:var(--muted); font-size:var(--fs-xs)}
 
@@ -1883,35 +1883,25 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 /* 入力シートが開いているあいだは一覧の場所を譲る（動画と③は動かさない） */
 .sview .sv-sec.sb.sheeton .nlistwrap{display:none}
 
-/* ── ③経緯・履歴 ── */
-.sview .sv-hsum{flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin;
+/* ── ③ 前回までの私の指摘（2026-09-21 に「経緯・履歴」から作り替え・オーナー指摘）──
+   出すのは**オーナー自身の指摘だけ**。AI の記録・工程の履歴・フックと、詳細への切り替えは
+   この画面から外した（対応の記録は②の先頭の「変更」に出ている）。 */
+.sview .sv-prevlist{flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin;
   display:flex; flex-direction:column}
-.sview .sv-hrow{display:flex; align-items:center; gap:var(--sp-2); font-family:inherit;
-  text-align:left; background:transparent; border:none; border-bottom:1px solid var(--border-2);
-  border-radius:0; padding:0 2px; min-height:44px; cursor:pointer; color:var(--ink);
-  font-size:var(--fs-sm); font-weight:680}
-.sview .sv-hrow:last-child{border-bottom:none}
-.sview .sv-hrow:hover{background:var(--surface-2)}
-.sview .sv-hrow .s{margin-left:auto; font-size:var(--fs-xs); font-weight:400; color:var(--muted);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
-.sview .sv-hrow .cv{flex:0 0 auto; color:var(--muted); font-size:12px}
-.sview .sv-hdet{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:var(--sp-2)}
-.sview .sv-hdethd{flex:0 0 auto; display:flex; align-items:center; gap:var(--sp-2); min-width:0}
-.sview .sv-hdethd .ht{font-size:var(--fs-sm); font-weight:680; overflow:hidden;
-  text-overflow:ellipsis; white-space:nowrap}
-.sview .sv-hdetbody{flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin;
-  font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight)}
-.sview .sv-hdetbody .row{display:flex; gap:var(--sp-2); padding:5px 2px;
-  border-bottom:1px solid var(--border-2)}
-.sview .sv-hdetbody .row:last-child{border-bottom:none}
-.sview .sv-hdetbody .row .k{flex:0 0 108px; color:var(--muted); font-size:var(--fs-xs)}
-.sview .sv-hpair{padding:6px 2px; border-bottom:1px solid var(--border-2)}
-.sview .sv-hpair:last-child{border-bottom:none}
-.sview .sv-hpair .q{color:var(--ink); font-size:var(--fs-sm); overflow-wrap:anywhere}
-.sview .sv-hpair .q .tm{color:var(--muted); font-size:var(--fs-xs);
-  font-variant-numeric:tabular-nums; margin-right:6px}
-.sview .sv-hpair .a{margin-top:3px; font-size:var(--fs-xs); color:var(--ink-2); overflow-wrap:anywhere}
-.sview .sv-hpair .a .k{color:var(--muted); margin-right:6px}
+.sview .sv-prow{display:flex; flex-direction:column; gap:3px; font-family:inherit; text-align:left;
+  background:transparent; border:none; border-top:1px solid var(--border-2); border-left:3px solid transparent;
+  border-radius:0; padding:7px 6px; cursor:pointer; color:var(--ink-2);
+  font-size:var(--fs-sm); line-height:var(--lh-tight)}
+.sview .sv-prevlist>.sv-prow:first-child{border-top:none}
+.sview .sv-prow:hover{background:var(--surface-1)}
+.sview .sv-prow.cur{background:var(--act-soft); border-left-color:var(--act-line); color:var(--ink)}
+.sview .sv-prow .m{display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-width:0}
+.sview .sv-prow .m .rev{font-size:var(--fs-2xs); font-weight:700; color:var(--sub-ink);
+  background:var(--act-soft); border-radius:var(--r-pill); padding:0 7px}
+.sview .sv-prow .m .dt,.sview .sv-prow .m .tm,.sview .sv-prow .m .sc{font-size:var(--fs-2xs);
+  color:var(--muted); font-variant-numeric:tabular-nums}
+.sview .sv-prow .b{overflow-wrap:anywhere; white-space:pre-wrap}
+.sview .sv-prevempty{font-size:var(--fs-sm); color:var(--muted); padding:2px}
 
 /* ── 下端の固定バー（左＝事実・右＝3つのボタン）── */
 .sview .dbar{gap:var(--sp-6)}
@@ -1958,17 +1948,17 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 }
 /* ≧1700px: 台本・動画2本・素材の3列（上下端をそろえる） */
 @media (min-width:1700px){
-  .sview{--script-w:clamp(300px, 15vw, 400px); --mat-min:340px;
-    --pane-h:min(calc(100dvh - var(--sv-chrome) - 240px),
+  /* 台本はサムネつきの行になったので少し広く取る（目安 420px 前後） */
+  .sview{--script-w:clamp(360px, 17vw, 460px); --mat-min:340px;
+    --pane-h:min(calc(100dvh - var(--sv-chrome) - 158px),
       calc((100vw - var(--side-w) - var(--script-w) - var(--mat-min) - 136px) / 2 * 16 / 9));
     --video-w:calc(var(--pane-h) * 9 / 16)}
   .sview .sv-sec.sa .sv-stage{grid-template-columns:var(--script-w) auto minmax(0,1fr);
-    grid-template-rows:18px var(--pane-h) 52px 74px}
+    grid-template-rows:18px var(--pane-h) 52px}
   .sview .sv-sec.sa .sv-script{grid-column:1; grid-row:1 / span 2}
   .sview .sv-sec.sa .sv-screens{grid-column:2; grid-row:1 / span 2}
   .sview .sv-sec.sa .sv-matcol{grid-column:3; grid-row:1 / span 2}
-  .sview .sv-sec.sa .sv-ctrls-slot,.sview .sv-sec.sa .sv-refctrls{grid-column:1 / -1; grid-row:3}
-  .sview .sv-sec.sa .sv-band{grid-column:1 / -1; grid-row:4}
+  .sview .sv-sec.sa .sv-ctrls-slot{grid-column:1 / -1; grid-row:3}
 }
 /* 1200〜1399px: ②③は右に縦積み（ページの縦スクロールは許す） */
 @media (min-width:1200px) and (max-width:1399px){
@@ -1981,17 +1971,16 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 }
 /* 900〜1699px: 台本と素材は同じ場所をタブで入れ替える（3列だと動画が小さくなりすぎる） */
 @media (min-width:900px) and (max-width:1699px){
-  .sview{--script-w:clamp(280px, 24vw, 380px);
-    --pane-h:min(calc(100dvh - var(--sv-chrome) - 244px), 640px,
+  .sview{--script-w:clamp(300px, 26vw, 420px);
+    --pane-h:min(calc(100dvh - var(--sv-chrome) - 162px), 720px,
       calc((100vw - var(--side-w) - var(--script-w) - 120px) / 2 * 16 / 9));
     --video-w:calc(var(--pane-h) * 9 / 16)}
   .sview .sv-sec.sa .sv-stage{grid-template-columns:minmax(0, var(--script-w)) auto;
-    grid-template-rows:22px var(--pane-h) 52px 74px}
+    grid-template-rows:22px var(--pane-h) 52px}
   .sview .sv-sec.sa .sv-mattabs{display:flex; grid-column:1; grid-row:1}
   .sview .sv-sec.sa .sv-script,.sview .sv-sec.sa .sv-matcol{grid-column:1; grid-row:2}
   .sview .sv-sec.sa .sv-screens{grid-column:2; grid-row:1 / span 2}
-  .sview .sv-sec.sa .sv-ctrls-slot,.sview .sv-sec.sa .sv-refctrls{grid-column:1 / -1; grid-row:3}
-  .sview .sv-sec.sa .sv-band{grid-column:1 / -1; grid-row:4}
+  .sview .sv-sec.sa .sv-ctrls-slot{grid-column:1 / -1; grid-row:3}
   .sview .sv-sec.sa .sv-script>.shd,.sview .sv-sec.sa .sv-matcol>.sv-colhd{display:none}
   .sview .sv-scrhd{height:22px; line-height:22px}
   .sview .sv-stage[data-mat="mat"] .sv-script{display:none}
@@ -2004,8 +1993,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .vidbox{height:var(--pane-h); width:var(--video-w); aspect-ratio:auto; min-height:0}
   .sview .sv-now{height:var(--pane-h); overflow-y:auto; scrollbar-width:thin;
     --slot-h:calc((var(--pane-h) - 176px) / 2)}
-  .sview .sv-ctrls-slot,.sview .sv-refctrls{align-self:stretch}
-  .sview .sv-band{align-self:stretch; --band-h:60px}
+  .sview .sv-ctrls-slot{align-self:stretch}
   .sview .sv-viewswitch{display:none}
 }
 /* ── スマホ（900px 未満）: ① → ② → ③ の縦1列 ── */
@@ -2021,10 +2009,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-sec.sa .sv-stage{display:flex; flex-direction:column; gap:var(--sp-3)}
   .sview .sv-sec.sa .sv-viewswitch{order:1}
   .sview .sv-sec.sa .sv-screens{order:2}
-  .sview .sv-sec.sa .sv-ctrls-slot,.sview .sv-sec.sa .sv-refctrls{order:3}
-  .sview .sv-sec.sa .sv-band{order:4}
-  .sview .sv-sec.sa .sv-matcol{order:5}
-  .sview .sv-sec.sa .sv-script{order:6}
+  .sview .sv-sec.sa .sv-ctrls-slot{order:3}
+  .sview .sv-sec.sa .sv-matcol{order:4}
+  .sview .sv-sec.sa .sv-script{order:5}
   .sview .sv-colhd{display:none}
   .sview .sv-script>.shd{cursor:pointer; min-height:44px; height:auto; font-size:var(--fs-sm);
     color:var(--ink); line-height:1.4}
@@ -2181,7 +2168,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/21 14:49';
+const BUILT_AT = '9/21 15:03';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2949,13 +2936,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/21 14:49') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/21 15:03') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/21 14:49') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/21 15:03') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -4679,47 +4666,39 @@ function svFlowHTML(it){
   }).join('')}</div></div>`;
 }
 
-/* ── ③ 経緯・履歴の素 ──────────────────────────────────────────────
-   出どころは**いまの画面が既に持っているデータ**だけ（あなたの指摘・AI の記録・工程の履歴・
-   フック）。良し悪しの評価は書かない。
-   「今回変えた内容」は指摘1件ごとの記録が無いので**依頼1件ぶんの対応の記録**を添える。 */
-function svHistoryData(it, evs){
-  const prev = [];
+/* ── ③ 前回までの私の指摘（2026-09-21 に作り替え・オーナー指摘）────────────────
+   **オーナー自身の指摘だけ**を新しい順にそのまま出す（AI の記録・工程の履歴・フックと、
+   詳細への切り替えはこの画面から外した）。絞り込みは「あなたの指摘」（youHTML）と同じで、
+   人の author（AI の印が付いていないもの）の修正依頼とコメント。
+   対応の記録（今回変えた内容）は②の先頭の「変更」に出ているので、ここには出さない。 */
+function svPrevNotes(it, evs){
+  const liveRev = it._rv === 'final' ? submittedRevOf(it.id, 'final') : null;
+  const rows = [];
   for (const e of newestFirst(evs.filter(x => !isAiAuthor(x.author)
       && (x.kind === 'request_changes' || x.kind === 'comment')))) {
-    const when = fmtMD(e.created_at) || '';
+    const when = fmtDT(e.created_at) || '';
     const rev = e.revision == null ? null : Number(e.revision);
-    const fix = e.resolution_note ? rezCore(e.resolution_note).text : '';
+    /* ピンを出せるのは「いま左に出ている完成動画」と同じ版に付いた指摘だけ */
+    const live = !!(liveRev != null && e.gate === 'final' && Number(e.revision == null ? 1 : e.revision) === Number(liveRev));
     const o = notesOf(e);
     if (o) {
       for (const r of o.items) {
-        prev.push({ t: r.t == null ? null : Number(r.t),
+        rows.push({ t: r.t == null ? null : Number(r.t),
           scene: r.scene == null ? null : Number(r.scene),
-          title: r.scene_title || '',
-          text: [r.tag, r.note].filter(Boolean).join(' ') || '（本文なし）',
-          fix, when, rev });
+          title: r.scene_title || '', tag: r.tag || null,
+          body: r.note || '', when, rev, live,
+          pin: (live && normKind(r.kind) === 'picture' && r.pin) ? r.pin : null });
       }
-      if (o.memo) prev.push({ t:null, scene:null, title:'',
-        text:'全体へのメモ: ' + o.memo, fix, when, rev });
+      if (o.memo) rows.push({ t:null, scene:null, title:'', tag:'全体へのメモ',
+        body:o.memo, when, rev, live, pin:null });
     } else {
-      /* notes を持たない古い依頼は本文のまま（シーンに結び付けられないので「このシーン」には出ない） */
-      prev.push({ t:null, scene:null, title:'', text: cmtPreview(e.body, 400) || '（本文なし）',
-        fix, when, rev });
+      /* notes を持たない古い依頼は本文のまま */
+      rows.push({ t:null, scene:null, title:'', tag:null,
+        body: String(e.body || '（本文なし）'), when, rev, live, pin:null });
     }
   }
-  const ai = newestFirst(evs.filter(e => isAiAuthor(e.author) || e.kind === 'request_review'))
-    .map(e => [fmtMD(e.created_at) || '', aiSummaryLine(e)]);
-  return { prev, ai };
+  return rows;
 }
-const svPairHTML = (p, withScene) => `<div class="sv-hpair">
-  <div class="q"><span class="tm">${esc([p.when,
-    p.rev == null ? '' : 'v' + String(p.rev).padStart(2, '0'),
-    p.t == null ? '' : fmtT(p.t),
-    (withScene && p.scene != null) ? 'シーン' + p.scene : ''].filter(Boolean).join(' '))}</span>${
-    esc(p.text)}</div>
-  <div class="a"><span class="k">今回変えた内容</span>${
-    esc(p.fix || '対応記録なし')}${p.fix ? '（この依頼ぶんの記録）' : ''}</div></div>`;
-const svRowHTML = (k, v) => `<div class="row"><span class="k">${esc(k)}</span><span>${esc(v)}</span></div>`;
 
 /* ── 画面の組み立て ─────────────────────────────────────────────── */
 function sceneDetailHTML(it){
@@ -4728,7 +4707,7 @@ function sceneDetailHTML(it){
   const evs = threadOf(it.id);
   const sub = latestSub(evs);
   const ver = subRevLabel(sub);
-  const hist = svHistoryData(it, evs);
+  const prev = svPrevNotes(it, evs);
   /* 下端バーの左（事実だけ）。承認の先は工程の帯の次の工程から取る */
   const barFacts = `<div class="sv-barfacts">
     <span class="bf"><span data-sv-state>指摘 0件</span></span>
@@ -4801,23 +4780,16 @@ function sceneDetailHTML(it){
             <div class="sv-now" data-sv-now></div>
           </div>
           <div class="sv-ctrls-slot" data-sv-ctrls></div>
-          <div class="sv-band" data-sv-band role="tablist" aria-label="シーンの帯"></div>
         </div>
       </section>
       <section class="sv-sec sb" data-sv-secb aria-label="私の指摘">
         <div class="sv-sechd">私の指摘<span class="facts" data-sv-ncount>—</span></div>
         ${decide}
       </section>
-      <section class="sv-sec sc" aria-label="経緯・履歴">
-        <div class="sv-sechd">経緯・履歴<span class="facts">${
-          sub ? `提出 <b>${esc(fmtMD(sub.created_at) || '')}</b> ・ ` : ''}前回までの指摘 <b>${
-          hist.prev.length}件</b></span></div>
-        <div class="sv-hsum" data-sv-hsum></div>
-        <div class="sv-hdet" data-sv-hdet hidden>
-          <div class="sv-hdethd"><button class="btn sm" type="button" data-svact="hback">← 戻る</button>
-            <span class="ht" data-sv-hdettitle>—</span></div>
-          <div class="sv-hdetbody" data-sv-hdetbody></div>
-        </div>
+      <section class="sv-sec sc" aria-label="前回までの私の指摘">
+        <div class="sv-sechd">前回までの私の指摘<span class="facts" data-sv-prevcount>${
+          prev.length}件</span></div>
+        <div class="sv-prevlist" data-sv-prevlist></div>
       </section>
     </div>
     <div class="assets" data-assets="${esc(it.id + '|final')}" data-sv="1" data-ch="${esc(it.channel)}"
@@ -4871,36 +4843,8 @@ function svNoMat(sub){
   }
   return e;
 }
-function svBuildBand(){
-  const band = sv.q('[data-sv-band]');
-  band.textContent = '';
-  sv.bandCells = [];
-  /* シーンの区切りが分からなくても帯そのものは出す（中に「素材なし」と書く） */
-  if (!svScenes().length) { band.appendChild(svNoMat('シーンの区切りがまだありません')); return; }
-  for (const s of svScenes()) {
-    const c = document.createElement('button');
-    c.type = 'button'; c.className = 'sv-bcell';
-    c.title = 'シーン' + s.n + (s.title ? '「' + s.title + '」' : '');
-    c.setAttribute('aria-label', 'シーン' + s.n + ' ' + (s.title || ''));
-    const u = svUrl(s.start_img);
-    if (u) {
-      const im = document.createElement('img');
-      im.src = u; im.alt = ''; im.loading = 'lazy';
-      c.appendChild(im);
-    } else {
-      /* サムネが無いコマは番号だけの枠にする（枠は消さない） */
-      const nn = document.createElement('div');
-      nn.className = 'bnone';
-      c.appendChild(nn);
-    }
-    const no = document.createElement('span');
-    no.className = 'bno'; no.textContent = String(s.n);
-    c.appendChild(no);
-    c.addEventListener('click', () => svGoScene(s.n));
-    band.appendChild(c);
-    sv.bandCells.push(c);
-  }
-}
+/* 台本の1行 = 開始フレームのサムネ ｜ シーン番号・時刻・指摘の数 ｜ ナレーション。
+   シーンの帯（再生の操作の下のサムネの列）は廃止し、サムネはここに付ける（オーナー指摘 2026-09-21）。 */
 function svBuildScript(){
   const box = sv.q('[data-sv-scriptlist]');
   box.textContent = '';
@@ -4912,6 +4856,9 @@ function svBuildScript(){
     sv.q('[data-sv-scriptmeta]').textContent = '—';
     return;
   }
+  /* そのシーンに前回の指摘が何件あるか（帯に付けていた印をここへ移した） */
+  const byScene = {};
+  for (const p of (sv.prev || [])) if (p.scene != null) byScene[p.scene] = (byScene[p.scene] || 0) + 1;
   /* 素材表が無くても、時刻表があれば行の形（番号・時刻・タイトル）は出し、
      ナレーションの場所に「素材なし」と書く（行ごと消さない） */
   let chars = 0;
@@ -4919,8 +4866,29 @@ function svBuildScript(){
     chars += (s.narration || '').length;
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'sv-sline';
+    b.title = 'シーン' + s.n + (s.title ? '「' + s.title + '」' : '');
+    /* 開始フレームのサムネ。無ければ同じ大きさの「素材なし」の面 */
+    const u = svUrl(s.start_img);
+    if (u) {
+      const im = document.createElement('img');
+      im.className = 'sth'; im.src = u; im.alt = ''; im.loading = 'lazy';
+      b.appendChild(im);
+    } else {
+      const nn = document.createElement('span');
+      nn.className = 'sthnone'; nn.textContent = '素材\nなし';
+      b.appendChild(nn);
+    }
+    const meta = document.createElement('span');
+    meta.className = 'smeta';
     const n = document.createElement('span'); n.className = 'sn'; n.textContent = 'S' + s.n;
     const t = document.createElement('span'); t.className = 'stm'; t.textContent = fmtT(s.start);
+    meta.append(n, t);
+    if (byScene[s.n]) {
+      const k = document.createElement('span');
+      k.className = 'nmark'; k.textContent = '指摘' + byScene[s.n];
+      k.title = 'このシーンへの前回までの指摘 ' + byScene[s.n] + '件';
+      meta.appendChild(k);
+    }
     const x = document.createElement('span');
     if (sv.mat) {
       x.textContent = s.narration || '（ナレーションなし）';
@@ -4928,7 +4896,7 @@ function svBuildScript(){
       x.className = 'snone';
       x.textContent = (s.title ? s.title + ' ・ ' : '') + '素材なし';
     }
-    b.append(n, t, x);
+    b.append(meta, x);
     b.addEventListener('click', () => svGoScene(s.n));
     box.appendChild(b);
     sv.scriptRows.push(b);
@@ -5176,12 +5144,8 @@ function svSyncScene(force){
   sv.refIdx = 0;
   svPaintNow();
   svPaintScript();
-  svPaintHistoryScene();
+  svPaintPrevCur();
   svApplyRef();
-  const rows = svScenes();
-  rows.forEach((s, i) => { if (sv.bandCells[i]) sv.bandCells[i].setAttribute('aria-current', s.n === n ? 'true' : 'false'); });
-  const cell = sv.bandCells[rows.findIndex(s => s.n === n)];
-  if (sv.booted && cell) { try { cell.scrollIntoView({ block:'nearest', inline:'center', behavior:'smooth' }); } catch (_) {} }
 }
 function svGoScene(n){
   const s = svSceneByN(n);
@@ -5196,73 +5160,66 @@ function svGoScene(n){
   svSyncScene(true);
 }
 
-/* ── ③ の要約と詳細 ── */
-function svBuildHistory(it, hist){
-  const el = sv.q('[data-sv-hsum]');
-  el.textContent = '';
-  sv.hRows = {};
-  const rows = [
-    ['scene', 'このシーン: 前回の指摘', ''],
-    ['prev',  '前回までの指摘', hist.prev.length + '件'],
-    ['ai',    'AI の記録', hist.ai.length + '件'],
-    ['flow',  '工程の履歴', displayIdx(it) < 0 ? '' : PSTAGES[displayIdx(it)].name],
-    ['hook',  'フック・型', clip(it.hook || '（未設定）', 24)]
-  ];
-  for (const r of rows) {
+/* ── ③ 前回までの私の指摘（新しい順にそのまま出す）── */
+function svBuildPrev(){
+  const box = sv.q('[data-sv-prevlist]');
+  box.textContent = '';
+  sv.prevRows = [];
+  sv.q('[data-sv-prevcount]').textContent = sv.prev.length + '件';
+  if (!sv.prev.length) {
+    const e = document.createElement('div');
+    e.className = 'sv-prevempty'; e.textContent = '前回までの指摘はありません';
+    box.appendChild(e);
+    return;
+  }
+  for (const p of sv.prev) {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'sv-hrow';
-    const t = document.createElement('span'); t.textContent = r[1];
-    const s = document.createElement('span'); s.className = 's'; s.textContent = r[2];
-    const c = document.createElement('span'); c.className = 'cv'; c.textContent = '›';
-    b.append(t, s, c);
-    b.addEventListener('click', () => svOpenHistory(r[0]));
-    el.appendChild(b);
-    sv.hRows[r[0]] = s;
+    b.type = 'button'; b.className = 'sv-prow';
+    const m = document.createElement('span'); m.className = 'm';
+    if (p.rev != null) {
+      const r = document.createElement('span');
+      r.className = 'rev'; r.textContent = 'v' + String(p.rev).padStart(2, '0');
+      m.appendChild(r);
+    }
+    const dt = document.createElement('span'); dt.className = 'dt'; dt.textContent = p.when;
+    m.appendChild(dt);
+    if (p.t != null) {
+      const tm = document.createElement('span'); tm.className = 'tm'; tm.textContent = fmtT(p.t);
+      m.appendChild(tm);
+    }
+    if (p.scene != null) {
+      const sc = document.createElement('span'); sc.className = 'sc';
+      sc.textContent = 'シーン' + p.scene + (p.title ? '「' + p.title + '」' : '');
+      m.appendChild(sc);
+    }
+    if (p.tag) {
+      const g = document.createElement('span'); g.className = 'gbadge fix'; g.textContent = p.tag;
+      m.appendChild(g);
+    }
+    b.appendChild(m);
+    if (p.body) {
+      const t = document.createElement('span'); t.className = 'b'; t.textContent = p.body;
+      b.appendChild(t);
+    }
+    /* 押すとその時刻へ。ピンが出るのはいま見ている版に付いた指摘だけ */
+    b.addEventListener('click', () => {
+      if (p.t == null) return;
+      if (tap) tapGoto(p.t, p.pin);
+      else if (sv.ctl) { sv.ctl.video.pause();
+        try { sv.ctl.video.currentTime = p.t; } catch (_) {}
+        sv.ctl.paint(); }
+      sv.manual = false;
+      svSyncScene();
+    });
+    box.appendChild(b);
+    sv.prevRows.push({ el: b, scene: p.scene });
   }
-  svPaintHistoryScene();
+  svPaintPrevCur();
 }
-/* 先頭の行だけ、いまのシーンに合わせて数を書き換える（詳細を開いている間は差し替えない） */
-function svPaintHistoryScene(){
-  if (!sv || sv.hDetail || !sv.hRows || !sv.hRows.scene) return;
-  if (sv.curN == null) { sv.hRows.scene.textContent = 'シーンが分かりません'; return; }
-  const k = sv.hist.prev.filter(p => p.scene === sv.curN).length;
-  sv.hRows.scene.textContent = 'シーン' + sv.curN + ' ・ ' + k + '件';
-}
-function svOpenHistory(k){
-  sv.hDetail = k;
-  const body = sv.q('[data-sv-hdetbody]'), title = sv.q('[data-sv-hdettitle]');
-  const n = sv.curN;
-  if (k === 'scene') {
-    const ps = sv.hist.prev.filter(p => p.scene === n);
-    title.textContent = (n == null ? 'このシーン' : 'シーン' + n) + ' の前回の指摘と、今回変えた内容';
-    body.innerHTML = ps.length ? ps.map(p => svPairHTML(p, false)).join('')
-      : '<div class="sv-none">このシーンに前回の指摘はありません</div>';
-  } else if (k === 'prev') {
-    title.textContent = '前回までの指摘（' + sv.hist.prev.length + '件）';
-    body.innerHTML = sv.hist.prev.length ? sv.hist.prev.map(p => svPairHTML(p, true)).join('')
-      : '<div class="sv-none">まだ指摘はありません</div>';
-  } else if (k === 'ai') {
-    title.textContent = 'AI の記録';
-    body.innerHTML = sv.hist.ai.length ? sv.hist.ai.map(r => svRowHTML(r[0], r[1])).join('')
-      : '<div class="sv-none">記録はありません</div>';
-  } else if (k === 'flow') {
-    title.textContent = '工程の履歴';
-    body.innerHTML = `<div class="tl">${timelineRows(sv.it)}</div>
-      <div class="dhint">日付は承認ポイント・公開時刻の実記録のみ表示（記録が無い工程は —）</div>`;
-  } else {
-    title.textContent = 'フック・型';
-    body.innerHTML = svRowHTML('フックの全文', sv.it.hook || '（未設定）')
-      + svRowHTML('型', sv.it.genre || '（未設定）');
-  }
-  sv.q('[data-sv-hsum]').hidden = true;
-  sv.q('[data-sv-hdet]').hidden = false;
-  body.scrollTop = 0;
-}
-function svCloseHistory(){
-  sv.hDetail = null;
-  sv.q('[data-sv-hdet]').hidden = true;
-  sv.q('[data-sv-hsum]').hidden = false;
-  svPaintHistoryScene();
+/* いま見ているシーンへの指摘の行を強調する（並びは変えない・付け替えるだけ） */
+function svPaintPrevCur(){
+  if (!sv || !sv.prevRows) return;
+  for (const r of sv.prevRows) r.el.classList.toggle('cur', r.scene != null && r.scene === sv.curN);
 }
 
 /* ── 下端バーの左（事実だけ・良し悪しは書かない）── */
@@ -5334,10 +5291,10 @@ async function armScene(node, files, mode, ctl){
          refvid: q('[data-sv-refvid]'), refSrc: null, refLoadOK: true, refIdx: 0,
          matRaw: sceneMaterials(files, vname), tlRaw: tapTimeline(files, vname),
          mat: null, tl: null, scenes: [], urls: {}, curN: null, manualN: null, manual: false,
-         bandCells: [], scriptRows: [], scriptHold: 0, scriptAuto: false,
-         lboxList: [], lboxI: 0, hRows: {}, hDetail: null, hist: null, watched: [], booted: false };
-  sv.hist = svHistoryData(sv.it, threadOf(sv.it.id));
-  svBuildHistory(sv.it, sv.hist);
+         scriptRows: [], scriptHold: 0, scriptAuto: false, prevRows: [],
+         lboxList: [], lboxI: 0, prev: [], watched: [], booted: false };
+  sv.prev = svPrevNotes(sv.it, threadOf(sv.it.id));
+  svBuildPrev();
 
   /* 素材表の画像・参照動画をまとめて署名URLにする（無ければ枠だけ出る） */
   if (sv.matRaw) {
@@ -5366,7 +5323,6 @@ async function armScene(node, files, mode, ctl){
     q('[data-sv-switch]').hidden = false;
     q('[data-sv-facts]').textContent = (d ? fmtT(d) : '—')
       + (sv.scenes.length ? ' ・ シーン ' + sv.scenes.length : ' ・ シーンの区切りは不明');
-    svBuildBand();
     svBuildScript();
     /* 台本は広い画面では開いたまま。スマホだけ最初は畳む（開いたあとは畳み直さない） */
     if (!sv.booted) q('.sv-script').open = window.innerWidth >= 900;
@@ -5377,7 +5333,7 @@ async function armScene(node, files, mode, ctl){
     sv.booted = true;
   };
   ctl.onmeta = () => { if (prevMeta) prevMeta(); apply(); };
-  if (ctl.video.readyState >= 1) apply(); else { svBuildHistory(sv.it, sv.hist); svPaintBar(); }
+  if (ctl.video.readyState >= 1) apply(); else svPaintBar();
 
   /* 台本を手で読み返している間は追従を止める */
   const sbox = q('[data-sv-scriptlist]');
@@ -5427,7 +5383,6 @@ async function armScene(node, files, mode, ctl){
       q('[data-svact="tab-script"]').setAttribute('aria-pressed', String(!mat));
       if (!mat) svPaintScript();
     }
-    else if (a === 'hback')      svCloseHistory();
     else if (a === 'lbox-prev')  { e.stopPropagation(); svStepLbox(-1); }
     else if (a === 'lbox-next')  { e.stopPropagation(); svStepLbox(1); }
     else if (a === 'lbox-close') { e.stopPropagation(); svCloseLbox(); }
