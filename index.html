@@ -2222,7 +2222,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/22 00:02';
+const BUILT_AT = '9/22 00:08';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5601,12 +5601,15 @@ function svPaintMainHead(){
   const gname = GATE_LABEL[sv.gate] || sv.gate;
   const label = sv.mainLabel || (gname + 'の動画');
   const borrow = svBorrowed();
+  /* 借りているときの左の見出し。「絵コンテの動画」は意味が取れない（オーナー指摘 2026-09-22）——
+     ここに入るのは、これから作る映像なので「映像」と書く */
+  const emptyTtl = '映像';
   const stage = sv.q('[data-sv-stage]');
   if (stage) { if (borrow) stage.dataset.borrow = '1'; else delete stage.dataset.borrow; }
   const ttl = sv.q('[data-sv-mainttl]'); if (ttl) ttl.textContent = borrow ? '参照動画' : label;
   const seg = sv.q('[data-sv-segmain]'); if (seg) seg.textContent = borrow ? '参照動画' : label;
-  const rttl = sv.q('[data-sv-refttl]'); if (rttl) rttl.textContent = borrow ? (gname + 'の動画') : '参照動画';
-  const rseg = sv.q('[data-sv-segref]'); if (rseg) rseg.textContent = borrow ? (gname + 'の動画') : '参照動画';
+  const rttl = sv.q('[data-sv-refttl]'); if (rttl) rttl.textContent = borrow ? emptyTtl : '参照動画';
+  const rseg = sv.q('[data-sv-segref]'); if (rseg) rseg.textContent = borrow ? emptyTtl : '参照動画';
   const sub = sv.q('[data-sv-finallbl]');
   /* 借りているときの添え字は目録の label（例「通しのモック」）。ふだんはファイル名 */
   if (sub) sub.textContent = borrow ? label : String(sv.videoName || '').replace(/\.[^.]+$/, '');
