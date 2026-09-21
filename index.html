@@ -56,6 +56,15 @@
   --stg4:#256abf; --stg5:#1c5cab; --stg6:#8a8880;
   --stage-bg:#f3f7fd; --stage-bg-h:#e8f0fb; --stage-line:#d3e1f4;
 
+  /* ── 完成の承認画面（.sview）だけで使うくすんだ配色（オーナー確定の見本より・#519）──
+     鮮やかな --s1 / --crit は大きな面に使わない。**この画面の外では使わない**
+     （一覧・分析・運営の色は従来のまま） */
+  --act:#485E69; --act-ink:#ffffff; --act-soft:#E6ECEF; --act-line:#485E69;
+  --sub-ink:#38454D;
+  --attn:#F3EBDD; --attn-ink:#7A6240;
+  --danger:#865A58; --danger-ink:#ffffff; --danger-tint:#F2E9E8;
+  --mark:#C4574E; --mark-fill:rgba(196,87,78,.22);
+
   --fs-2xs:.6875rem; --fs-xs:.75rem; --fs-sm:.8125rem; --fs-md:.875rem;
   --fs-lg:1rem; --fs-xl:1.1875rem; --fs-hero:clamp(2rem,3.4vw,2.6rem);
   --lh-tight:1.35; --lh:1.6;
@@ -81,6 +90,11 @@
     --stg1:#b7d3f6; --stg2:#86b6ef; --stg3:#5598e7;
     --stg4:#2a78d6; --stg5:#256abf; --stg6:#8f8d86;
     --stage-bg:#141a23; --stage-bg-h:#1c2531; --stage-line:#26313f;
+    --act:#7E96A2; --act-ink:#0d1114; --act-soft:#26333A; --act-line:#8FA7B2;
+    --sub-ink:#C2CDD4;
+    --attn:#33291B; --attn-ink:#D9C49B;
+    --danger:#8B605E; --danger-ink:#ffffff; --danger-tint:#2B1F1E;
+    --mark:#D0685E; --mark-fill:rgba(208,104,94,.24);
   }
 }
 :root[data-theme="dark"]{
@@ -101,6 +115,11 @@
   --stg1:#b7d3f6; --stg2:#86b6ef; --stg3:#5598e7;
   --stg4:#2a78d6; --stg5:#256abf; --stg6:#8f8d86;
   --stage-bg:#141a23; --stage-bg-h:#1c2531; --stage-line:#26313f;
+  --act:#7E96A2; --act-ink:#0d1114; --act-soft:#26333A; --act-line:#8FA7B2;
+  --sub-ink:#C2CDD4;
+  --attn:#33291B; --attn-ink:#D9C49B;
+  --danger:#8B605E; --danger-ink:#ffffff; --danger-tint:#2B1F1E;
+  --mark:#D0685E; --mark-fill:rgba(208,104,94,.24);
 }
 
 *{box-sizing:border-box}
@@ -1607,6 +1626,435 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   body{font-size:18px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ═══ 完成の承認画面（シーン素材つき・#519 段2/段3）════════════════════════════
+   見た目と並びの正本は `dashboard/scene-mockup.html`（オーナー確定済みの見本）。ここは
+   その CSS を本体のヘッダー・下端バーの高さに合わせて写したもの。**すべて .sview の中だけ**
+   に閉じてあるので、一覧・分析・運営の見た目は変わらない。
+   区画は3つ: ① 素材・作ったもの ② 私の指摘 ③ 経緯・履歴。
+   広い画面ではページ全体を縦に動かさず、②の一覧・③の中・台本だけが内側でスクロールする。
+   --sv-chrome（ヘッダー＋工程の帯＋下端バーの実高さ）は JS が測って入れる。 ═══ */
+.sview{--sv-flow-h:40px; --sv-chrome:200px; --band-h:64px; --side-w:0px;
+  --script-w:340px; --mat-min:340px;
+  --pane-h:min(calc(100dvh - var(--sv-chrome) - 240px), 640px);
+  --video-w:calc(var(--pane-h) * 9 / 16)}
+.sview .sv-flow{position:sticky; top:calc(var(--stickytop, 0px) + var(--dhdr-h)); z-index:35;
+  height:var(--sv-flow-h); display:flex; align-items:center; gap:var(--sp-4);
+  padding:0 var(--sp-2); background:var(--surface-1);
+  border:1px solid var(--border); border-top:none; border-radius:0 0 var(--r-md) var(--r-md);
+  margin:calc(var(--sp-3) * -1) 0 var(--sp-3); min-width:0}
+.sview .sv-steps{display:flex; align-items:center; gap:0; min-width:0; overflow-x:auto;
+  scrollbar-width:none; flex:0 1 auto}
+.sview .sv-steps::-webkit-scrollbar{display:none}
+/* 矢羽根（シェブロン）の帯。右が尖り、左が同じ形に欠ける */
+.sview .sv-step{--ar:11px; position:relative; display:flex; align-items:center; gap:5px; flex:0 0 auto;
+  height:26px; padding:0 calc(var(--ar) + 8px) 0 calc(var(--ar) + 12px); margin-left:calc(2px - var(--ar));
+  font-size:var(--fs-xs); white-space:nowrap; color:var(--muted); background:var(--surface-3);
+  clip-path:polygon(0 0, calc(100% - var(--ar)) 0, 100% 50%, calc(100% - var(--ar)) 100%, 0 100%, var(--ar) 50%)}
+.sview .sv-step:first-child{margin-left:0; padding-left:14px; border-radius:var(--r-sm) 0 0 var(--r-sm);
+  clip-path:polygon(0 0, calc(100% - var(--ar)) 0, 100% 50%, calc(100% - var(--ar)) 100%, 0 100%)}
+.sview .sv-step .dot{font-size:11px; line-height:1; color:inherit; flex:0 0 auto}
+.sview .sv-step:not(.done) .dot{display:none}
+.sview .sv-step.done{background:var(--act-soft); color:var(--sub-ink)}
+.sview .sv-step.cur{background:var(--act); color:var(--act-ink); font-weight:700}
+.sview .sv-step .sub{font-weight:400; font-size:var(--fs-2xs); color:inherit;
+  background:rgba(255,255,255,.2); border-radius:var(--r-pill); padding:1px 8px}
+/* この番組では使わない工程。流れの並びは全番組で同じにして、使わない所だけ斜線の地で「なし」 */
+.sview .sv-step.skip{color:var(--muted); font-weight:400;
+  background:repeating-linear-gradient(135deg, var(--surface-2) 0 5px, var(--surface-3) 5px 10px)}
+.sview .sv-step.skip .lbl2{text-decoration:line-through; text-decoration-color:var(--muted)}
+.sview .sv-step .skipnote{font-size:var(--fs-2xs); color:var(--muted)}
+
+/* ── 骨組み ── */
+.sview .sv-wrap{display:flex; flex-direction:column; gap:var(--sp-3); min-width:0}
+.sview .sv-sec{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0; min-height:0;
+  background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
+  padding:var(--sp-4); box-shadow:none}
+.sview .sv-sec.sb{background:var(--surface-2)}
+.sview .sv-sechd{flex:0 0 auto; height:32px; display:flex; align-items:center; gap:var(--sp-3);
+  font-size:var(--fs-lg); font-weight:700; text-align:left; min-width:0}
+.sview .sv-sechd .facts{margin-left:auto; font-size:var(--fs-xs); font-weight:400; color:var(--muted);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+.sview .sv-sechd .facts b{font-weight:700; color:var(--ink-2); font-variant-numeric:tabular-nums}
+.sview .sv-stage{display:grid; min-width:0; min-height:0; column-gap:var(--sp-4); row-gap:var(--sp-2)}
+.sview .sv-matcol{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0; min-height:0}
+.sview .sv-mattabs{display:none; align-items:center; gap:4px; min-width:0}
+.sview .sv-mattabs button{font-family:inherit; font-size:var(--fs-2xs); cursor:pointer; height:22px;
+  padding:0 12px; border:1px solid var(--border); background:var(--surface-2); color:var(--ink-2);
+  border-radius:var(--r-pill)}
+.sview .sv-mattabs button[aria-pressed="true"]{background:var(--act-soft); color:var(--sub-ink);
+  border-color:var(--act-line); font-weight:680}
+
+/* ── 動画のかたまり ── */
+.sview .sv-screens{display:grid; grid-template-columns:repeat(2, minmax(0, var(--video-w)));
+  justify-content:start; gap:var(--sp-3); min-width:0}
+/* 参照動画が1本も無い動画は列ごと出さず、空いた幅は素材の欄へ回す
+   （狭い画面は縦1列なので、この幅の指定は 900px 以上だけ） */
+.sview .sv-stage.noref .sv-screen.ref{display:none}
+.sview .sv-screen{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
+.sview .sv-scrhd{display:flex; align-items:baseline; gap:var(--sp-2); min-width:0; padding:0 2px}
+.sview .sv-scrhd .scrttl{font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em;
+  color:var(--muted); flex:0 0 auto}
+.sview .sv-scrhd .scrsub{font-size:var(--fs-2xs); color:var(--muted); min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.sview .sv-scrhd .scrpick{display:flex; gap:4px; margin-left:auto; flex:0 0 auto}
+.sview .sv-scrhd .scrpick button{font-family:inherit; font-size:var(--fs-2xs); cursor:pointer;
+  border:1px solid var(--border); background:var(--surface-2); color:var(--ink-2);
+  border-radius:var(--r-sm); min-width:28px; height:26px; padding:0 6px}
+.sview .sv-scrhd .scrpick button[aria-pressed="true"]{background:var(--act-soft); color:var(--sub-ink);
+  border-color:var(--act-line); box-shadow:inset 0 0 0 1px var(--act-line)}
+.sview .sv-scrhd .refdone{margin-left:auto; font-size:var(--fs-2xs); color:var(--attn-ink);
+  background:var(--attn); border-radius:var(--r-pill); padding:0 8px}
+/* 動画の枠は本体の .vidbox をそのまま使い、大きさだけこの画面の寸法に合わせる */
+.sview .vidbox{margin:0; width:100%; box-shadow:none; border-radius:var(--r-lg)}
+.sview .pin{border-color:var(--mark); background:var(--mark-fill)}
+.sview .seek .tpfill,.sview .seek .knob{background:var(--act)}
+.sview .seek .tpmark{background:var(--mark)}
+.sview .bigplay{position:absolute; left:50%; top:50%; width:68px; height:68px; margin:-34px 0 0 -34px;
+  z-index:1; border-radius:var(--r-pill); background:rgba(0,0,0,.46);
+  border:1.5px solid rgba(255,255,255,.7); display:grid; place-items:center; pointer-events:none}
+.sview .bigplay::before{content:''; display:block; margin-left:5px; border-style:solid;
+  border-width:13px 0 13px 21px; border-color:transparent transparent transparent #fff}
+.sview .sv-novid{position:absolute; inset:0; display:grid; place-content:center; gap:var(--sp-3);
+  z-index:3; padding:var(--sp-5); text-align:center; color:var(--ink-2);
+  background:var(--surface-2); font-size:var(--fs-sm)}
+/* 参照動画が無いときの面。破線にすると欠けて見えるので薄い無彩色の面にする */
+.sview .sv-refempty{position:absolute; inset:0; z-index:3; display:grid; place-content:center;
+  align-content:center; gap:var(--sp-2); padding:var(--sp-5); text-align:center;
+  background:var(--surface-2); color:var(--ink-2); font-size:var(--fs-sm); line-height:var(--lh-tight)}
+.sview .sv-refempty .rsub{font-size:var(--fs-xs); color:var(--muted)}
+/* 操作は1つだけ（2本は連動して進む）。動画の下に1行で置く */
+.sview .sv-ctrls-slot{display:flex; align-items:center; min-width:0}
+.sview .sv-ctrls-slot .ctrls{flex:1 1 auto; margin:0; background:transparent; border:none;
+  border-top:1px solid var(--border); border-radius:0; padding:var(--sp-2) 0; flex-wrap:nowrap}
+.sview .sv-ctrls-slot .seek{flex:1 1 auto; order:0; min-width:60px}
+.sview .sv-ctrls-slot .ctime{margin-left:0}
+.sview .sv-ctrls-slot .ctrls.off{opacity:.45; pointer-events:none}
+.sview .sv-refctrls{display:flex; align-items:center; gap:var(--sp-2); min-width:0;
+  border-top:1px solid var(--border); padding:var(--sp-2) 0}
+.sview .sv-refctrls.off{opacity:.45; pointer-events:none}
+.sview .sv-refctrls .seek{position:relative; flex:1 1 auto; height:36px; cursor:pointer;
+  touch-action:none; min-width:60px; order:0}
+
+/* ── シーンの帯（全シーンの開始フレーム）── */
+.sview .sv-band{flex:0 0 auto; display:flex; gap:5px; overflow-x:auto; overflow-y:hidden;
+  padding:0; align-items:center; scrollbar-width:thin; -webkit-overflow-scrolling:touch}
+.sview .sv-bcell{flex:0 0 auto; position:relative; width:calc(var(--band-h) * 9 / 16);
+  height:var(--band-h); border-radius:var(--r-sm); border:2px solid transparent;
+  background:var(--surface-3); padding:0; cursor:pointer; overflow:hidden; display:block}
+.sview .sv-bcell img{display:block; width:100%; height:100%; object-fit:cover}
+.sview .sv-bcell .bno{position:absolute; left:0; right:0; bottom:0; font-size:9px; line-height:14px;
+  background:rgba(0,0,0,.6); color:#fff; text-align:center; font-variant-numeric:tabular-nums}
+.sview .sv-bcell .bnone{display:grid; place-items:center; width:100%; height:100%;
+  font-size:var(--fs-2xs); color:var(--muted)}
+.sview .sv-bcell[aria-current="true"]{border-color:var(--act-line); box-shadow:0 0 0 2px var(--act-soft)}
+
+/* ── 欄の見出し・台本 ── */
+.sview .sv-colhd{font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em; color:var(--muted);
+  padding:0 2px; display:flex; align-items:center; gap:var(--sp-2); height:18px; line-height:18px}
+.sview .sv-colhd .n{font-weight:400; letter-spacing:0; margin-left:auto}
+.sview .sv-scrhd{height:18px; line-height:18px; align-items:center}
+.sview .sv-script{min-width:0; min-height:0; display:flex; flex-direction:column; gap:var(--sp-2)}
+.sview .sv-script>.shd{display:flex; align-items:center; gap:var(--sp-2); font-size:var(--fs-xs);
+  font-weight:700; letter-spacing:.08em; color:var(--muted); padding:0 2px; list-style:none;
+  cursor:default; height:18px; line-height:18px}
+.sview .sv-script>.shd::-webkit-details-marker{display:none}
+.sview .sv-script>.shd .n{font-weight:400; letter-spacing:0; margin-left:auto}
+.sview .sv-script:not([open])>.sv-scriptlist{display:none}
+.sview .sv-scriptlist{max-height:min(38dvh, 340px); overflow-y:auto; scrollbar-width:thin;
+  display:flex; flex-direction:column}
+.sview .sv-sline{display:grid; grid-template-columns:30px 40px minmax(0,1fr); gap:var(--sp-2);
+  align-items:baseline; font-family:inherit; text-align:left; background:transparent; border:none;
+  border-left:3px solid transparent; border-bottom:1px solid var(--border-2);
+  padding:7px 8px 7px 6px; cursor:pointer; color:var(--ink-2); font-size:var(--fs-sm);
+  line-height:var(--lh-tight); min-height:36px}
+.sview .sv-sline:last-child{border-bottom:none}
+.sview .sv-sline:hover{background:var(--surface-2)}
+.sview .sv-sline .sn{font-size:var(--fs-xs); font-weight:700; color:var(--muted);
+  font-variant-numeric:tabular-nums}
+.sview .sv-sline .stm{font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums}
+.sview .sv-sline[aria-current="true"]{background:var(--act-soft); border-left-color:var(--act-line);
+  color:var(--ink)}
+.sview .sv-sline[aria-current="true"] .sn{color:var(--sub-ink)}
+.sview .sv-none{font-size:var(--fs-sm); color:var(--muted); padding:2px; line-height:var(--lh-tight)}
+
+/* ── いまのシーンの素材 ── */
+.sview .sv-now{min-width:0; --slot-h:180px; padding:0}
+.sview .sv-now .l1{display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; margin-bottom:2px}
+.sview .sv-now .nn{font-size:var(--fs-md); font-weight:700}
+.sview .sv-now .ntt{font-size:var(--fs-sm); color:var(--ink-2); overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; min-width:0}
+.sview .sv-now .nt{font-size:var(--fs-xs); color:var(--muted); font-variant-numeric:tabular-nums;
+  margin-left:auto}
+.sview .sv-now .nar{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight);
+  margin-bottom:var(--sp-2); overflow-wrap:anywhere}
+.sview .sv-shelf{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
+.sview .sv-shelfrow{display:flex; gap:var(--sp-2); overflow-x:auto; overflow-y:hidden;
+  padding-bottom:4px; scrollbar-width:thin; -webkit-overflow-scrolling:touch; align-items:flex-start}
+.sview .sv-refbox{border:none; background:transparent; padding:var(--sp-2) 0 0;
+  border-top:1px solid var(--border-2); min-width:0; --ref-h:var(--slot-h)}
+.sview .sv-refbox .refhd{display:flex; align-items:baseline; gap:6px; font-size:var(--fs-xs);
+  font-weight:700; color:var(--ink-2); margin-bottom:6px}
+.sview .sv-refbox .refhd .n{font-weight:400; color:var(--muted); margin-left:auto}
+.sview .sv-refbox .sv-slot{width:calc(var(--ref-h) * 9 / 16)}
+.sview .sv-refbox .sv-slot .shot,.sview .sv-refbox .sv-slot .none{height:var(--ref-h)}
+.sview .sv-refbox .refnone{font-size:var(--fs-xs); color:var(--muted); padding:6px 2px}
+.sview .sv-slot{flex:0 0 auto; display:flex; flex-direction:column; gap:3px;
+  width:calc(var(--slot-h) * 9 / 16)}
+.sview .sv-slot .cap{font-size:var(--fs-2xs); color:var(--muted); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+.sview .sv-slot .shot{width:100%; height:var(--slot-h); border-radius:var(--r-sm);
+  border:1px solid var(--border); background:var(--surface-3); padding:0; cursor:zoom-in;
+  overflow:hidden; display:block}
+.sview .sv-slot .shot img{display:block; width:100%; height:100%; object-fit:contain;
+  background:var(--surface-3)}
+.sview .sv-slot .none{width:100%; height:var(--slot-h); border-radius:var(--r-sm);
+  border:1.5px dashed var(--border); background:transparent; display:grid; place-items:center;
+  text-align:center; padding:6px; font-size:var(--fs-2xs); color:var(--muted); line-height:1.35}
+.sview .sv-sep{flex:0 0 auto; align-self:center; color:var(--muted); font-size:var(--fs-sm); padding:0 1px}
+
+/* 大きく表示（ライトボックス） */
+.sv-lbox{position:fixed; inset:0; z-index:80; background:rgba(0,0,0,.82);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:var(--sp-2); padding:var(--sp-4)}
+.sv-lbox img{max-width:min(100%, 62dvh); max-height:76dvh; object-fit:contain;
+  border-radius:var(--r-md); background:#000}
+.sv-lbox .lcap{color:#fff; font-size:var(--fs-sm); text-align:center; max-width:90vw}
+.sv-lbox .lnav{display:flex; align-items:center; gap:var(--sp-3)}
+.sv-lbox .lnav button{font-family:inherit; font-size:var(--fs-sm); color:#fff; cursor:pointer;
+  background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.34);
+  border-radius:var(--r-md); min-width:56px; min-height:44px; padding:0 14px}
+.sv-lbox .lnav button:hover{background:rgba(255,255,255,.3)}
+.sv-lbox .lnav button:disabled{opacity:.35; cursor:default}
+.sv-lbox .lhint{color:rgba(255,255,255,.72); font-size:var(--fs-2xs); text-align:center}
+
+/* ── ②私の指摘（本体の .decide は display:contents で②の直下に並べる）── */
+.sview .sv-sec.sb .decide{display:contents}
+.sview .sv-sec.sb .abox{order:1; border:none; background:transparent; box-shadow:none; padding:0;
+  gap:var(--sp-2)}
+.sview .sv-sec.sb .abox .dcg{display:none}       /* 承認ポイント名と版は上のヘッダに出ている */
+/* 「この版で変えたこと」と申し送りは見本に無いが、安全に関わるので②の先頭に残す。
+   面の色だけこの画面のくすんだ色に合わせる（鮮やかな青は大きな面に使わない） */
+.sview .sv-sec.sb .dcchg{background:var(--act-soft)}
+.sview .sv-sec.sb .dcchg .k{color:var(--sub-ink)}
+.sview .sv-sec.sb .acaution{background:var(--attn); color:var(--attn-ink); border-color:transparent}
+.sview .sv-sec.sb .abox .afold>.dsum{color:var(--muted)}
+.sview .sv-sec.sb .wbox{order:2; margin:0; background:transparent; border:none; padding:0;
+  display:flex; flex-direction:column; flex:1 1 auto; min-height:0; overflow:hidden}
+.sview .sv-sec.sb .rjbox{order:3; margin:0; padding:0; border-top:none}
+.sview .sv-sec.sb .dstate{order:1; margin:0}
+.sview .tapbox{flex:1 1 auto; min-height:0; gap:var(--sp-2)}
+.sview .addrow{flex:0 0 auto; display:flex; flex-direction:row; flex-wrap:wrap; gap:var(--sp-2)}
+.sview .addrow .btn{flex:0 0 auto; width:auto; min-height:44px; white-space:nowrap}
+.sview .addrow .btn[aria-pressed="true"]{background:var(--act-soft); border-color:var(--act-line);
+  color:var(--sub-ink); font-weight:650; box-shadow:inset 0 0 0 1px var(--act-line)}
+.sview .addrow .btn[aria-pressed="true"]:hover{background:var(--act-soft); filter:none}
+.sview .tapbox .nhd{display:none}                /* 件数は②の見出しに出す */
+/* 見本の並び: 入口の2ボタン → （入力シート）→ 指摘の一覧 → 全体へのメモ */
+.sview .addrow{order:1}
+.sview .sheet{order:2}
+.sview .nlistwrap{order:3; flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin}
+.sview .tapbox>.svmemo{order:4; flex:0 0 auto}
+.sview .nlist{gap:0}
+.sview .nitem{background:transparent; border:none; border-top:1px solid var(--border-2);
+  border-radius:0; padding:var(--sp-2) 0}
+.sview .nlist .nitem:first-child{border-top:none}
+.sview .nitem.cur{background:var(--act-soft); border-color:var(--border-2)}
+.sview .tpempty{border:none; background:transparent; text-align:left; padding:2px}
+.sview .memo,.sview .noteinput{background:var(--page)}
+.sview .memo{height:72px; min-height:72px; max-height:72px; resize:none}
+.sview .sheet{border-color:var(--act-line); flex:1 1 auto; min-height:0; overflow-y:auto;
+  scrollbar-width:thin; border-radius:var(--r-md)}
+.sview .tagbtn[aria-pressed="true"]{background:var(--act-soft); border-color:var(--act-line);
+  color:var(--sub-ink); font-weight:650; box-shadow:inset 0 0 0 1px var(--act-line)}
+.sview .nrec.jump:hover{background:var(--act-soft)}
+.sview .gbadge.fix{background:var(--attn); color:var(--attn-ink)}
+/* 入力シートが開いているあいだは一覧の場所を譲る（動画と③は動かさない） */
+.sview .sv-sec.sb.sheeton .nlistwrap{display:none}
+
+/* ── ③経緯・履歴 ── */
+.sview .sv-hsum{flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin;
+  display:flex; flex-direction:column}
+.sview .sv-hrow{display:flex; align-items:center; gap:var(--sp-2); font-family:inherit;
+  text-align:left; background:transparent; border:none; border-bottom:1px solid var(--border-2);
+  border-radius:0; padding:0 2px; min-height:44px; cursor:pointer; color:var(--ink);
+  font-size:var(--fs-sm); font-weight:680}
+.sview .sv-hrow:last-child{border-bottom:none}
+.sview .sv-hrow:hover{background:var(--surface-2)}
+.sview .sv-hrow .s{margin-left:auto; font-size:var(--fs-xs); font-weight:400; color:var(--muted);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+.sview .sv-hrow .cv{flex:0 0 auto; color:var(--muted); font-size:12px}
+.sview .sv-hdet{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:var(--sp-2)}
+.sview .sv-hdethd{flex:0 0 auto; display:flex; align-items:center; gap:var(--sp-2); min-width:0}
+.sview .sv-hdethd .ht{font-size:var(--fs-sm); font-weight:680; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap}
+.sview .sv-hdetbody{flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin;
+  font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight)}
+.sview .sv-hdetbody .row{display:flex; gap:var(--sp-2); padding:5px 2px;
+  border-bottom:1px solid var(--border-2)}
+.sview .sv-hdetbody .row:last-child{border-bottom:none}
+.sview .sv-hdetbody .row .k{flex:0 0 108px; color:var(--muted); font-size:var(--fs-xs)}
+.sview .sv-hpair{padding:6px 2px; border-bottom:1px solid var(--border-2)}
+.sview .sv-hpair:last-child{border-bottom:none}
+.sview .sv-hpair .q{color:var(--ink); font-size:var(--fs-sm); overflow-wrap:anywhere}
+.sview .sv-hpair .q .tm{color:var(--muted); font-size:var(--fs-xs);
+  font-variant-numeric:tabular-nums; margin-right:6px}
+.sview .sv-hpair .a{margin-top:3px; font-size:var(--fs-xs); color:var(--ink-2); overflow-wrap:anywhere}
+.sview .sv-hpair .a .k{color:var(--muted); margin-right:6px}
+
+/* ── 下端の固定バー（左＝事実・右＝3つのボタン）── */
+.sview .dbar{gap:var(--sp-6)}
+.sview .dbar .sv-barfacts{display:flex; align-items:center; gap:var(--sp-5); min-width:0;
+  flex:1 1 auto; font-size:var(--fs-sm); color:var(--ink-2)}
+.sview .dbar .sv-barfacts .bf{display:flex; align-items:center; gap:7px; white-space:nowrap; min-width:0}
+.sview .dbar .sv-barfacts .bf .k{color:var(--muted); font-size:var(--fs-xs)}
+.sview .dbar .sv-barfacts .bf b{color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums}
+.sview .sv-watchbar{width:120px; height:6px; border-radius:var(--r-pill); background:var(--surface-3);
+  overflow:hidden; position:relative; flex:0 0 auto}
+.sview .sv-watchbar i{position:absolute; top:0; bottom:0; background:var(--act)}
+.sview .dbar .sv-barfacts .next{color:var(--muted); font-size:var(--fs-xs); overflow:hidden;
+  text-overflow:ellipsis}
+.sview .dbar .btn{height:48px; min-height:48px; background:var(--surface-1); color:var(--sub-ink);
+  border-color:var(--border); padding:0 10px}
+.sview .dbar .btn:hover{background:var(--surface-3)}
+/* 幅は役目で決め打ちにする（件数が増えても・主役が入れ替わってもボタンは伸び縮みしない） */
+.sview .dbar [data-act="comment"]{flex:0 0 152px; width:152px}
+.sview .dbar [data-act="approve-quick"]{flex:0 0 144px; width:144px}
+.sview .dbar .btn.soft{background:var(--surface-1); color:var(--sub-ink); border-color:var(--border);
+  font-weight:680}
+.sview .dbar .btn.soft.on{background:var(--attn); color:var(--attn-ink); border-color:var(--attn-ink)}
+.sview .dbar .btn.primary{background:var(--act); color:var(--act-ink); border-color:transparent}
+.sview .dbar .btn.primary:hover{background:var(--act); filter:brightness(1.1)}
+.sview .dbar .btn.kill{flex:0 0 88px; width:88px; background:transparent; color:var(--ink-2)}
+.sview .dbar .btn.kill:hover{background:var(--danger-tint); color:var(--danger); border-color:var(--danger)}
+@media (max-width:1199px){ .sview .dbar .sv-barfacts .next{display:none} }
+
+/* ── 広い画面: ページ全体を動かさない ── */
+@media (min-width:1400px){
+  .sview{--side-w:clamp(420px, 21vw, 560px)}
+  body.sv-lock{overflow:hidden; height:100dvh}
+  body.sv-lock main{padding-top:var(--sp-3); padding-bottom:0}
+  body.sv-lock #footer{display:none}
+  .sview .sv-wrap{display:grid; overflow:hidden; gap:var(--sp-4);
+    height:calc(100dvh - var(--sv-chrome));
+    grid-template-columns:minmax(0,1fr) var(--side-w);
+    grid-template-rows:minmax(0,1fr) clamp(200px, 26dvh, 296px)}
+  .sview .sv-sec{overflow:hidden}
+  .sview .sv-sec.sa{grid-column:1; grid-row:1 / span 2}
+  .sview .sv-sec.sb{grid-column:2; grid-row:1}
+  .sview .sv-sec.sc{grid-column:2; grid-row:2}
+  .sview .sv-sec.sa .sv-stage{flex:1 1 auto; overflow:hidden}
+}
+/* ≧1700px: 台本・動画2本・素材の3列（上下端をそろえる） */
+@media (min-width:1700px){
+  .sview{--script-w:clamp(300px, 15vw, 400px); --mat-min:340px;
+    --pane-h:min(calc(100dvh - var(--sv-chrome) - 240px),
+      calc((100vw - var(--side-w) - var(--script-w) - var(--mat-min) - 136px) / 2 * 16 / 9));
+    --video-w:calc(var(--pane-h) * 9 / 16)}
+  .sview .sv-sec.sa .sv-stage{grid-template-columns:var(--script-w) auto minmax(0,1fr);
+    grid-template-rows:18px var(--pane-h) 52px 74px}
+  .sview .sv-sec.sa .sv-script{grid-column:1; grid-row:1 / span 2}
+  .sview .sv-sec.sa .sv-screens{grid-column:2; grid-row:1 / span 2}
+  .sview .sv-sec.sa .sv-matcol{grid-column:3; grid-row:1 / span 2}
+  .sview .sv-sec.sa .sv-ctrls-slot,.sview .sv-sec.sa .sv-refctrls{grid-column:1 / -1; grid-row:3}
+  .sview .sv-sec.sa .sv-band{grid-column:1 / -1; grid-row:4}
+  .sview .sv-stage.noref{--mat-min:520px}
+}
+/* 1200〜1399px: ②③は右に縦積み（ページの縦スクロールは許す） */
+@media (min-width:1200px) and (max-width:1399px){
+  .sview{--side-w:400px}
+  .sview .sv-wrap{display:grid; gap:var(--sp-4); align-items:start;
+    grid-template-columns:minmax(0,1fr) var(--side-w)}
+  .sview .sv-sec.sa{grid-column:1; grid-row:1 / span 2}
+  .sview .sv-sec.sb{grid-column:2; grid-row:1}
+  .sview .sv-sec.sc{grid-column:2; grid-row:2}
+}
+/* 900〜1699px: 台本と素材は同じ場所をタブで入れ替える（3列だと動画が小さくなりすぎる） */
+@media (min-width:900px) and (max-width:1699px){
+  .sview{--script-w:clamp(280px, 24vw, 380px);
+    --pane-h:min(calc(100dvh - var(--sv-chrome) - 244px), 640px,
+      calc((100vw - var(--side-w) - var(--script-w) - 120px) / 2 * 16 / 9));
+    --video-w:calc(var(--pane-h) * 9 / 16)}
+  .sview .sv-sec.sa .sv-stage{grid-template-columns:minmax(0, var(--script-w)) auto;
+    grid-template-rows:22px var(--pane-h) 52px 74px}
+  .sview .sv-sec.sa .sv-mattabs{display:flex; grid-column:1; grid-row:1}
+  .sview .sv-sec.sa .sv-script,.sview .sv-sec.sa .sv-matcol{grid-column:1; grid-row:2}
+  .sview .sv-sec.sa .sv-screens{grid-column:2; grid-row:1 / span 2}
+  .sview .sv-sec.sa .sv-ctrls-slot,.sview .sv-sec.sa .sv-refctrls{grid-column:1 / -1; grid-row:3}
+  .sview .sv-sec.sa .sv-band{grid-column:1 / -1; grid-row:4}
+  .sview .sv-sec.sa .sv-script>.shd,.sview .sv-sec.sa .sv-matcol>.sv-colhd{display:none}
+  .sview .sv-scrhd{height:22px; line-height:22px}
+  .sview .sv-stage[data-mat="mat"] .sv-script{display:none}
+  .sview .sv-stage[data-mat="script"] .sv-matcol{display:none}
+}
+/* 900px 以上の共通: 台本・動画・素材の上下端をそろえる */
+@media (min-width:900px){
+  .sview .sv-scriptlist{height:var(--pane-h); max-height:none; overflow-y:auto}
+  .sview .sv-screens{grid-template-columns:repeat(2, var(--video-w)); gap:12px}
+  .sview .sv-stage.noref .sv-screens{grid-template-columns:var(--video-w)}
+  .sview .vidbox{height:var(--pane-h); width:var(--video-w); aspect-ratio:auto; min-height:0}
+  .sview .sv-now{height:var(--pane-h); overflow-y:auto; scrollbar-width:thin;
+    --slot-h:calc((var(--pane-h) - 176px) / 2)}
+  .sview .sv-ctrls-slot,.sview .sv-refctrls{align-self:stretch}
+  .sview .sv-band{align-self:stretch; --band-h:60px}
+  .sview .sv-viewswitch{display:none}
+}
+/* ── スマホ（900px 未満）: ① → ② → ③ の縦1列 ── */
+@media (max-width:899px){
+  /* 工程の帯は、いまの工程だけ名前を出す（全部出すと横に溢れて現在地が画面の外へ出る） */
+  .sview .sv-flow{gap:var(--sp-2); padding:0 var(--sp-2)}
+  .sview .sv-step{--ar:8px; height:24px; padding:0 calc(var(--ar) + 3px) 0 calc(var(--ar) + 7px)}
+  .sview .sv-step:first-child{padding-left:9px}
+  .sview .sv-step:not(.cur) .lbl2{display:none}
+  .sview .sv-step:not(.cur):not(.done){min-width:26px}
+  .sview .sv-step.skip .skipnote{display:none}
+  .sview .sv-sec{padding:var(--sp-3)}
+  .sview .sv-sec.sa .sv-stage{display:flex; flex-direction:column; gap:var(--sp-3)}
+  .sview .sv-sec.sa .sv-viewswitch{order:1}
+  .sview .sv-sec.sa .sv-screens{order:2}
+  .sview .sv-sec.sa .sv-ctrls-slot,.sview .sv-sec.sa .sv-refctrls{order:3}
+  .sview .sv-sec.sa .sv-band{order:4}
+  .sview .sv-sec.sa .sv-matcol{order:5}
+  .sview .sv-sec.sa .sv-script{order:6}
+  .sview .sv-colhd{display:none}
+  .sview .sv-script>.shd{cursor:pointer; min-height:44px; height:auto; font-size:var(--fs-sm);
+    color:var(--ink); line-height:1.4}
+  .sview .sv-script>.shd::before{content:'▸'; font-size:12px; color:var(--ink-2); margin-right:4px}
+  .sview .sv-script[open]>.shd::before{content:'▾'}
+  .sview .sv-viewswitch{display:flex; align-items:center; gap:var(--sp-2); min-width:0}
+  .sview .sv-viewswitch .seg{display:flex; flex:1 1 auto; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:var(--r-md); padding:3px; gap:3px; min-width:0}
+  .sview .sv-viewswitch .segbtn{flex:1 1 0; font-family:inherit; font-size:var(--fs-xs);
+    cursor:pointer; min-width:0; border:1px solid transparent; background:transparent;
+    color:var(--ink-2); border-radius:var(--r-sm); min-height:38px; padding:0 8px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .sview .sv-viewswitch .segbtn[aria-pressed="true"]{background:var(--act-soft); color:var(--sub-ink);
+    border-color:var(--act-line); font-weight:680; box-shadow:inset 0 0 0 1px var(--act-line)}
+  .sview .sv-viewswitch .cmpbtn{flex:0 0 auto; min-height:38px!important}
+  .sview .sv-viewswitch .cmpbtn[aria-pressed="true"]{background:var(--act-soft); color:var(--sub-ink);
+    border-color:var(--act-line); box-shadow:inset 0 0 0 1px var(--act-line); font-weight:680}
+  .sview .sv-screens{grid-template-columns:minmax(0,1fr)}
+  .sview .sv-stage[data-cmp="off"][data-view="final"] .sv-screen.ref{display:none}
+  .sview .sv-stage[data-cmp="off"][data-view="ref"] .sv-screen.final{display:none}
+  .sview .sv-stage[data-cmp="on"] .sv-screens{grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:var(--sp-2)}
+  .sview .vidbox{height:auto; width:min(100%, calc(52dvh * 9 / 16)); aspect-ratio:9/16; margin:0 auto}
+  .sview .sv-stage[data-cmp="on"] .vidbox{width:100%}
+  body.sheetopen .sview .vidbox{width:min(100%, calc(40dvh * 9 / 16))}
+  body.sheetopen .sview .sv-stage[data-cmp="on"] .vidbox{width:100%}
+  .sview .sv-now{--slot-h:160px}
+  .sview .cbtn,.sview .tagbtn{height:44px}
+  .sview .btn.sm{min-height:44px}
+  .sview .sheet.float{border-top-color:var(--act-line)}
+  .sview .sv-sec.sb.sheeton .nlistwrap{display:block}
+  body.sheetopen .sview .dbar{display:none}
+  .sview .dbar{flex-wrap:wrap; gap:var(--sp-2)}
+  .sview .dbar .sv-barfacts{flex:1 1 100%; gap:var(--sp-3); font-size:var(--fs-xs); order:0}
+  .sview .sv-watchbar{width:64px}
+  .sview .dbar .btn.kill{order:1}
+  .sview .dbar [data-act="comment"],.sview .dbar [data-act="approve-quick"]{flex:1 1 0; width:auto; order:2}
+  .sv-lbox img{max-width:100%; max-height:62dvh}
+}
 </style>
 </head>
 <body>
@@ -1724,7 +2172,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/20 15:02';
+const BUILT_AT = '9/21 14:31';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2492,13 +2940,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/20 15:02') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/21 14:31') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/20 15:02') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/21 14:31') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -3097,8 +3545,9 @@ async function openDetail(vid, gate){
   const dv = $('#view-detail');
   state.detail = id;
   /* 描き直すたびにタップ入力は組み直す（下書きは localStorage から戻る・#509 段4） */
-  tap = null; curItem = null;
+  tap = null; curItem = null; sv = null;
   document.body.classList.remove('sheetopen');
+  document.body.classList.remove('sv-lock');
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   dv.classList.add('active');
   document.body.classList.add('detail-open');
@@ -3118,7 +3567,10 @@ async function openDetail(vid, gate){
   annotate(it, evs, curRev);
 
   curItem = it;                 /* 素材は非同期で届くので、届いた時点の「何を見ているか」の控え */
-  dv.innerHTML = detailHTML(it);
+  /* ── 完成の mp4 を見る画面だけ、見本の3区画の並びに差し替える（#519 段2/段3）──
+     mp4 があるかは素材を読むまで分からないので、ここで先に読んで（結果は控えが効くので
+     二度は取りに行かない）から組み立てを決める。取れなければ従来の画面のまま。 */
+  dv.innerHTML = (await useSceneView(it)) ? sceneDetailHTML(it) : detailHTML(it);
   syncStickyOffsets();          /* タブが隠れてヘッダーが低くなるので測り直す（戻るボタンの貼り付き位置） */
   window.scrollTo(0, 0);
   dv.querySelector('.dback')?.focus();
@@ -3126,11 +3578,27 @@ async function openDetail(vid, gate){
   armLazyAssets(dv);            /* 畳んである素材は開かれた時点で読みに行く（#360） */
 }
 
+/* この動画を「完成のシーン素材つきの画面」で開くか（#519 段2）。
+   ・見ているゲートが完成であること（台本・絵コンテの承認待ちは従来の画面）
+   ・その版の mp4 が Storage にあること（無ければ従来の画面）
+   ネタの仕分け・没・完成に到達していない動画は対象外。 */
+async function useSceneView(it){
+  if (!it || it.stage === 'triage' || it.stage === 'dropped') return false;
+  const rv = it._rv || it._rc;
+  if (rv && rv !== 'final') return false;
+  if (displayIdx(it) < GATE_COL.final) return false;
+  try {
+    const a = await loadAssets(it.channel, it.seq, 'final');
+    return (a.files || []).some(f => f.kind === 'video' && f.url);
+  } catch (_) { return false; }
+}
+
 /* 一覧へ戻す（履歴は操作しない）。scrollY 指定があればそこへ、無ければ開いた時点へ復元 */
 function closeDetail(scrollY){
   const wasOpen = state.detail != null;
   state.detail = null;
-  tap = null; curItem = null;
+  tap = null; curItem = null; sv = null;
+  document.body.classList.remove('sv-lock');
   document.body.classList.remove('sheetopen');
   const dv = $('#view-detail');
   dv.classList.remove('active');
@@ -3362,11 +3830,13 @@ async function mountAssets(node){
   try {
     const a = await loadAssets(ch, seq, gate);
     if (!node.isConnected) return;
-    /* シーンの時刻表は読む素材ではなく画面の裏方なので、素材の一覧には出さない（#509 段4） */
-    const shown = a.files.filter(f => !RE_TIMELINE.test(f.name));
+    /* シーンの時刻表と素材の一覧（#519）は読む素材ではなく画面の裏方なので、一覧には出さない */
+    const shown = a.files.filter(f => !RE_TIMELINE.test(f.name) && !RE_MATERIALS.test(f.name));
     const tapMode = tapModeFor(node, shown);
     node.innerHTML = assetsHTML(shown, tapMode);
-    if (tapMode) armTap(node, a.files, tapMode);
+    const ctl = tapMode ? armTap(node, a.files, tapMode) : null;
+    /* 完成の mp4 を見ているときは、見本の3区画の並びへ組み替える（#519 段2/段3） */
+    if (node.dataset.sv === '1') await armScene(node, a.files, tapMode, ctl);
   } catch (e) {
     if (node.isConnected) node.innerHTML = `<div class="noitem">素材を読み込めませんでした
       <span class="s">${esc(e.message || String(e))}</span></div>`;
@@ -3460,7 +3930,9 @@ function tapModeFor(node, files){
   if (node.dataset.gate !== 'final') return null;
   if (!files.some(f => f.kind === 'video' && f.url)) return null;
   const it = curItem;
-  return (node.closest('.dstage') && it && it._rv === 'final') ? 'edit' : 'view';
+  /* シーン素材つきの画面（#519）は左列の器を持たないので、その器も「書ける場所」として数える */
+  const onStage = node.closest('.dstage') || node.dataset.sv === '1';
+  return (onStage && it && it._rv === 'final') ? 'edit' : 'view';
 }
 
 /* ── 自前の操作バー ──────────────────────────────────────────────────
@@ -3676,8 +4148,8 @@ function tapPanelHTML(it){
       <button class="btn" type="button" data-tapact="add-pick" aria-pressed="false">＋ 場所を指してコメント</button>
       <button class="btn" type="button" data-tapact="add-whole">＋ いまの画面にコメント</button>
     </div>
-    <div class="nlist" data-nlist></div>
-    <div><label class="lbl" for="${id}-memo">全体へのメモ（任意）</label>
+    <div class="nlistwrap"><div class="nlist" data-nlist></div></div>
+    <div class="svmemo"><label class="lbl" for="${id}-memo">全体へのメモ（任意）</label>
       <textarea class="memo" id="${id}-memo" data-memo maxlength="${NOTE_LIM.memo}"
         placeholder="全体を通して気になったことがあれば"></textarea></div>
   </div>`;
@@ -3744,15 +4216,20 @@ function tapOpenSheet(){
   sheet.hidden = false;
   sheet.classList.toggle('float', tapMobile());
   document.body.classList.toggle('sheetopen', tapMobile());
+  /* シーン素材つきの画面では、広い画面のとき一覧の場所を一時的に譲る（#519） */
+  document.querySelector('#view-detail [data-sv-secb]')?.classList.add('sheeton');
   if (!tapMobile()) input.focus({ preventScroll: true });
+  svPaintBar();
 }
 function tapCloseSheet(){
   const sheet = tapEl('[data-sheet]');
   if (sheet) { sheet.hidden = true; sheet.classList.remove('float'); }
   document.body.classList.remove('sheetopen');
+  document.querySelector('#view-detail [data-sv-secb]')?.classList.remove('sheeton');
   tap.draft = null;
   tap.ctl.hidePin();
   tapPickOff();                    /* シートを閉じたら「場所を指すモード」も降りる */
+  svPaintBar();
 }
 
 /* ── 場所を指すモード（オーナー指示 2026-09-20）──────────────────────────
@@ -3768,6 +4245,7 @@ function tapSyncPick(){
   if (band) band.hidden = !on;
   const btn = tapEl('[data-tapact="add-pick"]');
   if (btn) btn.setAttribute('aria-pressed', String(on));
+  svPaintBar();
 }
 function tapPickOn(){
   if (!tap || tap.mode !== 'edit') return;
@@ -3901,6 +4379,7 @@ function tapPaint(){
 }
 /* 下端のバー: 件数つきの「修正を依頼」と、指摘が無いときだけ主役になる「承認」 */
 function tapSyncBar(){
+  svPaintBar();
   const bar = tap && tap.panel && tap.panel.closest('.decide');
   if (!bar) return;
   const n = tap.items.length, filled = n > 0 || !!tapMemoVal();
@@ -3917,12 +4396,12 @@ function tapMark(id){
 /* ── 組み立て（素材が届いてから呼ばれる）──────────────────────────────── */
 function armTap(node, files, mode){
   const el = node.querySelector('[data-tapvid]');
-  if (!el) return;
+  if (!el) return null;
   const ctl = armVideoBar(el);
-  if (mode !== 'edit') return;                 /* 見るだけの場所は操作バーまで */
+  if (mode !== 'edit') return ctl;             /* 見るだけの場所は操作バーまで */
   const it = curItem;
   const panel = document.querySelector('#view-detail .decide [data-tapbox]');
-  if (!it || !panel) return;
+  if (!it || !panel) return ctl;
   const box = panel.closest('[data-wbox]');
   const rev = submittedRevOf(it.id, 'final');
 
@@ -4024,6 +4503,7 @@ function armTap(node, files, mode){
   }
   tapSyncPick();                  /* 帯とボタンの見た目を「降りている」状態に揃えてから出す */
   tapPaint();
+  return ctl;
 }
 /* いまこの動画・このゲートでタップ入力が動いているか（下端のバーの送り先を決める） */
 const tapActive = key => !!(tap && tap.mode === 'edit' && tap.key.startsWith(String(key) + '|'));
@@ -4080,6 +4560,859 @@ async function submitTapChanges(box, key){
   toast('修正を依頼しました');
 }
 
+/* ══ 完成の承認画面（シーン素材つき・#519 段2/段3）═══════════════════════════════
+   「完成」で mp4 を見ているときだけ、詳細画面を見本（dashboard/scene-mockup.html）の
+   3区画の並びに差し替える。台本・絵コンテのゲート、mp4 が無い完成、ネタの仕分けは
+   これまでの画面のまま。
+     ① 素材・作ったもの … 台本／完成動画・参照動画／いまのシーンの素材／再生の操作／シーンの帯
+     ② 私の指摘        … 入口の2ボタン／指摘の一覧／全体へのメモ（承認待ちでなければ現状の1行）
+     ③ 経緯・履歴      … 5行の要約（押すと③の中だけが詳細に切り替わる）
+   ⚠️ 送信の仕組み（approve_gate / request_changes / reject_video の呼び出し、版のずれで
+   断られたときの描き直し、没の2段階、下書き、ピンの正規化）は一切動かしていない——
+   置き場所と見た目だけを変えている。 */
+
+/* 動画と同じフォルダに置かれるシーンの素材表。内部ファイルなので素材の一覧には出さない */
+const RE_MATERIALS = /^materials_v(\d+)\.json$/i;
+/* 全番組で同じ並びにする工程の帯。使わない工程は斜線の地で「なし」と書いて並びは崩さない */
+const SV_STEPS = ['ネタ案','台本','シーン割り','3Dの下敷き','フレーム','映像','レンダ',
+                  'あなたの確認','予約投稿','公開'];
+const SV_REVIEW_STEP = 7;
+/* 3Dの下敷きを使うのは「人類の力わざ」だけ（02・03 は「なし」） */
+const SV_SKIP = {'rikiwaza':[]};
+const SV_SKIP_DEFAULT = [3];
+/* 本体が持っている工程（PSTAGES / displayIdx）との対応。絵コンテは「シーン割り」までしか
+   対応が取れないので、「フレーム」は先の工程のまま残す（無理に済みにしない） */
+const SV_FROM_PSTAGE = [0, 1, 2, 5, 6, 8, 9];
+
+let sv = null;                      /* いま組み立ててあるシーン画面（詳細を閉じると捨てる） */
+
+/* ── シーンの素材表 ─────────────────────────────────────────────────
+   動画と同じ版の表だけを使う（時刻表と同じ作法）。尺が 1.0 秒を超えて食い違うときは
+   使わない——推測の表は素材を別の場面に結び付けてしまう。 */
+function sceneMaterials(files, videoName){
+  const m = /_v(\d+)\./i.exec(String(videoName || ''));
+  const want = m ? Number(m[1]) : null;
+  for (const f of files) {
+    const t = RE_MATERIALS.exec(f.name || '');
+    if (!t || f.text == null) continue;
+    if (want != null && Number(t[1]) !== want) continue;
+    try {
+      const o = JSON.parse(f.text);
+      const rows = (o && Array.isArray(o.scenes) ? o.scenes : [])
+        .filter(s => s && s.start != null && s.end != null)
+        .map(s => ({
+          n: Number(s.n), title: String(s.title == null ? '' : s.title),
+          start: Number(s.start), end: Number(s.end),
+          narration: s.narration == null ? '' : String(s.narration),
+          start_img: s.start_img || null,
+          end_img: s.end_img || null,
+          end_kind: (s.end_kind === 'still' || s.end_kind === 'free') ? s.end_kind : 'frame',
+          refs: Array.isArray(s.refs) ? s.refs.filter(r => r && r.img)
+            .map(r => ({ label: String(r.label || ''), img: String(r.img) })) : [],
+          ref_videos: Array.isArray(s.ref_videos) ? s.ref_videos.filter(r => r && r.src)
+            .map(r => ({ label: String(r.label || ''), src: String(r.src) })) : []
+        }))
+        .filter(s => isFinite(s.start) && isFinite(s.end) && isFinite(s.n));
+      if (!rows.length) return null;
+      return { duration: Number(o.duration) || null, fps: Number(o.fps) || null, scenes: rows };
+    } catch (_) { return null; }
+  }
+  return null;
+}
+/* 素材表の中の相対パスをまとめて署名URLにする（1時間で切れるのは他の素材と同じ扱い）。
+   まとめて発行する API を使うので、シーン数ぶんの往復にはならない */
+async function svSign(ch, seq, gate, rels){
+  const base = assetPath(ch, seq, gate);
+  const uniq = [...new Set((rels || []).filter(Boolean))];
+  const out = {};
+  if (!uniq.length) return out;
+  try {
+    const { data } = await sb.storage.from(ASSET_BUCKET)
+      .createSignedUrls(uniq.map(r => `${base}/${r}`), ASSET_TTL);
+    /* 返ってくる path で突き合わせる（並び順に頼らない＝素材が入れ違わない）。path が無い応答だけ添字で受ける */
+    (data || []).forEach((r, i) => {
+      if (!r || !r.signedUrl) return;
+      const rel = (r.path && r.path.startsWith(base + '/')) ? r.path.slice(base.length + 1) : uniq[i];
+      if (rel) out[rel] = r.signedUrl;
+    });
+  } catch (_) { /* 取れなければ「まだありません」の面になるだけ */ }
+  return out;
+}
+
+/* ── 工程の帯 ────────────────────────────────────────────────────── */
+function svFlowAt(it){
+  const rv = it._rv || it._rc;
+  if (rv === 'final') return SV_REVIEW_STEP;
+  if (rv === 'storyboard') return 2;
+  if (rv === 'script') return 1;
+  const i = displayIdx(it);
+  return (i < 0 || SV_FROM_PSTAGE[i] == null) ? 0 : SV_FROM_PSTAGE[i];
+}
+/* いまの工程に添える札。言葉は一覧・工程の履歴と同じものを使う */
+function svFlowSub(it){
+  if (it._rv) return '承認待ち';
+  if (it._rc) return rcShort(it);
+  const i = displayIdx(it);
+  return i < 0 ? '' : AI_TAG + PSTAGES[i].work;
+}
+function svFlowHTML(it){
+  const cur = svFlowAt(it);
+  const skip = SV_SKIP[it.channel] || SV_SKIP_DEFAULT;
+  const sub = svFlowSub(it);
+  return `<div class="sv-flow"><div class="sv-steps" aria-label="工程">${SV_STEPS.map((name, i) => {
+    const isSkip = skip.includes(i);
+    const cls = isSkip ? ' skip' : (i < cur ? ' done' : (i === cur ? ' cur' : ''));
+    return `<span class="sv-step${cls}"${isSkip ? ' title="この番組ではこの工程を使いません"' : ''}${
+      i === cur ? ' aria-current="step"' : ''}><span class="dot">${
+      i < cur ? '✓' : (i === cur ? '●' : '')}</span><span class="lbl2">${esc(name)}</span>${
+      isSkip ? '<span class="skipnote">なし</span>' : ''}${
+      (i === cur && !isSkip && sub) ? `<span class="sub">${esc(sub)}</span>` : ''}</span>`;
+  }).join('')}</div></div>`;
+}
+
+/* ── ③ 経緯・履歴の素 ──────────────────────────────────────────────
+   出どころは**いまの画面が既に持っているデータ**だけ（あなたの指摘・AI の記録・工程の履歴・
+   フック）。良し悪しの評価は書かない。
+   「今回変えた内容」は指摘1件ごとの記録が無いので**依頼1件ぶんの対応の記録**を添える。 */
+function svHistoryData(it, evs){
+  const prev = [];
+  for (const e of newestFirst(evs.filter(x => !isAiAuthor(x.author)
+      && (x.kind === 'request_changes' || x.kind === 'comment')))) {
+    const when = fmtMD(e.created_at) || '';
+    const rev = e.revision == null ? null : Number(e.revision);
+    const fix = e.resolution_note ? rezCore(e.resolution_note).text : '';
+    const o = notesOf(e);
+    if (o) {
+      for (const r of o.items) {
+        prev.push({ t: r.t == null ? null : Number(r.t),
+          scene: r.scene == null ? null : Number(r.scene),
+          title: r.scene_title || '',
+          text: [r.tag, r.note].filter(Boolean).join(' ') || '（本文なし）',
+          fix, when, rev });
+      }
+      if (o.memo) prev.push({ t:null, scene:null, title:'',
+        text:'全体へのメモ: ' + o.memo, fix, when, rev });
+    } else {
+      /* notes を持たない古い依頼は本文のまま（シーンに結び付けられないので「このシーン」には出ない） */
+      prev.push({ t:null, scene:null, title:'', text: cmtPreview(e.body, 400) || '（本文なし）',
+        fix, when, rev });
+    }
+  }
+  const ai = newestFirst(evs.filter(e => isAiAuthor(e.author) || e.kind === 'request_review'))
+    .map(e => [fmtMD(e.created_at) || '', aiSummaryLine(e)]);
+  return { prev, ai };
+}
+const svPairHTML = (p, withScene) => `<div class="sv-hpair">
+  <div class="q"><span class="tm">${esc([p.when,
+    p.rev == null ? '' : 'v' + String(p.rev).padStart(2, '0'),
+    p.t == null ? '' : fmtT(p.t),
+    (withScene && p.scene != null) ? 'シーン' + p.scene : ''].filter(Boolean).join(' '))}</span>${
+    esc(p.text)}</div>
+  <div class="a"><span class="k">今回変えた内容</span>${
+    esc(p.fix || '対応記録なし')}${p.fix ? '（この依頼ぶんの記録）' : ''}</div></div>`;
+const svRowHTML = (k, v) => `<div class="row"><span class="k">${esc(k)}</span><span>${esc(v)}</span></div>`;
+
+/* ── 画面の組み立て ─────────────────────────────────────────────── */
+function sceneDetailHTML(it){
+  const m = chMeta(it.channel), cur = displayIdx(it);
+  const curName = cur < 0 ? '—' : PSTAGES[cur].name;
+  const evs = threadOf(it.id);
+  const sub = latestSub(evs);
+  const ver = subRevLabel(sub);
+  const hist = svHistoryData(it, evs);
+  /* 下端バーの左（事実だけ）。承認の先は工程の帯の次の工程から取る */
+  const barFacts = `<div class="sv-barfacts">
+    <span class="bf"><span data-sv-state>指摘 0件</span></span>
+    <span class="bf"><span class="k">見た範囲</span>
+      <span class="sv-watchbar" data-sv-watchbar></span><b data-sv-watchpct>0%</b></span>
+    <span class="bf next" data-sv-next></span></div>`;
+  const decide = it._rv === 'final'
+    ? decideHTML(it, 'final', changeLines(evs), barFacts)
+    : `<div class="decide">${it._rc
+        ? (rcAiOnly(it)
+            ? `<div class="dstate rcai">↺ AI審査の指摘で${GATE_LABEL[it._rc]}を作り直しています。あなたの操作は要りません。</div>`
+            : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${GATE_LABEL[it._rc]}）。直り次第、新しい版で出し直します。</div>`)
+        : `<div class="dstate">● いまは「${esc(curName)}」の工程です。ここは見るだけの画面です。</div>`}</div>`;
+
+  return `<div class="dview sview${it._rv === 'final' ? ' hasbar' : ''}" role="region"
+      aria-label="${esc(it.title)} の詳細">
+    <div class="dtop">
+      <button class="dback" data-close="1" aria-label="一覧に戻る">← 一覧<span class="dback-l">に戻る</span></button>
+      <span class="seqn">${esc(it.seq)}</span>
+      <span class="ttl">${esc(it.title)}</span>
+      <span class="tags">
+        <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(m.name)}</span>
+        <span class="gbadge"><i style="background:${it._rv ? 'var(--s1)'
+          : (it.stage === 'posted' || it.stage === 'dropped') ? 'var(--done)' : 'var(--fix)'}"></i>完成${
+          ver ? ' ' + esc(ver) : ''}</span>
+        ${flagsHTML(it)}
+      </span>
+    </div>
+    ${svFlowHTML(it)}
+    <div class="sv-wrap">
+      <section class="sv-sec sa" aria-label="素材・作ったもの">
+        <div class="sv-sechd">素材・作ったもの<span class="facts" data-sv-facts>読み込み中…</span></div>
+        <div class="sv-stage" data-sv-stage data-view="final" data-cmp="off" data-mat="mat">
+          <div class="sv-viewswitch" data-sv-switch hidden>
+            <div class="seg">
+              <button class="segbtn" type="button" data-svact="view-final" aria-pressed="true">完成動画</button>
+              <button class="segbtn" type="button" data-svact="view-ref" aria-pressed="false" data-sv-segref>参照動画</button>
+            </div>
+            <button class="btn sm cmpbtn" type="button" data-svact="cmp" aria-pressed="false">並べて比較</button>
+          </div>
+          <div class="sv-mattabs">
+            <button type="button" data-svact="tab-mat" aria-pressed="true">素材</button>
+            <button type="button" data-svact="tab-script" aria-pressed="false">台本</button>
+          </div>
+          <details class="sv-script" open>
+            <summary class="shd">台本<span class="n" data-sv-scriptmeta>—</span></summary>
+            <div class="sv-scriptlist" data-sv-scriptlist></div>
+          </details>
+          <div class="sv-screens">
+            <div class="sv-screen final" data-sv-screenfinal>
+              <div class="sv-scrhd"><span class="scrttl">完成動画</span>
+                <span class="scrsub" data-sv-finallbl></span></div>
+              <div class="loadbox" data-sv-finalslot>素材を読み込み中…</div>
+            </div>
+            <div class="sv-screen ref">
+              <div class="sv-scrhd"><span class="scrttl">参照動画</span>
+                <span class="scrsub" data-sv-reflbl>—</span>
+                <span class="scrpick" data-sv-refpick hidden></span>
+                <span class="refdone" data-sv-refdone hidden>参照動画はここまで</span></div>
+              <div class="vidbox">
+                <video data-sv-refvid playsinline preload="metadata" muted disablepictureinpicture></video>
+                <div class="sv-refempty" data-sv-refempty>
+                  <b data-sv-refemptyt>このシーンは参照動画を渡していません</b>
+                  <span class="rsub" data-sv-refemptys>動きの手本を渡したシーンでは、ここに並びます。</span>
+                </div></div>
+            </div>
+          </div>
+          <div class="sv-matcol">
+            <div class="sv-colhd">いまのシーンの素材<span class="n">押すと大きく見られます</span></div>
+            <div class="sv-now" data-sv-now></div>
+          </div>
+          <div class="sv-ctrls-slot" data-sv-ctrls></div>
+          <div class="sv-band" data-sv-band role="tablist" aria-label="シーンの帯"></div>
+        </div>
+      </section>
+      <section class="sv-sec sb" data-sv-secb aria-label="私の指摘">
+        <div class="sv-sechd">私の指摘<span class="facts" data-sv-ncount>—</span></div>
+        ${decide}
+      </section>
+      <section class="sv-sec sc" aria-label="経緯・履歴">
+        <div class="sv-sechd">経緯・履歴<span class="facts">${
+          sub ? `提出 <b>${esc(fmtMD(sub.created_at) || '')}</b> ・ ` : ''}前回までの指摘 <b>${
+          hist.prev.length}件</b></span></div>
+        <div class="sv-hsum" data-sv-hsum></div>
+        <div class="sv-hdet" data-sv-hdet hidden>
+          <div class="sv-hdethd"><button class="btn sm" type="button" data-svact="hback">← 戻る</button>
+            <span class="ht" data-sv-hdettitle>—</span></div>
+          <div class="sv-hdetbody" data-sv-hdetbody></div>
+        </div>
+      </section>
+    </div>
+    <div class="assets" data-assets="${esc(it.id + '|final')}" data-sv="1" data-ch="${esc(it.channel)}"
+         data-seq="${esc(it.seq)}" data-gate="final" hidden></div>
+    <div class="sv-lbox" data-sv-lbox hidden>
+      <img data-sv-lboximg alt="">
+      <div class="lcap" data-sv-lboxcap>—</div>
+      <div class="lnav">
+        <button type="button" data-svact="lbox-prev" aria-label="前の画像">←</button>
+        <button type="button" data-svact="lbox-close">閉じる</button>
+        <button type="button" data-svact="lbox-next" aria-label="次の画像">→</button>
+      </div>
+      <div class="lhint">動画は止めたままです。←→ で 開始 → 終了 → 参照 を送れます（Esc・背景で閉じる）</div>
+    </div>
+  </div>`;
+}
+
+/* ── ヘッダー・工程の帯・下端バーの実高さを測って CSS に渡す（広い画面の高さ計算に使う）── */
+function svRelayout(){
+  const root = document.querySelector('#view-detail .sview');
+  if (!root) { document.body.classList.remove('sv-lock'); return; }
+  const h = el => (el ? el.offsetHeight : 0);
+  const chrome = h(document.querySelector('.topbar')) + h(root.querySelector('.dtop'))
+    + h(root.querySelector('.sv-flow')) + h(root.querySelector('.dbar')) + 40;
+  root.style.setProperty('--sv-chrome', chrome + 'px');
+  document.body.classList.toggle('sv-lock', window.innerWidth >= 1400);
+  /* 狭い画面では工程の帯が横に流れるので、いまの工程を画面の中へ入れておく */
+  const cur = root.querySelector('.sv-step.cur');
+  if (cur) { try { cur.scrollIntoView({ block:'nearest', inline:'center' }); } catch (_) {} }
+  if (sv) { svPaintNow(); svPaintRefFace(); }
+}
+
+/* ── シーンの帯・台本・いまのシーン ───────────────────────────────── */
+const svScenes = () => (sv && sv.scenes) ? sv.scenes : [];
+const svSceneByN = n => svScenes().find(s => s.n === n) || svScenes()[0] || null;
+function svSceneAt(t){
+  const rows = svScenes();
+  return rows.find(s => t >= s.start && t < s.end) || rows[rows.length - 1] || null;
+}
+const svUrl = rel => (rel && sv && sv.urls) ? (sv.urls[rel] || null) : null;
+
+function svBuildBand(){
+  const band = sv.q('[data-sv-band]');
+  band.textContent = '';
+  sv.bandCells = [];
+  for (const s of svScenes()) {
+    const c = document.createElement('button');
+    c.type = 'button'; c.className = 'sv-bcell';
+    c.title = 'シーン' + s.n + (s.title ? '「' + s.title + '」' : '');
+    c.setAttribute('aria-label', 'シーン' + s.n + ' ' + (s.title || ''));
+    const u = svUrl(s.start_img);
+    if (u) {
+      const im = document.createElement('img');
+      im.src = u; im.alt = ''; im.loading = 'lazy';
+      c.appendChild(im);
+    } else {
+      const nn = document.createElement('div');
+      nn.className = 'bnone'; nn.textContent = '—';
+      c.appendChild(nn);
+    }
+    const no = document.createElement('span');
+    no.className = 'bno'; no.textContent = String(s.n);
+    c.appendChild(no);
+    c.addEventListener('click', () => svGoScene(s.n));
+    band.appendChild(c);
+    sv.bandCells.push(c);
+  }
+}
+function svBuildScript(){
+  const box = sv.q('[data-sv-scriptlist]');
+  box.textContent = '';
+  sv.scriptRows = [];
+  const rows = svScenes();
+  if (!rows.length || !sv.mat) {
+    const e = document.createElement('div');
+    e.className = 'sv-none';
+    e.textContent = rows.length
+      ? 'この動画にはまだ素材の一覧がありません（シーンの時刻だけ分かります）'
+      : 'この動画にはまだ素材の一覧がありません';
+    box.appendChild(e);
+    sv.q('[data-sv-scriptmeta]').textContent = rows.length ? rows.length + 'シーン' : '—';
+    return;
+  }
+  let chars = 0;
+  for (const s of rows) {
+    chars += (s.narration || '').length;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'sv-sline';
+    const n = document.createElement('span'); n.className = 'sn'; n.textContent = 'S' + s.n;
+    const t = document.createElement('span'); t.className = 'stm'; t.textContent = fmtT(s.start);
+    const x = document.createElement('span'); x.textContent = s.narration || '（ナレーションなし）';
+    b.append(n, t, x);
+    b.addEventListener('click', () => svGoScene(s.n));
+    box.appendChild(b);
+    sv.scriptRows.push(b);
+  }
+  sv.q('[data-sv-scriptmeta]').textContent = rows.length + 'シーン・' + chars + '字';
+}
+/* 台本を手で読み返している間（最後の操作から4秒）は、いまのシーンへ勝手に戻さない */
+const SV_SCRIPT_HOLD = 4000;
+function svPaintScript(){
+  if (!sv.scriptRows || !sv.scriptRows.length) return;
+  const rows = svScenes();
+  rows.forEach((s, i) => sv.scriptRows[i].setAttribute('aria-current', s.n === sv.curN ? 'true' : 'false'));
+  const idx = rows.findIndex(s => s.n === sv.curN);
+  const row = sv.scriptRows[idx], box = sv.q('[data-sv-scriptlist]');
+  if (!row || !box || (Date.now() - sv.scriptHold) < SV_SCRIPT_HOLD) return;
+  const top = row.offsetTop - box.offsetTop, h = box.clientHeight;
+  if (top < box.scrollTop || top + row.offsetHeight > box.scrollTop + h) {
+    sv.scriptAuto = true;
+    box.scrollTop = Math.max(0, top - h / 3);
+    setTimeout(() => { sv.scriptAuto = false; }, 150);
+  }
+}
+/* いまのシーンの画像。上段＝開始 → 終了、下段＝参照画像の枠 */
+function svPaintNow(){
+  const now = sv.q('[data-sv-now]');
+  if (!now) return;
+  const s = svSceneByN(sv.curN);
+  now.textContent = '';
+  sv.lboxList = [];
+  if (!s) {
+    const e = document.createElement('div');
+    e.className = 'sv-none';
+    e.textContent = 'この動画にはまだ素材の一覧がありません';
+    now.appendChild(e);
+    return;
+  }
+  const l1 = document.createElement('div');
+  l1.className = 'l1';
+  const nn = document.createElement('span'); nn.className = 'nn'; nn.textContent = 'シーン' + s.n;
+  const ntt = document.createElement('span'); ntt.className = 'ntt'; ntt.textContent = s.title || '';
+  const nt = document.createElement('span'); nt.className = 'nt';
+  nt.textContent = fmtT(s.start) + '–' + fmtT(s.end);
+  l1.append(nn, ntt, nt);
+  now.appendChild(l1);
+  if (sv.mat) {
+    const nar = document.createElement('div');
+    nar.className = 'nar'; nar.textContent = s.narration || '—';
+    now.appendChild(nar);
+  }
+  if (!sv.mat) {
+    const e = document.createElement('div');
+    e.className = 'sv-none';
+    e.textContent = 'この動画にはまだ素材の一覧がありません';
+    now.appendChild(e);
+    return;
+  }
+  const shelf = document.createElement('div');
+  shelf.className = 'sv-shelf';
+  const slotEl = sl => {
+    const wrap = document.createElement('div');
+    wrap.className = 'sv-slot';
+    const cap = document.createElement('div');
+    cap.className = 'cap'; cap.textContent = sl.cap; cap.title = sl.full || sl.cap;
+    wrap.appendChild(cap);
+    const u = svUrl(sl.src);
+    if (u) {
+      const idx = sv.lboxList.length;
+      sv.lboxList.push({ src: u, cap: 'シーン' + s.n + ' ' + (sl.full || sl.cap) });
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'shot';
+      b.setAttribute('aria-label', sl.cap + 'を大きく見る');
+      const im = document.createElement('img');
+      im.src = u; im.alt = sl.cap; im.loading = 'lazy';
+      b.appendChild(im);
+      b.addEventListener('click', () => svOpenLbox(idx));
+      wrap.appendChild(b);
+    } else {
+      const nne = document.createElement('div');
+      nne.className = 'none'; nne.textContent = sl.why || 'まだありません';
+      wrap.appendChild(nne);
+    }
+    return wrap;
+  };
+  const top = document.createElement('div');
+  top.className = 'sv-shelfrow';
+  top.appendChild(slotEl({ cap: s.end_kind === 'still' ? '静止（1枚）' : '開始フレーム', src: s.start_img }));
+  const sep = document.createElement('span');
+  sep.className = 'sv-sep'; sep.textContent = '→';
+  top.appendChild(sep);
+  top.appendChild(slotEl(
+    s.end_kind === 'still' ? { cap:'終了フレーム', src:null, why:'静止のシーンなので終了フレームはありません' }
+    : s.end_kind === 'free' ? { cap:'終了フレーム', src:null, why:'このシーンは終了フレームを作らない設計です' }
+    : { cap:'終了フレーム', src: s.end_img }));
+  shelf.appendChild(top);
+
+  const rbox = document.createElement('div');
+  rbox.className = 'sv-refbox';
+  const hd = document.createElement('div');
+  hd.className = 'refhd'; hd.textContent = '参照画像';
+  const cnt = document.createElement('span');
+  cnt.className = 'n'; cnt.textContent = s.refs.length + '枚';
+  hd.appendChild(cnt);
+  rbox.appendChild(hd);
+  if (s.refs.length) {
+    const row = document.createElement('div');
+    row.className = 'sv-shelfrow';
+    s.refs.forEach((r, i) => row.appendChild(slotEl({
+      cap: '参照' + (i + 1) + (r.label ? '（' + r.label + '）' : ''), src: r.img, full: r.label })));
+    rbox.appendChild(row);
+  } else {
+    const none = document.createElement('div');
+    none.className = 'refnone'; none.textContent = 'このシーンは参照画像を渡していません';
+    rbox.appendChild(none);
+  }
+  shelf.appendChild(rbox);
+  now.appendChild(shelf);
+}
+
+/* ── 大きく表示（ライトボックス）── */
+function svOpenLbox(i){
+  if (!sv || !sv.lboxList.length) return;
+  svStopBoth();
+  sv.lboxI = Math.max(0, Math.min(sv.lboxList.length - 1, i));
+  svPaintLbox();
+  sv.q('[data-sv-lbox]').hidden = false;
+  sv.q('[data-svact="lbox-close"]').focus({ preventScroll: true });
+}
+function svPaintLbox(){
+  const x = sv.lboxList[sv.lboxI];
+  if (!x) return;
+  sv.q('[data-sv-lboximg]').src = x.src;
+  sv.q('[data-sv-lboximg]').alt = x.cap;
+  sv.q('[data-sv-lboxcap]').textContent = x.cap + '（' + (sv.lboxI + 1) + '/' + sv.lboxList.length + '）';
+  sv.q('[data-svact="lbox-prev"]').disabled = (sv.lboxI === 0);
+  sv.q('[data-svact="lbox-next"]').disabled = (sv.lboxI === sv.lboxList.length - 1);
+}
+const svLboxOpen = () => !!(sv && sv.q('[data-sv-lbox]') && !sv.q('[data-sv-lbox]').hidden);
+function svCloseLbox(){
+  if (!sv) return;
+  sv.q('[data-sv-lbox]').hidden = true;
+  sv.q('[data-sv-lboximg]').src = '';
+}
+function svStepLbox(d){
+  const n = sv.lboxI + d;
+  if (n < 0 || n >= sv.lboxList.length) return;
+  sv.lboxI = n; svPaintLbox();
+}
+
+/* ── 参照動画（完成動画が親・そのシーンの頭＝0秒で常時連動）────────────────
+   参照のほうが短ければ末尾で止めて知らせ、長ければシーンが変わった時点で次の参照へ替わる。
+   速度は変えない。 */
+const svRefList = () => { const s = svSceneByN(sv.curN); return (s && s.ref_videos) ? s.ref_videos : []; };
+function svPaintRefFace(){
+  if (!sv || !sv.q('[data-sv-refempty]')) return;
+  const vids = svRefList();
+  let msg = null, sub = '';
+  if (!vids.length) {
+    msg = 'このシーンは参照動画を渡していません';
+    sub = '動きの手本を渡したシーンでは、ここに並びます。';
+  } else if (!svUrl(vids[sv.refIdx] ? vids[sv.refIdx].src : null)) {
+    msg = 'まだありません';
+    sub = 'この版では参照動画がまだ用意されていません。';
+  } else if (!sv.refLoadOK) {
+    msg = '読み込めません';
+    sub = '参照動画を開けませんでした。';
+  }
+  sv.q('[data-sv-refempty]').hidden = !msg;
+  if (msg) {
+    sv.q('[data-sv-refemptyt]').textContent = msg;
+    sv.q('[data-sv-refemptys]').textContent = sub;
+  }
+}
+function svApplyRef(){
+  const vids = svRefList();
+  if (sv.refIdx >= vids.length) sv.refIdx = 0;
+  const pick = sv.q('[data-sv-refpick]');
+  pick.textContent = '';
+  if (vids.length > 1) {
+    vids.forEach((rv, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = String(i + 1);
+      b.setAttribute('aria-label', '参照動画 ' + (i + 1) + '/' + vids.length);
+      b.setAttribute('aria-pressed', String(i === sv.refIdx));
+      b.addEventListener('click', () => { sv.refIdx = i; svApplyRef(); });
+      pick.appendChild(b);
+    });
+    pick.hidden = false;
+  } else { pick.hidden = true; }
+  const want = vids.length ? svUrl(vids[sv.refIdx].src) : null;
+  sv.q('[data-sv-reflbl]').textContent = vids.length
+    ? ((vids[sv.refIdx].label || '動きの手本')
+       + (vids.length > 1 ? '（' + (sv.refIdx + 1) + '/' + vids.length + '本目）' : ''))
+    : '—';
+  if (want !== sv.refSrc) {
+    sv.refvid.pause();
+    sv.refSrc = want;
+    sv.refLoadOK = true;
+    sv.q('[data-sv-refdone]').hidden = true;
+    if (want) { sv.refvid.src = want; sv.refvid.load(); }
+    else { sv.refvid.removeAttribute('src'); try { sv.refvid.load(); } catch (_) {} }
+  }
+  sv.refvid.muted = true;
+  svPaintRefFace();
+  svLinkRef();
+}
+function svLinkRef(){
+  if (!sv || !sv.refSrc || !sv.refLoadOK || !sv.ctl) return;
+  const v = sv.ctl.video, rv = sv.refvid;
+  const d = (rv.duration && isFinite(rv.duration)) ? rv.duration : 0;
+  const s = svSceneByN(sv.curN);
+  if (!d || !s) return;
+  const target = Math.max(0, v.currentTime - s.start);
+  if (target >= d - 0.04) {
+    if (!rv.paused) rv.pause();
+    if (Math.abs(rv.currentTime - (d - 0.04)) > 0.12) { try { rv.currentTime = Math.max(0, d - 0.04); } catch (_) {} }
+    sv.q('[data-sv-refdone]').hidden = false;
+    return;
+  }
+  sv.q('[data-sv-refdone]').hidden = true;
+  if (Math.abs(rv.currentTime - target) > (v.paused ? 0.04 : 0.3)) {
+    try { rv.currentTime = target; } catch (_) {}
+  }
+  if (v.paused) { if (!rv.paused) rv.pause(); }
+  else if (rv.paused) rv.play().catch(() => {});
+}
+function svStopBoth(){
+  if (!sv) return;
+  if (sv.ctl) sv.ctl.video.pause();
+  if (sv.refvid) sv.refvid.pause();
+}
+
+/* ── いまのシーン（同じシーンの間は作り直さない＝ちらつかせない）── */
+function svCurN(){
+  const rows = svScenes();
+  if (!rows.length) return null;
+  if (sv.ctl && !sv.manual) { const s = svSceneAt(sv.ctl.video.currentTime); return s ? s.n : null; }
+  return sv.manualN != null ? sv.manualN : rows[0].n;
+}
+function svSyncScene(force){
+  if (!sv) return;
+  const n = svCurN();
+  if (!force && n === sv.curN) return;
+  sv.curN = n;
+  sv.refIdx = 0;
+  svPaintNow();
+  svPaintScript();
+  svPaintHistoryScene();
+  svApplyRef();
+  const rows = svScenes();
+  rows.forEach((s, i) => { if (sv.bandCells[i]) sv.bandCells[i].setAttribute('aria-current', s.n === n ? 'true' : 'false'); });
+  const cell = sv.bandCells[rows.findIndex(s => s.n === n)];
+  if (sv.booted && cell) { try { cell.scrollIntoView({ block:'nearest', inline:'center', behavior:'smooth' }); } catch (_) {} }
+}
+function svGoScene(n){
+  const s = svSceneByN(n);
+  if (!s || !sv) return;
+  sv.manualN = n;
+  if (sv.ctl) {
+    sv.manual = false;
+    sv.ctl.video.pause();
+    try { sv.ctl.video.currentTime = s.start + 0.05; } catch (_) {}
+    sv.ctl.paint();
+  }
+  svSyncScene(true);
+}
+
+/* ── ③ の要約と詳細 ── */
+function svBuildHistory(it, hist){
+  const el = sv.q('[data-sv-hsum]');
+  el.textContent = '';
+  sv.hRows = {};
+  const rows = [
+    ['scene', 'このシーン: 前回の指摘', ''],
+    ['prev',  '前回までの指摘', hist.prev.length + '件'],
+    ['ai',    'AI の記録', hist.ai.length + '件'],
+    ['flow',  '工程の履歴', displayIdx(it) < 0 ? '' : PSTAGES[displayIdx(it)].name],
+    ['hook',  'フック・型', clip(it.hook || '（未設定）', 24)]
+  ];
+  for (const r of rows) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'sv-hrow';
+    const t = document.createElement('span'); t.textContent = r[1];
+    const s = document.createElement('span'); s.className = 's'; s.textContent = r[2];
+    const c = document.createElement('span'); c.className = 'cv'; c.textContent = '›';
+    b.append(t, s, c);
+    b.addEventListener('click', () => svOpenHistory(r[0]));
+    el.appendChild(b);
+    sv.hRows[r[0]] = s;
+  }
+  svPaintHistoryScene();
+}
+/* 先頭の行だけ、いまのシーンに合わせて数を書き換える（詳細を開いている間は差し替えない） */
+function svPaintHistoryScene(){
+  if (!sv || sv.hDetail || !sv.hRows || !sv.hRows.scene) return;
+  if (sv.curN == null) { sv.hRows.scene.textContent = 'シーンが分かりません'; return; }
+  const k = sv.hist.prev.filter(p => p.scene === sv.curN).length;
+  sv.hRows.scene.textContent = 'シーン' + sv.curN + ' ・ ' + k + '件';
+}
+function svOpenHistory(k){
+  sv.hDetail = k;
+  const body = sv.q('[data-sv-hdetbody]'), title = sv.q('[data-sv-hdettitle]');
+  const n = sv.curN;
+  if (k === 'scene') {
+    const ps = sv.hist.prev.filter(p => p.scene === n);
+    title.textContent = (n == null ? 'このシーン' : 'シーン' + n) + ' の前回の指摘と、今回変えた内容';
+    body.innerHTML = ps.length ? ps.map(p => svPairHTML(p, false)).join('')
+      : '<div class="sv-none">このシーンに前回の指摘はありません</div>';
+  } else if (k === 'prev') {
+    title.textContent = '前回までの指摘（' + sv.hist.prev.length + '件）';
+    body.innerHTML = sv.hist.prev.length ? sv.hist.prev.map(p => svPairHTML(p, true)).join('')
+      : '<div class="sv-none">まだ指摘はありません</div>';
+  } else if (k === 'ai') {
+    title.textContent = 'AI の記録';
+    body.innerHTML = sv.hist.ai.length ? sv.hist.ai.map(r => svRowHTML(r[0], r[1])).join('')
+      : '<div class="sv-none">記録はありません</div>';
+  } else if (k === 'flow') {
+    title.textContent = '工程の履歴';
+    body.innerHTML = `<div class="tl">${timelineRows(sv.it)}</div>
+      <div class="dhint">日付は承認ポイント・公開時刻の実記録のみ表示（記録が無い工程は —）</div>`;
+  } else {
+    title.textContent = 'フック・型';
+    body.innerHTML = svRowHTML('フックの全文', sv.it.hook || '（未設定）')
+      + svRowHTML('型', sv.it.genre || '（未設定）');
+  }
+  sv.q('[data-sv-hsum]').hidden = true;
+  sv.q('[data-sv-hdet]').hidden = false;
+  body.scrollTop = 0;
+}
+function svCloseHistory(){
+  sv.hDetail = null;
+  sv.q('[data-sv-hdet]').hidden = true;
+  sv.q('[data-sv-hsum]').hidden = false;
+  svPaintHistoryScene();
+}
+
+/* ── 下端バーの左（事実だけ・良し悪しは書かない）── */
+function svPaintWatch(){
+  if (!sv || !sv.ctl) return;
+  const d = Math.max(1, Math.ceil(sv.ctl.dur() || 0));
+  const bar = sv.q('[data-sv-watchbar]');
+  if (!bar) return;
+  bar.textContent = '';
+  let n = 0, run = -1;
+  for (let i = 0; i <= d; i++) {
+    const on = (i < d) && sv.watched[i];
+    if (on) { n++; if (run < 0) run = i; }
+    if (!on && run >= 0) {
+      const seg = document.createElement('i');
+      seg.style.left = (run / d * 100) + '%';
+      seg.style.width = ((i - run) / d * 100) + '%';
+      bar.appendChild(seg);
+      run = -1;
+    }
+  }
+  const pct = Math.min(100, Math.round(n / d * 100));
+  sv.q('[data-sv-watchpct]').textContent = pct >= 100 ? '最後まで見ました' : (pct + '%');
+}
+function svPaintBar(){
+  if (!sv || !sv.root.isConnected) return;
+  /* 大きな再生ボタンは「ふつうに止まっているとき」だけ（場所を指している間・入力中は出さない） */
+  const big = sv.root.querySelector('.bigplay');
+  if (big && sv.ctl) big.hidden = !(sv.ctl.video.paused && !(tap && (tap.picking || tap.draft)));
+  const st = sv.q('[data-sv-state]'), cnt = sv.q('[data-sv-ncount]');
+  const n = (tap && tap.mode === 'edit' && tap.vid === sv.it.id) ? tap.items.length : null;
+  if (cnt) cnt.textContent = n == null ? '見るだけ' : (n + '件');
+  if (st) st.textContent = n == null ? 'この画面では指摘を足せません' : ('指摘 ' + n + '件');
+  const next = sv.q('[data-sv-next]');
+  if (next) {
+    const cur = svFlowAt(sv.it);
+    const after = SV_STEPS.slice(cur + 1).find((_, i) =>
+      !(SV_SKIP[sv.it.channel] || SV_SKIP_DEFAULT).includes(cur + 1 + i));
+    next.textContent = (sv.it._rv === 'final' && after)
+      ? (GATE_CAUTION.final || `承認すると「${after}」へ進みます`) : '';
+  }
+}
+
+/* ── 素材が届いてから組み立てる ─────────────────────────────────── */
+async function armScene(node, files, mode, ctl){
+  const root = document.querySelector('#view-detail .sview');
+  if (!root || !node.isConnected) return;
+  const q = s => root.querySelector(s);
+  const el = node.querySelector('[data-tapvid]');
+  const vbox = el ? el.querySelector('[data-vbox]') : null;
+  const ctrls = el ? el.querySelector('.ctrls') : null;
+  if (!vbox || !ctrls || !ctl) { q('[data-sv-finalslot]').textContent = '完成動画を読み込めませんでした'; return; }
+
+  /* 動画の枠と操作バーを見本の置き場所へ移す（armVideoBar は要素を掴んでいるので移動しても動く）。
+     場所を指すモードの帯はこの移動で [data-tapvid] の外に出るため、探す起点を付け替える */
+  const slot = q('[data-sv-finalslot]');
+  slot.parentNode.replaceChild(vbox, slot);
+  ctrls.parentNode && q('[data-sv-ctrls]').appendChild(ctrls);
+  ctl.el = q('[data-sv-stage]');
+  if (tap) tap.ctl.el = ctl.el;
+  const big = document.createElement('div');
+  big.className = 'bigplay'; big.setAttribute('aria-hidden', 'true'); big.hidden = true;
+  vbox.appendChild(big);
+
+  const vname = el.dataset.vname || '';
+  q('[data-sv-finallbl]').textContent = vname.replace(/\.[^.]+$/, '');
+
+  sv = { root, q, it: curItem, ctl, mode,
+         refvid: q('[data-sv-refvid]'), refSrc: null, refLoadOK: true, refIdx: 0,
+         matRaw: sceneMaterials(files, vname), tlRaw: tapTimeline(files, vname),
+         mat: null, tl: null, scenes: [], urls: {}, curN: null, manualN: null, manual: false,
+         bandCells: [], scriptRows: [], scriptHold: 0, scriptAuto: false,
+         lboxList: [], lboxI: 0, hRows: {}, hDetail: null, hist: null, watched: [], booted: false };
+  sv.hist = svHistoryData(sv.it, threadOf(sv.it.id));
+  svBuildHistory(sv.it, sv.hist);
+
+  /* 素材表の画像・参照動画をまとめて署名URLにする（無ければ枠だけ出る） */
+  if (sv.matRaw) {
+    const rels = [];
+    for (const s of sv.matRaw.scenes) {
+      rels.push(s.start_img, s.end_img);
+      for (const r of s.refs) rels.push(r.img);
+      for (const r of s.ref_videos) rels.push(r.src);
+    }
+    sv.urls = await svSign(node.dataset.ch, node.dataset.seq, 'final', rels);
+    if (!root.isConnected) return;
+  }
+
+  /* 尺の突き合わせ（1.0 秒を超えて違えば素材表も時刻表も使わない）はメタデータが届いてから */
+  const prevMeta = ctl.onmeta;
+  const apply = () => {
+    const d = ctl.dur();
+    const okDur = o => !(o && o.duration != null && d && Math.abs(o.duration - d) > TL_TOL);
+    sv.mat = (sv.matRaw && okDur(sv.matRaw)) ? sv.matRaw : null;
+    sv.tl  = (sv.tlRaw && okDur(sv.tlRaw)) ? sv.tlRaw : null;
+    sv.scenes = sv.mat ? sv.mat.scenes : (sv.tl ? sv.tl.scenes : []);
+    /* 指摘に添えるシーン名も同じ表から引く（素材表があればそちらを使う） */
+    if (tap) tap.tl = sv.mat ? { duration: sv.mat.duration, scenes: sv.mat.scenes } : sv.tl;
+    const hasRef = sv.scenes.some(s => (s.ref_videos || []).length);
+    q('[data-sv-stage]').classList.toggle('noref', !hasRef);
+    q('[data-sv-switch]').hidden = !hasRef;
+    q('[data-sv-facts]').textContent = (d ? fmtT(d) : '—')
+      + (sv.scenes.length ? ' ・ シーン ' + sv.scenes.length : ' ・ シーンの区切りは不明');
+    svBuildBand();
+    svBuildScript();
+    /* 台本は広い画面では開いたまま。スマホだけ最初は畳む（開いたあとは畳み直さない） */
+    if (!sv.booted) q('.sv-script').open = window.innerWidth >= 900;
+    svSyncScene(true);
+    svPaintWatch();
+    svPaintBar();
+    svRelayout();
+    sv.booted = true;
+  };
+  ctl.onmeta = () => { if (prevMeta) prevMeta(); apply(); };
+  if (ctl.video.readyState >= 1) apply(); else { svBuildHistory(sv.it, sv.hist); svPaintBar(); }
+
+  /* 台本を手で読み返している間は追従を止める */
+  const sbox = q('[data-sv-scriptlist]');
+  const hold = () => { sv.scriptHold = Date.now(); };
+  for (const ev of ['wheel', 'pointerdown', 'touchmove', 'keydown']) sbox.addEventListener(ev, hold, { passive: true });
+  sbox.addEventListener('scroll', () => { if (!sv.scriptAuto) hold(); }, { passive: true });
+
+  /* 完成動画が親。参照動画は再生・停止・シークに付いていく */
+  const v = ctl.video;
+  for (const ev of ['play', 'pause', 'seeked', 'timeupdate']) v.addEventListener(ev, svLinkRef);
+  v.addEventListener('timeupdate', () => {
+    sv.manual = false;
+    svSyncScene();
+    if (v.paused || v.seeking) return;
+    const i = Math.floor(v.currentTime);
+    if (!sv.watched[i]) { sv.watched[i] = true; svPaintWatch(); }
+  });
+  v.addEventListener('seeked', () => { sv.manual = false; svSyncScene(); });
+  v.addEventListener('play', () => { big.hidden = true; });
+  v.addEventListener('pause', () => { big.hidden = !!(tap && (tap.picking || tap.draft)); });
+  sv.refvid.addEventListener('loadedmetadata', svLinkRef);
+  sv.refvid.addEventListener('canplay', svLinkRef);
+  sv.refvid.addEventListener('error', () => { if (sv.refSrc) { sv.refLoadOK = false; svPaintRefFace(); } });
+  /* 参照動画の上を押しても2本いっしょに再生／一時停止 */
+  sv.refvid.parentNode.addEventListener('click', () => { if (sv.refSrc) ctl.toggle(); });
+
+  /* 押す先はすべてこの器の中なので、引き当ては1か所にまとめる */
+  root.addEventListener('click', e => {
+    const b = e.target.closest('[data-svact]');
+    if (!b || !sv) return;
+    const a = b.dataset.svact, stage = q('[data-sv-stage]');
+    if (a === 'view-final' || a === 'view-ref') {
+      const wantRef = a === 'view-ref';
+      svStopBoth();
+      stage.dataset.view = wantRef ? 'ref' : 'final';
+      q('[data-svact="view-final"]').setAttribute('aria-pressed', String(!wantRef));
+      q('[data-sv-segref]').setAttribute('aria-pressed', String(wantRef));
+    } else if (a === 'cmp') {
+      const on = stage.dataset.cmp !== 'on';
+      svStopBoth();
+      stage.dataset.cmp = on ? 'on' : 'off';
+      b.setAttribute('aria-pressed', String(on));
+    } else if (a === 'tab-mat' || a === 'tab-script') {
+      const mat = a === 'tab-mat';
+      stage.dataset.mat = mat ? 'mat' : 'script';
+      q('[data-svact="tab-mat"]').setAttribute('aria-pressed', String(mat));
+      q('[data-svact="tab-script"]').setAttribute('aria-pressed', String(!mat));
+      if (!mat) svPaintScript();
+    }
+    else if (a === 'hback')      svCloseHistory();
+    else if (a === 'lbox-prev')  { e.stopPropagation(); svStepLbox(-1); }
+    else if (a === 'lbox-next')  { e.stopPropagation(); svStepLbox(1); }
+    else if (a === 'lbox-close') { e.stopPropagation(); svCloseLbox(); }
+  });
+  q('[data-sv-lbox]').addEventListener('click', e => { if (e.target === q('[data-sv-lbox]')) svCloseLbox(); });
+  /* 広い画面では台本を畳ませない（見出しは押しても何も起きない） */
+  q('.sv-script').addEventListener('click', e => {
+    if (e.target.closest('summary') && window.innerWidth >= 900) e.preventDefault();
+  });
+
+  node.hidden = true;
+  svRelayout();
+}
+
 /* ── いま決めること（オーナー決定 2026-09-06 → 並びは 2026-09-20 に見本へ・#509 段1）──────
    右列の先頭に置く枠。中身は**ゲート名＋版**／**この版で変えたこと**／メモ／
    **修正を依頼するときの入力欄（自由記述）**。「承認をお願いします」「決めてほしいこと」
@@ -4091,7 +5424,7 @@ async function submitTapChanges(box, key){
      ・承認は1タップだが、押したあと数秒は「取り消す」で無かったことにできる（2026-08-20）
    ⚠️ この4つ（.abox / .wbox / .rjbox / .dbar）は必ず同じ .decide の直下に置く——
    バーのボタンは自分の外にある囲みを .decide 経由で引き当てる（actBox / writeGroup）。 */
-function decideHTML(it, gate, changes){
+function decideHTML(it, gate, changes, barFacts){
   const key = it.id + '|' + gate;
   const gname = GATE_LABEL[gate] || gate;
   const caution = GATE_CAUTION[gate] || null;
@@ -4138,6 +5471,7 @@ function decideHTML(it, gate, changes){
         </div>
       </div></div>
     <div class="dbar" data-dbar="${esc(key)}">
+      ${barFacts || ''}
       <button class="btn kill" data-act="reject-open" data-key="${esc(key)}"
         aria-expanded="false" aria-controls="${rid}">没にする</button>
       <button class="btn soft" data-act="comment" data-key="${esc(key)}">修正を依頼</button>
@@ -6886,11 +8220,19 @@ document.addEventListener('keydown', e => {
     if (box) { e.preventDefault(); submitComment(box, box.dataset.wbox); }
     return;
   }
+  /* 大きく表示しているあいだは、←→ で画像送り・Esc で閉じる（ほかの操作より先に受ける・#519） */
+  if (svLboxOpen()) {
+    if (e.key === 'ArrowLeft')  { svStepLbox(-1); e.preventDefault(); return; }
+    if (e.key === 'ArrowRight') { svStepLbox(1);  e.preventDefault(); return; }
+    if (e.key === 'Escape')     { svCloseLbox();  e.preventDefault(); return; }
+    return;
+  }
   /* 動画の上でのスペース＝再生／一時停止（ふつうの動画と同じ・#509 段4）。
      文字を打っている最中と、ボタン・リンクの上（スペースが押す操作になる）では効かせない */
   if ((e.key === ' ' || e.code === 'Space') && state.detail
       && !(e.target.closest && e.target.closest('input,textarea,select,button,a,summary,[contenteditable]'))) {
-    const v = $('#view-detail [data-tapvid] video');
+    /* シーン素材つきの画面では動画の枠を①へ移してあるので、そちらも探す（#519） */
+    const v = $('#view-detail [data-tapvid] video, #view-detail .sv-screen.final video');
     if (v) { e.preventDefault(); if (v.paused) v.play().catch(() => {}); else v.pause(); return; }
   }
   /* Esc は近いものから閉じる: 入力シート → 場所を指すモード → 詳細（一覧へ戻る） */
@@ -6911,7 +8253,7 @@ document.addEventListener('keydown', e => {
   if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pushDetail(row.dataset.vid, row.dataset.gate); }
 });
 window.addEventListener('scroll', hideTip, { passive: true });
-let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { drawSpark(); syncStickyOffsets(); tapRelayout(); }, 120); });
+let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { drawSpark(); syncStickyOffsets(); tapRelayout(); svRelayout(); }, 120); });
 /* 幅が変わるとシートの出し方（せり上がり／その場）とピンの置き場所が変わる（#509 段4） */
 function tapRelayout(){
   if (!tap || tap.mode !== 'edit' || !tap.panel) return;
