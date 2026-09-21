@@ -2215,7 +2215,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/21 16:23';
+const BUILT_AT = '9/21 23:04';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2816,7 +2816,10 @@ async function loadAssets(ch, seq, gate){
       if (dErr || !blob) rec.err = 'テキストを読み込めませんでした';
       else {
         const t = await blob.text();
-        rec.text = t.length > ASSET_MAX_TEXT ? t.slice(0, ASSET_MAX_TEXT) + '\n\n…（以降は省略。別タブで全文を開けます）' : t;
+        /* 切るのは人が読むテキストだけ。json は画面が中身を解釈する表（素材の目録・時刻表・
+           案の索引）なので切らない——切ると JSON として読めず、素材が1つも出なくなる
+           （ショット41本の目録が上限を超えて実発生・2026-09-21） */
+        rec.text = (t.length > ASSET_MAX_TEXT && !/\.json$/i.test(f.name)) ? t.slice(0, ASSET_MAX_TEXT) + '\n\n…（以降は省略。別タブで全文を開けます）' : t;
       }
     }
     return rec;
