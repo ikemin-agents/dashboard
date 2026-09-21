@@ -1688,9 +1688,8 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 /* ── 動画のかたまり ── */
 .sview .sv-screens{display:grid; grid-template-columns:repeat(2, minmax(0, var(--video-w)));
   justify-content:start; gap:var(--sp-3); min-width:0}
-/* 参照動画が1本も無い動画は列ごと出さず、空いた幅は素材の欄へ回す
-   （狭い画面は縦1列なので、この幅の指定は 900px 以上だけ） */
-.sview .sv-stage.noref .sv-screen.ref{display:none}
+/* ⚠️ 参照動画の列は**常に出す**（オーナー指摘 2026-09-21）。番組や動画によって列が消えると
+   並びが揃わないので、1本も無い動画でも同じ大きさの枠を置いて中に「素材なし」と書く */
 .sview .sv-screen{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
 .sview .sv-scrhd{display:flex; align-items:baseline; gap:var(--sp-2); min-width:0; padding:0 2px}
 .sview .sv-scrhd .scrttl{font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em;
@@ -1718,11 +1717,14 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-novid{position:absolute; inset:0; display:grid; place-content:center; gap:var(--sp-3);
   z-index:3; padding:var(--sp-5); text-align:center; color:var(--ink-2);
   background:var(--surface-2); font-size:var(--fs-sm)}
-/* 参照動画が無いときの面。破線にすると欠けて見えるので薄い無彩色の面にする */
-.sview .sv-refempty{position:absolute; inset:0; z-index:3; display:grid; place-content:center;
-  align-content:center; gap:var(--sp-2); padding:var(--sp-5); text-align:center;
-  background:var(--surface-2); color:var(--ink-2); font-size:var(--fs-sm); line-height:var(--lh-tight)}
-.sview .sv-refempty .rsub{font-size:var(--fs-xs); color:var(--muted)}
+/* ── 「素材なし」の見た目は1種類だけ（オーナー指摘 2026-09-21）────────────────
+   **枠は必ず作り、中に「素材なし」と書く**（欄そのものを消さない＝歯抜けにしない）。
+   破線は「欠けている」ように見えるので使わず、薄い無彩色の面＋小さな文字に統一する。 */
+.sview .sv-refempty,.sview .sv-nomat{display:grid; place-content:center; align-content:center;
+  gap:var(--sp-1); padding:var(--sp-3); text-align:center; background:var(--surface-2);
+  color:var(--ink-2); font-size:var(--fs-sm); line-height:var(--lh-tight)}
+.sview .sv-refempty{position:absolute; inset:0; z-index:3; padding:var(--sp-5)}
+.sview .sv-refempty .rsub,.sview .sv-nomat .rsub{font-size:var(--fs-xs); color:var(--muted)}
 /* 操作は1つだけ（2本は連動して進む）。動画の下に1行で置く */
 .sview .sv-ctrls-slot{display:flex; align-items:center; min-width:0}
 .sview .sv-ctrls-slot .ctrls{flex:1 1 auto; margin:0; background:transparent; border:none;
@@ -1777,6 +1779,13 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   color:var(--ink)}
 .sview .sv-sline[aria-current="true"] .sn{color:var(--sub-ink)}
 .sview .sv-none{font-size:var(--fs-sm); color:var(--muted); padding:2px; line-height:var(--lh-tight)}
+/* 台本・シーンの帯の中の「素材なし」（欄いっぱいの面にする＝枠は残る） */
+.sview .sv-scriptlist>.sv-nomat,.sview .sv-band>.sv-nomat{flex:1 1 auto; align-self:stretch;
+  border-radius:var(--r-sm); min-height:44px}
+/* 帯の「素材なし」はサムネと同じ高さにする（下の欄の位置がずれないように） */
+.sview .sv-band>.sv-nomat{min-height:var(--band-h); height:var(--band-h)}
+/* 素材表が無いときのナレーションの場所（行の形は保ったまま「素材なし」と書く） */
+.sview .sv-sline .snone{color:var(--muted); font-size:var(--fs-xs)}
 
 /* ── いまのシーンの素材 ── */
 .sview .sv-now{min-width:0; --slot-h:180px; padding:0}
@@ -1798,7 +1807,6 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-refbox .refhd .n{font-weight:400; color:var(--muted); margin-left:auto}
 .sview .sv-refbox .sv-slot{width:calc(var(--ref-h) * 9 / 16)}
 .sview .sv-refbox .sv-slot .shot,.sview .sv-refbox .sv-slot .none{height:var(--ref-h)}
-.sview .sv-refbox .refnone{font-size:var(--fs-xs); color:var(--muted); padding:6px 2px}
 .sview .sv-slot{flex:0 0 auto; display:flex; flex-direction:column; gap:3px;
   width:calc(var(--slot-h) * 9 / 16)}
 .sview .sv-slot .cap{font-size:var(--fs-2xs); color:var(--muted); white-space:nowrap;
@@ -1808,9 +1816,12 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   overflow:hidden; display:block}
 .sview .sv-slot .shot img{display:block; width:100%; height:100%; object-fit:contain;
   background:var(--surface-3)}
+/* 素材が無い枠も**同じ大きさ**で置く（破線にしない・薄い面＋小さな文字） */
 .sview .sv-slot .none{width:100%; height:var(--slot-h); border-radius:var(--r-sm);
-  border:1.5px dashed var(--border); background:transparent; display:grid; place-items:center;
-  text-align:center; padding:6px; font-size:var(--fs-2xs); color:var(--muted); line-height:1.35}
+  border:1px solid var(--border); background:var(--surface-2); display:grid; place-items:center;
+  align-content:center; gap:3px; text-align:center; padding:6px;
+  font-size:var(--fs-xs); color:var(--ink-2); line-height:1.35}
+.sview .sv-slot .none .rsub{font-size:var(--fs-2xs); color:var(--muted)}
 .sview .sv-sep{flex:0 0 auto; align-self:center; color:var(--muted); font-size:var(--fs-sm); padding:0 1px}
 
 /* 大きく表示（ライトボックス） */
@@ -1958,7 +1969,6 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-sec.sa .sv-matcol{grid-column:3; grid-row:1 / span 2}
   .sview .sv-sec.sa .sv-ctrls-slot,.sview .sv-sec.sa .sv-refctrls{grid-column:1 / -1; grid-row:3}
   .sview .sv-sec.sa .sv-band{grid-column:1 / -1; grid-row:4}
-  .sview .sv-stage.noref{--mat-min:520px}
 }
 /* 1200〜1399px: ②③は右に縦積み（ページの縦スクロールは許す） */
 @media (min-width:1200px) and (max-width:1399px){
@@ -1991,7 +2001,6 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 @media (min-width:900px){
   .sview .sv-scriptlist{height:var(--pane-h); max-height:none; overflow-y:auto}
   .sview .sv-screens{grid-template-columns:repeat(2, var(--video-w)); gap:12px}
-  .sview .sv-stage.noref .sv-screens{grid-template-columns:var(--video-w)}
   .sview .vidbox{height:var(--pane-h); width:var(--video-w); aspect-ratio:auto; min-height:0}
   .sview .sv-now{height:var(--pane-h); overflow-y:auto; scrollbar-width:thin;
     --slot-h:calc((var(--pane-h) - 176px) / 2)}
@@ -2172,7 +2181,7 @@ const PSTAGES = [
 const AI_TAG = '【AI】';
 /* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
    フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/21 14:31';
+const BUILT_AT = '9/21 14:49';
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2940,13 +2949,13 @@ function renderShell(){
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 async function checkForUpdate(){
-  if (BUILT_AT === '9/21 14:31') return;          /* ローカルで開いた未デプロイ版 */
+  if (BUILT_AT === '9/21 14:49') return;          /* ローカルで開いた未デプロイ版 */
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/21 14:31') return;
+    if (!m || m[1] === BUILT_AT || m[1] === '9/21 14:49') return;
     const bar = document.createElement('div');
     bar.id = 'newver';
     bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
@@ -4782,8 +4791,8 @@ function sceneDetailHTML(it){
               <div class="vidbox">
                 <video data-sv-refvid playsinline preload="metadata" muted disablepictureinpicture></video>
                 <div class="sv-refempty" data-sv-refempty>
-                  <b data-sv-refemptyt>このシーンは参照動画を渡していません</b>
-                  <span class="rsub" data-sv-refemptys>動きの手本を渡したシーンでは、ここに並びます。</span>
+                  <b data-sv-refemptyt>素材なし</b>
+                  <span class="rsub" data-sv-refemptys>この動画には参照動画がありません</span>
                 </div></div>
             </div>
           </div>
@@ -4850,10 +4859,24 @@ function svSceneAt(t){
 }
 const svUrl = rel => (rel && sv && sv.urls) ? (sv.urls[rel] || null) : null;
 
+/* 「素材なし」の面。**枠を消さずに中へ入れる**（欄が歯抜けになると見落とす・オーナー指摘） */
+function svNoMat(sub){
+  const e = document.createElement('div');
+  e.className = 'sv-nomat';
+  e.appendChild(document.createTextNode('素材なし'));
+  if (sub) {
+    const s = document.createElement('span');
+    s.className = 'rsub'; s.textContent = sub;
+    e.appendChild(s);
+  }
+  return e;
+}
 function svBuildBand(){
   const band = sv.q('[data-sv-band]');
   band.textContent = '';
   sv.bandCells = [];
+  /* シーンの区切りが分からなくても帯そのものは出す（中に「素材なし」と書く） */
+  if (!svScenes().length) { band.appendChild(svNoMat('シーンの区切りがまだありません')); return; }
   for (const s of svScenes()) {
     const c = document.createElement('button');
     c.type = 'button'; c.className = 'sv-bcell';
@@ -4865,8 +4888,9 @@ function svBuildBand(){
       im.src = u; im.alt = ''; im.loading = 'lazy';
       c.appendChild(im);
     } else {
+      /* サムネが無いコマは番号だけの枠にする（枠は消さない） */
       const nn = document.createElement('div');
-      nn.className = 'bnone'; nn.textContent = '—';
+      nn.className = 'bnone';
       c.appendChild(nn);
     }
     const no = document.createElement('span');
@@ -4882,16 +4906,14 @@ function svBuildScript(){
   box.textContent = '';
   sv.scriptRows = [];
   const rows = svScenes();
-  if (!rows.length || !sv.mat) {
-    const e = document.createElement('div');
-    e.className = 'sv-none';
-    e.textContent = rows.length
-      ? 'この動画にはまだ素材の一覧がありません（シーンの時刻だけ分かります）'
-      : 'この動画にはまだ素材の一覧がありません';
-    box.appendChild(e);
-    sv.q('[data-sv-scriptmeta]').textContent = rows.length ? rows.length + 'シーン' : '—';
+  /* シーンの区切りも分からないときだけ、欄いっぱいの「素材なし」にする（枠は残る） */
+  if (!rows.length) {
+    box.appendChild(svNoMat('ナレーションもシーンの区切りもまだありません'));
+    sv.q('[data-sv-scriptmeta]').textContent = '—';
     return;
   }
+  /* 素材表が無くても、時刻表があれば行の形（番号・時刻・タイトル）は出し、
+     ナレーションの場所に「素材なし」と書く（行ごと消さない） */
   let chars = 0;
   for (const s of rows) {
     chars += (s.narration || '').length;
@@ -4899,13 +4921,20 @@ function svBuildScript(){
     b.type = 'button'; b.className = 'sv-sline';
     const n = document.createElement('span'); n.className = 'sn'; n.textContent = 'S' + s.n;
     const t = document.createElement('span'); t.className = 'stm'; t.textContent = fmtT(s.start);
-    const x = document.createElement('span'); x.textContent = s.narration || '（ナレーションなし）';
+    const x = document.createElement('span');
+    if (sv.mat) {
+      x.textContent = s.narration || '（ナレーションなし）';
+    } else {
+      x.className = 'snone';
+      x.textContent = (s.title ? s.title + ' ・ ' : '') + '素材なし';
+    }
     b.append(n, t, x);
     b.addEventListener('click', () => svGoScene(s.n));
     box.appendChild(b);
     sv.scriptRows.push(b);
   }
-  sv.q('[data-sv-scriptmeta]').textContent = rows.length + 'シーン・' + chars + '字';
+  sv.q('[data-sv-scriptmeta]').textContent = rows.length + 'シーン'
+    + (sv.mat ? '・' + chars + '字' : '');
 }
 /* 台本を手で読み返している間（最後の操作から4秒）は、いまのシーンへ勝手に戻さない */
 const SV_SCRIPT_HOLD = 4000;
@@ -4930,33 +4959,21 @@ function svPaintNow(){
   const s = svSceneByN(sv.curN);
   now.textContent = '';
   sv.lboxList = [];
-  if (!s) {
-    const e = document.createElement('div');
-    e.className = 'sv-none';
-    e.textContent = 'この動画にはまだ素材の一覧がありません';
-    now.appendChild(e);
-    return;
-  }
   const l1 = document.createElement('div');
   l1.className = 'l1';
-  const nn = document.createElement('span'); nn.className = 'nn'; nn.textContent = 'シーン' + s.n;
-  const ntt = document.createElement('span'); ntt.className = 'ntt'; ntt.textContent = s.title || '';
+  const nn = document.createElement('span'); nn.className = 'nn';
+  nn.textContent = s ? 'シーン' + s.n : 'シーン —';
+  const ntt = document.createElement('span'); ntt.className = 'ntt';
+  ntt.textContent = s ? (s.title || '') : '';
   const nt = document.createElement('span'); nt.className = 'nt';
-  nt.textContent = fmtT(s.start) + '–' + fmtT(s.end);
+  nt.textContent = s ? (fmtT(s.start) + '–' + fmtT(s.end)) : '';
   l1.append(nn, ntt, nt);
   now.appendChild(l1);
-  if (sv.mat) {
-    const nar = document.createElement('div');
-    nar.className = 'nar'; nar.textContent = s.narration || '—';
-    now.appendChild(nar);
-  }
-  if (!sv.mat) {
-    const e = document.createElement('div');
-    e.className = 'sv-none';
-    e.textContent = 'この動画にはまだ素材の一覧がありません';
-    now.appendChild(e);
-    return;
-  }
+  const nar = document.createElement('div');
+  nar.className = 'nar';
+  if (sv.mat && s) nar.textContent = s.narration || '—';
+  else { nar.className = 'nar snone'; nar.textContent = '素材なし'; }
+  now.appendChild(nar);
   const shelf = document.createElement('div');
   shelf.className = 'sv-shelf';
   const slotEl = sl => {
@@ -4968,7 +4985,7 @@ function svPaintNow(){
     const u = svUrl(sl.src);
     if (u) {
       const idx = sv.lboxList.length;
-      sv.lboxList.push({ src: u, cap: 'シーン' + s.n + ' ' + (sl.full || sl.cap) });
+      sv.lboxList.push({ src: u, cap: (s ? 'シーン' + s.n + ' ' : '') + (sl.full || sl.cap) });
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'shot';
       b.setAttribute('aria-label', sl.cap + 'を大きく見る');
@@ -4978,43 +4995,53 @@ function svPaintNow(){
       b.addEventListener('click', () => svOpenLbox(idx));
       wrap.appendChild(b);
     } else {
+      /* **枠は必ず作る**。中は「素材なし」（作らない設計のときだけ理由を添える） */
       const nne = document.createElement('div');
-      nne.className = 'none'; nne.textContent = sl.why || 'まだありません';
+      nne.className = 'none';
+      nne.appendChild(document.createTextNode('素材なし'));
+      if (sl.why) {
+        const w = document.createElement('span');
+        w.className = 'rsub'; w.textContent = sl.why;
+        nne.appendChild(w);
+      }
       wrap.appendChild(nne);
     }
     return wrap;
   };
+  /* 素材表が無い／そのシーンに無いときも、上段2枠と下段の参照画像の枠は同じ大きさで出す */
+  const kind = (sv.mat && s) ? s.end_kind : 'frame';
   const top = document.createElement('div');
   top.className = 'sv-shelfrow';
-  top.appendChild(slotEl({ cap: s.end_kind === 'still' ? '静止（1枚）' : '開始フレーム', src: s.start_img }));
+  top.appendChild(slotEl({ cap: kind === 'still' ? '静止（1枚）' : '開始フレーム',
+    src: (sv.mat && s) ? s.start_img : null }));
   const sep = document.createElement('span');
   sep.className = 'sv-sep'; sep.textContent = '→';
   top.appendChild(sep);
   top.appendChild(slotEl(
-    s.end_kind === 'still' ? { cap:'終了フレーム', src:null, why:'静止のシーンなので終了フレームはありません' }
-    : s.end_kind === 'free' ? { cap:'終了フレーム', src:null, why:'このシーンは終了フレームを作らない設計です' }
-    : { cap:'終了フレーム', src: s.end_img }));
+    kind === 'still' ? { cap:'終了フレーム', src:null, why:'静止のシーンなので作りません' }
+    : kind === 'free' ? { cap:'終了フレーム', src:null, why:'このシーンは作らない設計です' }
+    : { cap:'終了フレーム', src: (sv.mat && s) ? s.end_img : null }));
   shelf.appendChild(top);
 
+  const refs = (sv.mat && s) ? s.refs : [];
   const rbox = document.createElement('div');
   rbox.className = 'sv-refbox';
   const hd = document.createElement('div');
   hd.className = 'refhd'; hd.textContent = '参照画像';
   const cnt = document.createElement('span');
-  cnt.className = 'n'; cnt.textContent = s.refs.length + '枚';
+  cnt.className = 'n'; cnt.textContent = refs.length + '枚';
   hd.appendChild(cnt);
   rbox.appendChild(hd);
-  if (s.refs.length) {
-    const row = document.createElement('div');
-    row.className = 'sv-shelfrow';
-    s.refs.forEach((r, i) => row.appendChild(slotEl({
+  const row = document.createElement('div');
+  row.className = 'sv-shelfrow';
+  if (refs.length) {
+    refs.forEach((r, i) => row.appendChild(slotEl({
       cap: '参照' + (i + 1) + (r.label ? '（' + r.label + '）' : ''), src: r.img, full: r.label })));
-    rbox.appendChild(row);
   } else {
-    const none = document.createElement('div');
-    none.className = 'refnone'; none.textContent = 'このシーンは参照画像を渡していません';
-    rbox.appendChild(none);
+    /* 0枚のシーンも枠を1つ出す（欄ごと消さない） */
+    row.appendChild(slotEl({ cap:'参照画像', src:null }));
   }
+  rbox.appendChild(row);
   shelf.appendChild(rbox);
   now.appendChild(shelf);
 }
@@ -5058,8 +5085,10 @@ function svPaintRefFace(){
   const vids = svRefList();
   let msg = null, sub = '';
   if (!vids.length) {
-    msg = 'このシーンは参照動画を渡していません';
-    sub = '動きの手本を渡したシーンでは、ここに並びます。';
+    /* 列は常に出す（オーナー指摘 2026-09-21）。動画ぜんたいに1本も無いのか、
+       このシーンに無いだけなのかで言葉を分ける */
+    msg = '素材なし';
+    sub = sv.hasRefVideo ? 'このシーンは参照動画なし' : 'この動画には参照動画がありません';
   } else if (!svUrl(vids[sv.refIdx] ? vids[sv.refIdx].src : null)) {
     msg = 'まだありません';
     sub = 'この版では参照動画がまだ用意されていません。';
@@ -5332,9 +5361,9 @@ async function armScene(node, files, mode, ctl){
     sv.scenes = sv.mat ? sv.mat.scenes : (sv.tl ? sv.tl.scenes : []);
     /* 指摘に添えるシーン名も同じ表から引く（素材表があればそちらを使う） */
     if (tap) tap.tl = sv.mat ? { duration: sv.mat.duration, scenes: sv.mat.scenes } : sv.tl;
-    const hasRef = sv.scenes.some(s => (s.ref_videos || []).length);
-    q('[data-sv-stage]').classList.toggle('noref', !hasRef);
-    q('[data-sv-switch]').hidden = !hasRef;
+    /* 参照動画の列は常に出す。「この動画に1本でもあるか」は面の言葉を分けるためだけに使う */
+    sv.hasRefVideo = sv.scenes.some(s => (s.ref_videos || []).length);
+    q('[data-sv-switch]').hidden = false;
     q('[data-sv-facts]').textContent = (d ? fmtT(d) : '—')
       + (sv.scenes.length ? ' ・ シーン ' + sv.scenes.length : ' ・ シーンの区切りは不明');
     svBuildBand();
