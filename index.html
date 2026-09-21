@@ -599,6 +599,10 @@ td.ttl .flags{margin-left:8px}
   white-space:nowrap; min-width:0; flex:1 1 auto}
 .dtop .tags{display:flex; gap:5px; flex:0 0 auto; align-items:center}
 .dtop .tags .sbadge{font-size:var(--fs-2xs); padding:2px 9px; gap:4px}
+/* 公開時刻（#523）。1400px 以上ではフッターが見えないので、ヘッダの隅にも小さく出す */
+.dtop .dupd{font-size:var(--fs-2xs); color:var(--muted); white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+@media (max-width:899px){ .dtop .dupd{display:none} }
 /* 狭い画面ではタイトルを優先する。チャンネル名と指摘の札は右列（工程の名前・指摘の本文）で分かる */
 @media (max-width:899px){ .dtop .tags .chip,.dtop .tags .flags{display:none} }
 
@@ -1490,11 +1494,14 @@ details.guide .axnote{margin-top:var(--sp-2)}
 #tip.on{opacity:1}
 /* 新版の通知バー（#205）。GitHub Pages の10分キャッシュで古い版を掴んだときに出る */
 #newver{position:fixed; z-index:96; left:50%; bottom:92px; transform:translateX(-50%);
-  display:flex; align-items:center; gap:10px; white-space:nowrap;
+  display:flex; align-items:center; gap:10px; max-width:min(560px, calc(100vw - 32px));
   background:var(--fix); color:#fff; font-size:var(--fs-xs); font-weight:680;
   padding:9px 14px; border-radius:var(--r-pill); box-shadow:0 8px 28px rgba(0,0,0,.28)}
 #newver button{font-family:inherit; font-size:var(--fs-xs); font-weight:700; cursor:pointer;
-  background:#fff; color:var(--fix); border:none; border-radius:var(--r-pill); padding:5px 12px}
+  background:#fff; color:var(--fix); border:none; border-radius:var(--r-pill); padding:5px 12px;
+  flex:0 0 auto; white-space:nowrap}
+/* 書きかけの指摘が消えないことを添える（知らせるだけで、勝手には読み込み直さない・#523） */
+#newver .s{font-weight:400; opacity:.9; min-width:0}
 #toast{position:fixed; z-index:95; left:50%; bottom:92px; transform:translate(-50%,14px);
   background:var(--ink); color:var(--page); border-radius:var(--r-md); padding:12px 20px; font-size:var(--fs-sm);
   opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; text-align:center;
@@ -1687,6 +1694,20 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   border-radius:var(--r-pill)}
 .sview .sv-mattabs button[aria-pressed="true"]{background:var(--act-soft); color:var(--sub-ink);
   border-color:var(--act-line); font-weight:680}
+
+/* ── 同じ検証の複数の案のタブ（#523）──────────────────────────────
+   主画面の動画のすぐ上に置く。押すと映像と素材と時刻表が入れ替わる（指摘の一覧は共通のまま） */
+.sview .sv-vtabs{display:flex; align-items:center; gap:4px; min-width:0; overflow-x:auto;
+  scrollbar-width:none; padding:0 2px}
+.sview .sv-vtabs::-webkit-scrollbar{display:none}
+.sview .sv-vtabs .vtab{font-family:inherit; font-size:var(--fs-2xs); cursor:pointer; height:24px;
+  flex:0 0 auto; padding:0 12px; border:1px solid var(--border); background:var(--surface-2);
+  color:var(--ink-2); border-radius:var(--r-pill); white-space:nowrap}
+.sview .sv-vtabs .vtab[aria-selected="true"]{background:var(--act-soft); color:var(--sub-ink);
+  border-color:var(--act-line); font-weight:680}
+/* 読めない案は押せない見た目に（「素材なし」の面と同じ流儀の薄い無彩色） */
+.sview .sv-vtabs .vtab.none{color:var(--muted); background:var(--surface-3); cursor:default;
+  font-weight:400}
 
 /* ── 動画のかたまり ── */
 .sview .sv-screens{display:grid; grid-template-columns:repeat(2, minmax(0, var(--video-w)));
@@ -2140,6 +2161,17 @@ const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 
 /* ══ 定義 ═══════════════════════════════════════════════════════ */
 const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗'};
+/* ── 検証用の動画（試作・検証）の見分け方 ──────────────────────────────
+   番号の数字部が 9000 以上なら本編ではない。**見分け方はこの1か所だけ**（gen-farm の
+   札 epHint も、チャンネルの振り分けもここを通す）。検証用は各番組のタブ・在庫の数・
+   進捗の表からは外し、チャンネルの並びの最後の「検証」タブへまとめる。 */
+const isPilotSeq = seq => {
+  const m = /(\d{3,4})$/.exec(String(seq == null ? '' : seq));
+  return !!(m && Number(m[1]) >= 9000);
+};
+/* 検証のタブは実在のチャンネルではないので、擬似のチャンネル名を1つ決めて同じ器に乗せる */
+const PILOT_CH = '__pilot__';
+const PILOT_META = {icon:'🧪', name:'検証'};
 const ACCENTS = ['var(--s1)','var(--s2)','var(--stg5)','var(--warn)','var(--good)'];
 const TINTS   = ['var(--s1-tint)','var(--s2-tint)','var(--stage-bg)','var(--warn-tint)','var(--good-tint)'];
 /* チャンネル別の承認ゲート（DB に列が無いため UI 側の定義。既定は3ゲート） */
@@ -2177,9 +2209,16 @@ const PSTAGES = [
 /* AI が作業している状態は【AI】を付け、人間（オーナー）の番には付けない（#205 オーナー指定）。
    接頭辞の有無だけで「誰のボールか」が分かるようにする。色（オレンジ=AI / 青=あなた）と二重化 */
 const AI_TAG = '【AI】';
-/* デプロイ時刻。deploy-page.sh が PUT 直前に置換する（ローカルでは未置換のまま）。
-   フッター表示と新版検知（checkForUpdate）の両方がこの値を見る */
-const BUILT_AT = '9/21 15:18';
+/* デプロイ時刻。公開のスクリプトが PUT 直前に置換する（手元では未置換のまま）。
+   フッター表示・ヘッダの隅・新版検知（checkForUpdate）がこの値を見る。
+   ⚠️ **置換の印を書いてよいのは次の1行だけ**（#523）。公開のスクリプトは送るバイト列の中の
+   印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
+   化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
+   比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
+const BUILT_AT = '9/21 16:21';
+const BUILT_RAW = '__' + 'BUILT' + '_AT__';
+/* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
+const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
 const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
@@ -2298,7 +2337,9 @@ function loadUI(){
    rework  = 動画ごとの「この版は何の作り直しか」（human / ai / null）。一覧の札に使う */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
                 board:{}, threads:{}, rework:{}, looks:{}, rvRev:{}, ops:null, analytics:{}, assets:{}, system:null,
-                genfarm:null, autonow:null };
+                genfarm:null, autonow:null,
+                /* 検証用の動画が1本でもあるか（#523）。loadPilotFlag が入れる */
+                pilot:{has:false} };
 const clearVideoCaches = () => {
   store.byId = new Map();
   store.core = {}; store.facets = {}; store.pending = {}; store.board = {}; store.threads = {};
@@ -2334,6 +2375,11 @@ const VIEWS = [
 const fullAccess = () => !state.me || state.me.full_access !== false;
 const visibleViews = () => VIEWS.filter(v => !v.fullOnly || fullAccess());
 const chMeta = slug => {
+  /* 検証のタブは番組ではないので、番組の設定（色・承認ポイント）を引かずに固定の札を返す */
+  if (slug === PILOT_CH) {
+    return { icon: PILOT_META.icon, accent: 'var(--axis)', tint: 'var(--surface-2)',
+             name: PILOT_META.name, gates: ['script', 'storyboard', 'final'] };
+  }
   const i = store.channels.findIndex(c => c.slug === slug);
   /* 人間の承認が要るゲートは DB（channels.human_gates・059・#385）が正本。
      正本は各チャンネルの pipeline.json で、DB とはスクリプトが突き合わせる。
@@ -2357,13 +2403,47 @@ async function loadBootstrap(){
   store.channels = chs.filter(c => c.status !== 'closed'
     && accs.some(a => a.channel === c.slug && a.platform === 'youtube'));
   /* 前回開いていたチャンネル・タブを復元する。許可外・廃止済みなら黙って既定へ落とす */
+  /* 検証用の動画が1本でもあるかだけを先に確かめる（タブを出すかどうかの判定に使う） */
+  await loadPilotFlag();
   const ui = loadUI();
-  if (!state.ch && ui.ch && store.channels.some(c => c.slug === ui.ch)) state.ch = ui.ch;
-  if (!state.ch || !store.channels.some(c => c.slug === state.ch)) {
+  if (!state.ch && ui.ch && chExists(ui.ch)) state.ch = ui.ch;
+  if (!state.ch || !chExists(state.ch)) {
     state.ch = store.channels.length ? store.channels[0].slug : null;
   }
   if (ui.view && visibleViews().some(v => v.key === ui.view)) state.view = ui.view;
 }
+
+/* ── 検証用の動画の範囲（#523）──────────────────────────────────────
+   一覧のビューは変えない。**番号の形で直接絞る**——番号は「英字2文字＋4桁」なので、
+   検証用（数字部 9000 以上）は必ず3文字目が 9 になる。`_` は1文字ぶんの当てはめ。
+   番号の一覧を持ち歩かないので、**取得の上限（既定 1,000行）に左右されない**。
+   見えるチャンネルの範囲は今までどおり（遮断は RLS）。 */
+const PILOT_LIKE = '__9___';
+/* 検証用が1本でもあるか（タブを出すかどうかだけに使う）。件数だけを引く＝行は取らない */
+async function loadPilotFlag(){
+  store.pilot = { has: false };
+  const slugs = store.channels.map(c => c.slug);
+  if (!slugs.length) return;
+  try {
+    const { count, error } = await sb.from('v_dashboard_list')
+      .select('id', { count: 'exact', head: true }).in('channel', slugs).like('seq', PILOT_LIKE);
+    if (!error) store.pilot.has = (count || 0) > 0;
+  } catch (_) { /* 引けなければ検証タブを出さないだけ（本編は今までどおり） */ }
+}
+const hasPilot = () => !!(store.pilot && store.pilot.has);
+const chExists = slug => slug === PILOT_CH ? hasPilot() : store.channels.some(c => c.slug === slug);
+/* 一覧のビューへの問い合わせに「どの範囲を見るか」を付ける。
+   ・番組のタブ … そのチャンネルから検証用の番号を除く
+   ・検証のタブ … 見えるチャンネル全部の、検証用の番号だけ */
+function scopeCh(qb, ch){
+  if (ch === PILOT_CH) {
+    return qb.in('channel', store.channels.map(c => c.slug)).like('seq', PILOT_LIKE);
+  }
+  return qb.eq('channel', ch).not('seq', 'like', PILOT_LIKE);
+}
+/* 取ってきた行から、その画面に出すものだけを残す保険。上の条件が効いていれば**何もしない**が、
+   効かなかったときに検証用が番組のタブへ紛れ込むのを止める（見分け方は isPilotSeq 1か所のまま） */
+const inScope = (ch, seq) => ch === PILOT_CH ? isPilotSeq(seq) : !isPilotSeq(seq);
 
 /* ── 一覧は v_dashboard_list（M027）から1ページぶんだけ取る（#215 Phase 2）──
    並べ替え・ゲートの現在状態・未対応の指摘件数は DB 側で計算済み。並び順を DB に
@@ -2383,7 +2463,7 @@ const likeEsc = s => String(s).toLowerCase().replace(/[\\%_]/g, '\\$&');
 /* 絞り込み条件つきのクエリ。条件は全部 DB 側に渡す＝2ページ目以降の動画も
    検索・絞り込みの対象になる（手元の100件だけを絞ると取りこぼす）。 */
 function listQuery(ch, opts){
-  let qb = sb.from('v_dashboard_list').select('*', opts).eq('channel', ch);
+  let qb = scopeCh(sb.from('v_dashboard_list').select('*', opts), ch);
   const qs = state.stockQ.trim();
   if (qs) qb = qb.ilike('search_text', '%' + likeEsc(qs) + '%');
   if (state.stockGenre) qb = qb.eq('genre_label', state.stockGenre);
@@ -2433,7 +2513,7 @@ async function loadCore(ch, retried){
   const { data, error, count } = await listOrder(listQuery(ch, { count:'exact' }))
     .range(from, from + PAGE_SIZE - 1);
   if (error) throw new Error(error.message || String(error));
-  const items = (data || []).map(mapRow);
+  const items = (data || []).filter(r => inScope(ch, r.seq)).map(mapRow);
   const total = count == null ? items.length : count;
   /* 絞り込みを変えて最終ページが消えたときは、いちばん後ろのページへ寄せて取り直す */
   if (!items.length && total > 0 && state.stockPage > 0 && !retried) {
@@ -2450,8 +2530,8 @@ async function loadCore(ch, retried){
    一覧本体（重い行）とは別経路。 */
 async function loadFacets(ch){
   if (store.facets[ch]) return store.facets[ch];
-  store.facets[ch] = await q(sb.from('v_dashboard_list')
-    .select('stage_key,genre_label,search_text').eq('channel', ch));
+  store.facets[ch] = await q(scopeCh(sb.from('v_dashboard_list')
+    .select('stage_key,genre_label,search_text'), ch));
   return store.facets[ch];
 }
 
@@ -2461,8 +2541,8 @@ async function loadFacets(ch){
    状態列（script_state / storyboard_state / final_state）から行を展開する。 */
 async function loadPending(ch){
   if (store.pending[ch]) return store.pending[ch];
-  const items = (await q(sb.from('v_dashboard_list').select('*')
-    .eq('channel', ch).eq('has_gate_state', true))).map(mapRow);
+  const items = (await q(scopeCh(sb.from('v_dashboard_list').select('*'), ch)
+    .eq('has_gate_state', true))).filter(r => inScope(ch, r.seq)).map(mapRow);
   const rv = [], rc = [];
   for (const it of items) {
     for (const g of ['script', 'storyboard', 'final']) {
@@ -2474,8 +2554,8 @@ async function loadPending(ch){
   }
   /* ネタの仕分け待ち（#314）はゲートを持たないので上の展開に乗らない。左ナビのバッジは
      「あなたが動く番」の総数を出したいので、別に1本だけ数える（件数だけ・行は引かない）。 */
-  const { count: triageN } = await sb.from('v_dashboard_list')
-    .select('id', { count: 'exact', head: true }).eq('channel', ch).eq('stage_key', 'triage');
+  const { count: triageN } = await scopeCh(sb.from('v_dashboard_list')
+    .select('id', { count: 'exact', head: true }), ch).eq('stage_key', 'triage');
 
   const byAt = (a, b) => new Date(a.at) - new Date(b.at);
   store.pending[ch] = { rv: rv.sort(byAt), rc: rc.sort(byAt), triage: triageN || 0 };
@@ -2863,6 +2943,12 @@ async function loadAnalyticsAll(){
   return out;
 }
 /* ══ シェル ═════════════════════════════════════════════════════ */
+/* チャンネルタブに並べるもの＝番組の並び ＋（検証用の動画があれば）最後に「検証」 */
+function chTabList(){
+  const list = store.channels.map(c => ({ slug: c.slug, name: c.name }));
+  if (hasPilot()) list.push({ slug: PILOT_CH, name: PILOT_META.name });
+  return list;
+}
 function renderShell(){
   /* 見えないビューを選んだ状態が残らないようにする（権限が変わった場合の保険・#208） */
   const views = visibleViews();
@@ -2876,7 +2962,10 @@ function renderShell(){
   const soloNav = views.filter(x => !x.chIndep).length <= 1;
   const stockN = (soloNav && stockV && stockV.badge) ? stockV.badge() : 0;
   const stockBadge = stockN ? `<span class="badge">${stockN}</span>` : '';
-  $('#chtabs').innerHTML = store.channels.map(c => {
+  /* 検証用の動画があるときだけ、チャンネルの並びの最後に「検証」を足す（#523）。
+     1本も見えない閲覧者には出さない（押しても空の画面しか出ないため） */
+  const chList = chTabList();
+  $('#chtabs').innerHTML = chList.map(c => {
     const m = chMeta(c.slug), on = state.ch === c.slug;
     return `<button class="chtab" role="tab" aria-selected="${on && !indepNow}" data-ch="${esc(c.slug)}"
        style="--chac:${m.accent}" title="${esc(c.name)}${indepNow ? 'の制作へ戻る' : ''}">
@@ -2885,8 +2974,8 @@ function renderShell(){
 
   /* スマホ用: いま見ているチャンネルだけを出し、押すと他が開く（オーナー要望 2026-08-20）。
      開閉は details/summary に任せる（JS を持たない＝選ぶと再描画で自然に閉じる）。 */
-  const curCh = store.channels.find(c => c.slug === state.ch);
-  const others = store.channels.filter(c => c.slug !== state.ch);
+  const curCh = chList.find(c => c.slug === state.ch);
+  const others = chList.filter(c => c.slug !== state.ch);
   $('#chpick').innerHTML = !curCh ? '' : (() => {
     const m = chMeta(curCh.slug);
     /* 名前を押す＝そのチャンネルの制作へ（共通画面からの戻り道）、▾ を押す＝他の候補を開く */
@@ -2946,21 +3035,36 @@ function renderShell(){
    開くと最大10分は古い版が表示される（プライベートモードでも同じ）。設定では
    変えられないので、ページ側で「自分自身を no-store で取り直してビルド時刻を
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
+/* 起動時の1回だけでは、画面を開いたまま何時間も置いたときに気づけない（#523）。
+   5分おき・タブが前面に戻ったとき・詳細を開くときにも確かめる。
+   ⚠️ **勝手に読み込み直さない**——指摘を書いている最中に画面が作り直されると手が止まる。
+   知らせるだけにして、書きかけが残ることを文言に添える（下書きは端末に控えてある）。 */
+const NEWVER_EVERY = 5 * 60 * 1000;
+const NEWVER_MIN_GAP = 30 * 1000;
+let _verAt = 0, _verBusy = false;
 async function checkForUpdate(){
-  if (BUILT_AT === '9/21 15:18') return;          /* ローカルで開いた未デプロイ版 */
+  if (builtLocal(BUILT_AT)) return;                 /* 手元で開いた未公開の版 */
+  if (_verBusy || document.getElementById('newver')) return;
+  if (Date.now() - _verAt < NEWVER_MIN_GAP) return;
+  _verBusy = true; _verAt = Date.now();
   try {
     const res  = await fetch(location.pathname + '?_=' + Date.now(), { cache:'no-store' });
     if (!res.ok) return;
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
-    if (!m || m[1] === BUILT_AT || m[1] === '9/21 15:18') return;
+    if (!m || m[1] === BUILT_AT || builtLocal(m[1])) return;
+    if (document.getElementById('newver')) return;
     const bar = document.createElement('div');
     bar.id = 'newver';
-    bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">再読み込み</button>`;
+    bar.innerHTML = `新しい版があります（${esc(m[1])}）<button type="button">読み込み直す</button>
+      <span class="s">書きかけの指摘は端末に控えてあるので、読み込み直しても残ります</span>`;
     bar.querySelector('button').onclick = () => location.reload();
     document.body.appendChild(bar);
   } catch { /* 通信できないときは黙って諦める（本流を止めない） */ }
+  finally { _verBusy = false; }
 }
+setInterval(checkForUpdate, NEWVER_EVERY);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
 
 const errBox = msg => `<div class="errbox"><b>読み込みエラー</b><br>${esc(msg)}</div>`;
 const loading = () => `<div class="loadbox">読み込み中…</div>`;
@@ -3577,12 +3681,14 @@ async function openDetail(vid, gate){
   /* ── 完成の mp4 を見る画面だけ、見本の3区画の並びに差し替える（#519 段2/段3）──
      mp4 があるかは素材を読むまで分からないので、ここで先に読んで（結果は控えが効くので
      二度は取りに行かない）から組み立てを決める。取れなければ従来の画面のまま。 */
-  dv.innerHTML = (await useSceneView(it)) ? sceneDetailHTML(it) : detailHTML(it);
+  const plan = await useSceneView(it);
+  dv.innerHTML = plan ? sceneDetailHTML(it, plan) : detailHTML(it);
   syncStickyOffsets();          /* タブが隠れてヘッダーが低くなるので測り直す（戻るボタンの貼り付き位置） */
   window.scrollTo(0, 0);
   dv.querySelector('.dback')?.focus();
   mountAllAssets(dv);
   armLazyAssets(dv);            /* 畳んである素材は開かれた時点で読みに行く（#360） */
+  checkForUpdate();             /* 詳細を開くときにも新しい版が出ていないか確かめる（#523） */
 }
 
 /* この動画を「完成のシーン素材つきの画面」で開くか（#519 段2）。
@@ -3590,14 +3696,21 @@ async function openDetail(vid, gate){
    ・その版の mp4 が Storage にあること（無ければ従来の画面）
    ネタの仕分け・没・完成に到達していない動画は対象外。 */
 async function useSceneView(it){
-  if (!it || it.stage === 'triage' || it.stage === 'dropped') return false;
+  if (!it || it.stage === 'triage' || it.stage === 'dropped') return null;
   const rv = it._rv || it._rc;
-  if (rv && rv !== 'final') return false;
-  if (displayIdx(it) < GATE_COL.final) return false;
+  /* いま見ている承認ポイント。状態を持っていなければ、完成まで進んでいる動画だけ対象 */
+  const gate = rv || (displayIdx(it) >= GATE_COL.final ? 'final' : null);
+  if (gate !== 'final' && gate !== 'storyboard') return null;
+  if (gate === 'final' && displayIdx(it) < GATE_COL.final) return null;
   try {
-    const a = await loadAssets(it.channel, it.seq, 'final');
-    return (a.files || []).some(f => f.kind === 'video' && f.url);
-  } catch (_) { return false; }
+    const a = await loadAssets(it.channel, it.seq, gate);
+    const files = a.files || [];
+    if (svVariants(files).list.length) return { gate, kind:'variant' };
+    if (svMainFile(files, gate))  return { gate, kind:'video' };
+    const mat = sceneMaterials(files, '');
+    if (mat && mat.ref_video_full) return { gate, kind:'ref' };
+    return null;
+  } catch (_) { return null; }
 }
 
 /* 一覧へ戻す（履歴は操作しない）。scrollY 指定があればそこへ、無ければ開いた時点へ復元 */
@@ -3630,7 +3743,8 @@ async function pushDetail(vid, gate){
   _returnScroll = y;
   const base = history.state || {};
   history.replaceState(Object.assign({}, base, { view: state.view, ch: state.ch, scrollY: _returnScroll }), '', BASE_URL());
-  const hash = `#detail/${encodeURIComponent(state.ch)}/${encodeURIComponent(it.seq)}` +
+  /* URL には**動画が属する番組**を書く（検証のタブは番組ではないので、そのままだと開き直せない） */
+  const hash = `#detail/${encodeURIComponent(it.channel || state.ch)}/${encodeURIComponent(it.seq)}` +
     (gate ? '/' + encodeURIComponent(gate) : '');
   history.pushState({ detail: it.id, ch: state.ch, gate: gate || null, view: state.view }, '', hash);
   await openDetail(it.id, gate);
@@ -3837,13 +3951,15 @@ async function mountAssets(node){
   try {
     const a = await loadAssets(ch, seq, gate);
     if (!node.isConnected) return;
-    /* シーンの時刻表と素材の一覧（#519）は読む素材ではなく画面の裏方なので、一覧には出さない */
-    const shown = a.files.filter(f => !RE_TIMELINE.test(f.name) && !RE_MATERIALS.test(f.name));
+    /* 素材つきの画面は主画面の動画1本だけを組み立てる（#519 段2/段3 → #523 で絵コンテにも） */
+    if (node.dataset.sv === '1') { await armScene(node, a.files); return; }
+    /* 時刻表・素材の目録・案の索引（#519 / #523）は読む素材ではなく画面の裏方なので一覧に出さない。
+       案のフォルダ（variants/…）は Storage の一覧がフォルダとして返すので、もともと載らない */
+    const shown = a.files.filter(f => !RE_TIMELINE.test(f.name) && !RE_MATERIALS.test(f.name)
+                                   && !RE_VARIANTS.test(f.name));
     const tapMode = tapModeFor(node, shown);
     node.innerHTML = assetsHTML(shown, tapMode);
-    const ctl = tapMode ? armTap(node, a.files, tapMode) : null;
-    /* 完成の mp4 を見ているときは、見本の3区画の並びへ組み替える（#519 段2/段3） */
-    if (node.dataset.sv === '1') await armScene(node, a.files, tapMode, ctl);
+    if (tapMode) armTap(node, a.files, tapMode);
   } catch (e) {
     if (node.isConnected) node.innerHTML = `<div class="noitem">素材を読み込めませんでした
       <span class="s">${esc(e.message || String(e))}</span></div>`;
@@ -3934,12 +4050,14 @@ const fmtT = t => {
 /* この素材の箱をタップ入力にするか。完成の mp4 のときだけで、承認待ちの左列なら書ける
    （'edit'）、それ以外の場所（見るだけの畳み・承認待ちでない動画）は操作バーだけ（'view'） */
 function tapModeFor(node, files){
-  if (node.dataset.gate !== 'final') return null;
+  const gate = node.dataset.gate;
+  /* タップ入力が使えるのは動画を見ている承認ポイント（完成・絵コンテ）だけ（#523） */
+  if (gate !== 'final' && gate !== 'storyboard') return null;
   if (!files.some(f => f.kind === 'video' && f.url)) return null;
   const it = curItem;
   /* シーン素材つきの画面（#519）は左列の器を持たないので、その器も「書ける場所」として数える */
   const onStage = node.closest('.dstage') || node.dataset.sv === '1';
-  return (onStage && it && it._rv === 'final') ? 'edit' : 'view';
+  return (onStage && it && it._rv === gate) ? 'edit' : 'view';
 }
 
 /* ── 自前の操作バー ──────────────────────────────────────────────────
@@ -4101,7 +4219,7 @@ const tapScene = t => {
 function tapWhere(kind, t, scene, title){
   const head = NOTE_KIND_LABEL[kind] || '';
   if (scene == null) return head ? head.replace(/\s*・\s*$/, '') : '';
-  return head + 'シーン' + scene + (title ? '「' + title + '」' : '');
+  return head + svUnitN(scene) + (title ? '「' + title + '」' : '');
 }
 
 /* ── 下書き（送る前に画面を閉じても消えない）──────────────────────────────
@@ -4116,7 +4234,7 @@ function tapDraftSave(){
     localStorage.setItem(tapDraftKey(), JSON.stringify({
       v: 1, at: Date.now(), memo: tapMemoVal(),
       items: tap.items.map(r => ({ id:r.id, kind:normKind(r.kind), t:r.t, scene:r.scene,
-        scene_title:r.scene_title, pin:r.pin, tag:r.tag, note:r.note }))
+        scene_title:r.scene_title, pin:r.pin, tag:r.tag, note:r.note, variant:r.variant || null }))
     }));
   } catch (_) {}                              /* 容量切れ・無効化は黙って諦める（入力は続く） */
 }
@@ -4209,11 +4327,15 @@ function tapSyncTags(){
 }
 const tapMobile = () => window.innerWidth < 900;
 function tapOpenSheet(){
-  const sc = tapScene(tap.draft.t);
+  /* 直しているときは元の指摘の場面・時刻をそのまま出す（#523 のレビュー指摘2） */
+  const k = tap.draft.keep || null;
+  const sc = k ? null : tapScene(tap.draft.t);
+  const at = k ? k.t : tap.draft.t;
   tapBuildTags();
-  tapEl('[data-stime]').textContent = fmtT(tap.draft.t);
-  tapEl('[data-sscene]').textContent =
-    tapWhere(normKind(tap.draft.kind), tap.draft.t, sc ? sc.n : null, sc ? sc.title : null);
+  tapEl('[data-stime]').textContent = fmtT(at);
+  tapEl('[data-sscene]').textContent = k
+    ? tapWhere(normKind(tap.draft.kind), at, k.scene == null ? null : k.scene, k.scene_title || null)
+    : tapWhere(normKind(tap.draft.kind), at, sc ? sc.n : null, sc ? sc.title : null);
   tapEl('[data-smode]').hidden = !tap.draft.editId;
   const input = tapEl('[data-snote]');
   input.value = [tap.draft.tag ? tap.draft.tag.split('・').join(' ') : '', tap.draft.note || '']
@@ -4282,7 +4404,9 @@ function tapStart(kind, p){
   const t = Math.round(tap.ctl.video.currentTime * 100) / 100;
   const keep = tap.draft || {};
   tap.draft = { t, kind, x: p ? p.x : null, y: p ? p.y : null,
-                tag: null, note: '', editId: keep.editId || null };
+                tag: null, note: '', editId: keep.editId || null,
+                /* 直している最中なら、元の指摘の場面・時刻・案はそのまま持ち越す（#523 のレビュー指摘2） */
+                keep: keep.keep || null };
   if (p) tap.ctl.showPin(p.x, p.y); else tap.ctl.hidePin();
   tapOpenSheet();
 }
@@ -4291,16 +4415,22 @@ function tapAdd(){
   const input = tapEl('[data-snote]');
   const sp = tapSplit(input.value);
   if (!sp.tag && !sp.note) return;
-  const d = tap.draft, sc = tapScene(d.t), kind = normKind(d.kind);
+  const d = tap.draft, kind = normKind(d.kind);
+  /* **直しているときは元の指摘の場面・時刻・案を保つ**（#523 のレビュー指摘2）。
+     いまの目録から引き直すと、別の案を見ている最中に直しただけで中身が書き換わってしまう */
+  const k = d.keep || null;
+  const sc = k ? null : tapScene(d.t);
   const rec = {
     id: d.editId || tap.nextId++,
-    t: Math.round(d.t * 100) / 100,
+    t: Math.round((k ? k.t : d.t) * 100) / 100,
     kind,
-    scene: sc ? sc.n : null,
-    scene_title: sc ? (sc.title || null) : null,
+    scene: k ? (k.scene == null ? null : Number(k.scene)) : (sc ? sc.n : null),
+    scene_title: k ? (k.scene_title || null) : (sc ? (sc.title || null) : null),
     pin: kind === 'picture' && d.x != null ? { x: Math.round(d.x * 1000) / 1000, y: Math.round(d.y * 1000) / 1000 } : null,
     tag: sp.tag ? sp.tag.slice(0, NOTE_LIM.tag) : null,
     note: sp.note ? sp.note.slice(0, NOTE_LIM.note) : null,
+    /* そのとき見ていた案（#523）。案のタブが無ければ null のまま */
+    variant: k ? (k.variant || null) : (tap.variant || null),
     /* 「いまの画面」でも静止画は撮る（赤丸は付けない）——どの場面のことかを一覧で見分けるため */
     thumb: tap.ctl.thumb(kind === 'picture' ? d.x : null, d.y)
   };
@@ -4322,7 +4452,9 @@ function tapEdit(id){
   if (!r) return;
   tapGoto(r.t, r.pin);
   tap.draft = { t:r.t, kind:normKind(r.kind), x:r.pin ? r.pin.x : null, y:r.pin ? r.pin.y : null,
-                tag:r.tag, note:r.note, editId:r.id };
+                tag:r.tag, note:r.note, editId:r.id,
+                /* 直しても変えないもの（#523 のレビュー指摘2） */
+                keep: { t:r.t, scene:r.scene, scene_title:r.scene_title, variant:r.variant || null } };
   tapOpenSheet();
 }
 
@@ -4365,6 +4497,9 @@ function tapPaint(){
     }
     const where = tapWhere('picture', r.t, r.scene, r.scene_title);
     if (where) { const s = document.createElement('span'); s.className = 'sc'; s.textContent = where; l1.appendChild(s); }
+    /* どの案を見て書いた指摘かの小さな印（案のタブがあるときだけ・#523） */
+    const vl = svVariantLabel(r.variant);
+    if (vl) { const s = document.createElement('span'); s.className = 'sc'; s.textContent = vl; l1.appendChild(s); }
     if (r.tag) { const g = document.createElement('span'); g.className = 'gbadge fix'; g.textContent = r.tag; l1.appendChild(g); }
     meta.appendChild(l1);
     if (r.note) { const n = document.createElement('div'); n.className = 'note'; n.textContent = r.note; meta.appendChild(n); }
@@ -4392,7 +4527,7 @@ function tapSyncBar(){
   const n = tap.items.length, filled = n > 0 || !!tapMemoVal();
   const req = bar.querySelector('.dbar [data-act="comment"]');
   const apv = bar.querySelector('.dbar [data-act="approve-quick"]');
-  if (req && !req.dataset.lbl) { req.textContent = `修正を依頼（${n}件）`; req.classList.toggle('on', filled); }
+  if (req && !req.dataset.lbl) { req.textContent = actWords(curItem).commentN(n); req.classList.toggle('on', filled); }
   if (apv) apv.classList.toggle('primary', n === 0);
 }
 function tapMark(id){
@@ -4404,18 +4539,19 @@ function tapMark(id){
 function armTap(node, files, mode){
   const el = node.querySelector('[data-tapvid]');
   if (!el) return null;
+  const gate = node.dataset.gate || 'final';
   const ctl = armVideoBar(el);
   if (mode !== 'edit') return ctl;             /* 見るだけの場所は操作バーまで */
   const it = curItem;
   const panel = document.querySelector('#view-detail .decide [data-tapbox]');
   if (!it || !panel) return ctl;
   const box = panel.closest('[data-wbox]');
-  const rev = submittedRevOf(it.id, 'final');
+  const rev = submittedRevOf(it.id, gate);
 
-  tap = { mode:'edit', vid: it.id, gate:'final', rev: rev == null ? 1 : rev,
-          key: it.id + '|final|' + (rev == null ? 1 : rev),
+  tap = { mode:'edit', vid: it.id, gate, rev: rev == null ? 1 : rev,
+          key: it.id + '|' + gate + '|' + (rev == null ? 1 : rev),
           asset: el.dataset.vname || null, items: [], nextId: 1, draft: null,
-          picking: false, tl: null, ctl, panel, box };
+          variant: null, picking: false, tl: null, ctl, panel, box };
 
   /* 時刻表は動画の尺と突き合わせてから使う。読めるようになるのはメタデータが届いてから */
   const cand = tapTimeline(files, el.dataset.vname);
@@ -4532,7 +4668,9 @@ function tapNotes(){
       scene_title: r.scene_title ? String(r.scene_title).slice(0, NOTE_LIM.title) : null,
       pin: normKind(r.kind) === 'picture' && r.pin ? { x: r.pin.x, y: r.pin.y } : null,
       tag: r.tag ? String(r.tag).slice(0, NOTE_LIM.tag) : null,
-      note: r.note ? String(r.note).slice(0, NOTE_LIM.note) : null
+      note: r.note ? String(r.note).slice(0, NOTE_LIM.note) : null,
+      /* 案のタブがあるときだけ、見ていた案の印を添える（受け口は知らないキーを拒まない・#523） */
+      ...(r.variant ? { variant: String(r.variant).slice(0, NOTE_LIM.tag) } : {})
     }))
   };
 }
@@ -4561,10 +4699,11 @@ async function submitTapChanges(box, key){
     return;
   }
   tapDraftDrop();
+  const pilot = isPilotItem(curItem);
   tap = null;
   document.body.classList.remove('sheetopen');
   await refreshAfterWrite(false);
-  toast('修正を依頼しました');
+  toast(pilot ? '指摘を送りました' : '修正を依頼しました');
 }
 
 /* ══ 完成の承認画面（シーン素材つき・#519 段2/段3）═══════════════════════════════
@@ -4591,45 +4730,78 @@ const SV_SKIP_DEFAULT = [3];
    対応が取れないので、「フレーム」は先の工程のまま残す（無理に済みにしない） */
 const SV_FROM_PSTAGE = [0, 1, 2, 5, 6, 8, 9];
 
+/* 案の索引（同じ検証の複数の案をタブで切り替える・#523）。案のフォルダと索引の json は
+   画面の裏方なので、「レビュー素材」の一覧には出さない */
+const RE_VARIANTS = /^variants_v(\d+)\.json$/i;
+
 let sv = null;                      /* いま組み立ててあるシーン画面（詳細を閉じると捨てる） */
+
+/* ── 単位の呼び名（#523）──────────────────────────────────────────
+   目録の unit（「ショット」など）があればその言葉で出す。無ければ今までどおり「シーン」。
+   **画面に出す単位の文言はこの3つの小さな関数だけで作る**（あちこちに直接書かない）。
+   工程の名前の「シーン割り」は工程の名前なので替えない。 */
+const svUnit = () => (sv && sv.unit) ? sv.unit : 'シーン';
+const svUnitN = n => svUnit() + n;               /* 「ショット3」 */
+const svUnitCount = n => n + svUnit();           /* 「12ショット」 */
 
 /* ── シーンの素材表 ─────────────────────────────────────────────────
    動画と同じ版の表だけを使う（時刻表と同じ作法）。尺が 1.0 秒を超えて食い違うときは
    使わない——推測の表は素材を別の場面に結び付けてしまう。 */
+/* 目録の本文（JSON の文字列）を画面の形に直す。目録の置き場は2つある——動画と同じフォルダと、
+   案ごとのフォルダ（variants/…）——ので、読み取りはこの1つの関数に寄せる。
+   ショット方式の目録が足す3つ（unit・ref_video_full・start_kind）もここで読む（#523）:
+     unit           … 単位の呼び名（「ショット」。無ければ「シーン」）
+     ref_video_full … 通しの参照動画（完成動画がまだ無いときの主画面）
+     start_kind     … 'chain' なら前のショットの最後の1コマから続く（開始の絵を作らない） */
+function parseMaterials(text){
+  try {
+    const o = JSON.parse(text);
+    const rows = (o && Array.isArray(o.scenes) ? o.scenes : [])
+      .filter(s => s && s.start != null && s.end != null)
+      .map(s => ({
+        n: Number(s.n), title: String(s.title == null ? '' : s.title),
+        start: Number(s.start), end: Number(s.end),
+        narration: s.narration == null ? '' : String(s.narration),
+        start_img: s.start_img || null,
+        start_kind: s.start_kind === 'chain' ? 'chain' : 'frame',
+        end_img: s.end_img || null,
+        end_kind: (s.end_kind === 'still' || s.end_kind === 'free') ? s.end_kind : 'frame',
+        refs: Array.isArray(s.refs) ? s.refs.filter(r => r && r.img)
+          .map(r => ({ label: String(r.label || ''), img: String(r.img) })) : [],
+        ref_videos: Array.isArray(s.ref_videos) ? s.ref_videos.filter(r => r && r.src)
+          .map(r => ({ label: String(r.label || ''), src: String(r.src) })) : []
+      }))
+      .filter(s => isFinite(s.start) && isFinite(s.end) && isFinite(s.n));
+    if (!rows.length) return null;
+    const full = (o && o.ref_video_full && o.ref_video_full.src)
+      ? { label: String(o.ref_video_full.label || '通しの参照動画'), src: String(o.ref_video_full.src) }
+      : null;
+    const unit = (o && typeof o.unit === 'string' && o.unit.trim()) ? o.unit.trim() : 'シーン';
+    return { duration: Number(o.duration) || null, fps: Number(o.fps) || null,
+             unit, ref_video_full: full, scenes: rows };
+  } catch (_) { return null; }
+}
+/* 動画と同じ版の目録だけを使う（時刻表と同じ作法）。主画面の動画がまだ無いとき
+   （通しの参照動画で見る回）は版を突き合わせられないので、いちばん新しい版を使う。 */
 function sceneMaterials(files, videoName){
   const m = /_v(\d+)\./i.exec(String(videoName || ''));
   const want = m ? Number(m[1]) : null;
+  let best = null, bestV = -1;
   for (const f of files) {
     const t = RE_MATERIALS.exec(f.name || '');
     if (!t || f.text == null) continue;
-    if (want != null && Number(t[1]) !== want) continue;
-    try {
-      const o = JSON.parse(f.text);
-      const rows = (o && Array.isArray(o.scenes) ? o.scenes : [])
-        .filter(s => s && s.start != null && s.end != null)
-        .map(s => ({
-          n: Number(s.n), title: String(s.title == null ? '' : s.title),
-          start: Number(s.start), end: Number(s.end),
-          narration: s.narration == null ? '' : String(s.narration),
-          start_img: s.start_img || null,
-          end_img: s.end_img || null,
-          end_kind: (s.end_kind === 'still' || s.end_kind === 'free') ? s.end_kind : 'frame',
-          refs: Array.isArray(s.refs) ? s.refs.filter(r => r && r.img)
-            .map(r => ({ label: String(r.label || ''), img: String(r.img) })) : [],
-          ref_videos: Array.isArray(s.ref_videos) ? s.ref_videos.filter(r => r && r.src)
-            .map(r => ({ label: String(r.label || ''), src: String(r.src) })) : []
-        }))
-        .filter(s => isFinite(s.start) && isFinite(s.end) && isFinite(s.n));
-      if (!rows.length) return null;
-      return { duration: Number(o.duration) || null, fps: Number(o.fps) || null, scenes: rows };
-    } catch (_) { return null; }
+    const v = Number(t[1]);
+    if (want != null) { if (v !== want) continue; return parseMaterials(f.text); }
+    if (v > bestV) { bestV = v; best = f.text; }
   }
-  return null;
+  return best == null ? null : parseMaterials(best);
 }
 /* 素材表の中の相対パスをまとめて署名URLにする（1時間で切れるのは他の素材と同じ扱い）。
    まとめて発行する API を使うので、シーン数ぶんの往復にはならない */
-async function svSign(ch, seq, gate, rels){
-  const base = assetPath(ch, seq, gate);
+async function svSign(ch, seq, gate, rels, sub){
+  /* sub＝案のフォルダ（variants/a）。案の目録の中のパスは「その json と同じフォルダから」なので、
+     署名を出す起点をそこへずらす（#523） */
+  const base = assetPath(ch, seq, gate) + (sub ? '/' + String(sub).replace(/^\/+|\/+$/g, '') : '');
   const uniq = [...new Set((rels || []).filter(Boolean))];
   const out = {};
   if (!uniq.length) return out;
@@ -4682,60 +4854,70 @@ function svFlowHTML(it){
    詳細への切り替えはこの画面から外した）。絞り込みは「あなたの指摘」（youHTML）と同じで、
    人の author（AI の印が付いていないもの）の修正依頼とコメント。
    対応の記録（今回変えた内容）は②の先頭の「変更」に出ているので、ここには出さない。 */
-function svPrevNotes(it, evs){
-  const liveRev = it._rv === 'final' ? submittedRevOf(it.id, 'final') : null;
+function svPrevNotes(it, evs, gate){
+  const g = gate || 'final';
+  const liveRev = it._rv === g ? submittedRevOf(it.id, g) : null;
   const rows = [];
   for (const e of newestFirst(evs.filter(x => !isAiAuthor(x.author)
       && (x.kind === 'request_changes' || x.kind === 'comment')))) {
     const when = fmtDT(e.created_at) || '';
     const rev = e.revision == null ? null : Number(e.revision);
     /* ピンを出せるのは「いま左に出ている完成動画」と同じ版に付いた指摘だけ */
-    const live = !!(liveRev != null && e.gate === 'final' && Number(e.revision == null ? 1 : e.revision) === Number(liveRev));
+    const live = !!(liveRev != null && e.gate === g && Number(e.revision == null ? 1 : e.revision) === Number(liveRev));
     const o = notesOf(e);
     if (o) {
       for (const r of o.items) {
         rows.push({ t: r.t == null ? null : Number(r.t),
           scene: r.scene == null ? null : Number(r.scene),
           title: r.scene_title || '', tag: r.tag || null,
+          /* どの案を見て書いた指摘かは送ったあとも残す（#523 のレビュー指摘2） */
+          variant: r.variant ? String(r.variant) : null,
           body: r.note || '', when, rev, live,
           pin: (live && normKind(r.kind) === 'picture' && r.pin) ? r.pin : null });
       }
       if (o.memo) rows.push({ t:null, scene:null, title:'', tag:'全体へのメモ',
-        body:o.memo, when, rev, live, pin:null });
+        variant:null, body:o.memo, when, rev, live, pin:null });
     } else {
       /* notes を持たない古い依頼は本文のまま */
-      rows.push({ t:null, scene:null, title:'', tag:null,
+      rows.push({ t:null, scene:null, title:'', tag:null, variant:null,
         body: String(e.body || '（本文なし）'), when, rev, live, pin:null });
     }
   }
   return rows;
 }
 
+/* この画面が公開された時刻（#523）。1400px 以上ではページが縦に動かず**フッターが見えない**ので、
+   ヘッダの隅にも小さく出す。手元で開いた未デプロイ版（置換されていない）では出さない。 */
+const builtAtHTML = () => builtLocal(BUILT_AT) ? ''
+  : `<span class="dupd" title="この画面が公開された時刻">更新 ${esc(BUILT_AT)}</span>`;
+
 /* ── 画面の組み立て ─────────────────────────────────────────────── */
-function sceneDetailHTML(it){
+function sceneDetailHTML(it, plan){
+  const gate = (plan && plan.gate) || 'final';
+  const gname = GATE_LABEL[gate] || gate;
   const m = chMeta(it.channel), cur = displayIdx(it);
   const curName = cur < 0 ? '—' : PSTAGES[cur].name;
   const evs = threadOf(it.id);
   const sub = latestSub(evs);
   const ver = subRevLabel(sub);
-  const prev = svPrevNotes(it, evs);
+  const prev = svPrevNotes(it, evs, gate);
   /* 下端バーの左（事実だけ）。承認の先は工程の帯の次の工程から取る */
   const barFacts = `<div class="sv-barfacts">
     <span class="bf"><span data-sv-state>指摘 0件</span></span>
     <span class="bf"><span class="k">見た範囲</span>
       <span class="sv-watchbar" data-sv-watchbar></span><b data-sv-watchpct>0%</b></span>
     <span class="bf next" data-sv-next></span></div>`;
-  const decide = it._rv === 'final'
+  const decide = it._rv === gate
     /* 「変更」の欄はこの画面には出さない（内部の言葉が並んで意味が取れない・オーナー指摘
        2026-09-21）。`changeLines` と旧画面（台本・絵コンテ）はそのまま */
-    ? decideHTML(it, 'final', [], barFacts, true)
+    ? decideHTML(it, gate, [], barFacts, true)
     : `<div class="decide">${it._rc
         ? (rcAiOnly(it)
             ? `<div class="dstate rcai">↺ AI審査の指摘で${GATE_LABEL[it._rc]}を作り直しています。あなたの操作は要りません。</div>`
             : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${GATE_LABEL[it._rc]}）。直り次第、新しい版で出し直します。</div>`)
         : `<div class="dstate">● いまは「${esc(curName)}」の工程です。ここは見るだけの画面です。</div>`}</div>`;
 
-  return `<div class="dview sview${it._rv === 'final' ? ' hasbar' : ''}" role="region"
+  return `<div class="dview sview${it._rv === gate ? ' hasbar' : ''}" role="region"
       aria-label="${esc(it.title)} の詳細">
     <div class="dtop">
       <button class="dback" data-close="1" aria-label="一覧に戻る">← 一覧<span class="dback-l">に戻る</span></button>
@@ -4744,9 +4926,10 @@ function sceneDetailHTML(it){
       <span class="tags">
         <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(m.name)}</span>
         <span class="gbadge"><i style="background:${it._rv ? 'var(--s1)'
-          : (it.stage === 'posted' || it.stage === 'dropped') ? 'var(--done)' : 'var(--fix)'}"></i>完成${
+          : (it.stage === 'posted' || it.stage === 'dropped') ? 'var(--done)' : 'var(--fix)'}"></i>${esc(gname)}${
           ver ? ' ' + esc(ver) : ''}</span>
         ${flagsHTML(it)}
+        ${builtAtHTML()}
       </span>
     </div>
     ${svFlowHTML(it)}
@@ -4756,7 +4939,8 @@ function sceneDetailHTML(it){
         <div class="sv-stage" data-sv-stage data-view="final" data-cmp="off" data-mat="mat">
           <div class="sv-viewswitch" data-sv-switch hidden>
             <div class="seg">
-              <button class="segbtn" type="button" data-svact="view-final" aria-pressed="true">完成動画</button>
+              <button class="segbtn" type="button" data-svact="view-final" aria-pressed="true"
+                data-sv-segmain>${esc(gname)}の動画</button>
               <button class="segbtn" type="button" data-svact="view-ref" aria-pressed="false" data-sv-segref>参照動画</button>
             </div>
             <button class="btn sm cmpbtn" type="button" data-svact="cmp" aria-pressed="false">並べて比較</button>
@@ -4771,7 +4955,8 @@ function sceneDetailHTML(it){
           </div>
           <div class="sv-screens">
             <div class="sv-screen final" data-sv-screenfinal>
-              <div class="sv-scrhd"><span class="scrttl">完成動画</span>
+              <div class="sv-vtabs" data-sv-vtabs hidden role="tablist" aria-label="案"></div>
+              <div class="sv-scrhd"><span class="scrttl" data-sv-mainttl>${esc(gname)}の動画</span>
                 <span class="scrsub" data-sv-finallbl></span></div>
               <div class="loadbox" data-sv-finalslot>素材を読み込み中…</div>
             </div>
@@ -4789,7 +4974,7 @@ function sceneDetailHTML(it){
             </div>
           </div>
           <div class="sv-matcol">
-            <div class="sv-colhd">いまのシーンの素材<span class="n">押すと大きく見られます</span></div>
+            <div class="sv-colhd"><span data-sv-colhd>いまのシーンの素材</span><span class="n">押すと大きく見られます</span></div>
             <div class="sv-now" data-sv-now></div>
           </div>
           <div class="sv-ctrls-slot" data-sv-ctrls></div>
@@ -4805,8 +4990,8 @@ function sceneDetailHTML(it){
         <div class="sv-prevlist" data-sv-prevlist></div>
       </section>
     </div>
-    <div class="assets" data-assets="${esc(it.id + '|final')}" data-sv="1" data-ch="${esc(it.channel)}"
-         data-seq="${esc(it.seq)}" data-gate="final" hidden></div>
+    <div class="assets" data-assets="${esc(it.id + '|' + gate)}" data-sv="1" data-ch="${esc(it.channel)}"
+         data-seq="${esc(it.seq)}" data-gate="${esc(gate)}" hidden></div>
     <div class="sv-lbox" data-sv-lbox hidden>
       <img data-sv-lboximg alt="">
       <div class="lcap" data-sv-lboxcap>—</div>
@@ -4865,7 +5050,7 @@ function svBuildScript(){
   const rows = svScenes();
   /* シーンの区切りも分からないときだけ、欄いっぱいの「素材なし」にする（枠は残る） */
   if (!rows.length) {
-    box.appendChild(svNoMat('ナレーションもシーンの区切りもまだありません'));
+    box.appendChild(svNoMat('ナレーションも' + svUnit() + 'の区切りもまだありません'));
     sv.q('[data-sv-scriptmeta]').textContent = '—';
     return;
   }
@@ -4879,8 +5064,9 @@ function svBuildScript(){
     chars += (s.narration || '').length;
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'sv-sline';
-    b.title = 'シーン' + s.n + (s.title ? '「' + s.title + '」' : '');
-    /* 開始フレームのサムネ。無ければ同じ大きさの「素材なし」の面 */
+    b.title = svUnitN(s.n) + (s.title ? '「' + s.title + '」' : '');
+    /* 開始フレームのサムネ。無ければ同じ大きさの「素材なし」の面
+       （前の1コマから続く作りでも、面の大きさは変えない・#523） */
     const u = svUrl(s.start_img);
     if (u) {
       const im = document.createElement('img');
@@ -4899,7 +5085,7 @@ function svBuildScript(){
     if (byScene[s.n]) {
       const k = document.createElement('span');
       k.className = 'nmark'; k.textContent = '指摘' + byScene[s.n];
-      k.title = 'このシーンへの前回までの指摘 ' + byScene[s.n] + '件';
+      k.title = 'この' + svUnit() + 'への前回までの指摘 ' + byScene[s.n] + '件';
       meta.appendChild(k);
     }
     const x = document.createElement('span');
@@ -4914,7 +5100,7 @@ function svBuildScript(){
     box.appendChild(b);
     sv.scriptRows.push(b);
   }
-  sv.q('[data-sv-scriptmeta]').textContent = rows.length + 'シーン'
+  sv.q('[data-sv-scriptmeta]').textContent = svUnitCount(rows.length)
     + (sv.mat ? '・' + chars + '字' : '');
 }
 /* 台本を手で読み返している間（最後の操作から4秒）は、いまのシーンへ勝手に戻さない */
@@ -4943,7 +5129,7 @@ function svPaintNow(){
   const l1 = document.createElement('div');
   l1.className = 'l1';
   const nn = document.createElement('span'); nn.className = 'nn';
-  nn.textContent = s ? 'シーン' + s.n : 'シーン —';
+  nn.textContent = s ? svUnitN(s.n) : svUnit() + ' —';
   const ntt = document.createElement('span'); ntt.className = 'ntt';
   ntt.textContent = s ? (s.title || '') : '';
   const nt = document.createElement('span'); nt.className = 'nt';
@@ -4966,7 +5152,7 @@ function svPaintNow(){
     const u = svUrl(sl.src);
     if (u) {
       const idx = sv.lboxList.length;
-      sv.lboxList.push({ src: u, cap: (s ? 'シーン' + s.n + ' ' : '') + (sl.full || sl.cap) });
+      sv.lboxList.push({ src: u, cap: (s ? svUnitN(s.n) + ' ' : '') + (sl.full || sl.cap) });
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'shot';
       b.setAttribute('aria-label', sl.cap + 'を大きく見る');
@@ -4976,10 +5162,11 @@ function svPaintNow(){
       b.addEventListener('click', () => svOpenLbox(idx));
       wrap.appendChild(b);
     } else {
-      /* **枠は必ず作る**。中は「素材なし」（作らない設計のときだけ理由を添える） */
+      /* **枠は必ず作る**。中は「素材なし」（作らない設計のときだけ理由を添える）。
+         前の1コマから続く作りのときだけ、文言そのものを差し替える（sl.none・#523） */
       const nne = document.createElement('div');
       nne.className = 'none';
-      nne.appendChild(document.createTextNode('素材なし'));
+      nne.appendChild(document.createTextNode(sl.none || '素材なし'));
       if (sl.why) {
         const w = document.createElement('span');
         w.className = 'rsub'; w.textContent = sl.why;
@@ -4991,16 +5178,20 @@ function svPaintNow(){
   };
   /* 素材表が無い／そのシーンに無いときも、上段2枠と下段の参照画像の枠は同じ大きさで出す */
   const kind = (sv.mat && s) ? s.end_kind : 'frame';
+  /* 開始の絵を作らない作り（start_kind:'chain'）のときは「素材なし」ではなく、
+     前の1コマから続くことを書く。**枠の位置と大きさは変えない**（#523） */
+  const startKind = (sv.mat && s) ? s.start_kind : 'frame';
   const top = document.createElement('div');
   top.className = 'sv-shelfrow';
   top.appendChild(slotEl({ cap: kind === 'still' ? '静止（1枚）' : '開始フレーム',
-    src: (sv.mat && s) ? s.start_img : null }));
+    src: (sv.mat && s) ? s.start_img : null,
+    none: startKind === 'chain' ? '前の' + svUnit() + 'の最後の1コマから続きます' : null }));
   const sep = document.createElement('span');
   sep.className = 'sv-sep'; sep.textContent = '→';
   top.appendChild(sep);
   top.appendChild(slotEl(
-    kind === 'still' ? { cap:'終了フレーム', src:null, why:'静止のシーンなので作りません' }
-    : kind === 'free' ? { cap:'終了フレーム', src:null, why:'このシーンは作らない設計です' }
+    kind === 'still' ? { cap:'終了フレーム', src:null, why:'静止の' + svUnit() + 'なので作りません' }
+    : kind === 'free' ? { cap:'終了フレーム', src:null, why:'この' + svUnit() + 'は作らない設計です' }
     : { cap:'終了フレーム', src: (sv.mat && s) ? s.end_img : null }));
   shelf.appendChild(top);
 
@@ -5069,7 +5260,7 @@ function svPaintRefFace(){
     /* 列は常に出す（オーナー指摘 2026-09-21）。動画ぜんたいに1本も無いのか、
        このシーンに無いだけなのかで言葉を分ける */
     msg = '素材なし';
-    sub = sv.hasRefVideo ? 'このシーンは参照動画なし' : 'この動画には参照動画がありません';
+    sub = sv.hasRefVideo ? 'この' + svUnit() + 'は参照動画なし' : 'この動画には参照動画がありません';
   } else if (!svUrl(vids[sv.refIdx] ? vids[sv.refIdx].src : null)) {
     msg = 'まだありません';
     sub = 'この版では参照動画がまだ用意されていません。';
@@ -5202,8 +5393,14 @@ function svBuildPrev(){
     }
     if (p.scene != null) {
       const sc = document.createElement('span'); sc.className = 'sc';
-      sc.textContent = 'シーン' + p.scene + (p.title ? '「' + p.title + '」' : '');
+      sc.textContent = svUnitN(p.scene) + (p.title ? '「' + p.title + '」' : '');
       m.appendChild(sc);
+    }
+    /* どの案を見て書いた指摘かの小さな印（いまの索引に載っている案だけ名前が出る） */
+    const pvl = svVariantLabel(p.variant);
+    if (pvl) {
+      const vb = document.createElement('span'); vb.className = 'sc'; vb.textContent = pvl;
+      m.appendChild(vb);
     }
     if (p.tag) {
       const g = document.createElement('span'); g.className = 'gbadge fix'; g.textContent = p.tag;
@@ -5271,20 +5468,225 @@ function svPaintBar(){
     const cur = svFlowAt(sv.it);
     const after = SV_STEPS.slice(cur + 1).find((_, i) =>
       !(SV_SKIP[sv.it.channel] || SV_SKIP_DEFAULT).includes(cur + 1 + i));
-    next.textContent = (sv.it._rv === 'final' && after)
-      ? (GATE_CAUTION.final || `承認すると「${after}」へ進みます`) : '';
+    /* 検証用の動画は先の工程が決まっていない＝承認しても制作は動かない（#523） */
+    next.textContent = !(sv.it._rv === sv.gate) ? ''
+      : isPilotItem(sv.it) ? '記録に残るだけで、制作は自動では動きません。'
+      : (after ? (GATE_CAUTION[sv.gate] || `承認すると「${after}」へ進みます`) : '');
   }
 }
 
+/* ── 主画面の動画と案（#523）─────────────────────────────────────────
+   主画面に出すのは「その承認ポイントのフォルダの {承認ポイント}_v{NN}.mp4」。無ければ
+   目録の「通しの参照動画」（ref_video_full）。どちらも無ければこの画面は使わない。 */
+function svMainFile(files, gate){
+  const re = new RegExp('^' + gate + '_v(\\d+)\\.[A-Za-z0-9]+$', 'i');
+  let best = null, bv = -1;
+  for (const f of files) {
+    if (f.kind !== 'video' || !f.url) continue;
+    const m = re.exec(f.name || '');
+    if (m && Number(m[1]) > bv) { bv = Number(m[1]); best = f; }
+  }
+  if (best) return best;
+  /* 完成だけは 02・03 の従来どおり「決まりの名前が無ければ最後の動画」を使う。
+     絵コンテは決まりの名前だけを候補にする——**関係のない動画が通しのモックより先に出る**のを
+     防ぐため（#523 のレビュー指摘8）。ここで null を返せば ref_video_full へ落ちる */
+  if (gate !== 'final') return null;
+  const vids = files.filter(f => f.kind === 'video' && f.url);
+  return vids.length ? vids[vids.length - 1] : null;
+}
+/* ファイル名の中の版（`…_v08.mp4` → 8）。無ければ null */
+const verOfName = name => { const m = /_v(\d+)(?:\.|$)/i.exec(String(name || '')); return m ? Number(m[1]) : null; };
+/* 案の索引（同じ検証の複数の案）。索引の**版**も返す——案の目録と動画はこの版で揃える。
+   無ければ {ver:null, list:[]}＝今までどおりタブは出ない */
+function svVariants(files){
+  let best = null, bv = -1;
+  for (const f of files) {
+    const m = RE_VARIANTS.exec(f.name || '');
+    if (!m || f.text == null) continue;
+    if (Number(m[1]) > bv) { bv = Number(m[1]); best = f.text; }
+  }
+  if (best == null) return { ver: null, list: [] };
+  try {
+    const o = JSON.parse(best);
+    if (!o || Number(o.v) !== 1 || !Array.isArray(o.variants)) return { ver: null, list: [] };
+    return { ver: bv, list: o.variants.filter(x => x && x.key && x.dir).map(x => ({
+      key: String(x.key), label: String(x.label || x.key),
+      dir: String(x.dir).replace(/^\/+|\/+$/g, ''),
+      video: x.video ? String(x.video) : null
+    })) };
+  } catch (_) { return { ver: null, list: [] }; }
+}
+const svVariantLabel = key => {
+  if (!key || !sv || !sv.variants) return null;
+  const v = sv.variants.find(x => x.key === key);
+  return v ? v.label : null;
+};
+
+/* 1つの「見せるもの」（目録・署名URL・主画面の動画）をそろえる。
+   案のタブが無ければ動画と同じフォルダから、あれば案のフォルダから読む。 */
+async function svSource(ch, seq, gate, files, v, ver){
+  const out = { mat:null, urls:{}, videoUrl:null, videoName:null, mainLabel:null };
+  if (!v) {
+    const f = svMainFile(files, gate);
+    out.mat = sceneMaterials(files, f ? f.name : '');
+    if (f) { out.videoUrl = f.url; out.videoName = f.name; }
+  } else {
+    /* 案の目録は**索引と同じ版**だけを使う（`variants_v08.json` なら `materials_v08.json`）。
+       いちばん新しいものを拾うと、古い動画と新しい目録が組み合わさる（#523 のレビュー指摘3） */
+    const base = assetPath(ch, seq, gate) + '/' + v.dir;
+    let name = null;
+    try {
+      const { data } = await sb.storage.from(ASSET_BUCKET)
+        .list(base, { limit: 100, sortBy: { column:'name', order:'asc' } });
+      for (const f of (data || [])) {
+        const m = RE_MATERIALS.exec(f.name || '');
+        if (m && ver != null && Number(m[1]) === Number(ver)) { name = f.name; break; }
+      }
+    } catch (_) { /* 読めなければ目録なしで出す */ }
+    if (name) {
+      try {
+        const { data: blob } = await sb.storage.from(ASSET_BUCKET).download(base + '/' + name);
+        if (blob) out.mat = parseMaterials(await blob.text());
+      } catch (_) {}
+    }
+    /* 動画も索引の video だけ。名前に版が入っていて索引の版と違うものは使わない */
+    if (v.video && !(verOfName(v.video) != null && ver != null && verOfName(v.video) !== Number(ver))) {
+      const u = await svSign(ch, seq, gate, [v.video]);
+      out.videoUrl = u[v.video] || null;
+      out.videoName = v.video.split('/').pop();
+    }
+  }
+  if (out.mat) {
+    const rels = [];
+    for (const s of out.mat.scenes) {
+      rels.push(s.start_img, s.end_img);
+      for (const r of s.refs) rels.push(r.img);
+      for (const r of s.ref_videos) rels.push(r.src);
+    }
+    if (out.mat.ref_video_full) rels.push(out.mat.ref_video_full.src);
+    out.urls = await svSign(ch, seq, gate, rels, v ? v.dir : null);
+    /* 主画面の動画がまだ無ければ、通しの参照動画を主画面にする（左の見出しは目録の label） */
+    if (!out.videoUrl && out.mat.ref_video_full) {
+      out.videoUrl = out.urls[out.mat.ref_video_full.src] || null;
+      out.videoName = out.mat.ref_video_full.src.split('/').pop();
+      out.mainLabel = out.mat.ref_video_full.label;
+    }
+  }
+  return out;
+}
+
+/* 左の枠の見出し。通しの参照動画を主画面にしたときは目録の label（例「通しのモック」）を出す */
+function svPaintMainHead(){
+  if (!sv) return;
+  const gname = GATE_LABEL[sv.gate] || sv.gate;
+  const label = sv.mainLabel || (gname + 'の動画');
+  const ttl = sv.q('[data-sv-mainttl]'); if (ttl) ttl.textContent = label;
+  const seg = sv.q('[data-sv-segmain]'); if (seg) seg.textContent = label;
+  const sub = sv.q('[data-sv-finallbl]');
+  if (sub) sub.textContent = String(sv.videoName || '').replace(/\.[^.]+$/, '');
+}
+
+/* ── 同じ検証の複数の案（#523）────────────────────────────────────
+   索引があれば主画面の上にタブを出す。切り替えると映像・素材・時刻表・台本が入れ替わり、
+   指摘の一覧・メモ・下端バーは共通のまま残る（どの案を見て書いたかは指摘1件ごとに持つ）。 */
+function svBuildVariantTabs(){
+  const box = sv.q('[data-sv-vtabs]');
+  if (!box) return;
+  box.textContent = '';
+  if (!sv.variants.length) { box.hidden = true; return; }
+  for (const v of sv.variants) {
+    const bad = sv.badVariants.has(v.key);
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'vtab' + (bad ? ' none' : ''); b.setAttribute('role', 'tab');
+    /* 読めない案は押せない見た目にして「素材なし」と分かるようにする（#523 のレビュー指摘5） */
+    b.textContent = v.label + (bad ? '（素材なし）' : '');
+    b.dataset.vkey = v.key;
+    b.disabled = bad;
+    b.setAttribute('aria-selected', String(v.key === sv.variant));
+    if (!bad) b.addEventListener('click', () => svSwitchVariant(v.key));
+    box.appendChild(b);
+  }
+  box.hidden = false;
+}
+/* 案を切り替えたあとの再生位置。同じ秒を保ち、尺が違ってはみ出すときは**同じ番号**の頭へ。
+   番号は連番とは限らないので、添字ではなく番号で引く（…31, 32, 34…）。 */
+function svKeepTime(keep, d, scenes){
+  const t = Number(keep && keep.t);
+  if (isFinite(t) && d && t <= d - 0.05) return t;
+  const s = (scenes || []).find(x => x.n === (keep && keep.n));
+  return s ? s.start + 0.05 : 0;
+}
+async function svSwitchVariant(key){
+  if (!sv || key === sv.variant) return;
+  const v = sv.variants.find(x => x.key === key);
+  if (!v || !sv.ctl || sv.badVariants.has(key)) return;
+  /* ⚠️ 読み込みを待つあいだに、別の動画を開いたり別の案を押したりされうる。
+     待つ前に「どの画面の・何回目の切り替えか」を控え、戻ってきたら一致を確かめる。
+     一致しなければ**黙って捨てる**——古い結果でいまの画面を上書きしない（#523 のレビュー指摘1） */
+  const mine = sv, token = ++mine.switchSeq;
+  const stale = () => sv !== mine || mine.switchSeq !== token || !mine.root.isConnected;
+  const keep = { t: sv.ctl.video.currentTime, n: sv.curN };
+  svStopBoth();
+  const src = await svSource(mine.ch, mine.seq, mine.gate, mine.files, v, mine.variantsVer);
+  if (stale()) return;
+  if (!src.videoUrl) {
+    mine.badVariants.add(key);
+    svBuildVariantTabs();
+    toast('この案の素材はまだありません');
+    return;
+  }
+  const box = sv.q('[data-sv-vtabs]');
+  if (box) box.querySelectorAll('.vtab').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.vkey === key)));
+  /* 見た範囲は案ごとに持つ（切り替えで入れ替え、戻れば戻る・#523 のレビュー指摘7） */
+  sv.watchedBy[sv.variant || ''] = sv.watched;
+  sv.variant = key;
+  sv.watched = sv.watchedBy[key] || (sv.watchedBy[key] = []);
+  if (tap) { tap.variant = key; tap.asset = src.videoName || null; }
+  sv.matRaw = src.mat; sv.urls = src.urls; sv.mainLabel = src.mainLabel;
+  sv.videoName = src.videoName;
+  sv.tlRaw = null;                 /* 案ごとの時刻は目録が持つ（動画と同じ版の時刻表は引かない） */
+  sv.manual = false; sv.manualN = null; sv.curN = null;
+  sv.seekAfterLoad = keep;         /* 同じ秒を保つ。尺が短くてはみ出すときは同じ番号の頭へ */
+  svPaintMainHead();
+  sv.ctl.video.src = src.videoUrl;
+  sv.ctl.video.load();             /* メタデータが届いた時点で apply() がもう一度走る */
+}
+
 /* ── 素材が届いてから組み立てる ─────────────────────────────────── */
-async function armScene(node, files, mode, ctl){
+async function armScene(node, files){
   const root = document.querySelector('#view-detail .sview');
   if (!root || !node.isConnected) return;
   const q = s => root.querySelector(s);
+  const ch = node.dataset.ch, seq = node.dataset.seq, gate = node.dataset.gate;
+  const fail = msg => { const s = q('[data-sv-finalslot]'); if (s) s.textContent = msg; };
+
+  /* 案があれば**読める最初の案**を開く。読めなかった案は控えておいてタブを押せなくする。
+     全部読めなければ索引が無いのと同じ扱いへ退避する（#523 のレビュー指摘5） */
+  const vx = svVariants(files);
+  const bad = new Set();
+  let variants = vx.list, variant = null, src = null;
+  for (const v of variants) {
+    const s = await svSource(ch, seq, gate, files, v, vx.ver);
+    if (!root.isConnected || !node.isConnected) return;
+    if (s.videoUrl) { src = s; variant = v.key; break; }
+    bad.add(v.key);
+  }
+  if (!src) {
+    if (variants.length) { variants = []; bad.clear(); }   /* 索引なしと同じ扱いへ退避 */
+    src = await svSource(ch, seq, gate, files, null);
+    if (!root.isConnected || !node.isConnected) return;
+  }
+  if (!src.videoUrl) { fail('動画を読み込めませんでした'); return; }
+
+  /* 主画面の動画1本だけを組み立てる（この器は隠したまま、中の枠を①へ移して使う） */
+  const mode = tapModeFor(node, [{ kind:'video', url: src.videoUrl }]) || 'view';
+  node.innerHTML = videoBlockHTML({ name: src.videoName, url: src.videoUrl, kind:'video', size:null }, mode);
+  const ctl = armTap(node, files, mode);
   const el = node.querySelector('[data-tapvid]');
   const vbox = el ? el.querySelector('[data-vbox]') : null;
   const ctrls = el ? el.querySelector('.ctrls') : null;
-  if (!vbox || !ctrls || !ctl) { q('[data-sv-finalslot]').textContent = '完成動画を読み込めませんでした'; return; }
+  if (!vbox || !ctrls || !ctl) { fail('動画を読み込めませんでした'); return; }
 
   /* 動画の枠と操作バーを見本の置き場所へ移す（armVideoBar は要素を掴んでいるので移動しても動く）。
      場所を指すモードの帯はこの移動で [data-tapvid] の外に出るため、探す起点を付け替える */
@@ -5297,29 +5699,22 @@ async function armScene(node, files, mode, ctl){
   big.className = 'bigplay'; big.setAttribute('aria-hidden', 'true'); big.hidden = true;
   vbox.appendChild(big);
 
-  const vname = el.dataset.vname || '';
-  q('[data-sv-finallbl]').textContent = vname.replace(/\.[^.]+$/, '');
-
-  sv = { root, q, it: curItem, ctl, mode,
+  sv = { root, q, it: curItem, ctl, mode, ch, seq, gate, files,
+         variants, variant, variantsVer: vx.ver, badVariants: bad, switchSeq: 0,
+         watchedBy: {},
          refvid: q('[data-sv-refvid]'), refSrc: null, refLoadOK: true, refIdx: 0,
-         matRaw: sceneMaterials(files, vname), tlRaw: tapTimeline(files, vname),
-         mat: null, tl: null, scenes: [], urls: {}, curN: null, manualN: null, manual: false,
+         matRaw: src.mat, tlRaw: tapTimeline(files, src.videoName), mainLabel: src.mainLabel,
+         videoName: src.videoName, seekAfterLoad: null,
+         unit: (src.mat && src.mat.unit) || 'シーン',
+         mat: null, tl: null, scenes: [], urls: src.urls, curN: null, manualN: null, manual: false,
          scriptRows: [], scriptHold: 0, scriptAuto: false, prevRows: [],
          lboxList: [], lboxI: 0, prev: [], watched: [], booted: false };
-  sv.prev = svPrevNotes(sv.it, threadOf(sv.it.id));
+  sv.watchedBy[sv.variant || ''] = sv.watched;   /* 見た範囲は案ごと（#523 のレビュー指摘7） */
+  if (tap) tap.variant = sv.variant;
+  sv.prev = svPrevNotes(sv.it, threadOf(sv.it.id), gate);
   svBuildPrev();
-
-  /* 素材表の画像・参照動画をまとめて署名URLにする（無ければ枠だけ出る） */
-  if (sv.matRaw) {
-    const rels = [];
-    for (const s of sv.matRaw.scenes) {
-      rels.push(s.start_img, s.end_img);
-      for (const r of s.refs) rels.push(r.img);
-      for (const r of s.ref_videos) rels.push(r.src);
-    }
-    sv.urls = await svSign(node.dataset.ch, node.dataset.seq, 'final', rels);
-    if (!root.isConnected) return;
-  }
+  svPaintMainHead();
+  svBuildVariantTabs();
 
   /* 尺の突き合わせ（1.0 秒を超えて違えば素材表も時刻表も使わない）はメタデータが届いてから */
   const prevMeta = ctl.onmeta;
@@ -5329,22 +5724,37 @@ async function armScene(node, files, mode, ctl){
     sv.mat = (sv.matRaw && okDur(sv.matRaw)) ? sv.matRaw : null;
     sv.tl  = (sv.tlRaw && okDur(sv.tlRaw)) ? sv.tlRaw : null;
     sv.scenes = sv.mat ? sv.mat.scenes : (sv.tl ? sv.tl.scenes : []);
+    /* 単位の呼び名は目録から。使わないと決めた目録の呼び名は引かない（既定の「シーン」に戻す） */
+    sv.unit = (sv.mat && sv.mat.unit) || 'シーン';
+    const colhd = q('[data-sv-colhd]');
+    if (colhd) colhd.textContent = 'いまの' + svUnit() + 'の素材';
     /* 指摘に添えるシーン名も同じ表から引く（素材表があればそちらを使う） */
     if (tap) tap.tl = sv.mat ? { duration: sv.mat.duration, scenes: sv.mat.scenes } : sv.tl;
     /* 参照動画の列は常に出す。「この動画に1本でもあるか」は面の言葉を分けるためだけに使う */
     sv.hasRefVideo = sv.scenes.some(s => (s.ref_videos || []).length);
     q('[data-sv-switch]').hidden = false;
     q('[data-sv-facts]').textContent = (d ? fmtT(d) : '—')
-      + (sv.scenes.length ? ' ・ シーン ' + sv.scenes.length : ' ・ シーンの区切りは不明');
+      + (sv.scenes.length ? ' ・ ' + svUnit() + ' ' + sv.scenes.length
+                          : ' ・ ' + svUnit() + 'の区切りは不明');
     svBuildScript();
     /* 台本は広い画面では開いたまま。スマホだけ最初は畳む（開いたあとは畳み直さない） */
     if (!sv.booted) q('.sv-script').classList.toggle('closed', window.innerWidth < 900);
+    /* 案を切り替えた直後は、同じ秒に合わせる。尺が短くてはみ出すときは同じ番号の頭へ（#523） */
+    if (sv.seekAfterLoad) {
+      const keep = sv.seekAfterLoad; sv.seekAfterLoad = null;
+      try { ctl.video.currentTime = svKeepTime(keep, d, sv.scenes); } catch (_) {}
+      ctl.paint();
+    }
     svSyncScene(true);
+    /* 単位の呼び名が決まるのはここなので、それを使う一覧はここで描き直す（#523） */
+    svBuildPrev();
+    if (tap && tap.mode === 'edit') tapPaint();
     svPaintWatch();
     svPaintBar();
     svRelayout();
     sv.booted = true;
   };
+  sv.apply = apply;               /* 案を切り替えたときも同じ組み立てをもう一度通す（#523） */
   ctl.onmeta = () => { if (prevMeta) prevMeta(); apply(); };
   if (ctl.video.readyState >= 1) apply(); else svPaintBar();
 
@@ -5423,10 +5833,24 @@ async function armScene(node, files, mode, ctl){
      ・承認は1タップだが、押したあと数秒は「取り消す」で無かったことにできる（2026-08-20）
    ⚠️ この4つ（.abox / .wbox / .rjbox / .dbar）は必ず同じ .decide の直下に置く——
    バーのボタンは自分の外にある囲みを .decide 経由で引き当てる（actBox / writeGroup）。 */
+/* ── 下端のボタンの言葉（#523）──────────────────────────────────────
+   検証用の動画は「作って良いか」ではなく「この作り方で良いか」を見るものなので、
+   本編と同じ言葉だと意味がずれる。**呼ぶ受け口は本編とまったく同じ**で、言葉だけを替える。 */
+const isPilotItem = it => !!(it && isPilotSeq(it.seq));
+const ACT_WORDS = {
+  normal: { approve: g => `${g}を承認`, approved:'承認済み', comment:'修正を依頼',
+            commentN: n => `修正を依頼（${n}件）`, reject:'没にする' },
+  pilot:  { approve: () => 'この方向でOK', approved:'記録しました', comment:'指摘を送る',
+            commentN: n => `指摘を送る（${n}件）`, reject:'この案はやめる' }
+};
+const actWords = it => isPilotItem(it) ? ACT_WORDS.pilot : ACT_WORDS.normal;
+
 function decideHTML(it, gate, changes, barFacts, plain){
   const key = it.id + '|' + gate;
   const gname = GATE_LABEL[gate] || gate;
-  const caution = GATE_CAUTION[gate] || null;
+  const w = actWords(it), pilot = isPilotItem(it);
+  /* 検証用の動画は先の工程が決まっていないので、進む先の注意書きは出さない（#523） */
+  const caution = pilot ? null : (GATE_CAUTION[gate] || null);
   const pid = `ap-${it.id}-${gate}`;
   const rid = `rj-${it.id}-${gate}`;
   const sub = latestSub(threadOf(it.id));
@@ -5449,35 +5873,39 @@ function decideHTML(it, gate, changes, barFacts, plain){
       <div class="wmsg" data-slot="approve" hidden></div>
     </div>
     <div class="wbox fixbox" data-wbox="${esc(key)}">
-      <h4 class="wh" data-freefix>修正を依頼するとき</h4>
+      <h4 class="wh" data-freefix>${pilot ? '気になった点を送るとき' : '修正を依頼するとき'}</h4>
       <textarea class="wta" data-freefix rows="3" aria-label="直してほしい点"
         placeholder="直してほしい点を入力（Ctrl + Enter で送信）"></textarea>
-      ${gate === 'final' ? tapPanelHTML(it) : ''}
+      ${tapPanelHTML(it)}
       <div class="wmsg" data-slot="comment" hidden></div>
       <div class="wact" data-freefix>
-        <span class="whint">書いてから下の「修正を依頼」を押すと、AI が直して新しい版で出し直します</span>
+        <span class="whint">${pilot
+          ? `書いてから下の「${esc(w.comment)}」を押すと、記録に残ります（制作は自動では動きません）`
+          : '書いてから下の「修正を依頼」を押すと、AI が直して新しい版で出し直します'}</span>
       </div></div>
     <div class="rjbox" data-rjbox="${esc(key)}">
       <div class="rjpanel" id="${rid}" hidden>
-        <div class="rjwarn">⚠ この動画の制作を止めて<b>ネタごと没</b>にします。表現を直したいだけなら、
-          上の入力欄に書いて「修正を依頼」で伝えてください。没の取り消しはダッシュボードからはできません。</div>
-        <label class="alb" for="${rid}-reason">没にする理由（必須）</label>
-        <textarea class="rta" id="${rid}-reason" rows="2" aria-label="没にする理由（必須）"
-          placeholder="例: 検証できないネタだった／類似動画が伸びていない"></textarea>
-        <div class="anote">理由は記録され、同じネタが再び提案されたときに参照されます。</div>
+        <div class="rjwarn">${pilot
+          ? `⚠ この案を<b>やめる</b>と記録します。直せば使えそうなら、上の入力欄に書いて「${esc(w.comment)}」で伝えてください。取り消しはダッシュボードからはできません。`
+          : '⚠ この動画の制作を止めて<b>ネタごと没</b>にします。表現を直したいだけなら、上の入力欄に書いて「修正を依頼」で伝えてください。没の取り消しはダッシュボードからはできません。'}</div>
+        <label class="alb" for="${rid}-reason">${pilot ? 'やめる理由（必須）' : '没にする理由（必須）'}</label>
+        <textarea class="rta" id="${rid}-reason" rows="2" aria-label="${pilot ? 'やめる理由（必須）' : '没にする理由（必須）'}"
+          placeholder="${pilot ? '例: この作り方では形が崩れる／別の案のほうが良い' : '例: 検証できないネタだった／類似動画が伸びていない'}"></textarea>
+        <div class="anote">理由は記録され、${pilot ? '次に同じ作り方を試すときに参照されます。' : '同じネタが再び提案されたときに参照されます。'}</div>
         <div class="wmsg" data-slot="reject" hidden></div>
         <div class="aact">
           <button class="btn" data-act="reject-cancel">キャンセル</button>
-          <button class="btn danger" data-act="reject-confirm" data-key="${esc(key)}" disabled>この理由で没にする</button>
+          <button class="btn danger" data-act="reject-confirm" data-key="${esc(key)}" disabled>${
+            pilot ? 'この理由でやめる' : 'この理由で没にする'}</button>
         </div>
       </div></div>
     <div class="dbar" data-dbar="${esc(key)}">
       ${barFacts || ''}
       <button class="btn kill" data-act="reject-open" data-key="${esc(key)}"
-        aria-expanded="false" aria-controls="${rid}">没にする</button>
-      <button class="btn soft" data-act="comment" data-key="${esc(key)}">修正を依頼</button>
+        aria-expanded="false" aria-controls="${rid}">${esc(w.reject)}</button>
+      <button class="btn soft" data-act="comment" data-key="${esc(key)}">${esc(w.comment)}</button>
       <button class="btn primary" data-act="approve-quick" data-key="${esc(key)}"
-        data-label="${esc(gname)}を承認">${esc(gname)}を承認</button>
+        data-label="${esc(w.approve(gname))}" data-donelabel="${esc(w.approved)}">${esc(w.approve(gname))}</button>
     </div></div>`;
 }
 
@@ -5722,8 +6150,9 @@ async function submitComment(box, key){
     { p_video_id: Number(vid), p_gate: gate, p_body: body });
   if (error) { wboxBusy(box, false, 'comment'); wboxMsg(box, rpcErrText(error, 'comment'), true, 'comment'); return; }
   ta.value = '';
+  const pilot = isPilotItem(store.byId.get(Number(vid)));
   await refreshAfterWrite(false);
-  toast('修正を依頼しました');
+  toast(pilot ? '指摘を送りました' : '修正を依頼しました');
 }
 
 /* 承認の2段階目（確定）。パネルが開いていないときは絶対に実行しない＝1タップでは通らない */
@@ -5733,6 +6162,7 @@ async function submitComment(box, key){
    詳細でメモを開いて書いてあれば、その内容を添えて承認する。 */
 async function approveNow(vid, gate, note){
   const gname = GATE_LABEL[gate] || gate;
+  const pilot = isPilotItem(store.byId.get(Number(vid)));
   /* 見ていた提出物の版を添える。裏で新しい版が提出されていたら DB が P0003 で断る（073・#502） */
   const { data, error } = await sb.rpc('approve_gate',
     { p_video_id: Number(vid), p_gate: gate, p_note: note || null,
@@ -5761,30 +6191,36 @@ async function approveNow(vid, gate, note){
   markApproved(vid, gate, true);
   renderShell();
   const rev = data && data.target_revision ? `第${data.target_revision}版の` : '';
-  toast((data && data.already_approved) ? `${rev}${gname}は既に承認済みです` : `${rev}${gname}を承認しました`);
+  if (pilot) {
+    toast((data && data.already_approved) ? `${rev}この案は記録済みです`
+                                          : `${rev}「この方向でOK」と記録しました`);
+  } else {
+    toast((data && data.already_approved) ? `${rev}${gname}は既に承認済みです` : `${rev}${gname}を承認しました`);
+  }
 }
 /* 承認した動画のボタンを、画面を作り直さずにその場で書き換える（表の行・スマホのカード・詳細） */
 function markApproved(vid, gate, done){
   document.querySelectorAll(`[data-act="approve-quick"][data-key="${vid}|${gate}"]`).forEach(b => {
     b.disabled = done;
-    b.textContent = done ? '承認済み' : (b.dataset.label || '承認');
+    b.textContent = done ? (b.dataset.donelabel || '承認済み') : (b.dataset.label || '承認');
   });
 }
 function quickApprove(key, btn){
   const [vidS, gate] = String(key).split('|');
   const gname = GATE_LABEL[gate] || gate;
+  const w = actWords(store.byId.get(Number(vidS)));
   /* 指摘を書いたまま承認を押したら1回だけ聞く。押し間違いなら戻れるし、
      わざと「送らずに承認」したい回もあるので止めはしない（#509 段4） */
   if (tapActive(key) && tap.items.length
-      && !window.confirm(`指摘が ${tap.items.length} 件残っています。送らずに承認しますか`)) return;
+      && !window.confirm(`指摘が ${tap.items.length} 件残っています。送らずに「${w.approve(gname)}」にしますか`)) return;
   /* 詳細のメモ欄（同じ動画・同じゲートのもの）に書いてあれば添える。
      承認ボタンは下端の固定バー＝承認欄の外にあるので、決める枠（.decide）ごしに引く */
   const box = btn && (btn.closest('[data-abox]')
     || (btn.closest('.decide') || document).querySelector('[data-abox]'));
   const ta = box && box.querySelector('.ata');
   const note = ((ta && ta.value) || '').trim();
-  if (btn) { btn.disabled = true; btn.textContent = '承認しました'; }
-  actWithUndo(`${gname}を承認しました`,
+  if (btn) { btn.disabled = true; btn.textContent = w.approved; }
+  actWithUndo(w === ACT_WORDS.pilot ? '「この方向でOK」と記録しました' : `${gname}を承認しました`,
     () => approveNow(vidS, gate, note),
     () => markApproved(vidS, gate, false));
 }
@@ -5797,9 +6233,10 @@ async function submitReject(box, key){
   if (!panel || panel.hidden) return;
   const [vidS, gate] = key.split('|');
   const vid = Number(vidS);
+  const pilot = isPilotItem(store.byId.get(vid));
   const ta = panel.querySelector('.rta');
   const reason = ((ta && ta.value) || '').trim();
-  if (!reason) { wboxMsg(box, '没にする理由を入力してください', true, 'reject'); if (ta) ta.focus(); return; }
+  if (!reason) { wboxMsg(box, pilot ? 'やめる理由を入力してください' : '没にする理由を入力してください', true, 'reject'); if (ta) ta.focus(); return; }
 
   wboxMsg(box, '', false, 'reject');
   wboxBusy(box, true, 'reject-confirm');
@@ -5809,7 +6246,8 @@ async function submitReject(box, key){
   if (ta) ta.value = '';
   const already = !!(data && data.already_dropped);
   await refreshAfterWrite(true);
-  toast(already ? 'この動画はすでに没になっています' : '没にしました');
+  toast(pilot ? (already ? 'この案はすでにやめています' : 'この案はやめる、と記録しました')
+              : (already ? 'この動画はすでに没になっています' : '没にしました'));
 }
 
 /* ── コメント本文の1行要約（#266 / 2026-09-06）─────────────────────────
@@ -7289,7 +7727,7 @@ const gfClock = ms => ms == null ? '—' : fmtTime(new Date(ms).toISOString());
    下段のフォールバックで拾う。
    動画として登録済みならチャンネルとタイトルが引けるのでそちらを優先し、
    試作・練習のものは番号だけで出す。 */
-const EP_PILOT = {icon: '🧪', name: '試作・検証'};
+const EP_PILOT = {icon: PILOT_META.icon, name: '試作・検証'};
 const EP_HINT = [
   {re: /^BZ/i,  icon: '🌏', name: '世界のバズ雑学'},
   {re: /^DT/i,  icon: '🦷', name: '歯科医番長'},
@@ -7304,8 +7742,7 @@ const EP_HINT = [
    企画の頭2文字が付いていても本編ではないので、企画名では出さない。 */
 function epHint(seq){
   const s = String(seq || '');
-  const num = /(\d{3,4})$/.exec(s);
-  if (num && Number(num[1]) >= 9000) return EP_PILOT;
+  if (isPilotSeq(s)) return EP_PILOT;         /* 見分け方の正本は isPilotSeq（1か所だけ） */
   return EP_HINT.find(h => h.re.test(s)) || null;
 }
 function gfWhose(r, titles){
@@ -7521,8 +7958,9 @@ async function loadAutomationNow(force){
     }
   } catch (_) {}   /* 全チャンネル可ユーザー以外は読めない＝0件のまま */
   try {
-    const vids = (await q(sb.from('v_dashboard_list')
-      .select('seq,title,approved_storyboard_at').eq('channel', state.ch)
+    /* 検証のタブを開いたまま運営を見ることもあるので、範囲の付け方は一覧と同じ窓口を通す（#523） */
+    const vids = (await q(scopeCh(sb.from('v_dashboard_list')
+      .select('seq,title,approved_storyboard_at'), state.ch)
       .eq('status', '素材制作中').not('approved_storyboard_at', 'is', null))) || [];
     if (vids.length) {
       const oldest = vids.map(v => v.approved_storyboard_at).sort()[0];
