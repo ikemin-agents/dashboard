@@ -2215,7 +2215,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/21 16:21';
+const BUILT_AT = '9/21 16:23';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3895,7 +3895,7 @@ function videoBlockHTML(f, tapMode){
 
 function assetBlocksHTML(files, tapMode){
   if (!files.length) return NO_ASSET;
-  /* `…_p01.jpg` 形式は資料の「ページ」（絵コンテの各ページ等）。サムネ格子ではなく
+  /* `…_p01.jpg` 形式は資料の「ページ」。サムネ格子ではなく
      縦スクロールのビューアで見せる（#203） */
   const pageNo = f => { const m = /_p(\d+)\.(?:jpe?g|png)$/i.exec(f.name); return m ? Number(m[1]) : null; };
   const pages = files.filter(f => f.kind === 'image' && pageNo(f) != null)
@@ -3924,7 +3924,7 @@ function assetBlocksHTML(files, tapMode){
   }
   if (pages.length) {
     blocks.unshift(`<div class="asset">
-      <div class="ahead"><span class="anm">絵コンテ ${pages.length} ページ</span>
+      <div class="ahead"><span class="anm">資料 ${pages.length} ページ</span>
         <span class="asz">箱の中をスクロール・画像クリックで原寸</span></div>
       <div class="pageview">${pages.map((f, i) => f.url
         ? `<figure><a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">
@@ -3970,15 +3970,15 @@ const mountAllAssets = root =>
   (root || document).querySelectorAll('[data-assets]:not([data-lazy])').forEach(mountAssets);
 
 /* ── 素材を「見るだけ」で開く折りたたみ（#360）────────────────────────
-   02（世界のバズ雑学）は絵コンテの承認ポイントを廃止した。レビュー節は承認待ち／
-   【AI】修正中の動画にしか出ないので、そのままだと搬出済みの絵コンテがどこからも
-   見られない。詳細画面に見るだけの畳みを足して読めるようにする（承認・コメント・没は
-   付けない＝書き込みの入口はレビュー節ひとつのまま）。
+   レビュー節は承認待ち／【AI】修正中の動画にしか出ないので、そのままだと搬出済みの
+   素材がどこからも見られない。詳細画面に見るだけの畳みを足して読めるようにする
+   （承認・コメント・没は付けない＝書き込みの入口はレビュー節ひとつのまま）。
      ・レビュー節に出ているゲートはここへ出さない（同じ素材を2か所に並べない）
      ・その工程に到達した動画にだけ出す（到達前は Storage にまだ何も無い）
-     ・中身は開いたときに初めて読みに行く（畳んだままなら通信しない） */
+     ・中身は開いたときに初めて読みに行く（畳んだままなら通信しない）
+   絵コンテの畳みは 2026-09-21 に外した（#525）——PDF を組む工程をやめ、開始フレームは
+   完成のレビュー画面で見るようにしたので、開いても中身が無い。 */
 const MATERIAL_FOLDS = [
-  { gate:'storyboard', label:'絵コンテを見る' },
   { gate:'final',      label:'完成した動画を見る' }
 ];
 function materialsHTML(it, rvGate){
@@ -7364,8 +7364,9 @@ const RUN_KIND_JA = {
   'dispatcher-audio-generate':'ナレーション音声の生成',
   'dispatcher-storyboard-generate':'絵コンテ設計係',
   'dispatcher-storyboard-review-spec':'spec審査係',
-  'dispatcher-storyboard-archive':'絵コンテを組む係',
-  'dispatcher-storyboard-submit-review':'絵コンテの提出',
+  'dispatcher-thumb-card':'サムネカードを組む',
+  'dispatcher-storyboard-archive':'絵コンテを組む係（旧）',
+  'dispatcher-storyboard-submit-review':'絵コンテの提出（旧）',
   'dispatcher-frame-submit':'フレームの発注',
   'dispatcher-frame-collect':'フレームの回収',
   'dispatcher-clip-submit':'映像の発注',
