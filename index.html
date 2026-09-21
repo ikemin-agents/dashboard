@@ -1715,6 +1715,13 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 /* ⚠️ 参照動画の列は**常に出す**（オーナー指摘 2026-09-21）。番組や動画によって列が消えると
    並びが揃わないので、1本も無い動画でも同じ大きさの枠を置いて中に「素材なし」と書く */
 .sview .sv-screen{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
+/* 主画面に出せる動画がまだ無く、目録の「通しの参照動画」を借りている回だけ、
+   借りた通しを**参照動画の列の位置**へ、本来の動画の位置（左）を「素材なし」の面へ入れ替える
+   （オーナー決定 2026-09-21）。入れ替えるのは見た目の位置と見出しだけで、連動の親・指摘に付く
+   ファイル名・尺の照合は主画面の動画のまま。ショットごとの参照動画がある回は入れ替えない。
+   どの幅でも .sv-screens は「左右2つ」なので、order だけで足りる（縦に積む状態は無い） */
+.sview .sv-stage[data-borrow="1"] .sv-screen.final{order:2}
+.sview .sv-stage[data-borrow="1"] .sv-screen.ref{order:1}
 .sview .sv-scrhd{display:flex; align-items:baseline; gap:var(--sp-2); min-width:0; padding:0 2px}
 .sview .sv-scrhd .scrttl{font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em;
   color:var(--muted); flex:0 0 auto}
@@ -2215,7 +2222,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/21 23:04';
+const BUILT_AT = '9/22 00:02';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4964,7 +4971,7 @@ function sceneDetailHTML(it, plan){
               <div class="loadbox" data-sv-finalslot>素材を読み込み中…</div>
             </div>
             <div class="sv-screen ref">
-              <div class="sv-scrhd"><span class="scrttl">参照動画</span>
+              <div class="sv-scrhd"><span class="scrttl" data-sv-refttl>参照動画</span>
                 <span class="scrsub" data-sv-reflbl>—</span>
                 <span class="scrpick" data-sv-refpick hidden></span>
                 <span class="refdone" data-sv-refdone hidden>参照動画はここまで</span></div>
@@ -5261,9 +5268,12 @@ function svPaintRefFace(){
   let msg = null, sub = '';
   if (!vids.length) {
     /* 列は常に出す（オーナー指摘 2026-09-21）。動画ぜんたいに1本も無いのか、
-       このシーンに無いだけなのかで言葉を分ける */
+       このシーンに無いだけなのかで言葉を分ける。
+       借りている状態では、この枠は**本来の動画の位置**なので言葉もそちらに合わせる */
     msg = '素材なし';
-    sub = sv.hasRefVideo ? 'この' + svUnit() + 'は参照動画なし' : 'この動画には参照動画がありません';
+    sub = svBorrowed() ? '映像はまだありません'
+        : sv.hasRefVideo ? 'この' + svUnit() + 'は参照動画なし'
+        : 'この動画には参照動画がありません';
   } else if (!svUrl(vids[sv.refIdx] ? vids[sv.refIdx].src : null)) {
     msg = 'まだありません';
     sub = 'この版では参照動画がまだ用意されていません。';
@@ -5297,7 +5307,7 @@ function svApplyRef(){
   sv.q('[data-sv-reflbl]').textContent = vids.length
     ? ((vids[sv.refIdx].label || '動きの手本')
        + (vids.length > 1 ? '（' + (sv.refIdx + 1) + '/' + vids.length + '本目）' : ''))
-    : '—';
+    : (svBorrowed() ? '' : '—');
   if (want !== sv.refSrc) {
     sv.refvid.pause();
     sv.refSrc = want;
@@ -5578,15 +5588,28 @@ async function svSource(ch, seq, gate, files, v, ver){
   return out;
 }
 
-/* 左の枠の見出し。通しの参照動画を主画面にしたときは目録の label（例「通しのモック」）を出す */
+/* 主画面に出せる動画（{承認ポイント}_v{NN}.mp4）がまだ無く、目録の「通しの参照動画」を
+   主画面に借りている状態か（オーナー決定 2026-09-21）。借りているときは**見た目の位置だけ**
+   入れ替えて、借りた通しを「参照動画」の列に、左（本来の動画の位置）を「素材なし」の面にする。
+   ⚠️ ショットごとの参照動画がある回は入れ替えない——右の列はそちらが使うので潰さない。
+   `hasRefVideo` が決まるのは尺の照合のあと（apply）なので、決まるまでは今までどおりの並び。 */
+const svBorrowed = () => !!(sv && sv.mainLabel && sv.hasRefVideo === false);
+
+/* 動画2本の枠の見出し。借りている状態では左右の見出しも入れ替える（中身と同じ順に読めるように） */
 function svPaintMainHead(){
   if (!sv) return;
   const gname = GATE_LABEL[sv.gate] || sv.gate;
   const label = sv.mainLabel || (gname + 'の動画');
-  const ttl = sv.q('[data-sv-mainttl]'); if (ttl) ttl.textContent = label;
-  const seg = sv.q('[data-sv-segmain]'); if (seg) seg.textContent = label;
+  const borrow = svBorrowed();
+  const stage = sv.q('[data-sv-stage]');
+  if (stage) { if (borrow) stage.dataset.borrow = '1'; else delete stage.dataset.borrow; }
+  const ttl = sv.q('[data-sv-mainttl]'); if (ttl) ttl.textContent = borrow ? '参照動画' : label;
+  const seg = sv.q('[data-sv-segmain]'); if (seg) seg.textContent = borrow ? '参照動画' : label;
+  const rttl = sv.q('[data-sv-refttl]'); if (rttl) rttl.textContent = borrow ? (gname + 'の動画') : '参照動画';
+  const rseg = sv.q('[data-sv-segref]'); if (rseg) rseg.textContent = borrow ? (gname + 'の動画') : '参照動画';
   const sub = sv.q('[data-sv-finallbl]');
-  if (sub) sub.textContent = String(sv.videoName || '').replace(/\.[^.]+$/, '');
+  /* 借りているときの添え字は目録の label（例「通しのモック」）。ふだんはファイル名 */
+  if (sub) sub.textContent = borrow ? label : String(sv.videoName || '').replace(/\.[^.]+$/, '');
 }
 
 /* ── 同じ検証の複数の案（#523）────────────────────────────────────
@@ -5735,6 +5758,9 @@ async function armScene(node, files){
     if (tap) tap.tl = sv.mat ? { duration: sv.mat.duration, scenes: sv.mat.scenes } : sv.tl;
     /* 参照動画の列は常に出す。「この動画に1本でもあるか」は面の言葉を分けるためだけに使う */
     sv.hasRefVideo = sv.scenes.some(s => (s.ref_videos || []).length);
+    /* 借りている状態かが決まるのはここ（ショットごとの参照動画の有無を見てから）。
+       見出しと並びをここでもう一度描き直す */
+    svPaintMainHead();
     q('[data-sv-switch]').hidden = false;
     q('[data-sv-facts]').textContent = (d ? fmtT(d) : '—')
       + (sv.scenes.length ? ' ・ ' + svUnit() + ' ' + sv.scenes.length
