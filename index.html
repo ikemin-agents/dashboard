@@ -6587,7 +6587,7 @@ const ANA_DEF = {
   rate: '動画の長さに対して平均で何%まで見られたか。ループ再生があると100%を超える',
   hook: '冒頭1%の時点で、平均に対して何倍の人が見ているか',
   end:  '最後の瞬間に、平均に対して何倍の人が残っているか。登録につながりやすい',
-  loss: '冒頭から15%地点までに去った人の割合',
+  loss: '冒頭から15%地点までに去った人の割合。単独では良し悪しを言えないので、組み合わせで見る（序盤29%以下 かつ 中盤減衰38%以下）',
   eng:  '再生数のうち、スワイプせず実際に見た割合',
   spk:  '1,000回見られて何人が登録したか'
 };
@@ -6597,8 +6597,15 @@ const ANA_DEF = {
 const ANA_GOAL = {
   rate: {thr:70,   step:10,  dir:1,  unit:'%', fmt:v => String(Math.round(v))},
   hook: {thr:1.8,  step:0.2, dir:1,  unit:'',  fmt:v => v.toFixed(1)},
-  end:  {thr:0.85, step:0.1, dir:1,  unit:'',  fmt:v => v.toFixed(2)},
-  loss: {thr:25,   step:5,   dir:-1, unit:'%', fmt:v => String(Math.round(v))}
+  end:  {thr:0.85, step:0.1, dir:1,  unit:'',  fmt:v => v.toFixed(2)}
+};
+/* 目安の線を持たない指標の、表示だけの設定（区分の幅と書式）。
+   冒頭の離脱は 2026-09-22（#505）に単独の目安 25% を廃止した——63本で通過31.7%・的中60%で、
+   勝ち群18本のうち6本を「フックが弱い」と誤診断していた。良し悪しは
+   「序盤29%以下 かつ 中盤減衰38%以下」の組み合わせで見る（正本 scene-taxonomy.md §2-1b）。
+   ここに残すのは分布のグラフを描くための幅と書式だけで、線も到達／未達の色分けも出さない。 */
+const ANA_SCALE = {
+  loss: {step:5, dir:-1, unit:'%', fmt:v => String(Math.round(v))}
 };
 /* 目安を当てるチャンネル（オーナー決定 2026-09-06）。根拠は世界のバズ雑学の50本だけなので、
    歯科医番長では線を描かず、到達／未達の色分けも赤字もしない（数値だけ出す）。
@@ -6608,7 +6615,7 @@ const ANA_GOAL_CHANNELS = ['buzz-zatsugaku'];
 const ANA_GOAL_NG_GENRE = /E系/;
 const goalCh = ch => ANA_GOAL_CHANNELS.includes(ch);
 const goalVid = p => goalCh(p.channel) && !ANA_GOAL_NG_GENRE.test(p.genre || '');
-/* 目安の値を文にするときの共通表記（例: 70% / 1.8 / 0.85 / 25%） */
+/* 目安の値を文にするときの共通表記（例: 70% / 1.8 / 0.85） */
 const goalTxt = k => `${ANA_GOAL[k].fmt(ANA_GOAL[k].thr)}${ANA_GOAL[k].unit}`;
 /* グラフの下・表の下に添える1行（線の対象が02だけであることの説明） */
 /* チャンネルを名指ししない（足すたびに直し忘れる・#506 中8）。線を当てるのは ANA_GOAL_CHANNELS だけ */
@@ -6888,6 +6895,8 @@ function scatterChart(items, W, opt){
    棒の色＝チャンネル。目安に到達した区分は塗りつぶし、未達は白抜き（輪郭だけ）。
    ⚠️ 目安を当てないチャンネル（groups[].goal が false）は棒を全部塗りつぶしにし、
       対象が1つも無いときは破線も描かず、横軸の範囲にも閾値を混ぜない。
+      **そもそも目安を持たない指標（冒頭の離脱・ANA_SCALE 側）も同じ経路で全部塗りつぶしになる**
+      ので、凡例の「塗りつぶし＝到達」は目安のある指標だけに出すこと（#505・2026-09-22）。
    groups = [{ch, name, color, values, goal}]（values は欠測を除いてある） */
 function histogram(groups, cfg, W, H){
   const { thr, step, dir, fmt, unit } = cfg;
@@ -7079,7 +7088,7 @@ async function renderAnalytics(){
       return `<button class="chchip" data-anach="${esc(c.slug)}" aria-pressed="${on}" style="--chac:${m.accent}">
         <i></i>${m.icon} ${esc(m.name)}</button>`;
     }).join('')}
-    <span class="hint">チップを押すとそのチャンネルの表示を消せます・塗りつぶし＝目安に到達／白抜き＝未達（${esc(ANA_GOAL_SCOPE)}）</span></div>`;
+    <span class="hint">チップを押すとそのチャンネルの表示を消せます・<b>目安のある指標では</b>塗りつぶし＝到達／白抜き＝未達（${esc(ANA_GOAL_SCOPE)}）。冒頭の離脱は目安を置いていないので全部塗りつぶしで出します</span></div>`;
 
   /* ── ① チャンネルの現在地 ───────────────────────────────────
      行＝指標（大分類ごとに見出し行）・列＝チャンネル の縦持ち。横持ちは列が15本になり
@@ -7238,12 +7247,14 @@ async function renderAnalytics(){
 
   /* ── ④ 視聴の質（4つの分布・チャンネルごとに同じ区分で横並び）───── */
   const qBlock = (id, title, key, pick, gpick, big) => {
-    const cfg = ANA_GOAL[key];
+    /* 目安を持たない指標（冒頭の離脱）は ANA_SCALE の表示設定だけで描く */
+    const hasGoal = !!ANA_GOAL[key];
+    const cfg = ANA_GOAL[key] || ANA_SCALE[key];
     /* values＝棒に積む全部の値 / gvalues＝目安に照らして数える値（02 の通常雑学だけ） */
-    const groups = sers.map(s => ({ ...s, goal:goalCh(s.ch), values: pick(ST[s.ch]), gvalues: gpick(ST[s.ch]) }))
+    const groups = sers.map(s => ({ ...s, goal:hasGoal && goalCh(s.ch), values: pick(ST[s.ch]), gvalues: gpick(ST[s.ch]) }))
       .filter(g => g.values.length);
-    const goalTxt = cfg.dir > 0 ? `${cfg.fmt(cfg.thr)}${cfg.unit}以上` : `${cfg.fmt(cfg.thr)}${cfg.unit}以下`;
-    const head = `<h3>${esc(title)}<span class="goal">目安 ${goalTxt}</span></h3>
+    const goalTxt = !hasGoal ? '' : (cfg.dir > 0 ? `${cfg.fmt(cfg.thr)}${cfg.unit}以上` : `${cfg.fmt(cfg.thr)}${cfg.unit}以下`);
+    const head = `<h3>${esc(title)}${hasGoal ? `<span class="goal">目安 ${goalTxt}</span>` : ''}</h3>
       <p class="defline">${esc(ANA_DEF[key])}</p>`;
     if (!groups.length) return `<div class="qblk${big ? ' big' : ''}">${head}
       <div class="noitem">計測できた動画がまだありません</div></div>`;
@@ -7260,10 +7271,10 @@ async function renderAnalytics(){
       <p class="axnote">横軸＝${esc(title)}の区分（幅${cfg.fmt(cfg.step)}${cfg.unit}）・縦軸＝その区分に入る動画の本数</p>
       ${tbl}
       <div class="chartwrap" id="${id}"></div>
-      <div class="distlegend"><span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝目安に到達</span>
+      ${hasGoal ? `<div class="distlegend"><span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝目安に到達</span>
         <span><i class="sw" style="background:transparent;box-shadow:inset 0 0 0 2px var(--ink-2)"></i>白抜き＝未達</span>
         <span style="color:var(--crit)">┊ 目安の線</span></div>
-      <p class="axnote">${esc(ANA_GOAL_SCOPE)}</p>
+      <p class="axnote">${esc(ANA_GOAL_SCOPE)}</p>` : `<p class="axnote">この指標には目安の線を置いていません（単独では良し悪しを言えないため）</p>`}
     </div>`;
   };
   const qualCard = `<div class="card span2">
@@ -7377,13 +7388,13 @@ async function renderAnalytics(){
         <tr><td>平均視聴率</td><td class="wrap">${esc(ANA_DEF.rate)}</td><td>${goalTxt('rate')}以上</td></tr>
         <tr><td>冒頭の維持</td><td class="wrap">${esc(ANA_DEF.hook)}</td><td>${goalTxt('hook')}以上</td></tr>
         <tr><td>末尾の維持</td><td class="wrap">${esc(ANA_DEF.end)}</td><td>${goalTxt('end')}以上</td></tr>
-        <tr><td>冒頭の離脱</td><td class="wrap">${esc(ANA_DEF.loss)}</td><td>${goalTxt('loss')}以下（診断用・単独で良し悪しは言わない）</td></tr>
+        <tr><td>冒頭の離脱</td><td class="wrap">${esc(ANA_DEF.loss)}</td><td>—（単独の目安は置かない・診断用）</td></tr>
         <tr><td>エンゲージ率</td><td class="wrap">${esc(ANA_DEF.eng)}</td><td>高いほど良い</td></tr>
         <tr><td>千再生あたり登録</td><td class="wrap">${esc(ANA_DEF.spk)}</td><td>高いほど良い</td></tr>
         <tr><td>登録者数</td><td class="wrap">チャンネル登録者の実数</td><td>—</td></tr>
         <tr><td>再生数</td><td class="wrap">動画が再生された回数。累計はそれまでの合計</td><td>—</td></tr>
         </tbody></table></div>
-      <p class="axnote">数字はすべて毎朝6時に更新しています。計測できた動画だけを集計に入れています。色はチャンネルを表し、塗りつぶし／白抜きが目安に到達したかどうかを表します</p>
+      <p class="axnote">数字はすべて毎朝6時に更新しています。計測できた動画だけを集計に入れています。色はチャンネルを表し、<b>目安のある指標では</b>塗りつぶし／白抜きが目安に到達したかどうかを表します（目安を置いていない冒頭の離脱は全部塗りつぶし）</p>
       <p class="axnote">目安は世界のバズ雑学の50本から出した値で、歯科医番長には当てていない（計測が増えたらチャンネル別にする）</p>
     </details>`;
 
