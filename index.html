@@ -68,6 +68,7 @@
   --fs-2xs:.6875rem; --fs-xs:.75rem; --fs-sm:.8125rem; --fs-md:.875rem;
   --fs-lg:1rem; --fs-xl:1.1875rem; --fs-hero:clamp(2rem,3.4vw,2.6rem);
   --lh-tight:1.35; --lh:1.6;
+  --okcol-w:122px;                 /* 進捗マトリクス右端の承認ボタンの列幅（#536 中4） */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
   --r-sm:7px; --r-md:10px; --r-lg:14px; --r-pill:999px;
 }
@@ -379,9 +380,10 @@ td.dim{color:var(--muted)}
    ③.mtx th.okcol（承認）の3つだけ。幅を書いていないタイトル列が残り幅を取る。
    12列ぶんの合計が約1280pxなので、左右パディングを 14px → 10px に詰めて収める。 */
 /* 2026-09-19: ジャンル・投稿日時・再生数・登録者増の列を外し、工程マスを 46px に詰めた。
-   固定列の合計は 956px。タイトルに 230px を残して最小幅は 1186px
-   （幅 1246px 以上の画面なら横スクロールなしで収まる） */
-.mtx table{table-layout:fixed; min-width:1186px}
+   固定列の合計は 1002px（承認の列を 122px に広げたぶん +46px・#536 中4）。
+   タイトルに 230px を残して最小幅は 1232px
+   （幅 1292px 以上の画面なら横スクロールなしで収まる） */
+.mtx table{table-layout:fixed; min-width:1232px}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
 .mtx th.st,.mtx td.st{width:46px; text-align:center; padding-left:2px; padding-right:2px;
   background:var(--stage-bg)}
@@ -465,7 +467,10 @@ td.dim{color:var(--muted)}
 .okbtn:hover{filter:brightness(1.07)}
 .okbtn:disabled{background:var(--done-tint); color:var(--done); cursor:default}
 /* 表では右端の専用列に、カードではバッジ行の右端に置く（オーナー指定 2026-08-20） */
-.mtx td.okcol,.mtx th.okcol{width:76px; white-space:nowrap; text-align:center}
+/* 幅は検証用の動画の「この方向でOK」（ACT_WORDS.pilot）が折り返さずに収まる実測値。
+   76px のときはボタンが列からはみ出し、右端が押せなかった（#536 中4）。
+   ⚠️ 幅の正本は --okcol-w 1つ（colgroup の inline style も同じ変数を見る） */
+.mtx td.okcol,.mtx th.okcol{width:var(--okcol-w); white-space:nowrap; text-align:center}
 /* 表が横スクロールになる幅でも承認ボタンが切れないよう、右端に貼り付ける（オーナー指摘 2026-09-19）。
    左端の番号列と同じ作り */
 .mtx td.okcol,.mtx th.okcol{position:sticky; right:0; z-index:1;
@@ -1151,7 +1156,10 @@ details.opsec[open]>summary{margin-bottom:var(--sp-4)}
    出し、軸の中央付近で名前同士が交差しないようにする。5分間隔で常時稼働するもの
    （ポーラー）は特定の時刻を持たないので軸には点を打たず、軸の上に帯（.tlband）として
    出す。時間軸だけは狭い画面で横スクロールを許容する（旧2列表の「横スクロール無し」
-   方針は詳細の表側で引き続き守る＝表の列は番号・時刻とも幅1%に固定し、本文だけ折り返す）。 */
+   方針は詳細の表側で引き続き守る＝表の列は番号・時刻とも幅1%に固定し、本文だけ折り返す）。
+   ⚠️ **図そのものに 840px（ラベル 150px ＋ 軸 680px）要る**ので、それより狭い画面では
+   図を出さず下の表だけにする（幅 390px では 172px の枠に 680px を押し込んで読めなかった・
+   #536 低）。表は同じ番号・同じ色の丸バッジを持つので、図が無くても内容は全部読める。 */
 /* 用語集。1語＝1行の縦積み。スマホでも横スクロールしないよう
    表組みにはしない（言葉／意味／別の呼び方 を上下に重ねる） */
 .glgroup{margin:0 0 var(--sp-4)}
@@ -1178,7 +1186,7 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .gfhead.warn{background:var(--warn-tint); color:var(--ink)}
 .gfhead.bad{background:var(--crit-tint); color:var(--ink)}
 /* 正常な合間の待ち（できあがりを回収するまで）。異常ではないので色を当てず灰色で置く
-   （オーナー指摘 2026-08-28: 受け取り待ちが赤く出て毎回びっくりする） */
+   （オーナー指摘 2026-08-28: 回収待ちが赤く出て毎回びっくりする） */
 .gfhead.info{background:var(--surface-2); color:var(--ink-2)}
 .gfmetrics{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-2); margin-bottom:var(--sp-3)}
 .gfm{background:var(--surface-2); border:1px solid var(--border-2); border-radius:var(--r-md); padding:10px 12px}
@@ -1212,7 +1220,7 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .gfghead .seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
 /* タイトルは省略しない（オーナー指定 2026-08-20: 見切れずに全部出す）。長ければ折り返す */
 .gfghead .ttl{min-width:0; color:var(--ink-2); line-height:1.5; overflow-wrap:anywhere}
-/* 状態の札。待ちは無彩色・制作中は青・受け取り待ちは橙。見込みを超えた1件だけ赤で強く出す
+/* 状態の札。待ちは無彩色・制作中は青・回収待ちは橙。見込みを超えた1件だけ赤で強く出す
    （現行の目立たせ方を踏襲） */
 .gfghead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2); background:var(--surface-1);
   border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap}
@@ -1296,6 +1304,8 @@ a.syslink .t{color:var(--accent, var(--ink))}
 .tlcardcount{font-size:var(--fs-2xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
 .tlouter{flex:1 1 auto; min-width:0; overflow-x:auto; -webkit-overflow-scrolling:touch}
 .timeline{position:relative; min-width:680px; padding:0 14px 66px}
+/* 図の実寸（ラベル 150px ＋ 隙間 10px ＋ 軸 680px）に足りない画面では図を出さない（#536 低） */
+@media (max-width:879px){ .tltrack{display:none} }
 .tlpins{position:relative}
 .tlrow{position:absolute; z-index:1; display:flex; align-items:center; gap:5px; white-space:nowrap}
 .tlrow.off{opacity:.5}
@@ -1842,8 +1852,13 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-refbox .sv-slot .shot,.sview .sv-refbox .sv-slot .none{height:var(--ref-h)}
 .sview .sv-slot{flex:0 0 auto; display:flex; flex-direction:column; gap:3px;
   width:calc(var(--slot-h) * 9 / 16)}
-.sview .sv-slot .cap{font-size:var(--fs-2xs); color:var(--muted); white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis}
+/* 見出しは目録の label をそのまま出すので、枠の幅（9:16）では1行に収まらない
+   （「①閉じた列の真上から」で 185px 必要・枠は 72px＝7文字で切れていた・#536 低）。
+   枠の大きさは決まりなので**見出しだけ3行まで折り返す**（枠の幅 72px × 3 = 216px ぶん）。
+   高さは2行ぶんを下限にして、短い見出しどうしでは画像の上端が揃うようにする */
+.sview .sv-slot .cap{font-size:var(--fs-2xs); color:var(--muted); line-height:1.3;
+  white-space:normal; overflow-wrap:anywhere; min-height:2.6em; overflow:hidden;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical}
 .sview .sv-slot .shot{width:100%; height:var(--slot-h); border-radius:var(--r-sm);
   border:1px solid var(--border); background:var(--surface-3); padding:0; cursor:zoom-in;
   overflow:hidden; display:block}
@@ -2087,21 +2102,17 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-stage[data-cmp="off"][data-view="ref"] .sv-screen.final{display:none}
   .sview .sv-stage[data-cmp="on"] .sv-screens{grid-template-columns:repeat(2, minmax(0,1fr));
     gap:var(--sp-2)}
-  /* ── 動画は幅いっぱい・操作は薄い棒だけ（オーナー指摘 2026-09-22）──────────────
-     高さは「ヘッダ＋工程の帯＋切替の段＋棒の段＋下端バー」を除いた残りをぜんぶ渡す。
-     9:16 を保ったまま高さを先に決めるので、残りが高いときは幅で頭打ち（＝幅いっぱい）になる。
-     --sv-chrome はヘッダー・工程の帯・下端バーの実測（JS が入れる）。88px は切替の段と棒の段 */
-  .sview{--sv-vidh:calc(100dvh - var(--sv-chrome) - 108px)}
+  /* ── 動画は幅いっぱい・操作は薄い棒だけ（オーナー決定 2026-09-23・#536 中5）──────
+     スマホでは 9:16 を保ったまま**欄の幅をぜんぶ渡す**。高さで頭打ちにすると
+     390×844 で 268px（欄の幅の 73%）までしか出ず、いちばん大事な画が小さかった。
+     動画の下の指摘欄・ボタンは縦スクロールで見る（承認ボタンが初期表示で隠れてよい）。 */
   /* 動画に高さを渡すため、見出しの段を2つ畳む（切替の段が「どちらを見ているか」を兼ねる） */
   .sview .sv-sec.sa>.sv-sechd{display:none}
   .sview .sv-screen.final>.sv-scrhd{display:none}
-  .sview .vidbox{height:auto; width:min(100%, calc(var(--sv-vidh) * 9 / 16));
-    aspect-ratio:9/16; margin:0 auto}
-  .sview .sv-stage[data-cmp="on"] .vidbox{width:100%}
+  .sview .vidbox{height:auto; width:100%; aspect-ratio:9/16; margin:0 auto}
   /* 指摘の入力シートが出ているあいだは動画を少し縮める（下からせり上がるシートに
      半分ほど隠れる。全部を出せる大きさまで縮めると指摘を書けないほど小さくなる） */
-  body.sheetopen .sview{--sv-vidh:calc((100dvh - var(--sv-chrome) - 108px) * .78)}
-  body.sheetopen .sview .vidbox{width:min(100%, calc(var(--sv-vidh) * 9 / 16))}
+  body.sheetopen .sview .vidbox{width:78%}
   body.sheetopen .sview .sv-stage[data-cmp="on"] .vidbox{width:100%}
   /* ▶・−0.5s・+0.5s・🔊 はスマホでは出さない。再生／停止は動画のタップ、コマ送りは
      指摘のシートの中だけ（オーナー指摘 2026-09-22）。棒はドラッグ／タップでシークできる */
@@ -2262,7 +2273,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/23 07:55';
+const BUILT_AT = '9/23 07:56';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2584,14 +2595,21 @@ async function loadFacets(ch){
 /* 承認待ち・【AI】修正中の一覧（レビュータブ＋左ナビのバッジ）。
    ページングとは独立に「状態を持つ行」だけを引く＝在庫が増えても件数は増えない。
    1本の動画で複数ゲートが同時に状態を持つ場合も取りこぼさないよう、ゲート別の
-   状態列（script_state / storyboard_state / final_state）から行を展開する。 */
+   状態列（script_state / storyboard_state / final_state）から行を展開する。
+   ⚠️ 数えるのは**その番組がいま使う承認ポイントだけ**（`chMeta(ch).gates`＝DB の
+   channels.human_gates が正本・画面の他の場所と同じ）。廃止した承認ポイントの
+   状態が古い行に残っており、素通しで展開すると見出しとバッジの件数が表の本数より
+   多くなる（歯科で「承認待ち 70件」・表は26本／#536 中3）。検証のタブは番組を
+   またぐので、その動画が属する番組の承認ポイントで絞る。 */
 async function loadPending(ch){
   if (store.pending[ch]) return store.pending[ch];
   const items = (await q(scopeCh(sb.from('v_dashboard_list').select('*'), ch)
     .eq('has_gate_state', true))).filter(r => inScope(ch, r.seq)).map(mapRow);
   const rv = [], rc = [];
   for (const it of items) {
+    const gates = chMeta(it.channel || ch).gates || [];
     for (const g of ['script', 'storyboard', 'final']) {
+      if (!gates.includes(g)) continue;
       const st = it[g + '_state'];
       if (!st) continue;
       const at = it[g + '_state_at'];
@@ -2914,7 +2932,7 @@ async function loadSystem(){
 const GF_OPEN_STATUS = ['submitting', 'in_flight', 'done'];
 /* コレクターが生成機の履歴から後追いで記録したジョブ（source が pipeline 以外）は、
    誰も受け取りに行かないので「できあがり」が終了状態。これを未回収に数えると
-   「受け取り待ち」が永久に減らず、詰まりの警告が鳴りっぱなしになる（#278）。
+   「回収待ち」が永久に減らず、詰まりの警告が鳴りっぱなしになる（#278）。
    この除き方は genfarm.py の open_job_predicate（正本）と揃えること。 */
 const gfCollected = r => r.source && r.source !== 'pipeline' && r.status === 'done';
 const GF_FALLBACK_SEC = {h3_video:223, flux_image:76, unknown:200};
@@ -3369,7 +3387,7 @@ const mtxRow = (it, cols) => `<tr data-vid="${it.id}" tabindex="0" class="${
    col に幅を書けば行の中身に関係なく効く。幅を書かないタイトル列が残りを取る。 */
 const mtxCols = cols => `<colgroup>${cols.map(k => k === '@'
     ? PSTAGES.map(() => '<col style="width:46px">').join('')
-    : `<col${MCOL[k].w ? ` style="width:${MCOL[k].w}"` : (k === 'ok' ? ' style="width:76px"' : '')}>`).join('')}</colgroup>`;
+    : `<col${MCOL[k].w ? ` style="width:${MCOL[k].w}"` : (k === 'ok' ? ' style="width:var(--okcol-w)"' : '')}>`).join('')}</colgroup>`;
 const mtxTable = (cols, body) => `<table>${mtxCols(cols)}<thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
 
 function matrixTable(core){
@@ -6973,14 +6991,20 @@ function histogram(groups, cfg, W, H){
 /* ── ここから画面 ───────────────────────────────────────────── */
 const anaRangeLabel = () => state.anaRange ? `直近${state.anaRange}日` : '記録の全部';
 
-/* 到達までの見込み。伸びが0以下なら見込みは出さない（言い切らない） */
+/* 到達までの見込み。伸びが0以下なら見込みは出さない（言い切らない）。
+   ⚠️ 伸びがごく小さいと見込みが何百年にもなり、数字として意味を持たない
+   （「約3,240.8年」が実際に出ていた・#536 低）。PACE_MAX_YEARS を超えたら
+   年数を出さず「このペースでは見通せません」に落とす。 */
+const PACE_MAX_YEARS = 10;
 function paceLine(name, now, goal, gain30, unit){
   if (now >= goal) return `${name}は目標に到達しています。`;
   if (gain30 == null) return `${name}の直近30日の伸びは、まだ記録が足りず出せません。`;
   if (gain30 <= 0) return `${name}は直近30日は増えていないため見込みは出せません。`;
   const months = (goal - now) / gain30;
+  const head = `${name}は直近30日で+${nf(Math.round(gain30))}${unit}。`;
+  if (months / 12 > PACE_MAX_YEARS) return `${head}このペースでは${nf(goal)}${unit}までの見通しは出せません。`;
   const span = months >= 24 ? `約${(months / 12).toFixed(1)}年` : `約${Math.max(1, Math.round(months))}か月`;
-  return `${name}は直近30日で+${nf(Math.round(gain30))}${unit}。このペースなら${nf(goal)}${unit}まで${span}。`;
+  return `${head}このペースなら${nf(goal)}${unit}まで${span}。`;
 }
 
 /* 千再生あたり登録（登録者増 ÷ 再生数 × 1000）。再生0・欠測は出さない */
@@ -7101,6 +7125,14 @@ async function renderAnalytics(){
   const md = t => t ? fmtMDW(t + 'T00:00:00+09:00') : '—';
   const st0 = sers.length ? ST[sers[0].ch] : null;
   const span = (a, b) => (a && b) ? `${md(a)} → ${md(b)}` : '記録が2日分たまると出ます';
+  /* 行の名前は「30日ぶんの記録がある」ときだけ直近30日と名乗る（#536 低）。
+     記録が 08/24 から 09/04 の11日しか無いのに「直近30日」と書くと、増え方を
+     30日のものとして読んでしまう。足りないときは実際にある日数を名前にする。 */
+  const gainLb = (a, b) => {
+    if (!a || !b) return '直近30日';
+    const n = dayNum(b) - dayNum(a) + 1;
+    return n >= 30 ? '直近30日' : `記録のある期間（${n}日）`;
+  };
   const delta = (v, unit) => v == null ? '—' : `${v >= 0 ? '+' : ''}${nf(v)} ${unit}`;
   const mnOf = (st, t) => {
     const p1 = Math.min(1, (st.latestSubs || 0) / t.subs), p2 = Math.min(1, st.totalViews / t.plays);
@@ -7112,12 +7144,14 @@ async function renderAnalytics(){
     { nm:'登録者', rows:[
       { lb:'いま', note:`${st0 ? md(st0.subsLatestT) : '—'} の朝の実数`, cell: st => st.latestSubs == null ? '—' : `${nf(st.latestSubs)} 人` },
       { lb:'先週比', note: st0 ? span(st0.s7t, st0.subsLatestT) : '—', cell: st => delta(st.subsDelta, '人') },
-      { lb:'直近30日', note: st0 ? span(st0.s30t, st0.subsLatestT) : '—', cell: st => delta(st.subsGain30, '人') }
+      { lb: st0 ? gainLb(st0.s30t, st0.subsLatestT) : '直近30日',
+        note: st0 ? span(st0.s30t, st0.subsLatestT) : '—', cell: st => delta(st.subsGain30, '人') }
     ]},
     { nm:'再生数', rows:[
       { lb:'累計', note:'投稿済の動画の合計', cell: st => `${nf(st.totalViews)} 回` },
       { lb:'先週比', note: st0 ? span(st0.c7t, st0.cumLatestT) : '—', cell: st => delta(st.viewsDelta, '回') },
-      { lb:'直近30日', note: st0 ? span(st0.c30t, st0.cumLatestT) : '—', cell: st => delta(st.viewsGain30, '回') }
+      { lb: st0 ? gainLb(st0.c30t, st0.cumLatestT) : '直近30日',
+        note: st0 ? span(st0.c30t, st0.cumLatestT) : '—', cell: st => delta(st.viewsGain30, '回') }
     ]},
     { nm:'視聴の質', rows:[
       { lb:'平均視聴率', note:`計測できた動画の平均・目安 ${goalTxt('rate')}（02 の基準）`, cell: st => st.avgRate == null ? '—' : `${st.avgRate.toFixed(1)}%<span class="sub">計測済 ${st.rates.length}/${st.posted.length} 本</span>` },
@@ -7943,17 +7977,17 @@ function gfGroups(s, titles){
     const late = !!over;
     /* できあがりと生成中が混ざっている束は、畳んだままでも内訳が読めるようにする */
     const mix = (ready && making)
-      ? `できあがり${ready}本は受け取り待ち・${making}本は生成中` : '';
+      ? `できあがり${ready}本は回収待ち・${making}本は生成中` : '';
     return Object.assign(g, {
       running: n('running'), queued: n('queued') + n('todo'), ready,
       eta: eta || null, late, over, mix,
-      /* 受け取り待ちの最長経過（できあがりからの時間）。詰まりの判定に使う */
+      /* 回収待ちの最長経過（できあがりからの時間）。詰まりの判定に使う */
       readyAge: ready ? Math.max(...g.jobs.filter(j => j.state === 'ready').map(j => j.age)) : null,
       unit: kinds.length === 1 ? (GF_UNIT[kinds[0]] || '素材') : '素材',
       done: ready, total: g.jobs.length,
       badge: late ? {t:`見込み超過 +${gfDur(over)}`, c:'late'}
            : run ? {t:'制作中', c:'run'}
-           : ready === g.jobs.length ? {t:'受け取り待ち', c:'ready'}
+           : ready === g.jobs.length ? {t:'回収待ち', c:'ready'}
            : {t:'待ち', c:''}
     });
   });
@@ -8000,7 +8034,7 @@ function genfarmCard(gf){
     {k:'順番待ち', v:waitN,
      s:s.allDoneAt ? `${cur && cur.overBy > 0 ? '再見積り ' : ''}${gfClock(s.allDoneAt)} ごろ全部そろう`
        : '—'},
-    {k:'受け取り待ち', v:s.stale.length,
+    {k:'回収待ち', v:s.stale.length,
      s:s.stale.length ? `できあがりから最長${gfDur(readyMax)}` : '—'}
   ].map(t => `<div class="gfm"><div class="k">${esc(t.k)}</div><div class="v">${t.v}</div>
       <div class="s">${esc(t.s)}</div></div>`).join('');
@@ -8083,7 +8117,10 @@ async function loadAutomationNow(force){
   } catch (_) {}
   try {
     const cut = new Date(Date.now() - 2 * 3600e3).toISOString();   /* 心拍の切れた残骸は見せない */
-    out.runs = (await q(sb.from('agent_runs').select('id,kind,channel,started_at,heartbeat_at')
+    /* ⚠️ 実行記録は全チャンネルを1回で処理するのでチャンネルの列を持たない。
+       持たない列を選ぶと問い合わせそのものが弾かれ、この区画が60秒ごとに
+       失敗し続ける（#536 低）。チャンネルの印は実行記録の中の出来事の側に付く */
+    out.runs = (await q(sb.from('agent_runs').select('id,kind,started_at,heartbeat_at')
       .is('finished_at', null).gte('heartbeat_at', cut)
       .order('id', { ascending: false }).limit(3))) || [];
     if (out.runs.length) {
@@ -8110,8 +8147,9 @@ function automationCard(an){
   }
   const runs = an.runs.map(r => {
     const what = AUTO_RUN_JA[r.kind] || RUN_KIND_JA[r.kind] || r.kind;
-    const note = an.runNotes[r.id]
-      ? ` — ${esc(String(an.runNotes[r.id]).slice(0, 80))}` : '';
+    /* 実行記録と同じく、内部の言葉を落としてから出す（#536 低） */
+    const raw = an.runNotes[r.id] ? (plainWords(an.runNotes[r.id]) || String(an.runNotes[r.id])) : '';
+    const note = raw ? ` — ${esc(raw.slice(0, 80))}` : '';
     return `<div style="display:flex;gap:8px;align-items:baseline;font-size:var(--fs-sm)">
       <span>↻</span><div>${AI_TAG}作業中: <b>${esc(what)}</b>
       （${esc(fmtDT(r.started_at) || '')} 開始）${note}</div></div>`;
@@ -8364,7 +8402,11 @@ function recordSection(ops, an){
                     : `<span class="cq">共通</span>`;
       const sev = e.severity === 'error' ? 'bad' : (e.severity === 'warn' ? 'warn' : '');
       const mk = e.severity === 'error' ? '✕' : (e.severity === 'warn' ? '⚠' : '✓');
-      return `<li class="${sev}">${tag}<span class="mk">${mk}</span><span class="tm">${esc(fmtTime(e.at))}</span><span class="bd">${esc(e.body)}</span></li>`;
+      /* 記録の本文は制作側が内部向けに書いたもの。承認画面と同じ plainWords を通して
+         内部の識別子・英語の判定語が混ざった括弧書きを落とす（#536 低）。
+         落とした結果が空になる行は、時刻と印だけ残さず元の本文を出す */
+      const body = plainWords(e.body) || e.body || '';
+      return `<li class="${sev}">${tag}<span class="mk">${mk}</span><span class="tm">${esc(fmtTime(e.at))}</span><span class="bd">${esc(body)}</span></li>`;
     }).join('');
     /* 異常があったものだけ最初から開いておく（見てほしいものを隠さない） */
     const open = st.key === 'err' || st.key === 'warn' || st.key === 'run';
@@ -8375,7 +8417,7 @@ function recordSection(ops, an){
         ${dur ? `<span class="dur">所要 ${esc(dur)}</span>` : ''}
         <span class="stat ${st.cls}">${st.txt}</span></summary>
       <div class="runbody">
-        ${r.summary ? `<div class="runsummary">${esc(r.summary)}</div>` : ''}
+        ${r.summary ? `<div class="runsummary">${esc(plainWords(r.summary) || r.summary)}</div>` : ''}
         ${laneChips(r.lanes)}
         ${evs.length ? `<ul class="acts">${acts}</ul>`
           : `<div class="dhint">この回の細かい記録は残っていません</div>`}
