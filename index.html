@@ -1007,6 +1007,9 @@ tr.dropped td{color:var(--muted)}
 .sheet{background:var(--surface-1); border:1px solid var(--s1); border-radius:var(--r-lg);
   box-shadow:var(--shadow-2); padding:var(--sp-3) var(--sp-3) var(--sp-3)}
 .sheet .at{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:var(--sp-3)}
+/* スマホの完成レビューでだけシートの中に出すコマ送りの行（オーナー指摘 2026-09-22）。
+   広い画面では動画の下の操作バーに −0.5s／+0.5s があるので、ここは出さない */
+.sheet .atnudge{display:none}
 .sheet .at .t{font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums}
 .sheet .at .sc{font-size:var(--fs-xs); color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .tagrow{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:var(--sp-3)}
@@ -2084,10 +2087,36 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-stage[data-cmp="off"][data-view="ref"] .sv-screen.final{display:none}
   .sview .sv-stage[data-cmp="on"] .sv-screens{grid-template-columns:repeat(2, minmax(0,1fr));
     gap:var(--sp-2)}
-  .sview .vidbox{height:auto; width:min(100%, calc(42dvh * 9 / 16)); aspect-ratio:9/16; margin:0 auto}
+  /* ── 動画は幅いっぱい・操作は薄い棒だけ（オーナー指摘 2026-09-22）──────────────
+     高さは「ヘッダ＋工程の帯＋切替の段＋棒の段＋下端バー」を除いた残りをぜんぶ渡す。
+     9:16 を保ったまま高さを先に決めるので、残りが高いときは幅で頭打ち（＝幅いっぱい）になる。
+     --sv-chrome はヘッダー・工程の帯・下端バーの実測（JS が入れる）。88px は切替の段と棒の段 */
+  .sview{--sv-vidh:calc(100dvh - var(--sv-chrome) - 108px)}
+  /* 動画に高さを渡すため、見出しの段を2つ畳む（切替の段が「どちらを見ているか」を兼ねる） */
+  .sview .sv-sec.sa>.sv-sechd{display:none}
+  .sview .sv-screen.final>.sv-scrhd{display:none}
+  .sview .vidbox{height:auto; width:min(100%, calc(var(--sv-vidh) * 9 / 16));
+    aspect-ratio:9/16; margin:0 auto}
   .sview .sv-stage[data-cmp="on"] .vidbox{width:100%}
-  body.sheetopen .sview .vidbox{width:min(100%, calc(34dvh * 9 / 16))}
+  /* 指摘の入力シートが出ているあいだは動画を少し縮める（下からせり上がるシートに
+     半分ほど隠れる。全部を出せる大きさまで縮めると指摘を書けないほど小さくなる） */
+  body.sheetopen .sview{--sv-vidh:calc((100dvh - var(--sv-chrome) - 108px) * .78)}
+  body.sheetopen .sview .vidbox{width:min(100%, calc(var(--sv-vidh) * 9 / 16))}
   body.sheetopen .sview .sv-stage[data-cmp="on"] .vidbox{width:100%}
+  /* ▶・−0.5s・+0.5s・🔊 はスマホでは出さない。再生／停止は動画のタップ、コマ送りは
+     指摘のシートの中だけ（オーナー指摘 2026-09-22）。棒はドラッグ／タップでシークできる */
+  .sview .sv-ctrls-slot .ctrls .cbtn{display:none}
+  .sview .sv-ctrls-slot .ctrls{padding:var(--sp-2) 0 0; gap:var(--sp-3)}
+  .sview .sv-ctrls-slot .seek{height:28px; flex:1 1 auto; order:0; min-width:60px}
+  .sview .sv-ctrls-slot .seek .tptrack{height:4px; margin-top:-2px}
+  /* 「並べて比較」はスマホでは出さない（横に2本並べても読めない） */
+  .sview .sv-viewswitch .cmpbtn{display:none}
+  /* 指摘のシートの中だけに出るコマ送りの行（時刻は 0:47.0 まで出す） */
+  .sview .sheet .atnudge{display:flex; align-items:center; gap:var(--sp-2); flex-wrap:wrap;
+    margin-bottom:var(--sp-3)}
+  .sview .sheet .atnudge .t{font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums;
+    min-width:58px; text-align:center}
+  .sview .sheet .atnudge .pickbtn{margin-left:auto}
   .sview .sv-now{--slot-h:128px}
   .sview .cbtn,.sview .tagbtn{height:44px}
   .sview .btn.sm{min-height:44px}
@@ -2233,7 +2262,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/22 16:12';
+const BUILT_AT = '9/22 20:50';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4065,6 +4094,12 @@ const fmtT = t => {
   const m = Math.floor(t / 60), s = Math.floor(t % 60);
   return m + ':' + (s < 10 ? '0' : '') + s;
 };
+/* 0.1秒まで出す形（指摘のシートのコマ送り。0:47.0 のように読む） */
+const fmtT1 = t => {
+  if (!isFinite(t) || t < 0) t = 0;
+  const m = Math.floor(t / 60), s = t % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1);
+};
 
 /* この素材の箱をタップ入力にするか。完成の mp4 のときだけで、承認待ちの左列なら書ける
    （'edit'）、それ以外の場所（見るだけの畳み・承認待ちでない動画）は操作バーだけ（'view'） */
@@ -4280,6 +4315,14 @@ function tapPanelHTML(it){
       <div class="at"><span class="t" data-stime>0:00</span>
         <span class="sc" data-sscene></span>
         <span class="gbadge fix" data-smode hidden>直しています</span></div>
+      <!-- スマホでだけ出るコマ送りの行（オーナー指摘 2026-09-22）。広い画面は動画の下の
+           操作バーに同じものがあるので CSS で隠す -->
+      <div class="atnudge">
+        <button class="btn sm" type="button" data-tapact="nudge-back" aria-label="0.5秒もどる">−0.5s</button>
+        <span class="t" data-stime1>0:00.0</span>
+        <button class="btn sm" type="button" data-tapact="nudge-fwd" aria-label="0.5秒すすむ">+0.5s</button>
+        <button class="btn sm pickbtn" type="button" data-tapact="add-pick" aria-pressed="false">📍 場所を指す</button>
+      </div>
       <div class="tagrow" data-tagrow></div>
       <input class="noteinput" type="text" data-snote maxlength="120" aria-label="指摘の一言"
         placeholder="上の言葉を押すとここに入ります。続けて書き足せます（マイクで話しても可）">
@@ -4352,6 +4395,7 @@ function tapOpenSheet(){
   const at = k ? k.t : tap.draft.t;
   tapBuildTags();
   tapEl('[data-stime]').textContent = fmtT(at);
+  tapEl('[data-stime1]').textContent = fmtT1(at);
   tapEl('[data-sscene]').textContent = k
     ? tapWhere(normKind(tap.draft.kind), at, k.scene == null ? null : k.scene, k.scene_title || null)
     : tapWhere(normKind(tap.draft.kind), at, sc ? sc.n : null, sc ? sc.title : null);
@@ -4367,6 +4411,9 @@ function tapOpenSheet(){
   /* シーン素材つきの画面では、広い画面のとき一覧の場所を一時的に譲る（#519） */
   document.querySelector('#view-detail [data-sv-secb]')?.classList.add('sheeton');
   if (!tapMobile()) input.focus({ preventScroll: true });
+  /* スマホはシートが下からせり上がるので、動画が画面の外だと何を見て書いているのか分からない。
+     シートを開いたら動画を画面の中へ入れる（オーナー指摘 2026-09-22） */
+  else { try { tap.ctl.box.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {} }
   svPaintBar();
 }
 function tapCloseSheet(){
@@ -4380,6 +4427,25 @@ function tapCloseSheet(){
   svPaintBar();
 }
 
+/* シートの中の −0.5s／+0.5s（スマホの完成レビュー・オーナー指摘 2026-09-22）。
+   動画をその分だけ動かし、**足す指摘の時刻もいっしょに動かす**（表示は 0:47.0 の形）。
+   直している最中（keep あり）は元の指摘の時刻を保つので、動くのは動画だけ */
+function tapNudge(d){
+  if (!tap || !tap.draft || !tap.ctl) return;
+  const v = tap.ctl.video;
+  v.pause();
+  const t = Math.min(tap.ctl.dur() || 0, Math.max(0, v.currentTime + d));
+  try { v.currentTime = t; } catch (_) {}
+  tap.ctl.paint();
+  if (tap.draft.keep) return;                 /* 直している最中は時刻を動かさない */
+  tap.draft.t = Math.round(t * 100) / 100;
+  const sc = tapScene(tap.draft.t);
+  tapEl('[data-stime]').textContent = fmtT(tap.draft.t);
+  tapEl('[data-stime1]').textContent = fmtT1(tap.draft.t);
+  tapEl('[data-sscene]').textContent =
+    tapWhere(normKind(tap.draft.kind), tap.draft.t, sc ? sc.n : null, sc ? sc.title : null);
+}
+
 /* ── 場所を指すモード（オーナー指示 2026-09-20）──────────────────────────
    ふだん動画の上を押すと再生／一時停止なので、場所つきの指摘は**入口のボタンから始める**。
    押すと動画を止めてこのモードに入り、動画の上に帯を出す（ふだんは案内文を出さない）。
@@ -4391,8 +4457,9 @@ function tapSyncPick(){
   if (tap.ctl.hitEl) tap.ctl.hitEl.classList.toggle('on', on);
   const band = tap.ctl.el.querySelector('[data-pickband]');
   if (band) band.hidden = !on;
-  const btn = tapEl('[data-tapact="add-pick"]');
-  if (btn) btn.setAttribute('aria-pressed', String(on));
+  /* 「場所を指す」は入口の行とシートの中の2か所にあるので、両方の見た目を揃える */
+  if (tap.panel) tap.panel.querySelectorAll('[data-tapact="add-pick"]')
+    .forEach(btn => btn.setAttribute('aria-pressed', String(on)));
   svPaintBar();
 }
 function tapPickOn(){
@@ -4632,6 +4699,8 @@ function armTap(node, files, mode){
       if (a === 'add-pick')       { if (tap.picking) tapPickOff(); else tapPickOn(); }
       else if (a === 'add-whole') tapStart('whole', null);
       else if (a === 'add')       tapAdd();
+      else if (a === 'nudge-back') tapNudge(-0.5);
+      else if (a === 'nudge-fwd')  tapNudge(0.5);
       else if (a === 'cancel')    tapCloseSheet();
       else if (a === 'edit')      { e.stopPropagation(); tapEdit(Number(b.dataset.nid)); }
       else if (a === 'del') {
