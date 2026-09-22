@@ -2262,7 +2262,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/22 23:37';
+const BUILT_AT = '9/23 07:55';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2907,11 +2907,15 @@ async function loadSystem(){
      open   … まだ手元に無いジョブ（materialized_at が空 かつ 発注中／実行中／生成済み）
      recent … 見込み時間の較正に使う直近の実測（終わったジョブの所要時間）
    30秒だけキャッシュする（システムタブを開き直すたびに叩かないため）。 */
+/* ▼ ここから下の「未回収の数え方」は**写し**。正本は進行係の
+   00-config/automation/dispatcher/genfarm.py（GENFARM_PORTS / open_job_predicate /
+   port_filter / FALLBACK_AVG）。画面は言語が違うので import できず写しを置いている。
+   数え方を変えるときは genfarm.py を直してからここへ写す（#536 中14②）。 */
 const GF_OPEN_STATUS = ['submitting', 'in_flight', 'done'];
 /* コレクターが生成機の履歴から後追いで記録したジョブ（source が pipeline 以外）は、
    誰も受け取りに行かないので「できあがり」が終了状態。これを未回収に数えると
    「受け取り待ち」が永久に減らず、詰まりの警告が鳴りっぱなしになる（#278）。
-   この除き方は genfarm-status（EXCLUDE_COLLECTED_DONE）と揃えること。 */
+   この除き方は genfarm.py の open_job_predicate（正本）と揃えること。 */
 const gfCollected = r => r.source && r.source !== 'pipeline' && r.status === 'done';
 const GF_FALLBACK_SEC = {h3_video:223, flux_image:76, unknown:200};
 /* 「できあがったのに手元へ降りていない」を詰まりと疑うまでの分数。**数えはじめは
