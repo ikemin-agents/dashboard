@@ -2233,7 +2233,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/22 11:41';
+const BUILT_AT = '9/22 11:48';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4994,7 +4994,7 @@ function sceneDetailHTML(it, plan){
             </div>
           </div>
           <div class="sv-matcol">
-            <div class="sv-colhd"><span data-sv-colhd>いまのシーンの素材</span><span class="n">押すと大きく見られます</span></div>
+            <div class="sv-colhd"><span data-sv-colhd>いまのシーンの素材</span></div>
             <div class="sv-now" data-sv-now></div>
           </div>
           <div class="sv-ctrls-slot" data-sv-ctrls></div>
@@ -5229,7 +5229,9 @@ function svPaintNow(){
   row.className = 'sv-shelfrow';
   if (refs.length) {
     refs.forEach((r, i) => row.appendChild(slotEl({
-      cap: '参照' + (i + 1) + (r.label ? '（' + r.label + '）' : ''), src: r.img, full: r.label })));
+      /* 見出しは目録の label をそのまま（例「①閉じた列」。番号は提出側が動画の中で通しで振る）。
+         「参照1（…）」の重ね書きはやめた（オーナー指摘 2026-09-22） */
+      cap: r.label || ('参照' + (i + 1)), src: r.img, full: r.label })));
   } else {
     /* 0枚のシーンも枠を1つ出す（欄ごと消さない） */
     row.appendChild(slotEl({ cap:'参照画像', src:null }));
