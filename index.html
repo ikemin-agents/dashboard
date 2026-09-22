@@ -230,8 +230,11 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chitem:hover,.chitem:focus-visible{background:var(--surface-2)}
 .chitem .cdot{width:9px; height:9px; border-radius:3px; flex:0 0 auto}
 body[data-chindep="1"] .chtabs{opacity:.6}
-body[data-chindep="1"] .chpickwrap{opacity:.6}
-body[data-chindep="1"] .chpickwrap:hover{opacity:1}
+/* 薄くするのは「いま見ているチャンネル」の見出し（summary）だけ（#533）。囲みごと薄くすると
+   開いたメニューまで半透明になり、元に戻す手が :hover しか無いのでスマホでは戻せなかった。 */
+body[data-chindep="1"] .chpick>.chcur{opacity:.6}
+body[data-chindep="1"] .chpick[open]>.chcur,
+body[data-chindep="1"] .chpickwrap:hover .chpick>.chcur{opacity:1}
 body[data-chindep="1"] .chtab[data-ch]{cursor:pointer}
 body[data-chindep="1"] .chtab[data-ch]:hover{opacity:1}
 /* 共通画面のタブはチャンネルタブと同じ見た目だが、選択中の色帯だけ中立色にする
@@ -712,8 +715,6 @@ tr.dropped td{color:var(--muted)}
 .resv{font-size:var(--fs-2xs); background:var(--warn-tint); border-radius:5px; padding:1px 7px;
   color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap}
 /* 枠線は使わず tint＋文字色（.resv と同じ作り）に揃える・色は一覧のバッジと同じ割り当て */
-.rvflag{font-size:var(--fs-2xs); background:var(--s1-tint); border:none;
-  border-radius:5px; padding:1px 7px; color:var(--s1-ink); font-weight:680; white-space:nowrap}
 .rcflag{font-size:var(--fs-2xs); background:var(--fix-tint); border:none;
   border-radius:5px; padding:1px 7px; color:var(--fix-ink); font-weight:680; white-space:nowrap}
 .rcflag.ai{background:var(--surface-3); color:var(--ink-2)}
@@ -1745,9 +1746,6 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   border:1.5px solid rgba(255,255,255,.7); display:grid; place-items:center; pointer-events:none}
 .sview .bigplay::before{content:''; display:block; margin-left:5px; border-style:solid;
   border-width:13px 0 13px 21px; border-color:transparent transparent transparent #fff}
-.sview .sv-novid{position:absolute; inset:0; display:grid; place-content:center; gap:var(--sp-3);
-  z-index:3; padding:var(--sp-5); text-align:center; color:var(--ink-2);
-  background:var(--surface-2); font-size:var(--fs-sm)}
 /* ── 「素材なし」の見た目は1種類だけ（オーナー指摘 2026-09-21）────────────────
    **枠は必ず作り、中に「素材なし」と書く**（欄そのものを消さない＝歯抜けにしない）。
    破線は「欠けている」ように見えるので使わず、薄い無彩色の面＋小さな文字に統一する。 */
@@ -1811,7 +1809,6 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-sline[aria-current="true"]{background:var(--act-soft); border-left-color:var(--act-line);
   color:var(--ink)}
 .sview .sv-sline[aria-current="true"] .sn{color:var(--sub-ink)}
-.sview .sv-none{font-size:var(--fs-sm); color:var(--muted); padding:2px; line-height:var(--lh-tight)}
 /* 台本の中の「素材なし」（欄いっぱいの面にする＝枠は残る） */
 .sview .sv-scriptlist>.sv-nomat{flex:1 1 auto; align-self:stretch;
   border-radius:var(--r-sm); min-height:44px}
@@ -1913,8 +1910,17 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   color:var(--sub-ink); font-weight:650; box-shadow:inset 0 0 0 1px var(--act-line)}
 .sview .nrec.jump:hover{background:var(--act-soft)}
 .sview .gbadge.fix{background:var(--attn); color:var(--attn-ink)}
-/* 入力シートが開いているあいだは一覧の場所を譲る（動画と③は動かさない） */
+/* 入力シートが開いているあいだは一覧の場所を譲る（動画は動かさない） */
 .sview .sv-sec.sb.sheeton .nlistwrap{display:none}
+/* シートは**中身の高さぶん**取る（枠に合わせて縮めない・監査 #533）。縮めると定型の札の
+   3段目・自由記述の欄・「この指摘を足す」「やめる」が内側のスクロールの下に隠れ、そこに
+   続きがあるという手がかりが出ない（PC 1400×900 の実測で 291px の中身が 94px に潰れていた）。
+   足りないぶんは②の枠ごと動かす（入れ子の内側だけを動かすのはやめる）。
+   スマホは下端の固定シート（.sheet.float・position:fixed）で全部見えているので触らない。 */
+@media (min-width:900px){
+  .sview .sv-sec.sb.sheeton .sheet{flex:0 0 auto; overflow:visible}
+  .sview .sv-sec.sb.sheeton .wbox{overflow-y:auto; scrollbar-width:thin}
+}
 
 /* ── ③ 前回までの私の指摘（2026-09-21 に「経緯・履歴」から作り替え・オーナー指摘）──
    出すのは**オーナー自身の指摘だけ**。AI の記録・工程の履歴・フックと、詳細への切り替えは
@@ -1978,6 +1984,11 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-sec.sb{grid-column:2; grid-row:1}
   .sview .sv-sec.sc{grid-column:2; grid-row:2}
   .sview .sv-sec.sa .sv-stage{flex:1 1 auto; overflow:hidden}
+  /* 入力シートを開いているあいだだけ②を右の列いっぱいに伸ばし、③の上に重ねる（#533）。
+     ①は grid-row 1 / span 2 のままなので**動画と台本の大きさは変わらない**。
+     行の高さも変えないので、ページ全体が縦に動くこともない。 */
+  .sview .sv-sec.sb.sheeton{grid-row:1 / span 2; position:relative; z-index:2}
+  .sview .sv-wrap:has(.sv-sec.sb.sheeton) .sv-sec.sc{visibility:hidden}
 }
 /* ≧1700px: 台本・動画2本・素材の3列（上下端をそろえる） */
 @media (min-width:1700px){
@@ -2222,11 +2233,10 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/22 00:08';
+const BUILT_AT = '9/22 11:41';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
-const SORT_ORDER = ['queue','edit','video','board','script','idea','posted','dropped'];
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
 const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
 const MONETIZE = [
@@ -2343,13 +2353,13 @@ function loadUI(){
    byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため）
    rework  = 動画ごとの「この版は何の作り直しか」（human / ai / null）。一覧の札に使う */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
-                board:{}, threads:{}, rework:{}, looks:{}, rvRev:{}, ops:null, analytics:{}, assets:{}, system:null,
+                threads:{}, rework:{}, looks:{}, rvRev:{}, ops:null, analytics:{}, assets:{}, system:null,
                 genfarm:null, autonow:null,
                 /* 検証用の動画が1本でもあるか（#523）。loadPilotFlag が入れる */
                 pilot:{has:false} };
 const clearVideoCaches = () => {
   store.byId = new Map();
-  store.core = {}; store.facets = {}; store.pending = {}; store.board = {}; store.threads = {};
+  store.core = {}; store.facets = {}; store.pending = {}; store.threads = {};
   store.rework = {}; store.looks = {};
 };
 const resetStockFilters = () => {
@@ -2570,7 +2580,6 @@ async function loadPending(ch){
 }
 const pendingList = ch => ((store.pending[ch] || {}).rv) || [];
 const triageCount = ch => ((store.pending[ch] || {}).triage) || 0;
-const changesList = ch => ((store.pending[ch] || {}).rc) || [];
 
 /* 一覧に載っていない動画（別ページ・レビュータブ経由・ディープリンク）も開けるよう、
    索引に無ければ1行だけ取りに行く */
@@ -2875,7 +2884,6 @@ const GF_OPEN_STATUS = ['submitting', 'in_flight', 'done'];
    「受け取り待ち」が永久に減らず、詰まりの警告が鳴りっぱなしになる（#278）。
    この除き方は genfarm-status（EXCLUDE_COLLECTED_DONE）と揃えること。 */
 const gfCollected = r => r.source && r.source !== 'pipeline' && r.status === 'done';
-const GF_KIND_LABEL = {h3_video:'H3映像', flux_image:'FLUX画像', unknown:'不明'};
 const GF_FALLBACK_SEC = {h3_video:223, flux_image:76, unknown:200};
 /* 「できあがったのに手元へ降りていない」を詰まりと疑うまでの分数。**数えはじめは
    できあがった時刻**（finished_at）で、発注時刻ではない。生成が全部終わるまで回収しない
@@ -3037,7 +3045,9 @@ function renderShell(){
   $('#synctext').textContent = state.busy ? '読み込み中…'
     : (state.lastSync ? '最終読込 ' + fmtDT(state.lastSync) : '未読込');
   $('#reloadbtn').classList.toggle('spin', state.busy);
-  $('#footer').textContent = `制作ダッシュボード ・ 更新 ${BUILT_AT}`;
+  /* 手元で開いた未公開の版は時刻を出さない（置換前の印をそのまま見せない・README の約束） */
+  $('#footer').textContent = '制作ダッシュボード'
+    + (builtLocal(BUILT_AT) ? '' : ` ・ 更新 ${BUILT_AT}`);
 }
 
 /* ══ 新版の検知（#205）════════════════════════════════════════════
@@ -3150,13 +3160,16 @@ function flagsHTML(it){
   return h ? `<span class="flags">${h}</span>` : '';
 }
 /* 承認待ちの行には、その場で通せるボタンを出す（オーナー要望 2026-08-20）。
-   コメント無しの承認が普通なので、1タップで承認まで行く（数秒だけ取り消せる） */
-const quickOkHTML = it => it._rv
-  ? `<button class="okbtn" data-act="approve-quick" data-key="${it.id}|${esc(it._rv)}"
-      data-label="承認" title="${esc(GATE_LABEL[it._rv] || it._rv)}を承認">承認</button>` : '';
-const pKeyOf = it => (it.stage === 'dropped' || it.stage === 'triage')
-  ? it.stage : PSTAGES[displayIdx(it)].key;
-
+   コメント無しの承認が普通なので、1タップで承認まで行く（数秒だけ取り消せる）。
+   言葉は詳細画面と同じ actWords を通す——検証用の動画は「この方向でOK」（#523）。 */
+const quickOkHTML = it => {
+  if (!it._rv) return '';
+  const w = actWords(it), gname = GATE_LABEL[it._rv] || it._rv;
+  const lb = isPilotItem(it) ? w.approve() : '承認';
+  return `<button class="okbtn" data-act="approve-quick" data-key="${it.id}|${esc(it._rv)}"
+      data-label="${esc(lb)}" data-donelabel="${esc(w.approved)}"
+      title="${esc(w.approve(gname))}">${esc(lb)}</button>`;
+};
 function progressCells(it){
   const cur = displayIdx(it), done = it.stage === 'posted';
   return PSTAGES.map((s, j) => {
@@ -3217,7 +3230,9 @@ function filterChips(facets){
    ここでは見出しを差し込むだけで並べ替えはしない。
    絞り込み・並べ替え中は順番の意味が変わるのでセクションを外し、素直な一覧にする。 */
 const SECTIONS = [
-  {key:'rv',   label:'あなたの番 — 承認待ち',      hint:'素材を見て、承認するか修正を依頼してください'},
+  /* 検証のタブは「作って良いか」ではなく「この作り方で良いか」を見るので言葉を替える（#523・ACT_WORDS と同じ言葉） */
+  {key:'rv',   label:'あなたの番 — 承認待ち',      hint:'素材を見て、承認するか修正を依頼してください',
+   hintPilot:'素材を見て、この方向でOKか、指摘を送るかを選んでください'},
   /* ネタの仕分け（#314）。台本の型カタログの3型に乗らずAIが起草を見送った案。
      AI は没にしないので、ここに溜まったものはオーナーが必ず1回見る */
   {key:'triage', label:'あなたの番 — ネタの仕分け',
@@ -3249,8 +3264,9 @@ function groupSections(rows){
 }
 /* 見出しの共通部分（表の行とスマホのカード見出しで同じ文言・同じ開閉状態を使う） */
 function secHeadInner(s){
+  const hint = (state.ch === PILOT_CH && s.hintPilot) ? s.hintPilot : s.hint;
   return `<span class="sn">${s.fold ? `<span class="tri">${secOpen(s) ? '▾' : '▸'}</span>` : ''}${esc(s.label)}</span>
-    <span class="n">${s.rows.length}件</span>${s.hint ? `<span class="hint">${esc(s.hint)}</span>` : ''}`;
+    <span class="n">${s.rows.length}件</span>${hint ? `<span class="hint">${esc(hint)}</span>` : ''}`;
 }
 const secAttrs = s => s.fold
   ? ` data-secfold="${s.key}" tabindex="0" role="button" aria-expanded="${secOpen(s)}"` : '';
@@ -3413,13 +3429,6 @@ const MARK_LEGEND = `<div class="legend2">
 function gateApproved(it, g){
   return !!it[GATE_COLUMN_FIELD[g]] && it[g + '_state'] !== 'review';
 }
-function gateChips(it, slug){
-  return chMeta(slug).gates.map(g => {
-    const on = gateApproved(it, g);
-    return `<span class="gate ${on ? 'on' : ''}">${on ? '✓ ' : ''}${GATE_LABEL[g]}</span>`;
-  }).join('');
-}
-
 /* ページ送り（#215 Phase 2）。並び順は DB 側（sort_rank）で付けているので、
    1ページ目に必ず「承認待ち（あなたの番）」が来る。 */
 function pagerHTML(core){
@@ -4720,9 +4729,10 @@ async function submitTapChanges(box, key){
    「完成」で mp4 を見ているときだけ、詳細画面を見本（dashboard/scene-mockup.html）の
    3区画の並びに差し替える。台本・絵コンテのゲート、mp4 が無い完成、ネタの仕分けは
    これまでの画面のまま。
-     ① 素材・作ったもの … 台本／完成動画・参照動画／いまのシーンの素材／再生の操作／シーンの帯
+     ① 素材・作ったもの … 台本（行の左に開始フレームのサムネ）／完成動画・参照動画／
+                          いまのシーンの素材／再生の操作
      ② 私の指摘        … 入口の2ボタン／指摘の一覧／全体へのメモ（承認待ちでなければ現状の1行）
-     ③ 経緯・履歴      … 5行の要約（押すと③の中だけが詳細に切り替わる）
+     ③ 前回までの私の指摘 … オーナー自身の指摘だけを新しい順に（押すとその時刻へ飛ぶ）
    ⚠️ 送信の仕組み（approve_gate / request_changes / reject_video の呼び出し、版のずれで
    断られたときの描き直し、没の2段階、下書き、ピンの正規化）は一切動かしていない——
    置き場所と見た目だけを変えている。 */
@@ -5030,7 +5040,7 @@ function svRelayout(){
   if (sv) { svPaintNow(); svPaintRefFace(); }
 }
 
-/* ── シーンの帯・台本・いまのシーン ───────────────────────────────── */
+/* ── 台本・いまのシーン ───────────────────────────────────────────── */
 const svScenes = () => (sv && sv.scenes) ? sv.scenes : [];
 const svSceneByN = n => svScenes().find(s => s.n === n) || svScenes()[0] || null;
 function svSceneAt(t){
@@ -5089,7 +5099,8 @@ function svBuildScript(){
     }
     const meta = document.createElement('span');
     meta.className = 'smeta';
-    const n = document.createElement('span'); n.className = 'sn'; n.textContent = 'S' + s.n;
+    /* 単位の呼び名は目録の unit に従う（「ショット3」／「シーン3」・README の約束） */
+    const n = document.createElement('span'); n.className = 'sn'; n.textContent = svUnitN(s.n);
     const t = document.createElement('span'); t.className = 'stm'; t.textContent = fmtT(s.start);
     meta.append(n, t);
     if (byScene[s.n]) {
@@ -6212,7 +6223,7 @@ async function approveNow(vid, gate, note){
      スクロールが先頭へ戻ってしまい、続けて承認するときに毎回探し直しになるため。
      代わりに「押した行のボタンだけ」を承認済みに変え、手元の記憶（キャッシュ）を捨てて
      次にこの画面を描き直すとき（タブ切替・再読み込み・⟳）に新しい状態で出るようにする。 */
-  store.core = {}; store.facets = {}; store.board = {}; store.byId = new Map();
+  store.core = {}; store.facets = {}; store.byId = new Map();
   store.assets = {}; store.analytics = {};
   delete store.threads[Number(vid)];
   /* 承認待ちバッジだけは今すぐ正しくする（この1件を減らす。一覧は触らない） */
@@ -7392,10 +7403,17 @@ const RUN_KIND_JA = {
   'dispatcher-script-generate':'台本係',
   'dispatcher-script-review-clarity':'台本チェック係（わかりやすさ）',
   'dispatcher-script-review-compliance':'コンプラチェック係',
+  /* 2026-09-20 に審査の記録係を通す形へ変わり、工程の名前の末尾に -v2 が付いた
+     （工程表の run_kind）。旧の名前の記録も画面に残るので、どちらも同じ係の名前で出す。 */
+  'dispatcher-script-review-clarity-v2':'台本チェック係（わかりやすさ）',
+  'dispatcher-script-review-compliance-v2':'コンプラチェック係',
+  'dispatcher-script-verify-resolution':'解消確認係（台本）',
+  'dispatcher-storyboard-verify-resolution':'解消確認係（絵コンテ）',
   'dispatcher-script-submit-review':'台本の提出',
   'dispatcher-audio-generate':'ナレーション音声の生成',
   'dispatcher-storyboard-generate':'絵コンテ設計係',
   'dispatcher-storyboard-review-spec':'spec審査係',
+  'dispatcher-storyboard-review-spec-v2':'spec審査係',
   'dispatcher-thumb-card':'サムネカードを組む',
   'dispatcher-storyboard-archive':'絵コンテを組む係（旧）',
   'dispatcher-storyboard-submit-review':'絵コンテの提出（旧）',
@@ -7797,7 +7815,6 @@ function gfPart(j){
   if (m) return `シーン${Number(m[1])}の${m[2] === 'b' ? '終了フレーム' : '開始フレーム'}`;
   return j.kind === 'h3_video' ? 'シーンの映像' : 'フレームの絵';
 }
-const GF_STATE_LABEL = {running:'作成中', queued:'生成機で順番待ち', todo:'待ち', ready:'できあがり'};
 /* 1件の右端に出す時刻・経過。**起点を必ず名乗る**（オーナー指摘 2026-08-28: どこから
    数えた時間か分からないと大げさに見える）。できあがったものは「できあがりから」。 */
 function gfWhen(j){
