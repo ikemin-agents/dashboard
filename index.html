@@ -2233,7 +2233,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/22 11:48';
+const BUILT_AT = '9/22 16:12';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -7983,8 +7983,7 @@ function genfarmCard(gf){
      ・進行係の心拍   … system_heartbeat（誰でも読める・5分ごとに更新される1行。
                         2026-08-28 からレビュー見張りに代わって進行係が打つ）
      ・実行中のAI     … agent_runs の未終了行＋最新の途中経過（全チャンネル可ユーザー限定。
-                        読めないユーザーではこの行だけ静かに消える）
-     ・発注待ちの承認 … 絵コンテ承認済みなのに、承認より新しい発注記録が無い動画 */
+                        読めないユーザーではこの行だけ静かに消える） */
 const AUTO_TTL_MS = 60000;
 /* 「いま動いている」側の言い方。ここに無い種類は下の記録側の対応表（RUN_KIND_JA）に
    落として拾うので、新しい種類は原則あちらに足すだけでよい（制作の工程 dispatcher-* は
@@ -7994,7 +7993,7 @@ const AUTO_RUN_JA = {
   'x-post-propose':'Xのネタ提案', 'weekly-review':'週次レビュー'};
 async function loadAutomationNow(force){
   if (!force && store.autonow && Date.now() - store.autonow.at < AUTO_TTL_MS) return store.autonow;
-  const out = { beat: null, runs: [], runNotes: {}, waiting: [], at: Date.now() };
+  const out = { beat: null, runs: [], runNotes: {}, at: Date.now() };
   try {
     out.beat = (await q(sb.from('system_heartbeat').select('beat_at,source').limit(1)))[0] || null;
   } catch (_) {}
@@ -8009,23 +8008,6 @@ async function loadAutomationNow(force){
       (evs || []).forEach(e => { if (!(e.run_id in out.runNotes)) out.runNotes[e.run_id] = e.body; });
     }
   } catch (_) {}   /* 全チャンネル可ユーザー以外は読めない＝0件のまま */
-  try {
-    /* 検証のタブを開いたまま運営を見ることもあるので、範囲の付け方は一覧と同じ窓口を通す（#523） */
-    const vids = (await q(scopeCh(sb.from('v_dashboard_list')
-      .select('seq,title,approved_storyboard_at'), state.ch)
-      .eq('status', '素材制作中').not('approved_storyboard_at', 'is', null))) || [];
-    if (vids.length) {
-      const oldest = vids.map(v => v.approved_storyboard_at).sort()[0];
-      const jobs = (await q(sb.from('generation_jobs').select('episode_seq,created_at')
-        .in('episode_seq', vids.map(v => v.seq)).gte('created_at', oldest))) || [];
-      const latest = {};
-      jobs.forEach(j => {
-        if (!latest[j.episode_seq] || latest[j.episode_seq] < j.created_at)
-          latest[j.episode_seq] = j.created_at;
-      });
-      out.waiting = vids.filter(v => !latest[v.seq] || latest[v.seq] < v.approved_storyboard_at);
-    }
-  } catch (_) {}
   store.autonow = out;
   return out;
 }
@@ -8050,18 +8032,13 @@ function automationCard(an){
       <span>↻</span><div>${AI_TAG}作業中: <b>${esc(what)}</b>
       （${esc(fmtDT(r.started_at) || '')} 開始）${note}</div></div>`;
   }).join('');
-  const waiting = an.waiting.length
-    ? `<div style="display:flex;gap:8px;align-items:baseline;font-size:var(--fs-sm)">
-        <span>●</span><div>発注待ちの承認: <b>${an.waiting.length}件</b>
-        （${esc(an.waiting.map(v => v.seq).join('・'))}）— 5分以内に進行係が生成機へ送ります</div></div>`
-    : '';
-  const idle = !runs && !waiting
-    ? `<div class="noitem">いま動いている自動の作業はありません（承認・差し戻しを押せば5分以内に拾います）</div>` : '';
+  const idle = !runs
+    ? `<div class="noitem">いま動いている自動の作業はありません</div>` : '';
   return `<section class="card gfcard">
     <div class="sectionhead" style="margin:0 0 var(--sp-3)"><h2>🤖 自動運転のいま</h2>
       <span class="hint">生成機が空でも、下に${AI_TAG}作業中が出ていれば裏で進んでいます</span></div>
     ${beat}
-    ${runs || waiting ? `<div class="stack" style="gap:6px;margin-top:var(--sp-3)">${runs}${waiting}</div>` : idle}
+    ${runs ? `<div class="stack" style="gap:6px;margin-top:var(--sp-3)">${runs}</div>` : idle}
   </section>`;
 }
 
