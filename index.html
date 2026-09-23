@@ -2273,7 +2273,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/23 09:05';
+const BUILT_AT = '9/23 14:42';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5365,7 +5365,16 @@ function svStepLbox(d){
 /* ── 参照動画（完成動画が親・そのシーンの頭＝0秒で常時連動）────────────────
    参照のほうが短ければ末尾で止めて知らせ、長ければシーンが変わった時点で次の参照へ替わる。
    速度は変えない。 */
-const svRefList = () => { const s = svSceneByN(sv.curN); return (s && s.ref_videos) ? s.ref_videos : []; };
+/* 参照動画の候補。そのシーンに参照動画が無く、主画面が本物の映像（借りていない）で、目録に
+   通しの参照動画（ref_video_full）があるなら、通しを候補にする（オーナー指摘 2026-09-23:
+   H3 の映像が入った途端に右のモックが消えた）。通しは主画面と同じ時間軸なので `full:true` を付け、
+   同期の起点をシーンの頭ではなく 0 秒にする */
+const svRefList = () => {
+  const s = svSceneByN(sv.curN);
+  if (s && s.ref_videos && s.ref_videos.length) return s.ref_videos;
+  if (sv.mat && sv.mat.ref_video_full && !sv.mainLabel) return [{ ...sv.mat.ref_video_full, full: true }];
+  return [];
+};
 function svPaintRefFace(){
   if (!sv || !sv.q('[data-sv-refempty]')) return;
   const vids = svRefList();
@@ -5430,7 +5439,8 @@ function svLinkRef(){
   const d = (rv.duration && isFinite(rv.duration)) ? rv.duration : 0;
   const s = svSceneByN(sv.curN);
   if (!d || !s) return;
-  const target = Math.max(0, v.currentTime - s.start);
+  const cur = svRefList()[sv.refIdx];
+  const target = Math.max(0, v.currentTime - ((cur && cur.full) ? 0 : s.start));
   if (target >= d - 0.04) {
     if (!rv.paused) rv.pause();
     if (Math.abs(rv.currentTime - (d - 0.04)) > 0.12) { try { rv.currentTime = Math.max(0, d - 0.04); } catch (_) {} }
@@ -5710,8 +5720,11 @@ function svPaintMainHead(){
   const emptyTtl = '映像';
   const stage = sv.q('[data-sv-stage]');
   if (stage) { if (borrow) stage.dataset.borrow = '1'; else delete stage.dataset.borrow; }
-  const ttl = sv.q('[data-sv-mainttl]'); if (ttl) ttl.textContent = borrow ? '参照動画' : label;
-  const seg = sv.q('[data-sv-segmain]'); if (seg) seg.textContent = borrow ? '参照動画' : label;
+  /* 左の見出し: 借りているときは「参照動画」、主画面の動画があり通しのモックを右に出す回は「映像」
+     （「絵コンテの動画」は意味が取れない・オーナー指摘 2026-09-22/23）。02・03 の完成は今までどおり */
+  const mainTtl = borrow ? '参照動画' : ((sv.mat && sv.mat.ref_video_full) ? emptyTtl : label);
+  const ttl = sv.q('[data-sv-mainttl]'); if (ttl) ttl.textContent = mainTtl;
+  const seg = sv.q('[data-sv-segmain]'); if (seg) seg.textContent = mainTtl;
   const rttl = sv.q('[data-sv-refttl]'); if (rttl) rttl.textContent = borrow ? emptyTtl : '参照動画';
   const rseg = sv.q('[data-sv-segref]'); if (rseg) rseg.textContent = borrow ? emptyTtl : '参照動画';
   const sub = sv.q('[data-sv-finallbl]');
