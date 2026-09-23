@@ -2213,8 +2213,13 @@ import { createClient } from './vendor/supabase-js.esm.min.js';
 
 const SUPABASE_URL = 'https://myavyqrzipfrofljmvkp.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_kt1UwIe3IUrpojqMcspieQ_zOopvk_C';
+/* ページを閉じる・再読み込みする・裏に回す間際に送る書き込みは keepalive を付ける。
+   付けないと、承認の猶予を確定した直後にページが消えて送信が途中で切られる
+   （BZ0052: 事前確認の OPTIONS だけ届き本体の POST が来なかった・2026-09-23） */
+let leaving = false;
 const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  global: { fetch: (u, o) => fetch(u, leaving ? { ...(o || {}), keepalive: true } : o) }
 });
 
 /* ══ 定義 ═══════════════════════════════════════════════════════ */
@@ -2273,7 +2278,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/23 14:45';
+const BUILT_AT = '9/23 14:48';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -6326,13 +6331,14 @@ async function submitComment(box, key){
    一覧の行からも詳細のボタンからも、押した1回で承認まで通す。押した瞬間は DB へ
    書かず、数秒の猶予をおいてから書く（その間は「取り消す」で無かったことにできる）。
    詳細でメモを開いて書いてあれば、その内容を添えて承認する。 */
-async function approveNow(vid, gate, note){
+async function approveNow(vid, gate, note, rev){
   const gname = GATE_LABEL[gate] || gate;
   const pilot = isPilotItem(store.byId.get(Number(vid)));
-  /* 見ていた提出物の版を添える。裏で新しい版が提出されていたら DB が P0003 で断る（073・#502） */
+  /* 見ていた提出物の版（押した時点の値）を添える。裏で新しい版が提出されていたら DB が P0003 で断る（073・#502） */
   const { data, error } = await sb.rpc('approve_gate',
     { p_video_id: Number(vid), p_gate: gate, p_note: note || null,
-      p_expected_revision: submittedRevOf(vid, gate) });
+      p_expected_revision: rev });
+  outboxDrop(vid, gate);                          /* 返事が来たので控えは要らない（通っても断られても） */
   if (error) {
     markApproved(vid, gate, false);              /* ボタンを押せる状態に戻す */
     toast(rpcErrText(error, 'approve'));
@@ -6356,12 +6362,12 @@ async function approveNow(vid, gate, note){
   }
   markApproved(vid, gate, true);
   renderShell();
-  const rev = data && data.target_revision ? `第${data.target_revision}版の` : '';
+  const revTxt = data && data.target_revision ? `第${data.target_revision}版の` : '';
   if (pilot) {
-    toast((data && data.already_approved) ? `${rev}この案は記録済みです`
-                                          : `${rev}「この方向でOK」と記録しました`);
+    toast((data && data.already_approved) ? `${revTxt}この案は記録済みです`
+                                          : `${revTxt}「この方向でOK」と記録しました`);
   } else {
-    toast((data && data.already_approved) ? `${rev}${gname}は既に承認済みです` : `${rev}${gname}を承認しました`);
+    toast((data && data.already_approved) ? `${revTxt}${gname}は既に承認済みです` : `${revTxt}${gname}を承認しました`);
   }
 }
 /* 承認した動画のボタンを、画面を作り直さずにその場で書き換える（表の行・スマホのカード・詳細） */
@@ -6386,9 +6392,12 @@ function quickApprove(key, btn){
   const ta = box && box.querySelector('.ata');
   const note = ((ta && ta.value) || '').trim();
   if (btn) { btn.disabled = true; btn.textContent = w.approved; }
+  const rev = submittedRevOf(vidS, gate);
+  outboxPut({ vid: Number(vidS), gate, note, rev, uid: state.user && state.user.id,
+              seq: (store.byId.get(Number(vidS)) || curItem || {}).seq || null, at: Date.now() });
   actWithUndo(w === ACT_WORDS.pilot ? '「この方向でOK」と記録しました' : `${gname}を承認しました`,
-    () => approveNow(vidS, gate, note),
-    () => markApproved(vidS, gate, false));
+    () => approveNow(vidS, gate, note, rev),
+    () => { outboxDrop(vidS, gate); markApproved(vidS, gate, false); });
 }
 
 /* 没の2段階目（確定）。パネルが開いていて理由が入っているときだけ実行する。
@@ -8642,9 +8651,46 @@ function toastUndo(msg, undo){
   t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), UNDO_MS);
 }
-/* ページを閉じる・裏に回すときは待たずに確定する（押したのに記録されない、を防ぐ） */
-window.addEventListener('pagehide', flushPendingAct);
-document.addEventListener('visibilitychange', () => { if (document.hidden) flushPendingAct(); });
+/* ページを閉じる・裏に回すときは待たずに確定する（押したのに記録されない、を防ぐ）。
+   それでも送信が間に合わなかった分は、承認の控え（下）が次に開いたとき送り直す */
+window.addEventListener('pagehide', () => { leaving = true; flushPendingAct(); });
+window.addEventListener('pageshow', () => { leaving = false; });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { leaving = true; flushPendingAct(); } else leaving = false;
+});
+
+/* ── 承認の控え ─────────────────────────────────────────────────────
+   押した承認は、DB から返事が来るまでこのブラウザに控えておく。猶予中や送信中に
+   再読み込み・タブを閉じる等でページが消えても、次にダッシュボードを開いたとき送り直す。
+   版（見ていた提出物）も押した時点の値を控えるので、裏で新しい版が出ていれば DB が断る */
+const APPROVE_OUTBOX = 'dash.approveOutbox';
+const OUTBOX_TTL_MS = 12 * 3600 * 1000;
+function outboxRead(){
+  try { const a = JSON.parse(localStorage.getItem(APPROVE_OUTBOX) || '[]'); return Array.isArray(a) ? a : []; }
+  catch (_) { return []; }
+}
+function outboxWrite(a){
+  try { a.length ? localStorage.setItem(APPROVE_OUTBOX, JSON.stringify(a)) : localStorage.removeItem(APPROVE_OUTBOX); }
+  catch (_) { /* 控えが使えないブラウザでも承認そのものは通る */ }
+}
+const sameApprove = (x, vid, gate) => x.vid === Number(vid) && x.gate === gate;
+function outboxPut(e){ outboxWrite(outboxRead().filter(x => !sameApprove(x, e.vid, e.gate)).concat([e])); }
+function outboxDrop(vid, gate){ outboxWrite(outboxRead().filter(x => !sameApprove(x, vid, gate))); }
+async function replayApproveOutbox(){
+  const list = outboxRead();
+  if (!list.length || !state.user) return;
+  const msgs = [];
+  for (const e of list) {
+    if (e.uid !== state.user.id || !(Date.now() - e.at < OUTBOX_TTL_MS)) { outboxDrop(e.vid, e.gate); continue; }
+    const { data, error } = await sb.rpc('approve_gate',
+      { p_video_id: e.vid, p_gate: e.gate, p_note: e.note || null, p_expected_revision: e.rev });
+    outboxDrop(e.vid, e.gate);
+    const who = e.seq || `#${e.vid}`, gname = GATE_LABEL[e.gate] || e.gate;
+    if (error) msgs.push(`前回押した ${who} の${gname}は記録できませんでした: ${rpcErrText(error, 'approve')}`);
+    else if (!(data && data.already_approved)) msgs.push(`前回押した ${who} の${gname}の承認を記録しました`);
+  }
+  if (msgs.length) toast(msgs.join(' ／ '));
+}
 
 /* ══ 描画オーケストレーション ═══════════════════════════════════ */
 /* 進捗マトリクスのページスクロール用: サイトヘッダー(.topbar＝トップバー＋ナビ)の実高さと
@@ -8989,6 +9035,8 @@ async function showApp(user){
       if (data) setDisplayName(String(data));
     } catch (_) { /* フォールバック済み */ }
   }
+  /* 前回ページが消えて送り損ねた承認を、一覧を読む前に送り直す（読んだ一覧に結果が載るように） */
+  try { await replayApproveOutbox(); } catch (_) { /* 控えの送り直しで画面を止めない */ }
   try { await loadBootstrap(); }
   catch (e) {
     state.busy = false; renderShell();
