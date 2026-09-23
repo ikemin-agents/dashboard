@@ -2273,7 +2273,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/23 14:42';
+const BUILT_AT = '9/23 14:45';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2627,6 +2627,16 @@ async function loadPending(ch){
 }
 const pendingList = ch => ((store.pending[ch] || {}).rv) || [];
 const triageCount = ch => ((store.pending[ch] || {}).triage) || 0;
+/* 全チャンネルタブのバッジ用（オーナー要望 2026-09-23）。いま見ている番組の表を描き終えた
+   あとに裏で呼ぶ——他の番組ぶんは表を待たせない。番組ごとに2本（状態を持つ行＋仕分けの
+   件数）なので、番組4つで最大8本。取り終えたらタブだけ描き直す。失敗しても表には
+   影響しないので握りつぶす（バッジが出ないだけ）。 */
+async function loadPendingAll(){
+  const todo = chTabList().map(c => c.slug).filter(slug => !store.pending[slug]);
+  if (!todo.length) return;
+  await Promise.all(todo.map(slug => loadPending(slug).catch(() => null)));
+  renderShell();
+}
 
 /* 一覧に載っていない動画（別ページ・レビュータブ経由・ディープリンク）も開けるよう、
    索引に無ければ1行だけ取りに行く */
@@ -3026,11 +3036,18 @@ function renderShell(){
   /* いま見ているのがチャンネル共通の画面か（＝チャンネルタブが「戻り道」になる） */
   const indepNow = !!(views.find(x => x.key === state.view) || {}).chIndep;
   /* 下ナビを隠すとき（残るのが「制作」1つだけのとき）は、「あなたの番」の件数を
-     チャンネルタブ側へ移す。数え方は下ナビのバッジとまったく同じ（いまのチャンネルぶん）。 */
+     チャンネルタブ側へ移す。数え方は下ナビのバッジとまったく同じ。
+     ⚠️ 選んでいるタブだけでなく**全部のチャンネルタブ**に出す（オーナー要望 2026-09-23）——
+     他の番組の承認待ちはタブを切り替えないと見えなかった。件数は loadPendingAll が
+     裏で番組ごとに取ってくる（取れる前は空＝バッジなし。取れたら描き直される）。 */
   const stockV = views.find(x => x.key === 'stock');
   const soloNav = views.filter(x => !x.chIndep).length <= 1;
-  const stockN = (soloNav && stockV && stockV.badge) ? stockV.badge() : 0;
-  const stockBadge = stockN ? `<span class="badge">${stockN}</span>` : '';
+  const chBadge = slug => {
+    if (!(soloNav && stockV)) return '';
+    const n = pendingList(slug).length + triageCount(slug);
+    return n ? `<span class="badge">${n}</span>` : '';
+  };
+  const stockBadge = chBadge(state.ch);
   /* 検証用の動画があるときだけ、チャンネルの並びの最後に「検証」を足す（#523）。
      1本も見えない閲覧者には出さない（押しても空の画面しか出ないため） */
   const chList = chTabList();
@@ -3038,7 +3055,7 @@ function renderShell(){
     const m = chMeta(c.slug), on = state.ch === c.slug;
     return `<button class="chtab" role="tab" aria-selected="${on && !indepNow}" data-ch="${esc(c.slug)}"
        style="--chac:${m.accent}" title="${esc(c.name)}${indepNow ? 'の制作へ戻る' : ''}">
-      <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(c.name)}${on ? stockBadge : ''}</button>`;
+      <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(c.name)}${chBadge(c.slug)}</button>`;
   }).join('') || `<span class="chtab" aria-hidden="true">チャンネルなし</span>`;
 
   /* スマホ用: いま見ているチャンネルだけを出し、押すと他が開く（オーナー要望 2026-08-20）。
@@ -3056,7 +3073,7 @@ function renderShell(){
       ${others.length ? `<div class="chmenu">${others.map(c => {
         const om = chMeta(c.slug);
         return `<button class="chitem" data-ch="${esc(c.slug)}">
-          <span class="cdot" style="background:${om.accent}"></span>${om.icon} ${esc(c.name)}</button>`;
+          <span class="cdot" style="background:${om.accent}"></span>${om.icon} ${esc(c.name)}${chBadge(c.slug)}</button>`;
       }).join('')}</div>` : ''}</details>`;
   })();
 
@@ -8655,6 +8672,7 @@ async function render(){
     renderShell();
     syncStickyOffsets();
   }
+  loadPendingAll();           /* 他のチャンネルタブのバッジ（裏で取って描き直す・待たない） */
 }
 
 async function reloadAll(){
