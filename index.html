@@ -2273,7 +2273,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/23 08:10';
+const BUILT_AT = '9/23 09:05';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -7121,17 +7121,30 @@ async function renderAnalytics(){
   /* ── ① チャンネルの現在地 ───────────────────────────────────
      行＝指標（大分類ごとに見出し行）・列＝チャンネル の縦持ち。横持ちは列が15本になり
      PC でも 1,955px で収まらなかった（2026-09-04）。各行に「いつからいつまで」「目安」を明記する。
-     期間は最初のチャンネルの記録日から取る（全チャンネル同じ朝に取り込むので一致する）。 */
+     期間の札は**表示中のチャンネルすべて**の記録から出す（#538）。開設日が違えば記録の
+     長さも違うので、先頭の1本だけを見ると、他のチャンネルの増え方を別の期間のものとして
+     読んでしまう。 */
   const md = t => t ? fmtMDW(t + 'T00:00:00+09:00') : '—';
   const st0 = sers.length ? ST[sers[0].ch] : null;
-  const span = (a, b) => (a && b) ? `${md(a)} → ${md(b)}` : '記録が2日分たまると出ます';
-  /* 行の名前は「30日ぶんの記録がある」ときだけ直近30日と名乗る（#536 低）。
-     記録が 08/24 から 09/04 の11日しか無いのに「直近30日」と書くと、増え方を
-     30日のものとして読んでしまう。足りないときは実際にある日数を名前にする。 */
-  const gainLb = (a, b) => {
-    if (!a || !b) return '直近30日';
-    const n = dayNum(b) - dayNum(a) + 1;
-    return n >= 30 ? '直近30日' : `記録のある期間（${n}日）`;
+  const stAll = sers.map(s => ST[s.ch]).filter(Boolean);
+  const pick = f => stAll.map(f).filter(Boolean);
+  const minT = ts => ts.length ? ts.reduce((a, b) => a < b ? a : b) : null;
+  const maxT = ts => ts.length ? ts.reduce((a, b) => a > b ? a : b) : null;
+  /* いつからいつまで — 表示中のチャンネルで最も早い開始と最も遅い終わり */
+  const span = (fa, fb) => {
+    const a = minT(pick(fa)), b = maxT(pick(fb));
+    return (a && b) ? `${md(a)} → ${md(b)}` : '記録が2日分たまると出ます';
+  };
+  /* 行の名前は「表示中のチャンネルが全部 30日ぶんの記録を持つ」ときだけ直近30日と名乗る
+     （#536 低 → #538）。記録が 08/24 から 09/04 の11日しか無いのに「直近30日」と書くと、
+     増え方を30日のものとして読んでしまう。足りないときは実際にある日数を名前にする
+     （チャンネルで長さが違う日は「11〜30日」のように幅で出す）。 */
+  const gainLb = (fa, fb) => {
+    const ns = stAll.map(st => (fa(st) && fb(st)) ? dayNum(fb(st)) - dayNum(fa(st)) + 1 : null)
+                    .filter(n => n != null).map(n => Math.min(30, n));
+    if (!ns.length || ns.every(n => n >= 30)) return '直近30日';
+    const lo = Math.min(...ns), hi = Math.max(...ns);
+    return `記録のある期間（${lo === hi ? lo : `${lo}〜${hi}`}日）`;
   };
   const delta = (v, unit) => v == null ? '—' : `${v >= 0 ? '+' : ''}${nf(v)} ${unit}`;
   const mnOf = (st, t) => {
@@ -7142,16 +7155,16 @@ async function renderAnalytics(){
   /* 行の定義。cell(st) がチャンネル1つぶんのセル HTML を返す */
   const GROUPS = [
     { nm:'登録者', rows:[
-      { lb:'いま', note:`${st0 ? md(st0.subsLatestT) : '—'} の朝の実数`, cell: st => st.latestSubs == null ? '—' : `${nf(st.latestSubs)} 人` },
-      { lb:'先週比', note: st0 ? span(st0.s7t, st0.subsLatestT) : '—', cell: st => delta(st.subsDelta, '人') },
-      { lb: st0 ? gainLb(st0.s30t, st0.subsLatestT) : '直近30日',
-        note: st0 ? span(st0.s30t, st0.subsLatestT) : '—', cell: st => delta(st.subsGain30, '人') }
+      { lb:'いま', note:`${md(maxT(pick(st => st.subsLatestT)))} の朝の実数`, cell: st => st.latestSubs == null ? '—' : `${nf(st.latestSubs)} 人` },
+      { lb:'先週比', note: span(st => st.s7t, st => st.subsLatestT), cell: st => delta(st.subsDelta, '人') },
+      { lb: gainLb(st => st.s30t, st => st.subsLatestT),
+        note: span(st => st.s30t, st => st.subsLatestT), cell: st => delta(st.subsGain30, '人') }
     ]},
     { nm:'再生数', rows:[
       { lb:'累計', note:'投稿済の動画の合計', cell: st => `${nf(st.totalViews)} 回` },
-      { lb:'先週比', note: st0 ? span(st0.c7t, st0.cumLatestT) : '—', cell: st => delta(st.viewsDelta, '回') },
-      { lb: st0 ? gainLb(st0.c30t, st0.cumLatestT) : '直近30日',
-        note: st0 ? span(st0.c30t, st0.cumLatestT) : '—', cell: st => delta(st.viewsGain30, '回') }
+      { lb:'先週比', note: span(st => st.c7t, st => st.cumLatestT), cell: st => delta(st.viewsDelta, '回') },
+      { lb: gainLb(st => st.c30t, st => st.cumLatestT),
+        note: span(st => st.c30t, st => st.cumLatestT), cell: st => delta(st.viewsGain30, '回') }
     ]},
     { nm:'視聴の質', rows:[
       { lb:'平均視聴率', note:`計測できた動画の平均・目安 ${goalTxt('rate')}（02 の基準）`, cell: st => st.avgRate == null ? '—' : `${st.avgRate.toFixed(1)}%<span class="sub">計測済 ${st.rates.length}/${st.posted.length} 本</span>` },
