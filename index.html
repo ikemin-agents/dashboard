@@ -1024,7 +1024,7 @@ tr.dropped td{color:var(--muted)}
 .tagbtn[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--page); font-weight:650}
 .noteinput{font-family:inherit; font-size:var(--fs-md); width:100%; border:1px solid var(--border);
   border-radius:var(--r-md); padding:10px 13px; background:var(--surface-1); color:var(--ink);
-  min-height:44px; margin-bottom:var(--sp-3)}
+  min-height:44px; margin-bottom:var(--sp-3); line-height:1.6; resize:vertical; display:block}
 .sheet .sacts{display:flex; gap:var(--sp-2)}
 .sheet .sacts .btn{flex:1 1 auto; min-height:44px}
 .btn.ghost{background:transparent; color:var(--ink-2)}
@@ -1054,7 +1054,7 @@ tr.dropped td{color:var(--muted)}
 .nitem .l1{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:3px}
 .nitem .tt{font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums}
 .nitem .sc{font-size:var(--fs-2xs); color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.nitem .note{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere}
+.nitem .note{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere; white-space:pre-wrap}
 .nitem .rowacts{display:flex; flex-direction:column; gap:4px}
 .gbadge.fix{background:var(--fix-tint); color:var(--fix-ink); border-color:transparent}
 .tpempty{font-size:var(--fs-sm); color:var(--muted); border:1px dashed var(--border);
@@ -1070,7 +1070,7 @@ tr.dropped td{color:var(--muted)}
 .nrec:first-child{border-top:none}
 .nrec .tt{font-weight:700; font-variant-numeric:tabular-nums; flex:0 0 auto}
 .nrec .sc{font-size:var(--fs-2xs); color:var(--muted); flex:0 0 auto}
-.nrec .note{color:var(--ink-2); min-width:0; overflow-wrap:anywhere}
+.nrec .note{color:var(--ink-2); min-width:0; overflow-wrap:anywhere; white-space:pre-wrap}
 .nrec.jump{cursor:pointer; border-radius:var(--r-sm)}
 .nrec.jump:hover{background:var(--s1-tint)}
 /* スマホでは入力シートを下からせり上げる（動画を隠しすぎない高さ） */
@@ -2274,7 +2274,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/23 15:00';
+const BUILT_AT = '9/23 15:17';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4364,8 +4364,8 @@ function tapPanelHTML(it){
         <button class="btn sm pickbtn" type="button" data-tapact="add-pick" aria-pressed="false">📍 場所を指す</button>
       </div>
       <div class="tagrow" data-tagrow></div>
-      <input class="noteinput" type="text" data-snote maxlength="120" aria-label="指摘の一言"
-        placeholder="上の言葉を押すとここに入ります。続けて書き足せます（マイクで話しても可）">
+      <!-- 複数行で書ける（Enter で改行・オーナー要望 2026-09-23）。説明の薄字は出さない -->
+      <textarea class="noteinput" data-snote rows="2" maxlength="${NOTE_LIM.note}" aria-label="指摘の一言"></textarea>
       <div class="sacts">
         <button class="btn primary" type="button" data-tapact="add">この指摘を足す</button>
         <button class="btn ghost" type="button" data-tapact="cancel">やめる</button>
@@ -4392,7 +4392,8 @@ function tapSplit(v){
   for (const name of NOTE_TAGS_ALL) {
     if (rest.indexOf(name) >= 0) { tags.push(name); rest = rest.replace(name, ''); }
   }
-  rest = rest.replace(/\s{2,}/g, ' ').replace(/^[\s、。・,.]+/, '').trim();
+  /* 改行は残す（複数行で書けるようにした・2026-09-23）。詰めるのは横の空白の連続だけ */
+  rest = rest.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').replace(/^[\s、。・,.]+/, '').trim();
   return { tag: tags.length ? tags.join('・') : null, note: rest };
 }
 
@@ -4407,7 +4408,7 @@ function tapBuildTags(){
     b.addEventListener('click', () => {
       /* 押した言葉を入力欄に入れる（もう一度押すと外す）。そのまま書き足せる */
       let v = input.value || '';
-      if (v.indexOf(name) >= 0) v = v.replace(name, '').replace(/\s{2,}/g, ' ').replace(/^\s+/, '');
+      if (v.indexOf(name) >= 0) v = v.replace(name, '').replace(/[ \t]{2,}/g, ' ').replace(/^\s+/, '');
       else v = (v && !/\s$/.test(v) ? v + ' ' : v) + name + ' ';
       input.value = v;
       tapSyncTags();
