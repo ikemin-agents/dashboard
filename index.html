@@ -2277,7 +2277,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/25 01:18';
+const BUILT_AT = '9/25 01:25';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5257,14 +5257,14 @@ function svPaintScript(){
     setTimeout(() => { sv.scriptAuto = false; }, 150);
   }
 }
-/* 参照画像の番号（①〜㊿。それより多いときは「(51)」）と、label の頭に付いた番号を外した役割（#549） */
+/* 参照画像の番号（①〜㊿。それより多いときは「(51)」）と、頭に付いた番号だけを外した label（#549） */
 function svRefNo(n){
   if (n >= 1 && n <= 20) return String.fromCharCode(0x2460 + n - 1);
   if (n >= 21 && n <= 35) return String.fromCharCode(0x3251 + n - 21);
   if (n >= 36 && n <= 50) return String.fromCharCode(0x32B1 + n - 36);
   return '(' + n + ')';
 }
-const svRefRole = lb => String(lb || '').replace(/^[①-⑳㉑-㉟㊱-㊿]\s*/, '').trim();
+const svRefLabel = lb => String(lb || '').replace(/^[①-⑳㉑-㉟㊱-㊿]\s*/, '').trim();
 /* いまのシーンの画像。上段＝開始 → 終了、下段＝参照画像の枠 */
 function svPaintNow(){
   const now = sv.q('[data-sv-now]');
@@ -5356,15 +5356,16 @@ function svPaintNow(){
   const row = document.createElement('div');
   row.className = 'sv-shelfrow';
   if (refs.length) {
-    /* 見出しは「① 被写体の正本の絵」＝シーンの中の並び順の番号＋目録の label（役割）。
-       拡大表示の題は「参照① 被写体の正本の絵」。オーナーが「S14 の参照②」と番号で指摘できる
-       ように、**番号は画面が並び順で振る**（目録の形は変えない・全番組共通・#549 オーナー指示
-       2026-09-25）。label の頭に提出側の番号（旧「①閉じた列」）が付いていたら外して振り直す */
+    /* 見出しは「①」＋目録の label **そのまま**（シーンの中の並び順の番号）。拡大表示の題は
+       「参照①」＋label。画面は言葉を足さない——label は提出側が具体的な名前で書く（例
+       「アクアラインを横から見た断面図（形の手本）」）。オーナーが「S14 の参照②」と番号で
+       指摘できるように、**番号は画面が並び順で振る**（目録の形は変えない・全番組共通・#549
+       オーナー指示 2026-09-25）。label の頭に提出側の番号（旧「①閉じた列」）が付いていたら外す */
     refs.forEach((r, i) => {
       const no = svRefNo(i + 1);
-      const role = svRefRole(r.label);
-      row.appendChild(slotEl({ cap: role ? no + ' ' + role : no + ' 参照画像', src: r.img,
-        full: '参照' + no + (role ? ' ' + role : '') }));
+      const lb = svRefLabel(r.label);
+      row.appendChild(slotEl({ cap: lb ? no + ' ' + lb : no, src: r.img,
+        full: '参照' + no + (lb ? ' ' + lb : '') }));
     });
   } else {
     /* 0枚のシーンも枠を1つ出す（欄ごと消さない） */
