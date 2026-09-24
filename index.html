@@ -2274,7 +2274,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/23 15:17';
+const BUILT_AT = '9/24 17:57';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2937,9 +2937,13 @@ async function loadSystem(){
      recent … 見込み時間の較正に使う直近の実測（終わったジョブの所要時間）
    30秒だけキャッシュする（システムタブを開き直すたびに叩かないため）。 */
 /* ▼ ここから下の「未回収の数え方」は**写し**。正本は進行係の
-   00-config/automation/dispatcher/genfarm.py（GENFARM_PORTS / open_job_predicate /
-   port_filter / FALLBACK_AVG）。画面は言語が違うので import できず写しを置いている。
-   数え方を変えるときは genfarm.py を直してからここへ写す（#536 中14②）。 */
+   00-config/automation/dispatcher/genfarm.py（open_job_predicate / FALLBACK_AVG）。
+   画面は言語が違うので import できず写しを置いている。
+   数え方を変えるときは genfarm.py を直してからここへ写す（#536 中14②）。
+   口（接続先）では絞らず、全部を**1本の待ち行列**として数える。2026-09-24 から生成機の
+   生成ソフトは1本だけで（#489）、旧い口で記録された行も同じ待ち行列に並ぶので、
+   genfarm.py の GENFARM_PORTS（新しい口＋旧い口を全部拾う）と同じ結果になる。
+   公開ページなので接続先の番号はここに書かない。 */
 const GF_OPEN_STATUS = ['submitting', 'in_flight', 'done'];
 /* コレクターが生成機の履歴から後追いで記録したジョブ（source が pipeline 以外）は、
    誰も受け取りに行かないので「できあがり」が終了状態。これを未回収に数えると
