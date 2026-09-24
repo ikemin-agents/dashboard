@@ -1844,6 +1844,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-refbox .refhd{display:flex; align-items:baseline; gap:6px; font-size:var(--fs-xs);
   font-weight:700; color:var(--ink-2); margin-bottom:6px}
 .sview .sv-refbox .refhd .n{font-weight:400; color:var(--muted); margin-left:auto}
+/* 指摘の入力のそばの1行（参照画像の番号で書ける案内・#549） */
+.svrefnote{flex:0 0 auto; font-size:var(--fs-2xs); color:var(--muted); margin:2px 0}
+.svrefnote[hidden]{display:none}
 .sview .sv-refbox .sv-slot{width:calc(var(--ref-h) * 9 / 16)}
 .sview .sv-refbox .sv-slot .shot,.sview .sv-refbox .sv-slot .none{height:var(--ref-h)}
 .sview .sv-slot{flex:0 0 auto; display:flex; flex-direction:column; gap:3px;
@@ -2274,7 +2277,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/24 17:57';
+const BUILT_AT = '9/25 01:18';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5254,6 +5257,14 @@ function svPaintScript(){
     setTimeout(() => { sv.scriptAuto = false; }, 150);
   }
 }
+/* 参照画像の番号（①〜㊿。それより多いときは「(51)」）と、label の頭に付いた番号を外した役割（#549） */
+function svRefNo(n){
+  if (n >= 1 && n <= 20) return String.fromCharCode(0x2460 + n - 1);
+  if (n >= 21 && n <= 35) return String.fromCharCode(0x3251 + n - 21);
+  if (n >= 36 && n <= 50) return String.fromCharCode(0x32B1 + n - 36);
+  return '(' + n + ')';
+}
+const svRefRole = lb => String(lb || '').replace(/^[①-⑳㉑-㉟㊱-㊿]\s*/, '').trim();
 /* いまのシーンの画像。上段＝開始 → 終了、下段＝参照画像の枠 */
 function svPaintNow(){
   const now = sv.q('[data-sv-now]');
@@ -5261,6 +5272,9 @@ function svPaintNow(){
   const s = svSceneByN(sv.curN);
   now.textContent = '';
   sv.lboxList = [];
+  /* 「参照画像は ①② の番号で書けます」は、目録に参照画像が1枚でもある動画だけ出す（#549） */
+  const anyRef = !!(sv.mat && (sv.mat.scenes || []).some(x => x.refs && x.refs.length));
+  sv.root.querySelectorAll('[data-sv-refnote]').forEach(e => { e.hidden = !anyRef; });
   const l1 = document.createElement('div');
   l1.className = 'l1';
   const nn = document.createElement('span'); nn.className = 'nn';
@@ -5342,10 +5356,16 @@ function svPaintNow(){
   const row = document.createElement('div');
   row.className = 'sv-shelfrow';
   if (refs.length) {
-    refs.forEach((r, i) => row.appendChild(slotEl({
-      /* 見出しは目録の label をそのまま（例「①閉じた列」。番号は提出側が動画の中で通しで振る）。
-         「参照1（…）」の重ね書きはやめた（オーナー指摘 2026-09-22） */
-      cap: r.label || ('参照' + (i + 1)), src: r.img, full: r.label })));
+    /* 見出しは「① 被写体の正本の絵」＝シーンの中の並び順の番号＋目録の label（役割）。
+       拡大表示の題は「参照① 被写体の正本の絵」。オーナーが「S14 の参照②」と番号で指摘できる
+       ように、**番号は画面が並び順で振る**（目録の形は変えない・全番組共通・#549 オーナー指示
+       2026-09-25）。label の頭に提出側の番号（旧「①閉じた列」）が付いていたら外して振り直す */
+    refs.forEach((r, i) => {
+      const no = svRefNo(i + 1);
+      const role = svRefRole(r.label);
+      row.appendChild(slotEl({ cap: role ? no + ' ' + role : no + ' 参照画像', src: r.img,
+        full: '参照' + no + (role ? ' ' + role : '') }));
+    });
   } else {
     /* 0枚のシーンも枠を1つ出す（欄ごと消さない） */
     row.appendChild(slotEl({ cap:'参照画像', src:null }));
@@ -6048,6 +6068,7 @@ function decideHTML(it, gate, changes, barFacts, plain){
       <h4 class="wh" data-freefix>${pilot ? '気になった点を送るとき' : '修正を依頼するとき'}</h4>
       <textarea class="wta" data-freefix rows="3" aria-label="直してほしい点"
         placeholder="直してほしい点を入力（Ctrl + Enter で送信）"></textarea>
+      ${plain ? '<div class="svrefnote" data-sv-refnote hidden>参照画像は ①② の番号で書けます</div>' : ''}
       ${tapPanelHTML(it)}
       <div class="wmsg" data-slot="comment" hidden></div>
       <div class="wact" data-freefix>
