@@ -2222,7 +2222,10 @@ const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 });
 
 /* ══ 定義 ═══════════════════════════════════════════════════════ */
-const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗'};
+const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'experiment':'🔬'};
+/* 検証だけを持つ番組（#551・05-experiment）。動画は 9000番台だけなので、自分のタブは常に空になる。
+   **タブには出さず、検証タブの集め先にだけ入れる**（store.pilotChannels）。登録簿にある番組だけを書く */
+const PILOT_ONLY_CH = new Set(['experiment']);
 /* ── 検証用の動画（試作・検証）の見分け方 ──────────────────────────────
    番号の数字部が 9000 以上なら本編ではない。**見分け方はこの1か所だけ**（gen-farm の
    札 epHint も、チャンネルの振り分けもここを通す）。検証用は各番組のタブ・在庫の数・
@@ -2277,7 +2280,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/25 01:25';
+const BUILT_AT = '9/25 10:03';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2441,6 +2444,14 @@ const chMeta = slug => {
     return { icon: PILOT_META.icon, accent: 'var(--axis)', tint: 'var(--surface-2)',
              name: PILOT_META.name, gates: ['script', 'storyboard', 'final'] };
   }
+  /* 検証だけの番組はタブの並びに無いので、色は検証タブと同じ固定の札にする（並びの色をずらさない） */
+  if (PILOT_ONLY_CH.has(slug)) {
+    const row = (store.pilotChannels || []).find(c => c.slug === slug) || {};
+    return { icon: CH_ICON[slug] || PILOT_META.icon, accent: 'var(--axis)', tint: 'var(--surface-2)',
+             name: row.name || slug,
+             gates: (Array.isArray(row.human_gates) && row.human_gates.length) ? row.human_gates
+                  : ['storyboard', 'final'] };
+  }
   const i = store.channels.findIndex(c => c.slug === slug);
   /* 人間の承認が要るゲートは DB（channels.human_gates・059・#385）が正本。
      正本は各チャンネルの pipeline.json で、DB とはスクリプトが突き合わせる。
@@ -2461,8 +2472,11 @@ async function loadBootstrap(){
   ]);
   store.accounts = accs;
   /* 動画チャンネル＝YouTube アカウントを持つ稼働中チャンネル */
-  store.channels = chs.filter(c => c.status !== 'closed'
+  const videoChs = chs.filter(c => c.status !== 'closed'
     && accs.some(a => a.channel === c.slug && a.platform === 'youtube'));
+  /* タブに並べる番組と、検証タブが集める番組は別（検証だけの番組はタブに出さない・#551） */
+  store.channels = videoChs.filter(c => !PILOT_ONLY_CH.has(c.slug));
+  store.pilotChannels = videoChs;
   /* 前回開いていたチャンネル・タブを復元する。許可外・廃止済みなら黙って既定へ落とす */
   /* 検証用の動画が1本でもあるかだけを先に確かめる（タブを出すかどうかの判定に使う） */
   await loadPilotFlag();
@@ -2483,7 +2497,7 @@ const PILOT_LIKE = '__9___';
 /* 検証用が1本でもあるか（タブを出すかどうかだけに使う）。件数だけを引く＝行は取らない */
 async function loadPilotFlag(){
   store.pilot = { has: false };
-  const slugs = store.channels.map(c => c.slug);
+  const slugs = pilotSlugs();
   if (!slugs.length) return;
   try {
     const { count, error } = await sb.from('v_dashboard_list')
@@ -2492,13 +2506,15 @@ async function loadPilotFlag(){
   } catch (_) { /* 引けなければ検証タブを出さないだけ（本編は今までどおり） */ }
 }
 const hasPilot = () => !!(store.pilot && store.pilot.has);
+/* 検証タブが集める番組＝タブの番組＋検証だけの番組（#551） */
+const pilotSlugs = () => (store.pilotChannels || store.channels).map(c => c.slug);
 const chExists = slug => slug === PILOT_CH ? hasPilot() : store.channels.some(c => c.slug === slug);
 /* 一覧のビューへの問い合わせに「どの範囲を見るか」を付ける。
    ・番組のタブ … そのチャンネルから検証用の番号を除く
    ・検証のタブ … 見えるチャンネル全部の、検証用の番号だけ */
 function scopeCh(qb, ch){
   if (ch === PILOT_CH) {
-    return qb.in('channel', store.channels.map(c => c.slug)).like('seq', PILOT_LIKE);
+    return qb.in('channel', pilotSlugs()).like('seq', PILOT_LIKE);
   }
   return qb.eq('channel', ch).not('seq', 'like', PILOT_LIKE);
 }
@@ -3857,17 +3873,21 @@ function parseHash(){
 async function applyInitialRoute(){
   const r = parseHash();
   if (!r) return;
-  if (!store.channels.some(c => c.slug === r.ch)) { history.replaceState({}, '', BASE_URL()); return; }
+  /* 検証だけの番組（#551）はタブを持たないので、検証タブを開いてからその番組の動画を引く */
+  const pilotOnly = PILOT_ONLY_CH.has(r.ch);
+  const known = pilotOnly ? pilotSlugs().includes(r.ch) : store.channels.some(c => c.slug === r.ch);
+  if (!known) { history.replaceState({}, '', BASE_URL()); return; }
+  const tab = pilotOnly ? PILOT_CH : r.ch;
   let it;
   try {
-    if (r.ch !== state.ch) { state.ch = r.ch; await render(); }
+    if (tab !== state.ch) { state.ch = tab; await render(); }
     /* 一覧のページに載っていない seq でも開けるよう、DB から直接1行引く */
-    it = await loadItemBySeq(state.ch, r.seq);
+    it = await loadItemBySeq(r.ch, r.seq);
   } catch { history.replaceState({}, '', BASE_URL()); return; }
   if (!it) { history.replaceState({}, '', BASE_URL()); return; }
   history.replaceState({ view: state.view, ch: state.ch, scrollY: 0 }, '', BASE_URL());
   history.pushState({ detail: it.id, ch: state.ch, gate: r.gate, view: state.view }, '',
-    `#detail/${encodeURIComponent(state.ch)}/${encodeURIComponent(it.seq)}${r.gate ? '/' + encodeURIComponent(r.gate) : ''}`);
+    `#detail/${encodeURIComponent(r.ch)}/${encodeURIComponent(it.seq)}${r.gate ? '/' + encodeURIComponent(r.gate) : ''}`);
   _returnScroll = 0;
   await openDetail(it.id, r.gate);
 }
@@ -7991,7 +8011,7 @@ function epHint(seq){
 }
 function gfWhose(r, titles){
   const t = (titles || {})[r.video_id];
-  if (r.channel && store.channels.some(c => c.slug === r.channel)) {
+  if (r.channel && pilotSlugs().includes(r.channel)) {
     const m = chMeta(r.channel);
     return { icon: m.icon, name: m.name, title: (t && t.title) || '' };
   }
@@ -8973,7 +8993,7 @@ async function signOut(){
   await sb.auth.signOut();
   clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {}; store.system = null;
   store.cost = null;   /* 費用（#321） */
-  store.channels = []; store.accounts = [];
+  store.channels = []; store.pilotChannels = []; store.accounts = [];
   state.user = null; state.me = null; state.ch = null; state.view = 'stock'; state.stockPage = 0;
   showLogin();
 }
