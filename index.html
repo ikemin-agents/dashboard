@@ -2423,7 +2423,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/25 21:52';
+const BUILT_AT = '9/26 23:06';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5689,6 +5689,23 @@ function svRefNo(n){
   return '(' + n + ')';
 }
 const svRefLabel = lb => String(lb || '').replace(/^[①-⑳㉑-㉟㊱-㊿]\s*/, '').trim();
+/* 参照画像の番号は**動画全体の通し番号**（オーナー要望 2026-09-26）。シーンの中の並び順で
+   振っていた頃は「S14 の参照②」とシーンまで書かないと特定できなかった。シーン順・並び順に
+   1から振り、**同じ画像はどのシーンに出ても同じ番号**（目録は同じ画像を同じ img で指す）。
+   目録ごとに1回だけ作って覚える */
+function svRefNos(mat){
+  if (!mat) return new Map();
+  if (mat._refNos) return mat._refNos;
+  const m = new Map();
+  for (const sc of (mat.scenes || [])) {
+    for (const r of (sc.refs || [])) {
+      const k = r.img || r.label || '';
+      if (!m.has(k)) m.set(k, m.size + 1);
+    }
+  }
+  Object.defineProperty(mat, '_refNos', { value: m, enumerable: false });
+  return m;
+}
 /* いまのシーンの画像。上段＝開始 → 終了、下段＝参照画像の枠 */
 function svPaintNow(){
   const now = sv.q('[data-sv-now]');
@@ -5780,13 +5797,14 @@ function svPaintNow(){
   const row = document.createElement('div');
   row.className = 'sv-shelfrow';
   if (refs.length) {
-    /* 見出しは「①」＋目録の label **そのまま**（シーンの中の並び順の番号）。拡大表示の題は
+    /* 見出しは「①」＋目録の label **そのまま**（番号は動画全体の通し番号・上の svRefNos）。拡大表示の題は
        「参照①」＋label。画面は言葉を足さない——label は提出側が具体的な名前で書く（例
        「アクアラインを横から見た断面図（形の手本）」）。オーナーが「S14 の参照②」と番号で
        指摘できるように、**番号は画面が並び順で振る**（目録の形は変えない・全番組共通・#549
        オーナー指示 2026-09-25）。label の頭に提出側の番号（旧「①閉じた列」）が付いていたら外す */
+    const nos = svRefNos(sv.mat);
     refs.forEach((r, i) => {
-      const no = svRefNo(i + 1);
+      const no = svRefNo(nos.get(r.img || r.label || '') || (i + 1));
       const lb = svRefLabel(r.label);
       row.appendChild(slotEl({ cap: lb ? no + ' ' + lb : no, src: r.img,
         full: '参照' + no + (lb ? ' ' + lb : '') }));
