@@ -1792,6 +1792,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   padding:0 2px; display:flex; align-items:center; gap:var(--sp-2); height:18px; line-height:18px}
 .sview .sv-colhd .n{font-weight:400; letter-spacing:0; margin-left:auto}
 .sview .sv-scrhd{height:18px; line-height:18px; align-items:center}
+/* 見出しの行に入れた案のタブ（広い画面）。行の高さを増やさないよう低くして右へ寄せる */
+.sview .sv-scrhd .sv-vtabs{margin-left:auto; flex:0 1 auto}
+.sview .sv-scrhd .sv-vtabs .vtab{height:18px; line-height:16px; padding-top:0; padding-bottom:0}
 .sview .sv-script{min-width:0; min-height:0; display:flex; flex-direction:column; gap:var(--sp-2)}
 .sview .sv-script>.shd{display:flex; align-items:center; gap:var(--sp-2); font-size:var(--fs-xs);
   font-family:inherit; background:none; border:none; width:100%; text-align:left;
@@ -2423,7 +2426,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/26 23:06';
+const BUILT_AT = '9/27 18:21';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5414,9 +5417,11 @@ function sceneDetailHTML(it, plan){
           </div>
           <div class="sv-screens">
             <div class="sv-screen final" data-sv-screenfinal>
-              <div class="sv-vtabs" data-sv-vtabs hidden role="tablist" aria-label="案"></div>
+              <!-- 案のタブは見出しの行の右端に置く（行を1段増やすと、隣の参照動画と高さがずれ、
+                   動画の下端が再生の操作に重なった・RW0004 版3 で実測 2026-09-27） -->
               <div class="sv-scrhd"><span class="scrttl" data-sv-mainttl>${esc(gname)}の動画</span>
-                <span class="scrsub" data-sv-finallbl></span></div>
+                <span class="scrsub" data-sv-finallbl></span>
+                <div class="sv-vtabs" data-sv-vtabs hidden role="tablist" aria-label="案"></div></div>
               <div class="loadbox" data-sv-finalslot>素材を読み込み中…</div>
             </div>
             <div class="sv-screen ref">
@@ -5522,7 +5527,8 @@ function svMobileLayout(){
     if (sv) root.classList.toggle('sv-noref', !(sv.hasRefVideo || (sv.mat && sv.mat.ref_video_full && !sv.mainLabel)));
   } else {
     if (ref && screens && ref.parentNode !== screens) screens.appendChild(ref);
-    if (vt && fin && vt.parentNode !== fin) fin.prepend(vt);
+    const fhd = fin && fin.querySelector('.sv-scrhd');
+    if (vt && fhd && vt.parentNode !== fhd) fhd.appendChild(vt);
     if (sc && wrap && sc.parentNode !== wrap) wrap.appendChild(sc);
     if (abox && tb) {
       const fold = abox.querySelector(':scope > .afold');
