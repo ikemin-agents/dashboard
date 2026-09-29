@@ -2472,7 +2472,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 16:28';
+const BUILT_AT = '9/29 16:41';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3303,10 +3303,20 @@ async function loadAnalytics(ch){
     pubs.forEach(p => { p.genre = gm[p.seq] || null; });
   } catch (_) {}
   const primaryPubs = pubs.filter(p => p.is_primary);
+  /* 1回の問い合わせで返るのは 1,000行まで（サーバー側の上限。limit を大きく書いても増えない）。
+     日付の古い順に取るので、行が 1,000 を超えると**新しい日が欠けて推移が途中で止まる**
+     （世界のバズ雑学は 2,589行あり 09/04 で止まっていた・オーナー指摘 2026-09-29）。
+     1,000行ずつ最後まで取る。並びを一意にするため動画の id も並べ替えに入れる */
   let daily = [];
   if (primaryPubs.length) {
-    daily = await q(sb.from('publication_metrics_daily').select('date,views,publication_id')
-      .in('publication_id', primaryPubs.map(p => p.id)).order('date', { ascending: true }).limit(20000));
+    const ids = primaryPubs.map(p => p.id), PAGE = 1000;
+    for (let from = 0; from < 200000; from += PAGE) {
+      const part = await q(sb.from('publication_metrics_daily').select('date,views,publication_id')
+        .in('publication_id', ids).order('date', { ascending: true })
+        .order('publication_id', { ascending: true }).range(from, from + PAGE - 1));
+      daily = daily.concat(part || []);
+      if (!part || part.length < PAGE) break;
+    }
   }
   store.analytics[ch] = { kpi, pubs: primaryPubs, daily, mediaKey: primary ? primary.kpi_media_key : null };
   return store.analytics[ch];
@@ -7530,13 +7540,16 @@ function dateTicks(rows, plotW){
   if (!n) return { ticks:[], rot:false, pb:26 };
   const d0 = rows[0].d, d1 = rows[n - 1].d, span = Math.max(1, d1 - d0);
   const per = plotW / span;                 /* 1日あたりの幅(px) */
-  const rot = per < 62;                     /* 横書きの MM/DD(曜) が並ばない */
-  const stride = rot ? Math.max(1, Math.ceil(15 / per)) : 1;
+  /* 日付の文字は**横書きのまま間引く**（オーナー指摘 2026-09-29「細かすぎる・5日単位に」）。
+     毎日が並ばない幅なら 5日 → 10日 → 15日 → 30日おき。数えるのは右端（いちばん新しい日）から。
+     目盛りの線は毎日のまま */
+  const rot = false;
+  const stride = [1, 5, 10, 15, 30].find(k => k * per >= 66) || 30;
   const lb = t => fmtMDW(t + 'T00:00:00+09:00');
   const ticks = [];
   for (let d = d0; d <= d1; d++){
-    const i = d - d0, isLast = d === d1;
-    const labeled = isLast || (i % stride === 0 && (d1 - d) >= stride * 0.6);
+    const i = d - d0;
+    const labeled = (d1 - d) % stride === 0;
     const row = rows.find(r => r.d === d);
     const t = row ? row.t : jstAdd(rows[0].t, i);
     ticks.push({ v:d, lb: labeled ? lb(t) : '' });
@@ -7572,7 +7585,8 @@ function axesSvg(g){
     s += g.xRot
       ? `<text transform="translate(${x.toFixed(1)} ${(by + 8).toFixed(1)}) rotate(-45)" text-anchor="end" font-size="9.5"
         font-family="system-ui,sans-serif" style="fill:var(--muted)">${esc(t.lb)}</text>`
-      : `<text x="${x.toFixed(1)}" y="${(by + 15).toFixed(1)}" text-anchor="middle" font-size="9.5"
+      : `<text x="${x.toFixed(1)}" y="${(by + 16).toFixed(1)}" text-anchor="${
+          x > g.x0 + g.plotW - 24 ? 'end' : 'middle'}" font-size="11"
         font-family="system-ui,sans-serif" style="fill:var(--muted)">${esc(t.lb)}</text>`;
   });
   return s;
