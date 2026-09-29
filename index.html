@@ -992,6 +992,7 @@ tr.dropped td{color:var(--muted)}
   color:var(--ink); border-radius:var(--r-sm); min-width:44px; height:36px; cursor:pointer; padding:0 8px}
 .cbtn:hover{background:var(--surface-3)}
 .cbtn.play{min-width:46px; font-size:var(--fs-md)}
+.cvol{flex:0 0 auto; width:84px; accent-color:var(--act, #3d4f66); cursor:pointer}
 .ctime{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums; flex:0 0 auto}
 .seek{position:relative; flex:1 0 100%; order:1; height:36px; cursor:pointer; touch-action:none}
 .ctime{margin-left:auto}
@@ -2462,7 +2463,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 15:14';
+const BUILT_AT = '9/29 15:36';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4311,6 +4312,7 @@ function videoBlockHTML(f, tapMode){
       </div>
       <span class="ctime" data-ctime>0:00 / 0:00</span>
       <button class="cbtn" type="button" data-cbtn="mute" aria-label="消音">🔊</button>
+      <input class="cvol" type="range" data-cvol min="0" max="100" step="5" value="100" aria-label="音量">
     </div></div>`;
 }
 
@@ -4541,7 +4543,26 @@ function armVideoBar(el){
   });
   $$('[data-cbtn="back"]').addEventListener('click', () => { v.currentTime = Math.max(0, v.currentTime - 0.5); });
   $$('[data-cbtn="fwd"]').addEventListener('click', () => { v.currentTime = Math.min(dur(), v.currentTime + 0.5); });
-  mute.addEventListener('click', () => { v.muted = !v.muted; mute.textContent = v.muted ? '🔇' : '🔊'; });
+  /* 音量（オーナー要望 2026-09-29）。決めた音量はこの端末に覚えておき、次に開いた動画にも効かせる。
+     iPhone・iPad は端末の音量ボタンだけが効く作りなので、つまみを動かしても変わらない */
+  const vol = $$('[data-cvol]');
+  const paintVol = () => {
+    const off = v.muted || v.volume === 0;
+    mute.textContent = off ? '🔇' : '🔊';
+    if (vol) vol.value = String(v.muted ? 0 : Math.round(v.volume * 100));
+  };
+  try {
+    const kept = Number(localStorage.getItem('dash.volume'));
+    if (isFinite(kept) && kept > 0 && kept <= 1) v.volume = kept;
+  } catch (_) {}
+  mute.addEventListener('click', () => { v.muted = !v.muted; paintVol(); });
+  if (vol) vol.addEventListener('input', () => {
+    const x = Math.min(1, Math.max(0, Number(vol.value) / 100));
+    v.muted = x === 0;
+    if (x > 0) { v.volume = x; try { localStorage.setItem('dash.volume', String(x)); } catch (_) {} }
+    paintVol();
+  });
+  paintVol();
   v.addEventListener('timeupdate', paint);
   v.addEventListener('loadedmetadata', () => { paint(); ctl.onmeta && ctl.onmeta(); });
 
