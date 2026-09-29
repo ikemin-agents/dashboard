@@ -613,12 +613,8 @@ td.ttl .flags{margin-left:8px}
   white-space:nowrap; min-width:0; flex:1 1 auto}
 .dtop .tags{display:flex; gap:5px; flex:0 0 auto; align-items:center}
 .dtop .tags .sbadge{font-size:var(--fs-2xs); padding:2px 9px; gap:4px}
-/* 公開時刻（#523）。1400px 以上ではフッターが見えないので、ヘッダの隅にも小さく出す */
-.dtop .dupd{font-size:var(--fs-2xs); color:var(--muted); white-space:nowrap;
-  font-variant-numeric:tabular-nums}
-@media (max-width:899px){ .dtop .dupd{display:none} }
 /* 狭い画面ではタイトルを優先する。チャンネル名と指摘の札は右列（工程の名前・指摘の本文）で分かる */
-@media (max-width:899px){ .dtop .tags .chip,.dtop .tags .flags{display:none} }
+@media (max-width:899px){ .dtop .tags .flags{display:none} }
 
 /* ── 2列の骨組み ──────────────────────────────────────────────
    左列の幅は画面の高さから 9:16 で逆算する（縦長の動画がいちばん大きく出る幅）。
@@ -2440,7 +2436,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 12:59';
+const BUILT_AT = '9/29 14:07';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3411,6 +3407,11 @@ const looksHTML = it => {
   const n = it._rv ? store.looks[it.id] : null;
   return n ? `<span title="あなたがこの動画を見るのは${n}回目（これまでに承認か修正依頼をした回数＋今回）">${n}回目</span>` : '';
 };
+/* 承認画面の上の帯に出す札。状態（承認待ち・修正中）は工程の帯に出ているので除く */
+function svTopFlagsHTML(it){
+  const h = reworkBadgeHTML(it) + openBadgeHTML(it);
+  return h ? `<span class="flags">${h}</span>` : '';
+}
 function flagsHTML(it){
   const h = badgeHTML(stateBadgeOf(it)) + reworkBadgeHTML(it) + openBadgeHTML(it);
   return h ? `<span class="flags">${h}</span>` : '';
@@ -3898,8 +3899,9 @@ function detailHTML(it){
       <button class="dback" data-close="1" aria-label="一覧に戻る">← 一覧<span class="dback-l">に戻る</span></button>
       <span class="seqn">${esc(it.seq)}</span>
       <span class="ttl">${esc(it.title)}</span>
+      <!-- 番組の札は出さない（番号の頭2文字で分かる・オーナー決定 2026-09-29）。この画面には工程の帯が
+           無いので、工程と状態の札は残す -->
       <span class="tags">
-        <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(m.name)}</span>
         <span class="gbadge"><i style="background:${it._rv ? 'var(--s1)'
           : (it.stage === 'posted' || it.stage === 'dropped') ? 'var(--done)' : 'var(--fix)'}"></i>${esc(curName)}</span>
         ${flagsHTML(it)}
@@ -5361,11 +5363,6 @@ function svPrevNotes(it, evs, gate){
   return rows;
 }
 
-/* この画面が公開された時刻（#523）。1400px 以上ではページが縦に動かず**フッターが見えない**ので、
-   ヘッダの隅にも小さく出す。手元で開いた未デプロイ版（置換されていない）では出さない。 */
-const builtAtHTML = () => builtLocal(BUILT_AT) ? ''
-  : `<span class="dupd" title="この画面が公開された時刻">更新 ${esc(BUILT_AT)}</span>`;
-
 /* ── 画面の組み立て ─────────────────────────────────────────────── */
 function sceneDetailHTML(it, plan){
   const gate = (plan && plan.gate) || 'final';
@@ -5399,13 +5396,12 @@ function sceneDetailHTML(it, plan){
       <span class="seqn">${esc(it.seq)}</span>
       <span class="ttl">${esc(it.title)}</span>
       ${ver ? `<span class="sv-mver sv-m-only">${esc(ver)}</span>` : ''}
+      <!-- 右上は「ほかの場所に出ていないもの」だけ（オーナー決定 2026-09-29）: 版と、付いたときだけの札
+           （何の作り直しか・未対応の指摘の数）。番組は番号の頭2文字、工程と状態（承認待ち・修正中）は
+           下の工程の帯、配信時刻は最下部に出ているので、ここには出さない -->
       <span class="tags">
-        <span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(m.name)}</span>
-        <span class="gbadge"><i style="background:${it._rv ? 'var(--s1)'
-          : (it.stage === 'posted' || it.stage === 'dropped') ? 'var(--done)' : 'var(--fix)'}"></i>${esc(gname)}${
-          ver ? ' ' + esc(ver) : ''}</span>
-        ${flagsHTML(it)}
-        ${builtAtHTML()}
+        ${ver ? `<span class="gbadge" title="${esc(gname)}の版">${esc(ver)}</span>` : ''}
+        ${svTopFlagsHTML(it)}
       </span>
     </div>
     ${svFlowHTML(it)}
