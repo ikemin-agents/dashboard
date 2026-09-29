@@ -2472,7 +2472,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 16:41';
+const BUILT_AT = '9/29 16:59';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -7980,7 +7980,7 @@ async function renderAnalytics(){
       return `<button class="chchip" data-anach="${esc(c.slug)}" aria-pressed="${on}" style="--chac:${m.accent}">
         <i></i>${m.icon} ${esc(m.name)}</button>`;
     }).join('')}
-    <span class="hint">チップを押すとそのチャンネルの表示を消せます・<b>目安のある指標では</b>塗りつぶし＝到達／白抜き＝未達（${esc(ANA_GOAL_SCOPE)}）。冒頭の離脱は目安を置いていないので全部塗りつぶしで出します</span></div>`;
+    <span class="hint">押すと表示を消せます・グラフの縦軸は表示中でいちばん大きいチャンネルに合わせます</span></div>`;
 
   /* ── ① チャンネルの現在地 ───────────────────────────────────
      行＝指標（大分類ごとに見出し行）・列＝チャンネル の縦持ち。横持ちは列が15本になり
@@ -8066,16 +8066,21 @@ async function renderAnalytics(){
     `<button class="rgbtn" data-anarange="${r.v}" aria-pressed="${state.anaRange === r.v}">${r.lb}</button>`).join('')}</div>`;
   /* 縦軸を合わせるチャンネル（案②・オーナー決定 2026-09-04）。表示中のチャンネルから選ぶ。
      選んだものが消えていたら先頭に戻す。1チャンネルならボタンは出さない */
-  const axisCh = (sers.find(x => x.ch === state.anaAxis) || sers[0] || {}).ch || null;
-  const axisBtns = sers.length > 1 ? `<span class="anarange axlbl">縦軸を合わせる</span><div class="chips rangebtns">${sers.map(x =>
-    `<button class="rgbtn" data-anaaxis="${esc(x.ch)}" aria-pressed="${x.ch === axisCh}" style="--chac:${x.color}"><i class="axsw"></i>${x.icon} ${esc(x.name)}</button>`).join('')}</div>` : '';
+  /* 縦軸は**表示中でいちばん数が大きいチャンネル**に自動で合わせる（オーナー決定 2026-09-29 16:58）。
+     合わせる先を選ぶチップの段はなくした——小さいチャンネルを見たいときは、大きいチャンネルを
+     凡例のチップで消せば縦軸がそちらに合う。グラフごとに決める（登録者と再生数で大小が違いうる） */
+  const axisOf = (list, key) => {
+    let best = null, bv = -Infinity;
+    for (const x of list) { const v = Math.max(...x.rows.map(r => Number(r[key]) || 0)); if (v > bv) { bv = v; best = x.ch; } }
+    return best;
+  };
 
   /* ── ② 登録者の推移（チャンネルを重ねる）───────────────────── */
   const subsSer = sers.map(s => ({ ...s, rows: ST[s.ch].subsAll.filter(r => r.t >= from) }))
     .filter(s => s.rows.length >= 2);
   let subsCard;
   if (subsSer.length) {
-    chartReg.push({ sel:'#c-subs', build: W => lineChart(subsSer, W, {unit:'人', label:'登録者の推移', id:'subs', axis:axisCh}) });
+    chartReg.push({ sel:'#c-subs', build: W => lineChart(subsSer, W, {unit:'人', label:'登録者の推移', id:'subs', axis:axisOf(subsSer, 'v')}) });
     const days = [...new Set(subsSer.reduce((a2, s) => a2.concat(s.rows.map(r => r.t)), []))].sort();
     const step = Math.max(1, Math.ceil(days.length / 8));
     const pick = days.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % step === 0);
@@ -8091,7 +8096,7 @@ async function renderAnalytics(){
     }).join('');
     subsCard = `<div class="card">
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>登録者の推移</h2>
-          <span class="axh">横軸＝日付・縦軸＝登録者数（人）。縦軸の範囲は上で選んだチャンネルに合わせ、他のチャンネルは薄い線。点にふれるとその日の全チャンネルの数が出ます</span></div>
+          <span class="axh">横軸＝日付・縦軸＝登録者数（人）。点にふれるとその日の数が出ます</span></div>
         <div class="chartwrap" id="c-subs"></div>
         <div class="sparkcap">${caps}</div>
         <button class="tbltoggle" data-tbl="subs">${state.anaTbl.subs ? '表を閉じる' : '表で見る'}</button>
@@ -8109,7 +8114,7 @@ async function renderAnalytics(){
     .filter(s => s.rows.length >= 2);
   let playsCard;
   if (cumSer.length) {
-    chartReg.push({ sel:'#c-plays', build: W => playsChart(cumSer, W, {axis:axisCh}) });
+    chartReg.push({ sel:'#c-plays', build: W => playsChart(cumSer, W, {axis:axisOf(cumSer, 'cum')}) });
     const days = [...new Set(cumSer.reduce((a2, s) => a2.concat(s.rows.map(r => r.t)), []))].sort();
     const step = Math.max(1, Math.ceil(days.length / 8));
     const pick = days.filter((_, i, arr) => i === 0 || i === arr.length - 1 || i % step === 0);
@@ -8122,7 +8127,7 @@ async function renderAnalytics(){
       }).join('')}</tr>`).join('')}</tbody></table></div>`;
     playsCard = `<div class="card">
         <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>再生数の推移</h2>
-          <span class="axh">上段＝1日にどれだけ再生されたか（回／日・同じ日のチャンネルは横に並べています）・下段＝それまでの合計（累計 回）。横軸はどちらも日付。縦軸の範囲は上で選んだチャンネルに合わせ、他は薄く</span></div>
+          <span class="axh">上段＝1日にどれだけ再生されたか（回／日・同じ日のチャンネルは横に並べています）・下段＝それまでの合計（累計 回）。横軸はどちらも日付</span></div>
         <div class="chartwrap" id="c-plays"></div>
         <button class="tbltoggle" data-tbl="plays">${state.anaTbl.plays ? '表を閉じる' : '表で見る'}</button>
         <div class="minitbl wide ${state.anaTbl.plays ? 'show' : ''}" data-tbl="plays">${mini}</div>
@@ -8320,7 +8325,7 @@ async function renderAnalytics(){
       <p>公開済みの動画とチャンネルの数字を毎朝6時に取り込んで集計しています。</p>
     </div>
     ${legend}
-    <div class="anahead">${rangeBtns}<span class="anarange">推移のグラフは${esc(anaRangeLabel())}</span>${axisBtns}</div>
+    <div class="anahead">${rangeBtns}<span class="anarange">推移のグラフは${esc(anaRangeLabel())}</span></div>
     <div class="anagrid">
       ${nowCard}
       ${subsCard}
