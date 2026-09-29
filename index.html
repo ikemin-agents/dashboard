@@ -2472,7 +2472,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 18:05';
+const BUILT_AT = '9/29 19:52';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3628,9 +3628,8 @@ function filterChips(facets){
    ここでは見出しを差し込むだけで並べ替えはしない。
    絞り込み・並べ替え中は順番の意味が変わるのでセクションを外し、素直な一覧にする。 */
 const SECTIONS = [
-  /* 検証のタブは「作って良いか」ではなく「この作り方で良いか」を見るので言葉を替える（#523・ACT_WORDS と同じ言葉） */
-  {key:'rv',   label:'あなたの番 — 承認待ち',      hint:'素材を見て、承認するか修正を依頼してください',
-   hintPilot:'素材を見て、この方向でOKか、指摘を送るかを選んでください'},
+  /* 検証のタブも本編と同じ言葉（2026-09-29 オーナー決定・ACT_WORDS と同じ） */
+  {key:'rv',   label:'あなたの番 — 承認待ち',      hint:'素材を見て、承認するか修正を依頼してください'},
   /* ネタの仕分け（#314）。台本の型カタログの3型に乗らずAIが起草を見送った案。
      AI は没にしないので、ここに溜まったものはオーナーが必ず1回見る */
   {key:'triage', label:'あなたの番 — ネタの仕分け',
@@ -6810,15 +6809,15 @@ async function armScene(node, files){
    ⚠️ この4つ（.abox / .wbox / .rjbox / .dbar）は必ず同じ .decide の直下に置く——
    バーのボタンは自分の外にある囲みを .decide 経由で引き当てる（actBox / writeGroup）。 */
 /* ── 下端のボタンの言葉（#523）──────────────────────────────────────
-   検証用の動画は「作って良いか」ではなく「この作り方で良いか」を見るものなので、
-   本編と同じ言葉だと意味がずれる。**呼ぶ受け口は本編とまったく同じ**で、言葉だけを替える。 */
+   **呼ぶ受け口は本編とまったく同じ**。言葉も本編と同じにそろえた（オーナー決定 2026-09-29
+   「承認、とかの同じ文言にしてほしい」。#523 で検証用だけ「この方向でOK／指摘を送る／この案はやめる」に
+   替えていたのをやめた）。検証用の動画で変わるのは、進む先の注意書きを出さないことだけ。 */
 const isPilotItem = it => !!(it && isPilotSeq(it.seq));
 const ACT_WORDS = {
   normal: { approve: g => `${g}を承認`, approved:'承認済み', comment:'修正を依頼',
-            commentN: n => `修正を依頼（${n}件）`, reject:'没にする' },
-  pilot:  { approve: () => 'この方向でOK', approved:'記録しました', comment:'指摘を送る',
-            commentN: n => `指摘を送る（${n}件）`, reject:'この案はやめる' }
+            commentN: n => `修正を依頼（${n}件）`, reject:'没にする' }
 };
+ACT_WORDS.pilot = ACT_WORDS.normal;
 const actWords = it => isPilotItem(it) ? ACT_WORDS.pilot : ACT_WORDS.normal;
 
 function decideHTML(it, gate, changes, barFacts, plain){
@@ -7177,12 +7176,7 @@ async function approveNow(vid, gate, note, rev){
   markApproved(vid, gate, true);
   renderShell();
   const revTxt = data && data.target_revision ? `第${data.target_revision}版の` : '';
-  if (pilot) {
-    toast((data && data.already_approved) ? `${revTxt}この案は記録済みです`
-                                          : `${revTxt}「この方向でOK」と記録しました`);
-  } else {
-    toast((data && data.already_approved) ? `${revTxt}${gname}は既に承認済みです` : `${revTxt}${gname}を承認しました`);
-  }
+  toast((data && data.already_approved) ? `${revTxt}${gname}は既に承認済みです` : `${revTxt}${gname}を承認しました`);
 }
 /* 承認した動画のボタンを、画面を作り直さずにその場で書き換える（表の行・スマホのカード・詳細） */
 function markApproved(vid, gate, done){
@@ -7244,8 +7238,7 @@ async function submitReject(box, key){
   if (ta) ta.value = '';
   const already = !!(data && data.already_dropped);
   await refreshAfterWrite(true);
-  toast(pilot ? (already ? 'この案はすでにやめています' : 'この案はやめる、と記録しました')
-              : (already ? 'この動画はすでに没になっています' : '没にしました'));
+  toast(already ? 'この動画はすでに没になっています' : '没にしました');
 }
 
 /* ── コメント本文の1行要約（#266 / 2026-09-06）─────────────────────────
