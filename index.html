@@ -1657,7 +1657,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
    区画は3つ: ① 素材・作ったもの ② 私の指摘 ③ 経緯・履歴。
    広い画面ではページ全体を縦に動かさず、②の一覧・③の中・台本だけが内側でスクロールする。
    --sv-chrome（ヘッダー＋工程の帯＋下端バーの実高さ）は JS が測って入れる。 ═══ */
-.sview{--sv-flow-h:40px; --sv-chrome:200px; --side-w:0px;
+.sview{--sv-flow-h:58px; --sv-chrome:200px; --side-w:0px;
   --script-w:420px; --mat-min:340px;
   /* --pane-full = 欄そのものの高さ。動画はその 80%（2026-09-21 オーナー指摘・参照画像の
      枚数が増える見込みなので、縮めたぶんの幅を素材の欄へ回す） */
@@ -1672,24 +1672,29 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-steps{display:flex; align-items:center; gap:0; min-width:0; overflow-x:auto;
   scrollbar-width:none; flex:0 1 auto}
 .sview .sv-steps::-webkit-scrollbar{display:none}
-/* 矢羽根（シェブロン）の帯。右が尖り、左が同じ形に欠ける */
-.sview .sv-step{--ar:11px; position:relative; display:flex; align-items:center; gap:5px; flex:0 0 auto;
-  height:26px; padding:0 calc(var(--ar) + 8px) 0 calc(var(--ar) + 12px); margin-left:calc(2px - var(--ar));
-  font-size:var(--fs-xs); white-space:nowrap; color:var(--muted); background:var(--surface-3);
+/* 矢羽根（シェブロン）の帯（#570）。右が尖り、左が同じ形に欠ける。各工程は3行
+   （名前／作るもの・道具／状態）。これからの工程は無彩色の面のまま、状態の欄は空 */
+.sview .sv-step{--ar:10px; position:relative; display:flex; flex-direction:column; justify-content:center;
+  flex:0 0 auto; min-width:84px; height:50px; padding:0 calc(var(--ar) + 5px) 0 calc(var(--ar) + 9px);
+  margin-left:calc(2px - var(--ar)); font-size:var(--fs-2xs); line-height:1.3; white-space:nowrap;
+  color:var(--muted); background:var(--surface-3);
   clip-path:polygon(0 0, calc(100% - var(--ar)) 0, 100% 50%, calc(100% - var(--ar)) 100%, 0 100%, var(--ar) 50%)}
-.sview .sv-step:first-child{margin-left:0; padding-left:14px; border-radius:var(--r-sm) 0 0 var(--r-sm);
+.sview .sv-step:first-child{margin-left:0; padding-left:12px; border-radius:var(--r-sm) 0 0 var(--r-sm);
   clip-path:polygon(0 0, calc(100% - var(--ar)) 0, 100% 50%, calc(100% - var(--ar)) 100%, 0 100%)}
-.sview .sv-step .dot{font-size:11px; line-height:1; color:inherit; flex:0 0 auto}
-.sview .sv-step:not(.done) .dot{display:none}
+.sview .sv-step .nm{font-size:var(--fs-xs); font-weight:650; color:var(--ink-2)}
+.sview .sv-step .st{font-variant-numeric:tabular-nums}
 .sview .sv-step.done{background:var(--act-soft); color:var(--sub-ink)}
-.sview .sv-step.cur{background:var(--act); color:var(--act-ink); font-weight:700}
-.sview .sv-step .sub{font-weight:400; font-size:var(--fs-2xs); color:inherit;
-  background:rgba(255,255,255,.2); border-radius:var(--r-pill); padding:1px 8px}
-/* この番組では使わない工程。流れの並びは全番組で同じにして、使わない所だけ斜線の地で「なし」 */
-.sview .sv-step.skip{color:var(--muted); font-weight:400;
+/* いまの工程（承認待ちもこの色） */
+.sview .sv-step.cur{background:var(--act); color:var(--act-ink)}
+.sview .sv-step.cur .st{font-weight:700}
+/* 承認ポイントの承認済み＝緑＋承認の日時 */
+.sview .sv-step.ok{background:var(--good-tint); color:var(--up)}
+.sview .sv-step.done .nm,.sview .sv-step.cur .nm,.sview .sv-step.ok .nm{color:inherit}
+/* この動画では使わない工程。並びは全番組で同じにして、使わない所だけ斜線の地＋取り消し線 */
+.sview .sv-step.skip{color:var(--muted);
   background:repeating-linear-gradient(135deg, var(--surface-2) 0 5px, var(--surface-3) 5px 10px)}
-.sview .sv-step.skip .lbl2{text-decoration:line-through; text-decoration-color:var(--muted)}
-.sview .sv-step .skipnote{font-size:var(--fs-2xs); color:var(--muted)}
+.sview .sv-step.skip .nm{color:var(--muted); font-weight:400;
+  text-decoration:line-through; text-decoration-color:var(--muted)}
 
 /* ── 骨組み ── */
 .sview .sv-wrap{display:flex; flex-direction:column; gap:var(--sp-3); min-width:0}
@@ -2398,10 +2403,10 @@ const isPilotSeq = seq => {
 /* ── 進行係を通らない動画（検証用と storage_only の番組・#569）─────────────────
    手元の提出の入口（submit_for_review.py）から出す動画。**02・03 の本編はここに入らない**。
    この動画だけ次の3つが違う（オーナー決定 2026-09-29「置き場は動画ごとに1つ」）:
-     ・レビュー素材の置き場が承認ポイントに依らず1つ（ONE_DIR）。モックは参照動画の欄に、
+     ・レビュー素材の置き場が承認ポイントに依らず1つ（ONE_DIR）。Blender の仮組みは参照動画の欄に、
        完成動画が出来たら主画面の欄に出る。旧い置き場（storyboard/）は新しい置き場が空のときだけ読む
-     ・モック＋静止画（storyboard）の承認待ちが、そのあとの完成の動きに追い越されたら数えない
-     ・承認ポイントの呼び名（storyboard は「モック＋静止画」） */
+     ・仮組み＋静止画（storyboard）の承認待ちが、そのあとの完成の動きに追い越されたら数えない
+     ・承認ポイントの呼び名（storyboard は「仮組み＋静止画」） */
 const offDispatcherItem = it => !!it && (isPilotSeq(it.seq) || STORAGE_ONLY_CH.has(it.channel));
 const ONE_DIR = 'final';
 /* 読みに行く順番（Storage のフォルダ名）。**全番組で同じ**（オーナー決定 2026-09-29 15:07）——
@@ -2417,11 +2422,11 @@ const TINTS   = ['var(--s1-tint)','var(--s2-tint)','var(--stage-bg)','var(--warn
 const CH_GATES = {'buzz-zatsugaku':['final'], 'dental':['final']};
 const GATE_LABEL = {script:'台本', storyboard:'絵コンテ', final:'完成'};
 /* 承認ポイントの呼び名は**この関数を通す**（#569）。進行係を通らない動画の storyboard は
-   「モック＋静止画」の承認（rikiwaza-produce の工程表と同じ呼び名）。02・03 は GATE_LABEL のまま。
+   「仮組み＋静止画」の承認（rikiwaza-produce の工程表と同じ呼び名・仮組み＝Blender の仮組み）。02・03 は GATE_LABEL のまま。
    it は動画の行（seq と channel があればよい）。無ければ GATE_LABEL と同じ */
-const GATE_LABEL_OFF = {storyboard:'モック＋静止画'};
+const GATE_LABEL_OFF = {storyboard:'仮組み＋静止画'};
 const gateName = (gate, it) => (offDispatcherItem(it) && GATE_LABEL_OFF[gate]) || GATE_LABEL[gate] || gate;
-/* 工程の名前も同じ（「絵コンテ」の工程＝モックと静止画を作る工程）。列見出しの短い名前（short）は
+/* 工程の名前も同じ（「絵コンテ」の工程＝仮組みと静止画を作る工程）。列見出しの短い名前（short）は
    全行で共通なので替えない */
 const stageName = (s, it) => (offDispatcherItem(it) && s && s.key === 'board') ? GATE_LABEL_OFF.storyboard : (s ? s.name : '');
 const stageWork = (s, it) => (offDispatcherItem(it) && s && s.key === 'board') ? GATE_LABEL_OFF.storyboard + 'の作成中' : (s ? s.work : '');
@@ -2450,7 +2455,7 @@ const PSTAGES = [
   {key:'script', name:'台本',     short:'台本',     work:'台本作成中'},
   {key:'board',  name:'絵コンテ', short:'絵コンテ', work:'絵コンテ作成中'},
   {key:'video',  name:'映像',     short:'映像',     work:'映像作成中'},
-  {key:'edit',   name:'レンダ',   short:'レンダ',   work:'レンダ中'},
+  {key:'edit',   name:'完成動画の書き出し', short:'書き出し', work:'完成動画の書き出し中'},
   {key:'queue',  name:'投稿待ち', short:'待ち',     work:'投稿待ち'},
   {key:'posted', name:'投稿済',   short:'済',       work:'投稿済'}
 ];
@@ -2463,12 +2468,12 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 15:36';
+const BUILT_AT = '9/29 16:18';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
-const LANE_NAMES = ['案','台本','素材','レンダ','投稿待ち'];
+const LANE_NAMES = ['案','台本','素材','書き出し','投稿待ち'];
 const MONETIZE = [
   {nm:'早期アクセス（ファンファンディング）', subs:500,  plays:3000000},
   {nm:'広告収益（YPP 本加入）',              subs:1000, plays:10000000}
@@ -2582,7 +2587,7 @@ function loadUI(){
    threads = 動画ごとのレビュー記録。詳細を開いた動画のぶんだけ貯める
    byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため）
    rework  = 動画ごとの「この版は何の作り直しか」（human / ai / null）。一覧の札に使う
-   sbGone  = 完成の動きに追い越された「モック＋静止画」の承認待ち（#569）。動画の id →
+   sbGone  = 完成の動きに追い越された「仮組み＋静止画」の承認待ち（#569）。動画の id →
              追い越された提出の時刻（ms）。レビュー記録で確かめた結果を一覧の行にも効かせる */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
                 threads:{}, rework:{}, looks:{}, rvRev:{}, sbGone:{}, ops:null, analytics:{}, assets:{}, system:null,
@@ -2755,7 +2760,7 @@ function mapRow(r){
   /* 一覧の状態バッジ・指摘件数はビューの値をそのまま使う（review_events は読まない） */
   it._rv   = r.rv_gate || null;
   it._rc   = r.rc_gate || null;
-  /* 完成の動きに追い越された「モック＋静止画」の承認待ちは数えない（#569・進行係を通らない動画だけ） */
+  /* 完成の動きに追い越された「仮組み＋静止画」の承認待ちは数えない（#569・進行係を通らない動画だけ） */
   if (it._rv === 'storyboard' && sbSupersededRow(r)) it._rv = null;
   it._open = r.open_feedback_count || 0;
   /* 指摘の内訳と差し戻しの出どころ（M051）。未適用の DB では列そのものが返らない＝
@@ -2819,7 +2824,7 @@ async function loadPending(ch){
       if (!gates.includes(g)) continue;
       const st = it[g + '_state'];
       if (!st) continue;
-      /* 追い越された「モック＋静止画」の承認待ちは数えない（#569）。行だけで決まらない動画は
+      /* 追い越された「仮組み＋静止画」の承認待ちは数えない（#569）。行だけで決まらない動画は
          下でレビュー記録を引いて確かめる */
       if (st === 'review' && g === 'storyboard' && offDispatcherItem(it)) {
         if (sbSupersededRow(it)) continue;
@@ -2967,15 +2972,15 @@ function gateStateMap(events, curRev){
   return m;
 }
 
-/* ── 追い越された「モック＋静止画」の承認待ち（#569・進行係を通らない動画だけ）──────────
+/* ── 追い越された「仮組み＋静止画」の承認待ち（#569・進行係を通らない動画だけ）──────────
    置き場が動画ごとに1つになり、どちらの承認ポイントを開いても同じ画面・同じ素材が出る。
-   そのため「モック＋静止画」の提出のあとに**完成が動いた**（提出・修正の依頼・承認・没の
+   そのため「仮組み＋静止画」の提出のあとに**完成が動いた**（提出・修正の依頼・承認・没の
    どれかが後から付いた）動画では、手前の承認待ちを表に残さない——残すと、承認済みの完成より
    前の段階として一覧の「承認待ち」に並び続ける（RW9004 で実発生・2026-09-29）。
    ⚠️ DB（一覧のビュー）は変えていない。ビューの rv_gate / storyboard_state は今までどおり
    storyboard を返すので、**画面の側で読み替える**。並び順（ビューの sort_rank）だけは承認待ちの
    位置に残る。02・03 は対象外（何も変えない）。 */
-/* 一覧の行だけで分かる範囲。完成の状態の時刻・完成の最初の承認の時刻が、モック＋静止画の
+/* 一覧の行だけで分かる範囲。完成の状態の時刻・完成の最初の承認の時刻が、仮組み＋静止画の
    提出より後なら追い越し。レビュー記録で確かめ済み（store.sbGone）の提出もここで効かせる */
 function sbSupersededRow(r){
   if (!offDispatcherItem(r) || r.storyboard_state !== 'review') return false;
@@ -2987,7 +2992,7 @@ function sbSupersededRow(r){
   return memo != null && memo >= at;
 }
 /* レビュー記録で確かめる（完成の承認は最初の1回しか行に残らないので、2回目以降はこちらで拾う）。
-   追い越されていれば、その「モック＋静止画」の提出の時刻（ms）を返す。いなければ null */
+   追い越されていれば、その「仮組み＋静止画」の提出の時刻（ms）を返す。いなければ null */
 function sbSupersededEvents(events){
   let sbE = null, fin = null;
   for (const e of (events || [])) {
@@ -2995,7 +3000,7 @@ function sbSupersededEvents(events){
     if (e.gate === 'storyboard' && e.kind === 'request_review') { if (!sbE || evNewer(e, sbE)) sbE = e; }
     else if (e.gate === 'final') { if (!fin || evNewer(e, fin)) fin = e; }
   }
-  /* 古い版の完成の記録が後から付いても、新しい版のモック＋静止画の承認待ちは隠さない */
+  /* 古い版の完成の記録が後から付いても、新しい版の仮組み＋静止画の承認待ちは隠さない */
   const rev = e => Number(e.revision == null ? 1 : e.revision);
   return (sbE && fin && evNewer(fin, sbE) && rev(fin) >= rev(sbE)) ? +new Date(sbE.created_at) : null;
 }
@@ -3103,7 +3108,7 @@ function rcSrcOf(gate, events){
    没にした動画はどちらのキューにも出さない（#203） */
 function annotate(it, events, curRev){
   let rv = null, rc = null;
-  /* 完成の動きに追い越された「モック＋静止画」の承認待ちは数えない（#569・進行係を通らない動画だけ） */
+  /* 完成の動きに追い越された「仮組み＋静止画」の承認待ちは数えない（#569・進行係を通らない動画だけ） */
   const gone = offDispatcherItem(it) ? sbSupersededEvents(events) : null;
   if (gone != null) store.sbGone[it.id] = gone;
   for (const p of gateStateMap(events, curRev).values()) {
@@ -3460,9 +3465,9 @@ function displayIdx(it){
   if (rv && GATE_COL[rv] > i) i = GATE_COL[rv];
   /* 進行係を通らない動画（#569）は status を進める者がいないので、オーナーの承認の記録でも位置を
      上げる（その承認ポイントがいま状態を持っていないときだけ、次の工程へ）。追い越された
-     「モック＋静止画」の承認待ちを外した動画が、status の「台本」まで戻って見えないようにするため */
+     「仮組み＋静止画」の承認待ちを外した動画が、status の「台本」まで戻って見えないようにするため */
   /* 承認待ち・修正中の承認ポイントがあるあいだは上げない（前の版の完成の承認で、新しい版の
-     モック＋静止画の承認待ちが「投稿待ち」の位置へ進んで見えるのを防ぐ） */
+     仮組み＋静止画の承認待ちが「投稿待ち」の位置へ進んで見えるのを防ぐ） */
   if (!rv && offDispatcherItem(it)) {
     for (const g of ['storyboard', 'final']) {
       if (it[GATE_COLUMN_FIELD[g]] && !it[g + '_state']
@@ -4097,8 +4102,8 @@ async function openDetail(vid, gate){
 }
 
 /* この動画を「シーン素材つきの画面」で開くか（#519 段2 → #523 で絵コンテにも → #569）。
-   ・見ている承認ポイントが完成か絵コンテ（モック＋静止画）であること（台本は従来の画面）
-   ・主画面に出せる動画（決まりの名前の mp4・案・通しのモック）が置き場にあること
+   ・見ている承認ポイントが完成か絵コンテ（仮組み＋静止画）であること（台本は従来の画面）
+   ・主画面に出せる動画（決まりの名前の mp4・案・通しの仮組み）が置き場にあること
    ネタの仕分け・没は対象外。返すのは { gate:承認ポイント, dir:読む置き場, kind }。 */
 async function useSceneView(it){
   if (!it || it.stage === 'triage' || it.stage === 'dropped') return null;
@@ -4106,7 +4111,7 @@ async function useSceneView(it){
   const one = offDispatcherItem(it);
   /* いま見ている承認ポイント。状態を持っていなければ、完成まで進んでいる動画だけ対象。
      進行係を通らない動画は段階に関係なく1つの画面なので、状態が無くても置き場を見に行く
-     （呼び名だけに使う承認ポイントは、完成まで進んでいれば完成・手前ならモック＋静止画・#569） */
+     （呼び名だけに使う承認ポイントは、完成まで進んでいれば完成・手前なら仮組み＋静止画・#569） */
   let gate = rv || (displayIdx(it) >= GATE_COL.final ? 'final' : null);
   if (!gate && one) gate = 'storyboard';
   if (gate !== 'final' && gate !== 'storyboard') return null;
@@ -5359,16 +5364,37 @@ async function submitTapChanges(box, key){
 
 /* 動画と同じフォルダに置かれるシーンの素材表。内部ファイルなので素材の一覧には出さない */
 const RE_MATERIALS = /^materials_v(\d+)\.json$/i;
-/* 全番組で同じ並びにする工程の帯。使わない工程は斜線の地で「なし」と書いて並びは崩さない */
-const SV_STEPS = ['ネタ案','台本','シーン割り','3Dの下敷き','フレーム','映像','レンダ',
-                  'あなたの確認','予約投稿','公開'];
-const SV_REVIEW_STEP = 7;
-/* 3Dの下敷きを使うのは「人類の力わざ」だけ（02・03 は「なし」） */
-const SV_SKIP = {'rikiwaza':[]};
-const SV_SKIP_DEFAULT = [3];
-/* 本体が持っている工程（PSTAGES / displayIdx）との対応。絵コンテは「シーン割り」までしか
-   対応が取れないので、「フレーム」は先の工程のまま残す（無理に済みにしない） */
-const SV_FROM_PSTAGE = [0, 1, 2, 5, 6, 8, 9];
+/* 工程の帯（#570・オーナー決定 2026-09-29）。**全番組で同じ12個**を同じ順に並べ、使わない工程は
+   斜線の地＋取り消し線で残す（並びは崩さない）。見本は dashboard/flow-mockup.html。
+     name    … 1行目（工程の名前・用語集の正式名）
+     what    … 2行目（作るもの・道具）。whatOff は進行係を通らない動画（offDispatcherItem）のとき
+     gate    … 承認ポイント（◆ を付け、承認済みは緑＋承認の日時）
+     offOnly … 進行係を通らない動画だけが使う（02・03 の本編では「この番組では なし」）
+     post    … 公開の側（検証用の動画では「検証は投稿しない」）
+     pubTime … 2行目は番組の既定の公開時刻（svPubTime）。ここには書かない */
+const SV_STEPS = [
+  {name:'ネタ案',               what:'候補の登録'},
+  {name:'台本',                 what:'文章（md）'},
+  {name:'ナレーション',          what:'音声（ElevenLabs）'},
+  {name:'シーン割り',            what:'設計図（json）'},
+  {name:'Blender の仮組み',      what:'動きとカメラの確認用の動画', offOnly:true},
+  {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）'},
+  {name:'仮組み＋静止画の承認',   what:'オーナーが見る', gate:'storyboard', offOnly:true},
+  {name:'映像',                 what:'テイク（H3）'},
+  {name:'完成動画の書き出し',     what:'映像・音声・字幕を1本に（Remotion）', whatOff:'映像・注釈・字幕・音を1本に'},
+  {name:'完成の承認',            what:'オーナーが見る', gate:'final'},
+  {name:'予約投稿',              what:'YouTube に登録', post:true},
+  {name:'公開',                 what:'', post:true, pubTime:true}
+];
+/* 承認ポイント → 帯の位置 */
+const SV_GATE_STEP = {storyboard:6, final:9};
+/* 本体が持っている工程（PSTAGES / displayIdx の7つ）→ 帯の位置。1つの工程が帯の何個分にも
+   またがるとき（「絵コンテ」＝ナレーション〜静止画）は**またがる先頭**を指す。DB の工程からは
+   ナレーション・仮組み・静止画の済み・未を細かく判定できないので、無理に済みにしない
+   （いまの位置より前は済み、後はこれから）。投稿済は全部済み（12＝帯の外）。
+     idea→ネタ案 / script→台本 / board→ナレーション / video→映像 / edit→完成動画の書き出し /
+     queue→予約投稿 / posted→（全部済み） */
+const SV_FROM_PSTAGE = [0, 1, 2, 7, 8, 10, 12];
 
 /* 案の索引（同じ検証の複数の案をタブで切り替える・#523）。案のフォルダと索引の json は
    画面の裏方なので、「レビュー素材」の一覧には出さない */
@@ -5458,34 +5484,66 @@ async function svSign(ch, seq, dir, rels, sub){
   return out;
 }
 
-/* ── 工程の帯 ────────────────────────────────────────────────────── */
+/* ── 工程の帯（#570）──────────────────────────────────────────────── */
+/* その動画で使わない工程と、状態の欄に出す言葉（12個ぶん。null＝使う）。
+   Blender の仮組みとその承認は進行係を通らない動画（力わざ・検証用）だけ、公開の側は検証用では使わない */
+const SV_SKIP = it => SV_STEPS.map(s =>
+    (s.offOnly && !offDispatcherItem(it)) ? 'この番組では なし'
+  : (s.post && isPilotSeq(it.seq))        ? '検証は投稿しない' : null);
+/* 番組の既定の公開時刻（画面が持っている番組の設定）。無ければ空 */
+function svPubTime(it){
+  const row = (store.pilotChannels || store.channels || []).find(c => c.slug === it.channel);
+  const m = row && /^(\d{1,2}):(\d{2})/.exec(String(row.publish_time_jst || ''));
+  return m ? `${m[1].padStart(2, '0')}:${m[2]} に公開` : '';
+}
+/* いまの位置。承認待ち・修正中の承認ポイントがあればその位置、無ければ本体の工程から写す */
 function svFlowAt(it){
   const rv = it._rv || it._rc;
-  if (rv === 'final') return SV_REVIEW_STEP;
-  if (rv === 'storyboard') return 2;
-  if (rv === 'script') return 1;
-  const i = displayIdx(it);
-  return (i < 0 || SV_FROM_PSTAGE[i] == null) ? 0 : SV_FROM_PSTAGE[i];
+  let i;
+  if (rv && SV_GATE_STEP[rv] != null) i = SV_GATE_STEP[rv];
+  else if (rv === 'script') i = 1;
+  /* 予約済みは「投稿済」の工程に入る（公開の記録がステータスを進める）。公開時刻を待っている */
+  else if (it.stage === 'posted' && it.pub_status === '予約済') i = 11;
+  else {
+    const d = displayIdx(it);
+    i = (d < 0 || SV_FROM_PSTAGE[d] == null) ? 0 : SV_FROM_PSTAGE[d];
+  }
+  /* 承認待ちの承認ポイントをこの動画が使わない（02・03 の古い絵コンテの承認）ときは手前の静止画に置く */
+  if (rv && SV_SKIP(it)[i]) i -= 1;
+  return i;
 }
-/* いまの工程に添える札。言葉は一覧・工程の履歴と同じものを使う */
-function svFlowSub(it){
-  if (it._rv) return '承認待ち';
-  if (it._rc) return rcShort(it);
-  const i = displayIdx(it);
-  return i < 0 ? '' : AI_TAG + stageWork(PSTAGES[i], it);
+/* 承認ポイントが承認済みか＝承認の記録があり、いま承認待ちでも修正中でもない */
+const svGateOk = (it, g) => !!it[GATE_COLUMN_FIELD[g]] && it._rv !== g && it._rc !== g;
+/* 1つの工程の見た目（クラスと状態の欄）。言葉は一覧の札と同じもの（承認待ち・rcShort・投稿待ち） */
+function svStepState(it, i, cur, skipNote){
+  const s = SV_STEPS[i];
+  if (skipNote) return { cls:'skip', st:skipNote };
+  if (i < cur) {
+    if (s.gate && svGateOk(it, s.gate)) {
+      const at = it[GATE_COLUMN_FIELD[s.gate]];
+      return { cls:'ok', st:`✓ 承認 ${fmtMD(at)} ${fmtTime(at)}` };
+    }
+    return { cls:'done', st:'✓ 済み' };
+  }
+  if (i > cur) return { cls:'', st:'' };
+  if (it._rv) return { cls:'cur', st:'● 承認待ち' };
+  if (it._rc) return { cls:'cur', st:'↺ ' + rcShort(it) };
+  return { cls:'cur', st: it.stage === 'posted' ? '● 予約済み'
+                        : it.stage === 'queue' ? '● 投稿待ち'
+                        : it.stage === 'idea'  ? '● 着手前' : '● AI作業中' };
 }
 function svFlowHTML(it){
   const cur = svFlowAt(it);
-  const skip = SV_SKIP[it.channel] || SV_SKIP_DEFAULT;
-  const sub = svFlowSub(it);
-  return `<div class="sv-flow"><div class="sv-steps" aria-label="工程">${SV_STEPS.map((name, i) => {
-    const isSkip = skip.includes(i);
-    const cls = isSkip ? ' skip' : (i < cur ? ' done' : (i === cur ? ' cur' : ''));
-    return `<span class="sv-step${cls}"${isSkip ? ' title="この番組ではこの工程を使いません"' : ''}${
-      i === cur ? ' aria-current="step"' : ''}><span class="dot">${
-      i < cur ? '✓' : (i === cur ? '●' : '')}</span><span class="lbl2">${esc(name)}</span>${
-      isSkip ? '<span class="skipnote">なし</span>' : ''}${
-      (i === cur && !isSkip && sub) ? `<span class="sub">${esc(sub)}</span>` : ''}</span>`;
+  const skip = SV_SKIP(it), off = offDispatcherItem(it);
+  return `<div class="sv-flow"><div class="sv-steps" role="list" aria-label="工程">${SV_STEPS.map((s, i) => {
+    const { cls, st } = svStepState(it, i, cur, skip[i]);
+    const what = s.pubTime ? (skip[i] ? '—' : svPubTime(it)) : ((off && s.whatOff) || s.what);
+    const tip = skip[i] ? (s.post ? '検証用の動画は投稿しません' : 'この番組ではこの工程を使いません') : '';
+    return `<span class="sv-step${s.gate ? ' gate' : ''}${cls ? ' ' + cls : ''}" role="listitem"${
+      tip ? ` title="${tip}"` : ''}${cls === 'cur' ? ' aria-current="step"' : ''}>` +
+      `<span class="nm">${s.gate ? '◆ ' : ''}${esc(s.name)}</span>` +
+      `<span class="what">${what ? esc(what) : '&nbsp;'}</span>` +
+      `<span class="st">${st ? esc(st) : '&nbsp;'}</span></span>`;
   }).join('')}</div></div>`;
 }
 
@@ -6265,9 +6323,10 @@ function svPaintBar(){
   if (st) st.textContent = n == null ? 'この画面では指摘を足せません' : ('指摘 ' + n + '件');
   const next = sv.q('[data-sv-next]');
   if (next) {
-    const cur = svFlowAt(sv.it);
-    const after = SV_STEPS.slice(cur + 1).find((_, i) =>
-      !(SV_SKIP[sv.it.channel] || SV_SKIP_DEFAULT).includes(cur + 1 + i));
+    /* 承認の先＝工程の帯で、いまの位置より後ろの最初の「使う工程」 */
+    const cur = svFlowAt(sv.it), skip = SV_SKIP(sv.it);
+    const nx = SV_STEPS.findIndex((_, i) => i > cur && !skip[i]);
+    const after = nx < 0 ? null : SV_STEPS[nx].name;
     /* 検証用の動画は先の工程が決まっていない＝承認しても制作は動かない（#523） */
     next.textContent = !(sv.it._rv === sv.gate) ? ''
       : isPilotItem(sv.it) ? '記録に残るだけで、制作は自動では動きません。'
@@ -6281,8 +6340,8 @@ function svPaintBar(){
 /* dir＝置き場のフォルダ名（動画の名前の頭もこれ: final/final_v01.mp4・storyboard/storyboard_v01.mp4）。
    latest＝進行係を通らない動画（#569）。置き場が1つなので、別の版の提出が同じフォルダに並ぶ——
    **置き場の中でいちばん新しい版**（動画と目録の版の大きい方）の動画だけを主画面にする。
-   その版が目録だけ（モックだけの提出）なら null を返し、その版の通しのモックを主画面に借りる。
-   古い版の完成動画を新しい版のモックより先に出さないため */
+   その版が目録だけ（仮組みだけの提出）なら null を返し、その版の通しの仮組みを主画面に借りる。
+   古い版の完成動画を新しい版の仮組みより先に出さないため */
 function svMainFile(files, dir, latest){
   const re = new RegExp('^' + dir + '_v(\\d+)\\.[A-Za-z0-9]+$', 'i');
   let best = null, bv = -1;
@@ -6293,7 +6352,7 @@ function svMainFile(files, dir, latest){
   }
   if (best) return (latest && svNewestMaterialsVer(files) > bv) ? null : best;
   /* 完成だけは 02・03 の従来どおり「決まりの名前が無ければ最後の動画」を使う。
-     絵コンテは決まりの名前だけを候補にする——**関係のない動画が通しのモックより先に出る**のを
+     絵コンテは決まりの名前だけを候補にする——**関係のない動画が通しの仮組みより先に出る**のを
      防ぐため（#523 のレビュー指摘8）。ここで null を返せば ref_video_full へ落ちる */
   if (dir !== 'final') return null;
   const vids = files.filter(f => f.kind === 'video' && f.url);
@@ -6405,7 +6464,7 @@ async function svSource(ch, seq, dir, files, v, ver, latest){
 const svBorrowed = () => !!(sv && sv.mainLabel && sv.hasRefVideo === false);
 /* 主画面の動画の見出し（目録の label を借りていないとき）。02・03 は「完成の動画」。
    進行係を通らない動画は置き場が1つで、主画面は承認ポイントに依らず「作った映像」なので
-   「映像」と書く（「モック＋静止画の動画」「絵コンテの動画」は意味が取れない・#569） */
+   「映像」と書く（「仮組み＋静止画の動画」「絵コンテの動画」は意味が取れない・#569） */
 const svMainTitle = (it, gate) => offDispatcherItem(it) ? '映像' : gateName(gate, it) + 'の動画';
 
 /* 動画2本の枠の見出し。借りている状態では左右の見出しも入れ替える（中身と同じ順に読めるように） */
@@ -6418,7 +6477,7 @@ function svPaintMainHead(){
   const emptyTtl = '映像';
   const stage = sv.q('[data-sv-stage]');
   if (stage) { if (borrow) stage.dataset.borrow = '1'; else delete stage.dataset.borrow; }
-  /* 左の見出し: 借りているときは「参照動画」、主画面の動画があり通しのモックを右に出す回は「映像」
+  /* 左の見出し: 借りているときは「参照動画」、主画面の動画があり通しの仮組みを右に出す回は「映像」
      （「絵コンテの動画」は意味が取れない・オーナー指摘 2026-09-22/23）。02・03 の完成は今までどおり */
   const mainTtl = borrow ? '参照動画' : ((sv.mat && sv.mat.ref_video_full) ? emptyTtl : label);
   const ttl = sv.q('[data-sv-mainttl]'); if (ttl) ttl.textContent = mainTtl;
@@ -6426,7 +6485,7 @@ function svPaintMainHead(){
   const rttl = sv.q('[data-sv-refttl]'); if (rttl) rttl.textContent = borrow ? emptyTtl : '参照動画';
   const rseg = sv.q('[data-sv-segref]'); if (rseg) rseg.textContent = borrow ? emptyTtl : '参照動画';
   const sub = sv.q('[data-sv-finallbl]');
-  /* 借りているときの添え字は目録の label（例「通しのモック」）。ふだんはファイル名 */
+  /* 借りているときの添え字は目録の label（例「Blender の仮組み（通し）」）。ふだんはファイル名 */
   if (sub) sub.textContent = borrow ? label : String(sv.videoName || '').replace(/\.[^.]+$/, '');
 }
 
@@ -8334,8 +8393,8 @@ const RUN_KIND_JA = {
   'dispatcher-frame-collect':'フレームの回収',
   'dispatcher-clip-submit':'映像の発注',
   'dispatcher-clip-collect':'映像の回収',
-  'dispatcher-render-run':'公開版のレンダ',
-  'dispatcher-render-derive-review':'レビュー版のレンダ',
+  'dispatcher-render-run':'完成動画の書き出し（公開版）',
+  'dispatcher-render-derive-review':'完成動画の書き出し（レビュー版）',
   'dispatcher-final-validate':'完成の機械測定',
   'dispatcher-final-submit-review':'完成の提出',
   'dispatcher-publish-schedule':'YouTube へ予約投稿',
