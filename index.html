@@ -1689,6 +1689,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-step.cur .st{font-weight:700}
 /* 承認ポイントの承認済み＝緑＋承認の日時 */
 .sview .sv-step.ok{background:var(--good-tint); color:var(--up)}
+.sview .sv-step.ok .st{font-weight:700}
+/* 承認の記録なしで通り過ぎた承認ポイント。済みの色を付けない */
+.sview .sv-step.nogate{background:var(--surface-3); color:var(--muted)}
+.sview .sv-step.nogate .nm{color:var(--muted)}
 .sview .sv-step.done .nm,.sview .sv-step.cur .nm,.sview .sv-step.ok .nm{color:inherit}
 /* この動画では使わない工程。並びは全番組で同じにして、使わない所だけ斜線の地＋取り消し線 */
 .sview .sv-step.skip{color:var(--muted);
@@ -2468,7 +2472,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 16:25';
+const BUILT_AT = '9/29 16:28';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5521,8 +5525,11 @@ function svStepState(it, i, cur, skipNote){
   if (i < cur) {
     if (s.gate && svGateOk(it, s.gate)) {
       const at = it[GATE_COLUMN_FIELD[s.gate]];
-      return { cls:'ok', st:`承認 ${fmtMD(at)} ${fmtTime(at)}` };
+      return { cls:'ok', st:`✓ 承認済み ${fmtMD(at)} ${fmtTime(at)}` };
     }
+    /* 承認ポイントを承認の記録なしで通り過ぎた（その承認ポイントへは出していない）。済みの色に
+       すると承認済みに見えるので、色を付けずに言葉で書く（オーナー指摘 2026-09-29 16:27） */
+    if (s.gate) return { cls:'nogate', st:'承認の記録なし' };
     return { cls:'done', st:'' };
   }
   if (i > cur) return { cls:'', st:'' };
@@ -5542,7 +5549,7 @@ function svFlowHTML(it){
     /* 2行だけ（オーナー指摘 2026-09-29 16:24「ごちゃごちゃ・文字を減らして」）。済みは色と ✓ だけで
        示し、2行目は「作るもの・道具」。知らせることがある工程（いまの工程・承認済み・使わない）
        だけ、2行目を状態の言葉に替える */
-    const line2 = (cls === 'cur' || cls === 'ok' || cls === 'skip') ? st : what;
+    const line2 = (cls === 'cur' || cls === 'ok' || cls === 'skip' || cls === 'nogate') ? st : what;
     const mark = s.gate ? '◆ ' : (cls === 'done' ? '✓ ' : '');
     return `<span class="sv-step${s.gate ? ' gate' : ''}${cls ? ' ' + cls : ''}" role="listitem"${
       tip ? ` title="${tip}"` : ''}${cls === 'cur' ? ' aria-current="step"' : ''}>` +
