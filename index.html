@@ -2181,7 +2181,7 @@ const TINTS   = ['var(--s1-tint)','var(--s2-tint)','var(--stage-bg)','var(--warn
 const CH_GATES = {'buzz-zatsugaku':['final'], 'dental':['final']};
 const GATE_LABEL = {script:'台本', storyboard:'絵コンテ', final:'完成'};
 /* 承認ポイントの呼び名は**この関数を通す**（#569）。進行係を通らない動画の storyboard は
-   「仮組み＋静止画」の承認（rikiwaza-produce の工程表と同じ呼び名・仮組み＝Blender の仮組み）。02・03 は GATE_LABEL のまま。
+   「仮組み＋静止画」の承認（仮組み＝Blender の仮組み。この承認ポイントを持つかは番組の human_gates）。02・03 は GATE_LABEL のまま。
    it は動画の行（seq と channel があればよい）。無ければ GATE_LABEL と同じ */
 const GATE_LABEL_OFF = {storyboard:'仮組み＋静止画'};
 const gateName = (gate, it) => (offDispatcherItem(it) && GATE_LABEL_OFF[gate]) || GATE_LABEL[gate] || gate;
@@ -2227,7 +2227,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 22:33';
+const BUILT_AT = '9/29 23:35';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5175,8 +5175,8 @@ async function svSign(ch, seq, dir, rels, sub){
 
 /* ── 工程の帯（#570）──────────────────────────────────────────────── */
 /* その動画で使わない工程と、状態の欄に出す言葉（12個ぶん。null＝使う）。
-   Blender の仮組みとその承認は進行係を通らない動画（力わざ・検証用）だけ、公開の側は検証用では使わない。
-   承認ポイントは番組の human_gates（chMeta の gates）に無ければ使わない（#572・身近なからくりは完成だけ） */
+   Blender の仮組みとその承認は進行係を通らない動画（力わざ・からくり・検証用）だけ、公開の側は検証用では使わない。
+   承認ポイントは番組の human_gates（chMeta の gates）に無ければ使わない（#572・力わざとからくりは完成だけ） */
 const SV_SKIP = it => SV_STEPS.map(s =>
     (s.offOnly && !offDispatcherItem(it)) ? 'この番組では なし'
   : (s.gate && !chMeta(it.channel).gates.includes(s.gate)) ? 'この番組では なし'
