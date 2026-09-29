@@ -1657,7 +1657,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
    区画は3つ: ① 素材・作ったもの ② 私の指摘 ③ 経緯・履歴。
    広い画面ではページ全体を縦に動かさず、②の一覧・③の中・台本だけが内側でスクロールする。
    --sv-chrome（ヘッダー＋工程の帯＋下端バーの実高さ）は JS が測って入れる。 ═══ */
-.sview{--sv-flow-h:58px; --sv-chrome:200px; --side-w:0px;
+.sview{--sv-flow-h:46px; --sv-chrome:200px; --side-w:0px;
   --script-w:420px; --mat-min:340px;
   /* --pane-full = 欄そのものの高さ。動画はその 80%（2026-09-21 オーナー指摘・参照画像の
      枚数が増える見込みなので、縮めたぶんの幅を素材の欄へ回す） */
@@ -1672,11 +1672,11 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-steps{display:flex; align-items:center; gap:0; min-width:0; overflow-x:auto;
   scrollbar-width:none; flex:0 1 auto}
 .sview .sv-steps::-webkit-scrollbar{display:none}
-/* 矢羽根（シェブロン）の帯（#570）。右が尖り、左が同じ形に欠ける。各工程は3行
-   （名前／作るもの・道具／状態）。これからの工程は無彩色の面のまま、状態の欄は空 */
+/* 矢羽根（シェブロン）の帯（#570）。右が尖り、左が同じ形に欠ける。各工程は2行
+   （名前／作るもの・道具。知らせることがある工程だけ2行目が状態の言葉）。済みは色と ✓ で示す */
 .sview .sv-step{--ar:10px; position:relative; display:flex; flex-direction:column; justify-content:center;
-  flex:0 0 auto; min-width:84px; height:50px; padding:0 calc(var(--ar) + 5px) 0 calc(var(--ar) + 9px);
-  margin-left:calc(2px - var(--ar)); font-size:var(--fs-2xs); line-height:1.3; white-space:nowrap;
+  flex:0 0 auto; min-width:72px; height:38px; padding:0 calc(var(--ar) + 7px) 0 calc(var(--ar) + 11px);
+  margin-left:calc(2px - var(--ar)); font-size:var(--fs-2xs); line-height:1.35; white-space:nowrap;
   color:var(--muted); background:var(--surface-3);
   clip-path:polygon(0 0, calc(100% - var(--ar)) 0, 100% 50%, calc(100% - var(--ar)) 100%, 0 100%, var(--ar) 50%)}
 .sview .sv-step:first-child{margin-left:0; padding-left:12px; border-radius:var(--r-sm) 0 0 var(--r-sm);
@@ -2468,7 +2468,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 16:18';
+const BUILT_AT = '9/29 16:25';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5517,20 +5517,20 @@ const svGateOk = (it, g) => !!it[GATE_COLUMN_FIELD[g]] && it._rv !== g && it._rc
 /* 1つの工程の見た目（クラスと状態の欄）。言葉は一覧の札と同じもの（承認待ち・rcShort・投稿待ち） */
 function svStepState(it, i, cur, skipNote){
   const s = SV_STEPS[i];
-  if (skipNote) return { cls:'skip', st:skipNote };
+  if (skipNote) return { cls:'skip', st:'なし' };
   if (i < cur) {
     if (s.gate && svGateOk(it, s.gate)) {
       const at = it[GATE_COLUMN_FIELD[s.gate]];
-      return { cls:'ok', st:`✓ 承認 ${fmtMD(at)} ${fmtTime(at)}` };
+      return { cls:'ok', st:`承認 ${fmtMD(at)} ${fmtTime(at)}` };
     }
-    return { cls:'done', st:'✓ 済み' };
+    return { cls:'done', st:'' };
   }
   if (i > cur) return { cls:'', st:'' };
-  if (it._rv) return { cls:'cur', st:'● 承認待ち' };
-  if (it._rc) return { cls:'cur', st:'↺ ' + rcShort(it) };
-  return { cls:'cur', st: it.stage === 'posted' ? '● 予約済み'
-                        : it.stage === 'queue' ? '● 投稿待ち'
-                        : it.stage === 'idea'  ? '● 着手前' : '● AI作業中' };
+  if (it._rv) return { cls:'cur', st:'承認待ち' };
+  if (it._rc) return { cls:'cur', st:rcShort(it) };
+  return { cls:'cur', st: it.stage === 'posted' ? '予約済み'
+                        : it.stage === 'queue' ? '投稿待ち'
+                        : it.stage === 'idea'  ? '着手前' : 'AI作業中' };
 }
 function svFlowHTML(it){
   const cur = svFlowAt(it);
@@ -5539,11 +5539,15 @@ function svFlowHTML(it){
     const { cls, st } = svStepState(it, i, cur, skip[i]);
     const what = s.pubTime ? (skip[i] ? '—' : svPubTime(it)) : ((off && s.whatOff) || s.what);
     const tip = skip[i] ? (s.post ? '検証用の動画は投稿しません' : 'この番組ではこの工程を使いません') : '';
+    /* 2行だけ（オーナー指摘 2026-09-29 16:24「ごちゃごちゃ・文字を減らして」）。済みは色と ✓ だけで
+       示し、2行目は「作るもの・道具」。知らせることがある工程（いまの工程・承認済み・使わない）
+       だけ、2行目を状態の言葉に替える */
+    const line2 = (cls === 'cur' || cls === 'ok' || cls === 'skip') ? st : what;
+    const mark = s.gate ? '◆ ' : (cls === 'done' ? '✓ ' : '');
     return `<span class="sv-step${s.gate ? ' gate' : ''}${cls ? ' ' + cls : ''}" role="listitem"${
       tip ? ` title="${tip}"` : ''}${cls === 'cur' ? ' aria-current="step"' : ''}>` +
-      `<span class="nm">${s.gate ? '◆ ' : ''}${esc(s.name)}</span>` +
-      `<span class="what">${what ? esc(what) : '&nbsp;'}</span>` +
-      `<span class="st">${st ? esc(st) : '&nbsp;'}</span></span>`;
+      `<span class="nm">${mark}${esc(s.name)}</span>` +
+      `<span class="st">${line2 ? esc(line2) : '&nbsp;'}</span></span>`;
   }).join('')}</div></div>`;
 }
 
