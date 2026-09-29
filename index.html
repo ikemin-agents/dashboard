@@ -64,7 +64,7 @@
 
   /* ── 完成の承認画面（.sview）だけで使うくすんだ配色（オーナー確定の見本より・#519）──
      鮮やかな --s1 / --crit は大きな面に使わない。**この画面の外では使わない**
-     （一覧・分析・運営の色は従来のまま） */
+     （一覧・分析の色は従来のまま） */
   --act:#485E69; --act-ink:#ffffff; --act-soft:#E6ECEF; --act-line:#485E69;
   --sub-ink:#38454D;
   --attn:#F3EBDD; --attn-ink:#7A6240;
@@ -251,7 +251,7 @@ body[data-chindep="1"] .chtab[data-ch]:hover{opacity:1}
 /* ═══ ナビ ══════════════════════════════════════════════════════ */
 .nav{background:var(--surface-1); border-top:1px solid var(--border-2)}
 /* 下ナビに残るのが「制作」1つだけになったら、ナビごと出さない（押す先が無い）。
-   チャンネル共通の画面（分析・運営）は広い画面でもスマホでもチャンネルタブの右に出る
+   チャンネル共通の画面（分析など）は広い画面でもスマホでもチャンネルタブの右に出る
    （.navbtn.indep は常に display:none）ので、下ナビは本当に「制作」1つしか無い。
    ⚠️ 「あなたの番」の件数（バッジ）はこのナビが持っていた。隠すぶん、チャンネルタブと
       スマホのチャンネル選択に同じバッジを出す（下の .chtab .badge）。 */
@@ -285,7 +285,7 @@ main{max-width:none; margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-wi
 .card{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   padding:var(--sp-5); box-shadow:var(--shadow-2); min-width:0}
 .stack{display:grid; gap:var(--sp-4); min-width:0}
-.stack>*, .runs>*{min-width:0}
+.stack>*{min-width:0}
 .note{display:flex; gap:9px; align-items:flex-start; background:var(--surface-2); border:1px solid var(--border-2);
   border-radius:var(--r-md); padding:10px 13px; font-size:var(--fs-sm); color:var(--ink-2); margin-bottom:var(--sp-4)}
 .note b{color:var(--ink); font-weight:650}
@@ -575,9 +575,6 @@ td.ttl .flags{margin-left:8px}
   main,footer{max-width:100%}
   .stockcards{display:grid; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
     border-top:1px solid var(--border)}
-  /* ⚠️ 稼働（.runs/.run）の同等ルールはここには書かない。基本定義がこのブロックより
-     後ろにあり、同じ詳細度なので上書きされてしまう（実際それで角丸・影が残っていた）。
-     スタイルシート末尾の専用ブロックに置く（#205） */
 }
 
 /* ═══ 詳細ビュー（レビュー画面・#200 → 2026-09-20 に並びを組み替え・#509 段1）══════
@@ -1089,293 +1086,59 @@ tr.dropped td{color:var(--muted)}
   body.sheetopen .dview.hasbar{padding-bottom:calc(var(--dbar-h) + 46dvh + env(safe-area-inset-bottom))}
 }
 
-/* ═══ 運営（旧: 稼働／システム／費用）════════════════════════════ */
-/* 折りたたみ節。カード1枚の見た目のまま、見出し行を押すと開く。右端の小さい字は
-   畳んだままでも分かってほしい要約（エラー件数・今月の請求額）。異常なら色を付ける。 */
-details.opsec{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
-  box-shadow:var(--shadow-2); padding:var(--sp-4) var(--sp-5)}
-details.opsec>summary{display:flex; align-items:baseline; gap:9px; cursor:pointer; list-style:none;
-  font-size:var(--fs-md); font-weight:680; -webkit-user-select:none; user-select:none}
-details.opsec>summary::-webkit-details-marker{display:none}
-details.opsec>summary::before{content:'▸'; font-size:12px; color:var(--ink-2); flex:0 0 auto;
-  transition:transform .15s}
-details.opsec[open]>summary::before{transform:rotate(90deg)}
-details.opsec>summary:hover{color:var(--s1)}
-details.opsec>summary:focus-visible{outline:2px solid var(--s1); outline-offset:3px;
-  border-radius:var(--r-sm)}
-details.opsec>summary .s{margin-left:auto; text-align:right; font-size:var(--fs-xs); font-weight:400;
-  color:var(--ink-2); line-height:1.5}
-details.opsec>summary .s.warn{color:var(--warn); font-weight:680}
-details.opsec>summary .s.bad{color:var(--crit); font-weight:680}
-details.opsec[open]>summary{margin-bottom:var(--sp-4)}
-.opsnote{font-size:var(--fs-xs); color:var(--ink-2); margin:0 0 var(--sp-3); line-height:1.65}
-.runs{display:grid; gap:var(--sp-2); margin-top:var(--sp-4)}
-.run{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
-  padding:var(--sp-4); box-shadow:var(--shadow-2)}
-.run.err{border-left:3px solid var(--crit)}
-.run.warn{border-left:3px solid var(--warn)}
-.run.ok{border-left:3px solid var(--done)}
-.run.run-{border-left:3px solid var(--axis)}
-/* 1件は畳んだ状態が既定。見出し行（summary）を押すと中身が開く（2026-08-20） */
-.runhead{display:flex; gap:var(--sp-3); align-items:center; flex-wrap:wrap;
-  cursor:pointer; list-style:none; -webkit-user-select:none; user-select:none}
-.runhead::-webkit-details-marker{display:none}
-.runhead:focus-visible{outline:2px solid var(--s1); outline-offset:3px; border-radius:var(--r-sm)}
-.runhead .tri{font-size:11px; color:var(--ink-2); transition:transform .15s}
-.run[open]>.runhead{margin-bottom:10px}
-.run[open]>.runhead .tri{transform:rotate(90deg)}
-.runbody{display:grid; gap:var(--sp-2)}
-.runhead .when{font-size:var(--fs-md); font-weight:680; font-variant-numeric:tabular-nums}
-.runhead .dur{font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums}
-.runhead .kind{font-size:var(--fs-2xs); color:var(--ink-2); border:1px solid var(--border-2);
-  border-radius:5px; padding:1px 8px; background:var(--surface-2)}
-.stat{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-2xs); font-weight:700;
-  border-radius:var(--r-sm); padding:2px 10px; margin-left:auto}
-.stat.ok{background:var(--done-tint); color:var(--done)}
-.stat.warn{background:var(--warn-tint); color:var(--ink)}
-.stat.err{background:var(--crit-tint); color:var(--crit)}
-.stat.run{background:var(--surface-2); color:var(--ink-2)}
-.runsummary{font-size:var(--fs-sm); color:var(--ink-2); margin-bottom:8px; white-space:pre-wrap}
-.lanerow{display:flex; gap:5px; align-items:center; flex-wrap:wrap; font-size:var(--fs-2xs);
-  color:var(--ink-2); margin-bottom:6px}
-.lane{border:1px solid var(--border-2); border-radius:5px; padding:1px 7px; font-variant-numeric:tabular-nums;
-  background:var(--surface-2); white-space:nowrap}
-.lane.low{background:var(--warn-tint); color:var(--ink)}
-.acts{display:grid; gap:0; margin:var(--sp-3) 0 0; padding:0; list-style:none}
-.acts li{display:flex; gap:9px; align-items:baseline; font-size:var(--fs-sm);
-  border-top:1px solid var(--border-2); padding:8px 0}
-.acts li .mk{color:var(--muted); font-size:var(--fs-2xs); flex:0 0 auto}
-.acts li.bad .mk{color:var(--crit)}
-.acts li.warn .mk{color:var(--warn)}
-.acts li.common{color:var(--ink-2)}
-.acts li .tm{color:var(--muted); font-size:var(--fs-2xs); font-variant-numeric:tabular-nums; flex:0 0 auto}
-.acts li .bd{white-space:pre-wrap; word-break:break-word}
-.acts .cq{font-size:var(--fs-2xs); flex:0 0 auto; border-radius:5px; padding:0 6px;
-  border:1px solid var(--border-2); color:var(--ink-2)}
-
-/* ═══ システム（#249）══════════════════════════════════════════
-   定時タスクは「1日のどこで動くか」を上段の時間軸（横=0〜24時、1時間刻みの目盛り）で
-   見せ、下段の表で詳細（実行主体・説明）を読む2段構成。軸の丸バッジと表1列目の丸バッジ
-   は同じ番号・同じ色で対応する（色の意味は上の凡例）。軸には番号だけでなくタスク名も
-   添える（buildTimelinePins が時刻順に1件=1段を割り当てるので、名前が重なる心配がない
-   ＝同じ段を共有させない）。丸バッジの右（時刻が後半＝50%超のものは左）にタスク名を
-   出し、軸の中央付近で名前同士が交差しないようにする。5分間隔で常時稼働するもの
-   （ポーラー）は特定の時刻を持たないので軸には点を打たず、軸の上に帯（.tlband）として
-   出す。時間軸だけは狭い画面で横スクロールを許容する（旧2列表の「横スクロール無し」
-   方針は詳細の表側で引き続き守る＝表の列は番号・時刻とも幅1%に固定し、本文だけ折り返す）。
-   ⚠️ **図そのものに 840px（ラベル 150px ＋ 軸 680px）要る**ので、それより狭い画面では
-   図を出さず下の表だけにする（幅 390px では 172px の枠に 680px を押し込んで読めなかった・
-   #536 低）。表は同じ番号・同じ色の丸バッジを持つので、図が無くても内容は全部読める。 */
-/* 用語集。1語＝1行の縦積み。スマホでも横スクロールしないよう
-   表組みにはしない（言葉／意味／別の呼び方 を上下に重ねる） */
-.glgroup{margin:0 0 var(--sp-4)}
-.glgroup > h3{font-size:var(--fs-sm); font-weight:700; margin:0 0 4px}
-.glgroup > .note2{font-size:var(--fs-2xs); color:var(--ink-2); margin:0 0 var(--sp-2); line-height:1.6}
-.glit{padding:8px 0; border-top:1px solid var(--border-2); min-width:0}
-.glit .t{font-size:var(--fs-sm); font-weight:700; line-height:1.4}
-.glit .m{font-size:var(--fs-xs); color:var(--ink-2); line-height:1.6; overflow-wrap:anywhere}
-.glit .a{display:inline-block; margin-top:3px; font-size:var(--fs-2xs); color:var(--muted);
-  overflow-wrap:anywhere}
-
-/* リンク集の行。用語集の行組み（.glit）を流用しつつ、指で押せる高さを確保する */
-a.syslink{display:block; text-decoration:none; color:inherit; padding:12px 4px; border-radius:var(--r-sm)}
-a.syslink:hover{background:var(--surface-2)}
-a.syslink .t{color:var(--accent, var(--ink))}
-
-/* ── gen-farm のいま（システムタブの先頭）──────────────────────────────
-   1行目に「いま何が起きているか」を大きく1文で、その下に数字3つ、さらに下に待ち行列。 */
-.gfhead{display:flex; gap:9px; align-items:center; font-size:var(--fs-lg); font-weight:700;
-  border-radius:var(--r-md); padding:12px 14px; margin-bottom:var(--sp-3); line-height:1.45}
-.gfhead .mk{flex:0 0 auto}
-.gfhead.run{background:var(--s1-tint); color:var(--ink)}
-.gfhead.ok{background:var(--done-tint); color:var(--ink-2)}
-.gfhead.warn{background:var(--warn-tint); color:var(--ink)}
-.gfhead.bad{background:var(--crit-tint); color:var(--ink)}
-/* 正常な合間の待ち（できあがりを回収するまで）。異常ではないので色を当てず灰色で置く
-   （オーナー指摘 2026-08-28: 回収待ちが赤く出て毎回びっくりする） */
-.gfhead.info{background:var(--surface-2); color:var(--ink-2)}
-.gfmetrics{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-2); margin-bottom:var(--sp-3)}
-.gfm{background:var(--surface-2); border:1px solid var(--border-2); border-radius:var(--r-md); padding:10px 12px}
-.gfm .k{font-size:var(--fs-2xs); color:var(--muted)}
-.gfm .v{font-size:var(--fs-xl); font-weight:700; font-variant-numeric:tabular-nums; line-height:1.25}
-.gfm .s{font-size:var(--fs-2xs); color:var(--ink-2)}
-/* 動画（エピソード）ごとの束。1本＝1枚の囲みにして、どこまでが同じ動画か分かるようにする
-   （オーナー指摘 2026-08-20: どこまでが一動画か分かりづらい）。
-   既定は畳んだ状態。畳んだまま「進捗」「全部そろう時刻」「状態の札」が読め、押すと中の
-   シーン別の行が開く（オーナー要望 2026-08-27）。開閉は <details>/<summary> の素の機能に
-   任せる＝キーボードでも指でも効き、JS は開いた束を覚えておくぶんだけで済む。 */
-.gfgroups{display:grid; gap:var(--sp-3)}
-.gfgrp{border:1px solid var(--border-2); border-radius:var(--r-md); overflow:hidden;
-  background:var(--surface-1)}
-/* 3段の固定レイアウト: 1段目＝チャンネルと番号／右に状態の札、2段目＝タイトル／右に開閉の
-   印、3段目＝進捗と完了見込み（畳んだときの主役なので大きく）。
-   タイトルの長さで位置がずれないよう、右側は常に同じ場所に来る（オーナー指摘 2026-08-20）*/
-.gfghead{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 10px; align-items:center;
-  padding:11px 13px; background:var(--surface-2); font-size:var(--fs-sm); cursor:pointer;
-  list-style:none}
-.gfghead::-webkit-details-marker{display:none}
-.gfghead:hover{background:var(--surface-3)}
-.gfghead:focus-visible{outline:2px solid var(--s1); outline-offset:-2px}
-.gfghead .g1{grid-column:1; grid-row:1; display:flex; align-items:baseline; gap:8px; min-width:0}
-.gfghead .n{grid-column:2; grid-row:1; justify-self:end}
-.gfghead .ttl{grid-column:1; grid-row:2}
-.gfghead .caret{grid-column:2; grid-row:2; justify-self:end; color:var(--ink-2);
-  font-size:var(--fs-sm); line-height:1; transition:transform .15s}
-.gfgrp[open] .gfghead .caret{transform:rotate(180deg)}
-.gfghead .who{font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.gfghead .seq{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
-/* タイトルは省略しない（オーナー指定 2026-08-20: 見切れずに全部出す）。長ければ折り返す */
-.gfghead .ttl{min-width:0; color:var(--ink-2); line-height:1.5; overflow-wrap:anywhere}
-/* 状態の札。待ちは無彩色・制作中は青・回収待ちは橙。見込みを超えた1件だけ赤で強く出す
-   （現行の目立たせ方を踏襲） */
-.gfghead .n{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2); background:var(--surface-1);
-  border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap}
-.gfghead .n.run{background:var(--s1-tint); color:var(--s1-ink); border-color:transparent}
-.gfghead .n.ready{background:var(--fix-tint); color:var(--fix-ink); border-color:transparent}
-.gfghead .n.late{background:var(--crit-tint); color:var(--crit); border-color:transparent}
-/* 畳んだときの主役の2つ。左＝進捗（映像 11/12）、右＝完了見込み（00:16 ごろ 全部そろう）。
-   横幅が足りなければ折り返して2段になる（スマホ） */
-.gfbig{grid-column:1/-1; grid-row:3; display:flex; flex-wrap:wrap; align-items:baseline;
-  justify-content:space-between; gap:1px 14px; margin-top:3px}
-.gfbig .pg,.gfbig .et{font-size:var(--fs-xl); font-weight:700; line-height:1.3;
-  font-variant-numeric:tabular-nums; white-space:nowrap}
-.gfbig .pg .u{font-size:var(--fs-xs); color:var(--ink-2); margin-right:5px}
-.gfbig .pg .d{color:var(--ink-2)}
-.gfbig .et{color:var(--ink-2)}
-.gfbig .et .u{font-size:var(--fs-xs); margin-left:4px; white-space:normal}
-/* 見込みを超えたときだけ時刻の前に付く「再見積り」。当初の見込みと読み違えないための札 */
-.gfbig .et .u2{font-size:var(--fs-xs); font-weight:700; margin-right:5px; white-space:nowrap}
-.gfbig .et.late{color:var(--crit)}
-/* 束の内訳（できあがりと生成中が混ざっている束だけ）。畳んだままでも中身が読めるようにする */
-.gfghead .sub{grid-column:1/-1; grid-row:4; margin-top:3px; font-size:var(--fs-2xs);
-  color:var(--muted); line-height:1.5; overflow-wrap:anywhere}
-.gfjobs{display:grid; padding:2px 13px 8px; border-top:1px solid var(--border-2)}
-.gfjob{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:baseline;
-  padding:8px 0; border-bottom:1px solid var(--border-2); font-size:var(--fs-sm)}
-/* 作成中の1件だけ、左に細い印を付けて分かるようにする */
-.gfjob.is-running{font-weight:680}
-.gfjob.is-running .tm{color:var(--s1-ink)}
-.gfjob.is-ready .tm{color:var(--fix-ink)}
-.gfjob:last-child{border-bottom:none}
-.gfjob .wt{flex:1 1 auto; min-width:0; overflow-wrap:anywhere}
-.gfjob .tm{flex:0 0 auto; color:var(--ink-2); font-size:var(--fs-xs); white-space:nowrap;
-  font-variant-numeric:tabular-nums}
-/* 開いたときだけ出る「この動画の記録を見る」。カード本体を押すと開閉するようになったぶん、
-   動画の詳細へ移る口をここへ分けた（2026-08-27） */
-.gfgo{padding:0 13px 11px}
-.gfgo button{background:none; border:0; padding:6px 0; font:inherit; font-size:var(--fs-xs);
-  font-weight:700; color:var(--s1-ink); cursor:pointer}
-.gfgo button:hover{text-decoration:underline}
-.gfmore{padding:8px 2px; font-size:var(--fs-2xs); color:var(--muted)}
+/* ═══ 決まりの一覧・素材の一覧（#574）═══════════════════════════════
+   1行＝1つ。見出しの行と同じ列の幅で並べる（位置を揃える）。行を押すと下に中身が開く */
+.lst{border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-1);
+  box-shadow:var(--shadow-1); overflow:hidden; min-width:0}
+.lsthead,.rlrow,.alrow{display:grid; gap:var(--sp-3); padding:9px 14px; min-width:0}
+.lsthead{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.07em;
+  background:var(--surface-2); border-bottom:1px solid var(--border)}
+/* 列の幅は px で書く（見出しの行は字が小さいので、em だと列の位置がずれる） */
+.rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
+.alrow,.lsthead.al{grid-template-columns:64px minmax(0,1fr) 84px 84px 14px; align-items:center}
+.lst details{border-bottom:1px solid var(--border-2)}
+.lst details:last-child{border-bottom:none}
+.lst summary{list-style:none; cursor:pointer}
+.lst summary::-webkit-details-marker{display:none}
+.lst summary:hover,.lst details[open]>summary{background:var(--surface-2)}
+.lst summary:focus-visible{outline:2px solid var(--s1); outline-offset:-2px}
+.lst .caret{color:var(--muted); font-size:11px; justify-self:end; transition:transform .15s}
+.lst details[open] .caret{transform:rotate(90deg)}
+.rlrow .no{font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink-2)}
+.rlrow .sb,.alrow .nm{font-weight:650; font-size:var(--fs-sm); overflow-wrap:anywhere}
+.rlrow .bd{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere}
+.alrow .cnt{font-size:var(--fs-sm); font-variant-numeric:tabular-nums; color:var(--ink-2)}
+.tagk{justify-self:start; font-size:var(--fs-2xs); white-space:nowrap; color:var(--ink-2);
+  border:1px solid var(--border-2); border-radius:var(--r-sm); padding:1px 6px; background:var(--surface-2)}
+.tagk.must{color:var(--ink); font-weight:700}
+.lstbody{padding:6px 14px 14px}
+.lstnone{padding:var(--sp-6); text-align:center; color:var(--ink-2); font-size:var(--fs-sm)}
+.kv{display:grid; grid-template-columns:8em minmax(0,1fr); gap:7px var(--sp-3); margin:0; font-size:var(--fs-sm)}
+.kv dt{color:var(--muted); font-size:var(--fs-xs); padding-top:1px}
+.kv dd{margin:0; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.55; min-width:0}
+.kv .none{color:var(--muted)}
+.kv .exl{margin:0; padding-left:1.1em; white-space:normal}
+.kv .exl li{margin:0 0 3px}
+.kv .exk{font-size:var(--fs-2xs); font-weight:700; color:var(--ink-2)}
+.kv .exn{color:var(--muted); font-size:var(--fs-xs)}
+.kv .pre{white-space:pre-wrap}
+.kv pre.code{margin:0 0 3px; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:var(--fs-2xs);
+  white-space:pre-wrap; overflow-wrap:anywhere; background:var(--surface-2); border-radius:var(--r-sm); padding:5px 8px}
+/* 見本の絵。無いときも同じ大きさの「素材なし」の面を置く */
+.athumb{width:64px; height:64px; border-radius:var(--r-sm); border:1px solid var(--border); padding:0;
+  overflow:hidden; background:var(--surface-3); cursor:zoom-in; display:block}
+.athumb img{display:block; width:100%; height:100%; object-fit:cover}
+.athumb.none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2);
+  font-size:var(--fs-2xs); cursor:inherit; text-align:center}
 @media (max-width:640px){
-  .gfmetrics{grid-template-columns:1fr; gap:0}
-  .gfm{border-radius:0; border-width:0 0 1px 0; display:flex; align-items:baseline; gap:10px}
-  .gfm .v{font-size:var(--fs-lg)}
-  .gfm .s{margin-left:auto; text-align:right}
-  .gfjob{flex-wrap:wrap; gap:6px 10px}
-  .gfjob .tm{margin-left:auto}
-  /* 狭い画面では進捗と見込みを縦に積む（横に並べると見込みの文が潰れる） */
-  .gfbig{justify-content:flex-start; gap:1px 12px}
-  .gfbig .pg,.gfbig .et{font-size:var(--fs-lg)}
+  .lsthead{display:none}
+  .rlrow{grid-template-columns:auto auto auto minmax(0,1fr) 14px}
+  .rlrow .bd{grid-column:1 / -1; grid-row:2}
+  .alrow{grid-template-columns:56px minmax(0,1fr) auto auto 14px}
+  .athumb{width:56px; height:56px}
+  .kv{grid-template-columns:1fr; gap:2px}
+  .kv dd{margin-bottom:6px}
 }
-
-.syslegend{display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4); margin:0 0 var(--sp-3);
-  font-size:var(--fs-2xs); color:var(--ink-2)}
-.syslegend .lg{display:inline-flex; align-items:center; gap:7px}
-.runner{display:inline-flex; align-items:center; font-size:var(--fs-2xs); font-weight:700;
-  border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap; line-height:1.6}
-/* 色は「実行主体」にだけ使う（オーナー要望 2026-08-19）。
-   オレンジ=Claude ルーチン（Claude のアイコンと同じ色）／青=ポーラー／緑=タスクスケジューラ。
-   分類（YouTube制作／X運用／その他）には色を当てない＝タイムラインは区切り線だけで分ける。 */
-.runner.routine{background:var(--fix-tint); color:var(--fix-ink)}
-.runner.poller{background:var(--s1-tint); color:var(--s1-ink)}
-.runner.task{background:var(--good-tint); color:var(--up)}
-.sysflag{display:inline-flex; align-items:center; font-size:var(--fs-2xs); font-weight:700;
-  border-radius:var(--r-pill); padding:1px 9px; white-space:nowrap; line-height:1.6;
-  background:var(--warn-tint); color:var(--ink)}
-
-/* 時間軸。丸バッジ(.tlpin)の色は .runner と同じ割り当て（橙=Claude ルーチン／青=ポーラー／
-   緑の枠線=タスクスケジューラ）。1件=1段（.tlrow の bottom で高さを決める）で、段の数だけ
-   .tlpins の高さが伸びる。.tlstem が軸線から段の高さまでの目印線。.tlrow は時刻の
-   左半分なら丸バッジ→名前の順（右に伸びる）、右半分なら名前→丸バッジの順（左に伸びる）
-   にして、右端で名前が画面外にはみ出しにくくする。 */
-/* 左に固定表示の帯カード＋右にスクロールする時間軸、の2カラム（オーナー指摘: 帯の中の
-   小さい文字ラベルは読みにくい・8/18。横スクロールしてもカードは常に見える）。 */
-.tltrack{display:flex; align-items:flex-start; gap:10px; margin-bottom:var(--sp-4)}
-.tlsidebar{position:relative; flex:0 0 150px; width:150px}
-/* 分類のラベル。色は付けない（色は実行主体だけ）。レーンの区切り線は右の軸側と揃える */
-.tlcard{position:absolute; left:0; right:0; display:flex; flex-direction:column;
-  justify-content:center; gap:3px; padding:0 13px 0 0; border-top:1px solid var(--border)}
-.tlcardtitle{font-size:var(--fs-sm); font-weight:700; color:var(--ink); line-height:1.3}
-.tlcardcount{font-size:var(--fs-2xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
-.tlouter{flex:1 1 auto; min-width:0; overflow-x:auto; -webkit-overflow-scrolling:touch}
-.timeline{position:relative; min-width:680px; padding:0 14px 66px}
-/* 図の実寸（ラベル 150px ＋ 隙間 10px ＋ 軸 680px）に足りない画面では図を出さない（#536 低） */
-@media (max-width:879px){ .tltrack{display:none} }
-.tlpins{position:relative}
-.tlrow{position:absolute; z-index:1; display:flex; align-items:center; gap:5px; white-space:nowrap}
-.tlrow.off{opacity:.5}
-.tlname{font-size:10.5px; font-weight:600; color:var(--ink-2)}
-/* 領域（YouTube制作／X運用／その他）はスイムレーンの区切り線だけで分ける。背景色は
-   付けない（色は実行主体＝Claude／ポーラー／スケジューラのためだけに取っておく・
-   オーナー要望 2026-08-19）。ラベルは左のカード側。pointer-events:none で操作の邪魔をしない。 */
-.tlchband{position:absolute; left:0; right:0; pointer-events:none;
-  border-top:1px solid var(--border)}
-/* 常時稼働（5分間隔など・特定の時刻を持たないタスク）は該当するレーンの一番上に外枠だけの
-   帯として全幅で出す（中は透明＝「点ではなく常時」を一目で区別させる・8/18）。枠線の色は
-   実行主体に合わせる（黒固定をやめた・2026-08-19）。 */
-.tlalways{position:absolute; left:0; right:0; z-index:1; box-sizing:border-box;
-  display:flex; align-items:center; gap:9px; padding:0 9px; border-radius:var(--r-sm);
-  background:transparent; border:1.5px solid var(--axis); color:var(--ink)}
-.tlalways.routine{border-color:var(--fix)}
-.tlalways.poller{border-color:var(--s1)}
-.tlalways.task{border-color:var(--up)}
-.tlalways.off{opacity:.5}   /* 止めてあるタスク（表の行・ピンと同じ薄さに揃える） */
-.tlalways .tlpin{flex:0 0 auto}
-.tlalways span:last-child{font-size:var(--fs-2xs); font-weight:600; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis}
-/* display を明示しないと <span> は inline のままで width/height が無視される
-   （.tlrow の中は flex item 化されるので偶然効いていたが、表の <td> 直下では
-   文字幅だけの細い帯になっていた・オーナー指摘 8/18「周りの色が小さい」の原因）。 */
-.tlpin{display:inline-flex; align-items:center; justify-content:center;
-  width:22px; height:22px; flex:0 0 auto;
-  border-radius:var(--r-pill); font-size:11px; font-weight:700; font-variant-numeric:normal; cursor:default}
-.tlpin.routine{background:var(--fix); color:#fff}
-.tlpin.poller{background:var(--s1); color:#fff}
-.tlpin.task{background:var(--good-tint); color:var(--up); box-shadow:inset 0 0 0 1.5px var(--up)}
-.tlstem{position:absolute; bottom:0; width:1px; background:var(--border-2); transform:translateX(-50%)}
-.tlstem.off{opacity:.5}
-.tlaxis{position:relative; height:1px; background:var(--grid); margin-top:6px}
-.tltick{position:absolute; top:0; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center}
-.tltick i{width:1px; height:5px; background:var(--axis)}
-.tltick b{margin-top:4px; font-weight:400; font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums}
-/* .tltick の数字は .tlaxis(高さ1px)の外に絶対配置ではみ出す（目盛り線5px+隙間4px+文字
-   ぶんで軸線から約22px下まで実際には描かれる）。.tlaxistitle は通常フローで .tlaxis の
-   直後に来るため、margin-top はその実際のはみ出し分より大きく取らないと目盛りの数字と
-   重なる（実例: 2026-08-18 margin-top:6px で重なって読めなくなった不具合の修正）。 */
-.tlaxistitle{margin-top:36px; font-size:var(--fs-2xs); color:var(--muted); text-align:center}
-
-.systbl table{min-width:0}
-.systbl th.no,.systbl td.no{white-space:nowrap; width:1%; text-align:center; vertical-align:top;
-  padding-top:11px; padding-right:0}
-/* 軸の丸バッジ(22px)は日中ずらっと並ぶので小さくしておく必要があるが、表は1行の余白が
-   広いので大きくして読みやすくする（オーナー指摘: 数字が小さすぎて読めない・8/18。
-   27px→13pxで足りなかったのでさらに拡大） */
-.systbl td.no .tlpin{width:34px; height:34px; line-height:34px; font-size:16px}
-.systbl th.when,.systbl td.when{white-space:nowrap; width:1%; font-weight:680;
-  font-variant-numeric:tabular-nums; vertical-align:top; padding-top:11px}
-.systbl td.what{white-space:normal; line-height:1.45; min-width:180px; padding-top:10px; padding-bottom:11px}
-.systbl td.what .nm{font-weight:650; margin-right:7px}
-.systbl td.what .runner,.systbl td.what .sysflag{vertical-align:1px; margin-right:5px}
-.systbl td.what .ds{display:block; color:var(--ink-2); font-size:var(--fs-xs); margin-top:3px}
-.systbl tr.off{opacity:.5}
-/* 領域見出し行（YouTube制作／X運用／その他・共通基盤）。進捗マトリクスの列グループ見出し
-   （.legend2 等）と同じ stage-bg トーンを使い、既存の「グループの区切り」語彙に揃える。 */
-.systbl tr.chgroup td{background:var(--stage-bg); color:var(--ink); font-weight:700;
-  font-size:var(--fs-xs); letter-spacing:.03em; padding:7px 14px; border-bottom:1px solid var(--stage-line)}
-.systbl tr.chgroup:hover td{background:var(--stage-bg)}
-.systbl tr.chgroup:first-child td{border-top:none}
-.sysnotes{margin:var(--sp-3) 0 0; padding-left:1.25em; font-size:var(--fs-2xs); color:var(--ink-2); line-height:1.7}
 
 /* ═══ 分析 ══════════════════════════════════════════════════════ */
 .spark{position:relative}
@@ -1593,26 +1356,11 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .legend2 .exs{display:inline; color:var(--muted)}
   .legend2 .mark{width:15px; height:15px; line-height:15px; font-size:10px}
 }
-/* ═══ スマホ: 在庫・レビュー・稼働の3タブを同じ「左右いっぱいの表」に揃える（#205）
-   基準は在庫カード（.stockcards の行）: 角丸なし・影なし・画面端まで・区切りは細線1本・
-   左端に状態の色帯・行の内側余白は 12px 16px。
-   ⚠️ 置き場所に意味がある: .run の基本定義（角丸・影つきカード）はこのブロックより
-      前にあり詳細度も同じなので、前方のメディアクエリに書くと後勝ちで上書きされて
-      効かない。必ず基本定義より後ろ＝ここに置くこと ═══ */
+/* ═══ スマホ: 説明バナー（.note）は囲みを外して画面端まで（#205）。運営タブ（実行記録の
+   .runs/.run）は 2026-09-29 に外した（#574）。.note の行は詳細の指摘の一覧にも効いているので残す ═══ */
 @media (max-width:640px){
-  /* リスト本体: main の左右パディングを打ち消して画面端まで。行間の隙間は無くす */
-  .runs{gap:0; margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3))}
-  /* 行: カードの角丸・影・左右の枠線を外し、下線1本だけの表の行にする。
-     状態の色帯（.run.ok 等）は詳細度が高いので 3px のまま残る */
-  .run{border-radius:0; border-width:0 0 1px 0; box-shadow:none}
-  .run{padding:var(--sp-3) var(--sp-4)}
-  /* 説明バナーは囲みを外し、下の実行ログと地続きの1枚に見せる */
   .note{margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
     border-radius:0; border-width:0 0 1px 0; box-shadow:none; margin-bottom:0}
-  .runs{margin-top:0}
-  /* 折りたたみ節は左右の余白を詰め、中の実行ログは節の内側余白ぶん外へ出して端まで使う */
-  details.opsec{padding-left:var(--sp-4); padding-right:var(--sp-4)}
-  details.opsec>.runs{margin-left:calc(-1 * var(--sp-4)); margin-right:calc(-1 * var(--sp-4))}
 }
 /* ═══ スマホの詳細まわりの微調整（#207 / #266 / #509 段1）══════════════════
    ⚠️ .dsec-history / .cmt .bub の基本定義はスタイルシートの前方にあり詳細度も同じなので、
@@ -1653,7 +1401,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 /* ═══ 完成の承認画面（シーン素材つき・#519 段2/段3）════════════════════════════
    見た目と並びの正本は `dashboard/scene-mockup.html`（オーナー確定済みの見本）。ここは
    その CSS を本体のヘッダー・下端バーの高さに合わせて写したもの。**すべて .sview の中だけ**
-   に閉じてあるので、一覧・分析・運営の見た目は変わらない。
+   に閉じてあるので、一覧・分析の見た目は変わらない。
    区画は3つ: ① 素材・作ったもの ② 私の指摘 ③ 経緯・履歴。
    広い画面ではページ全体を縦に動かさず、②の一覧・③の中・台本だけが内側でスクロールする。
    --sv-chrome（ヘッダー＋工程の帯＋下端バーの実高さ）は JS が測って入れる。 ═══ */
@@ -2363,7 +2111,14 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 <main>
   <section class="view" id="view-stock"></section>
   <section class="view" id="view-analytics"></section>
-  <section class="view" id="view-admin"></section>
+  <section class="view" id="view-rules"></section>
+  <section class="view" id="view-assets"></section>
+  <!-- 素材の一覧の見本の絵を大きく見る（見た目は承認画面の拡大表示と同じ） -->
+  <div class="sv-lbox" id="plbox" hidden>
+    <img id="plboximg" alt="">
+    <div class="lcap" id="plboxcap"></div>
+    <div class="lnav"><button type="button" data-plbox-close>閉じる</button></div>
+  </div>
   <section class="view" id="view-detail"></section>
 </main>
 
@@ -2397,8 +2152,8 @@ const PILOT_ONLY_CH = new Set(['experiment']);
    入口から出し、**レビュー素材の置き場が動画ごとに1つ**になる（下の offDispatcherItem） */
 const STORAGE_ONLY_CH = new Set(['rikiwaza', 'experiment', 'karakuri']);
 /* ── 検証用の動画（試作・検証）の見分け方 ──────────────────────────────
-   番号の数字部が 9000 以上なら本編ではない。**見分け方はこの1か所だけ**（gen-farm の
-   札 epHint も、チャンネルの振り分けもここを通す）。検証用は各番組のタブ・在庫の数・
+   番号の数字部が 9000 以上なら本編ではない。**見分け方はこの1か所だけ**（チャンネルの
+   振り分けもここを通す）。検証用は各番組のタブ・在庫の数・
    進捗の表からは外し、チャンネルの並びの最後の「検証」タブへまとめる。 */
 const isPilotSeq = seq => {
   const m = /(\d{3,4})$/.exec(String(seq == null ? '' : seq));
@@ -2472,12 +2227,11 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 19:52';
+const BUILT_AT = '9/29 22:33';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
 const SORT_LABEL = {seq:'番号', title:'タイトル', genre:'ジャンル', days:'滞留', plays:'再生数', subs:'登録者増'};
-const LANE_NAMES = ['案','台本','素材','書き出し','投稿待ち'];
 const MONETIZE = [
   {nm:'早期アクセス（ファンファンディング）', subs:500,  plays:3000000},
   {nm:'広告収益（YPP 本加入）',              subs:1000, plays:10000000}
@@ -2539,13 +2293,6 @@ function jstDateStr(offsetDays){
   const p = partsOf(d, {year:'numeric', month:'2-digit', day:'2-digit'});
   return `${p.year}-${p.month}-${p.day}`;
 }
-function durText(a, b){
-  if (!a || !b) return null;
-  const ms = new Date(b) - new Date(a);
-  if (!(ms >= 0)) return null;
-  const m = Math.round(ms / 60000);
-  return m < 60 ? `${m}分` : `${Math.floor(m/60)}時間${m%60}分`;
-}
 function displayNameOf(email){
   const local = String(email || '').split('@')[0].toLowerCase();
   if (/(kohnosuke|kounosuke|sugaya|konosuke)/.test(local)) return 'kohnosuke';
@@ -2567,7 +2314,10 @@ const state = {
   anaRange:30, anaAxis:null, anaSort:null, anaTbl:{}, anaOff:{},
   filtersOpen:false, busy:false, lastSync:null,
   /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
-  secOpen:{}
+  secOpen:{},
+  /* 決まりの一覧・素材の一覧の絞り込み（#574）。空文字＝絞らない */
+  rulesF:{q:'', ch:'', stage:'', kind:'', strength:'', subject:''},
+  assetsF:{kind:'', seq:''}
 };
 
 /* ── 開いていたタブ・チャンネルを覚える ──────────────────────────────
@@ -2594,8 +2344,9 @@ function loadUI(){
    sbGone  = 完成の動きに追い越された「仮組み＋静止画」の承認待ち（#569）。動画の id →
              追い越された提出の時刻（ms）。レビュー記録で確かめた結果を一覧の行にも効かせる */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
-                threads:{}, rework:{}, looks:{}, rvRev:{}, sbGone:{}, ops:null, analytics:{}, assets:{}, system:null,
-                genfarm:null, autonow:null,
+                threads:{}, rework:{}, looks:{}, rvRev:{}, sbGone:{}, analytics:{}, assets:{},
+                /* 決まりの一覧・素材の一覧（#574）。開いたときに取る（⟳ で取り直す）。chNames は番組の名前 */
+                rules:null, prodAssets:null, chNames:{},
                 /* 検証用の動画が1本でもあるか（#523）。loadPilotFlag が入れる */
                 pilot:{has:false} };
 const clearVideoCaches = () => {
@@ -2614,15 +2365,13 @@ const VIEWS = [
   /* バッジ＝「あなたが動く番」の総数（承認待ち ＋ ネタの仕分け待ち・#314） */
   {key:'stock',     icon:'🗂', label:'制作', badge:() => pendingCount(state.ch) + triageCount(state.ch)},
   /* 分析はチャンネル横断の1画面（2026-09-04）。見えるチャンネルを色で重ねて出すので、
-     チャンネルタブの右（運営の左）の共通タブに置く。 */
+     チャンネルタブの右の共通タブに置く。 */
   {key:'analytics', icon:'📈', label:'分析', chIndep:true},
-  /* 運営（オーナー決定 2026-08-24）＝ 稼働・システム・費用の3タブを1つに畳んだもの。
-     3つとも「運営の内側」の話で、分かれていたのはデータの出どころが違うだけだった。
-     中は上から「いま／お金／記録／調べる」。常に開くのは「いま」（自動運転・gen-farm）だけで、
-     残りは畳む（異常・残量僅少のときは畳んだ節が自分から開く）。
-     タブ自体は共同運営者にも出す＝旧「システム」の中身（時刻表・リンク集）は今までどおり見える。
-     お金と記録は運営の内側の数字なので、節ごと全チャンネル可の人にだけ出す（旧 fullOnly 相当）。 */
-  {key:'admin',     icon:'🛠', label:'運営', chIndep:true}
+  /* 決まりの一覧と素材の一覧（#574・オーナー決定 2026-09-29）。読むだけ。旧「運営」タブの代わり
+     （運営で見ていた AI の残量・請求・gen-farm・制作の詰まりは PC のステータス画面で見る）。
+     決まりは番組で閲覧を分けない表なので、全チャンネル可の人にだけ出す（共同運営者は制作と分析のまま） */
+  {key:'rules',     icon:'📏', label:'決まり', chIndep:true, fullOnly:true},
+  {key:'assets',    icon:'🧱', label:'素材',   chIndep:true, fullOnly:true}
 ];
 /* ── 権限（#208）─────────────────────────────────────────────────
    state.me は dashboard_me() RPC の戻り値（{display_name, channels, full_access}）。
@@ -2665,6 +2414,8 @@ async function loadBootstrap(){
     q(sb.from('accounts').select('slug,channel,platform,handle,url,is_primary,kpi_media_key,status'))
   ]);
   store.accounts = accs;
+  /* 番組の名前（決まりの一覧の番組の欄。YouTube の口がまだ無い番組の名前も引けるように全部持つ） */
+  store.chNames = Object.fromEntries(chs.map(c => [c.slug, c.name || c.slug]));
   /* 動画チャンネル＝YouTube アカウントを持つ稼働中チャンネル */
   const videoChs = chs.filter(c => c.status !== 'closed'
     && accs.some(a => a.channel === c.slug && a.platform === 'youtube'));
@@ -3199,87 +2950,6 @@ async function loadAssetsFirst(ch, seq, dirs){
     if ((a.files || []).length) break;
   }
   return { dir: d, files: a.files || [], at: a.at };
-}
-
-async function loadOps(){
-  if (store.ops) return store.ops;
-  const runs = await q(sb.from('agent_runs').select('*').order('started_at', { ascending: false }).limit(20));
-  let events = [];
-  if (runs.length) {
-    events = await q(sb.from('agent_run_events').select('*')
-      .in('run_id', runs.map(r => r.id)).order('at', { ascending: true }));
-  }
-  store.ops = { runs, events };
-  return store.ops;
-}
-
-/* システムビュー（#249）の表示素材。system_docs（M029）は2行しかないチャンネル横断の
-   表で、中身はリポジトリ内の正本（routines-backup の scheduled-tasks.json・
-   dashboard/sync-system-docs.py 内 STATIC_ENTRIES/OVERVIEW_ITEMS）を同スクリプトが
-   写したもの（旧 flow-map.html の iframe 表示は本ダッシュボードに一本化して廃止・8/19）。
-   ⚠️ 公開 GitHub Pages の静的HTMLには埋めない＝ログイン後にここで初めて取りに行く。 */
-async function loadSystem(){
-  if (store.system) return store.system;
-  const rows = await q(sb.from('system_docs').select('key,title,format,content,updated_at'));
-  const by = {};
-  for (const r of rows) by[r.key] = r;
-  store.system = by;
-  return store.system;
-}
-
-/* ── gen-farm（実家の GPU 生成機）の待ち行列（M033）──────────────────────────
-   数字の正本は generation_jobs（発注台帳）。コマンドラインの genfarm-status
-   （00-config/tools/genfarm-status/）と同じ表・同じ数え方を読む＝二重管理を作らない。
-   引くのは2本だけ:
-     open   … まだ手元に無いジョブ（materialized_at が空 かつ 発注中／実行中／生成済み）
-     recent … 見込み時間の較正に使う直近の実測（終わったジョブの所要時間）
-   30秒だけキャッシュする（システムタブを開き直すたびに叩かないため）。 */
-/* ▼ ここから下の「未回収の数え方」は**写し**。正本は進行係の
-   00-config/automation/dispatcher/genfarm.py（open_job_predicate / FALLBACK_AVG）。
-   画面は言語が違うので import できず写しを置いている。
-   数え方を変えるときは genfarm.py を直してからここへ写す（#536 中14②）。
-   口（接続先）では絞らず、全部を**1本の待ち行列**として数える。2026-09-24 から生成機の
-   生成ソフトは1本だけで（#489）、旧い口で記録された行も同じ待ち行列に並ぶので、
-   genfarm.py の GENFARM_PORTS（新しい口＋旧い口を全部拾う）と同じ結果になる。
-   公開ページなので接続先の番号はここに書かない。 */
-const GF_OPEN_STATUS = ['submitting', 'in_flight', 'done'];
-/* コレクターが生成機の履歴から後追いで記録したジョブ（source が pipeline 以外）は、
-   誰も受け取りに行かないので「できあがり」が終了状態。これを未回収に数えると
-   「回収待ち」が永久に減らず、詰まりの警告が鳴りっぱなしになる（#278）。
-   この除き方は genfarm.py の open_job_predicate（正本）と揃えること。 */
-const gfCollected = r => r.source && r.source !== 'pipeline' && r.status === 'done';
-const GF_FALLBACK_SEC = {h3_video:223, flux_image:76, unknown:200};
-/* 「できあがったのに手元へ降りていない」を詰まりと疑うまでの分数。**数えはじめは
-   できあがった時刻**（finished_at）で、発注時刻ではない。生成が全部終わるまで回収しない
-   作りなので、数分〜十数分の待ちは正常な合間。赤い警告はここを超えたときだけ出す
-   （オーナー指定 2026-08-28: 20分。コマンドラインの genfarm-status は 10分のまま）。 */
-const GF_STALE_DONE_MIN = 20;
-const GF_TTL_MS = 30000;
-
-async function loadGenfarm(force){
-  if (!force && store.genfarm && Date.now() - store.genfarm.at < GF_TTL_MS) return store.genfarm;
-  const [openAll, recent] = await Promise.all([
-    q(sb.from('generation_jobs')
-        .select('id,kind,channel,video_id,episode_seq,artifact_key,status,purpose,source,submitted_at,started_at,finished_at,updated_at,estimated_sec')
-        .is('materialized_at', null).in('status', GF_OPEN_STATUS)
-        .order('submitted_at', { ascending: true }).limit(200)),
-    q(sb.from('generation_jobs').select('kind,estimated_sec,started_at,finished_at')
-        .not('finished_at', 'is', null).not('started_at', 'is', null)
-        .order('finished_at', { ascending: false }).limit(150))
-  ]);
-  const open = openAll.filter(r => !gfCollected(r));
-  /* どの動画のぶんかを出すためにタイトルを引く（動画として登録済みのものだけ。
-     試作・練習のエピソードは videos に行が無いので番号だけで出す） */
-  const ids = [...new Set(open.map(r => r.video_id).filter(Boolean))];
-  const titles = {};
-  if (ids.length) {
-    try {
-      (await q(sb.from('v_dashboard_list').select('id,seq,title,channel').in('id', ids)))
-        .forEach(r => { titles[r.id] = r; });
-    } catch (_) { /* 取れなくても番号だけで出せる */ }
-  }
-  store.genfarm = { open, recent, titles, at: Date.now() };
-  return store.genfarm;
 }
 
 async function loadAnalytics(ch){
@@ -5422,6 +5092,10 @@ let sv = null;                      /* いま組み立ててあるシーン画�
 const svUnit = () => (sv && sv.unit) ? sv.unit : 'シーン';
 const svUnitN = n => svUnit() + n;               /* 「ショット3」 */
 const svUnitCount = n => n + svUnit();           /* 「12ショット」 */
+/* 参照画像の欄の呼び名（#574）。目録の refs_label（例「使った素材」）があればその言葉、無ければ「参照画像」。
+   拡大表示の題などの短い形は、無ければ今までどおり「参照」（参照①）。使わないと決めた目録の呼び名は引かない */
+const svRefWord  = () => (sv && sv.mat && sv.mat.refs_label) || '参照画像';
+const svRefShort = () => (sv && sv.mat && sv.mat.refs_label) || '参照';
 
 /* ── シーンの素材表 ─────────────────────────────────────────────────
    動画と同じ版の表だけを使う（時刻表と同じ作法）。尺が 1.0 秒を超えて食い違うときは
@@ -5456,8 +5130,10 @@ function parseMaterials(text){
       ? { label: String(o.ref_video_full.label || '通しの参照動画'), src: String(o.ref_video_full.src) }
       : null;
     const unit = (o && typeof o.unit === 'string' && o.unit.trim()) ? o.unit.trim() : 'シーン';
+    /* refs の欄の呼び名（#574）。全部 Blender の動画は「使った素材」。無ければ今までどおり「参照画像」 */
+    const refsLabel = (o && typeof o.refs_label === 'string' && o.refs_label.trim()) ? o.refs_label.trim() : null;
     return { duration: Number(o.duration) || null, fps: Number(o.fps) || null,
-             unit, ref_video_full: full, scenes: rows };
+             unit, refs_label: refsLabel, ref_video_full: full, scenes: rows };
   } catch (_) { return null; }
 }
 /* 動画と同じ版の目録だけを使う（時刻表と同じ作法）。主画面の動画がまだ無いとき
@@ -5736,7 +5412,7 @@ function sceneDetailHTML(it, plan){
         <button type="button" data-svact="lbox-close">閉じる</button>
         <button type="button" data-svact="lbox-next" aria-label="次の画像">→</button>
       </div>
-      <div class="lhint">動画は止めたままです。←→ で 開始 → 終了 → 参照 を送れます（Esc・背景で閉じる）</div>
+      <div class="lhint" data-sv-lhint>動画は止めたままです。←→ で 開始 → 終了 → 参照 を送れます（Esc・背景で閉じる）</div>
     </div>
   </div>`;
 }
@@ -5981,7 +5657,10 @@ function svPaintNow(){
   sv.lboxList = [];
   /* 「参照画像は ①② の番号で書けます」は、目録に参照画像が1枚でもある動画だけ出す（#549） */
   const anyRef = !!(sv.mat && (sv.mat.scenes || []).some(x => x.refs && x.refs.length));
-  sv.root.querySelectorAll('[data-sv-refnote]').forEach(e => { e.hidden = !anyRef; });
+  sv.root.querySelectorAll('[data-sv-refnote]').forEach(e => {
+    e.hidden = !anyRef; e.textContent = svRefWord() + 'は ①② の番号で書けます'; });
+  const lhint = sv.q('[data-sv-lhint]');
+  if (lhint) lhint.textContent = '動画は止めたままです。←→ で 開始 → 終了 → ' + svRefShort() + ' を送れます（Esc・背景で閉じる）';
   const l1 = document.createElement('div');
   l1.className = 'l1';
   const nn = document.createElement('span'); nn.className = 'nn';
@@ -6055,7 +5734,7 @@ function svPaintNow(){
   const rbox = document.createElement('div');
   rbox.className = 'sv-refbox';
   const hd = document.createElement('div');
-  hd.className = 'refhd'; hd.textContent = '参照画像';
+  hd.className = 'refhd'; hd.textContent = svRefWord();
   const cnt = document.createElement('span');
   cnt.className = 'n'; cnt.textContent = refs.length + '枚';
   hd.appendChild(cnt);
@@ -6073,11 +5752,11 @@ function svPaintNow(){
       const no = svRefNo(nos.get(r.img || r.label || '') || (i + 1));
       const lb = svRefLabel(r.label);
       row.appendChild(slotEl({ cap: lb ? no + ' ' + lb : no, src: r.img,
-        full: '参照' + no + (lb ? ' ' + lb : '') }));
+        full: svRefShort() + no + (lb ? ' ' + lb : '') }));
     });
   } else {
     /* 0枚のシーンも枠を1つ出す（欄ごと消さない） */
-    row.appendChild(slotEl({ cap:'参照画像', src:null }));
+    row.appendChild(slotEl({ cap: svRefWord(), src:null }));
   }
   rbox.appendChild(row);
   shelf.appendChild(rbox);
@@ -8356,1031 +8035,251 @@ function drawSpark(){
     bindHover(wrap, r.pts, r.mode);
   });
 }
-/* ══ ④ 稼働 ════════════════════════════════════════════════════ */
-/* ok=null（＝閉じられていない）のまま この時間を超えた行は「中断疑い」として赤で出す。
-   もともとは夜間の在庫番の 02:00→06:00 打ち切り＝4時間を基準に 5時間で線を引いた（#219）。
-   在庫番は 2026-08-28 に止まったが、いま最長の作業（差し戻し対応係の札＝1時間）でも
-   この線には届かないので、そのまま 5時間で据え置く。 */
-const STALE_RUN_MS = 5 * 60 * 60 * 1000;
-
-function laneChips(lanes){
-  if (!lanes || typeof lanes !== 'object') return '';
-  return Object.keys(lanes).map(slug => {
-    const m = chMeta(slug), v = lanes[slug];
-    const cells = Array.isArray(v)
-      ? v.map((n, i) => ({ nm: LANE_NAMES[i] || ('L' + (i + 1)), n, low: (i === 0 && n < 15) || (i === 4 && n < 2) }))
-      : Object.keys(v || {}).map(k => ({ nm: k, n: v[k], low: false }));
-    return `<div class="lanerow"><span class="chip"><span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(m.name)}</span>${
-      cells.map(c => `<span class="lane ${c.low ? 'low' : ''}">${c.low ? '⚠ ' : ''}${esc(c.nm)} ${esc(c.n)}</span>`).join('')}</div>`;
-  }).join('');
-}
-
-/* 実行記録の種類をオーナーの言葉にする（画面に内部の名前を出さない・2026-08-20）。
-   ここに無い種類は英語のまま画面に出てしまうので、実際に記録される種類を全部載せる
-   （2026-08-26 に実データと突き合わせ: いちばん多い作業係と全体監査が抜けていた）。
-   名前は用語集に合わせる。**同じ仕事を2つの名前で呼ばない**——月に一度の点検は
-   画面のどこでも「全体監査」と書く（#413 低9）。
-   2026-09-02: 動画制作の記録は進行係が出す `dispatcher-*` に全部入れ替わったので、
-   工程表（各チャンネルの制作の工程表）に載っている全工程を足した。ここに足し忘れると
-   その工程だけ英語のまま画面に出る。旧体制（作業係・夜間の在庫番・レビュー見張り）の
-   3つは過去の記録がまだ画面に出るので、（旧）を付けて残す。 */
-const RUN_KIND_JA = {
-  'step-runner':'作業係（旧）', 'stock-keeper':'夜間の在庫番（旧）',
-  'review-poller':'レビュー見張り（旧）',
-  'dispatcher-storyboard-review':'絵コンテ審査係（旧）',
-  'dispatcher-final-review':'完成審査係（旧）',
-  'daily-log':'数字の記録', 'daily-log-followup':'日次の後片付け係',
-  'weekly-review':'週次レビュー', 'project-audit':'全体監査',
-  'x-reply':'Xのリプ返信', 'x-post-publish':'Xの投稿（旧）', 'x-post-propose':'Xの投稿ネタ選び（旧）',
-  'x-article-scan':'記事ネタ集め', 'x-article-write':'記事の執筆と下書き',
-  /* 進行係が動かす制作の工程（用語集の係の名前・工程表のラベルに合わせる） */
-  'dispatcher-lease-reap':'期限切れの札の後片付け',
-  'dispatcher-material-gap':'記帳もれの点検',
-  'dispatcher-idea-generate':'ネタ補充係',
-  'dispatcher-script-generate':'台本係',
-  'dispatcher-script-review-clarity':'台本チェック係（わかりやすさ）',
-  'dispatcher-script-review-compliance':'コンプラチェック係',
-  /* 2026-09-20 に審査の記録係を通す形へ変わり、工程の名前の末尾に -v2 が付いた
-     （工程表の run_kind）。旧の名前の記録も画面に残るので、どちらも同じ係の名前で出す。 */
-  'dispatcher-script-review-clarity-v2':'台本チェック係（わかりやすさ）',
-  'dispatcher-script-review-compliance-v2':'コンプラチェック係',
-  'dispatcher-script-verify-resolution':'解消確認係（台本）',
-  'dispatcher-storyboard-verify-resolution':'解消確認係（絵コンテ）',
-  'dispatcher-script-submit-review':'台本の提出',
-  'dispatcher-audio-generate':'ナレーション音声の生成',
-  'dispatcher-storyboard-generate':'絵コンテ設計係',
-  'dispatcher-storyboard-review-spec':'spec審査係',
-  'dispatcher-storyboard-review-spec-v2':'spec審査係',
-  'dispatcher-thumb-card':'サムネカードを組む',
-  'dispatcher-storyboard-archive':'絵コンテを組む係（旧）',
-  'dispatcher-storyboard-submit-review':'絵コンテの提出（旧）',
-  'dispatcher-frame-submit':'フレームの発注',
-  'dispatcher-frame-collect':'フレームの回収',
-  'dispatcher-clip-submit':'映像の発注',
-  'dispatcher-clip-collect':'映像の回収',
-  'dispatcher-render-run':'完成動画の書き出し（公開版）',
-  'dispatcher-render-derive-review':'完成動画の書き出し（レビュー版）',
-  'dispatcher-final-validate':'完成の機械測定',
-  'dispatcher-final-submit-review':'完成の提出',
-  'dispatcher-publish-schedule':'YouTube へ予約投稿',
-  'dispatcher-rework-plan':'差し戻し対応係',
-  'dispatcher-storage-archive':'公開後の保管', 'dispatcher-storage-walk':'保存先の見回り'
-};
-
-/* 稼働タブ（オーナー指定 2026-08-20）: 上に「正常終了か・異常があったか」だけを大きく出し、
-   1件ずつの詳細（何をしたか・所要時間・チャンネル別の内訳）は畳んで、開いたときだけ見せる。 */
-
-/* ══ ⑤ システム ════════════════════════════════════════════════ */
-/* system_docs（M029）の3件を描くだけの画面。中身の正本はリポジトリ側にあり、ここは
-   同期スクリプト（dashboard/sync-system-docs.py）が入れた写しを表示する。
-   JSON は「画面が描きやすい形」で入っている前提だが、壊れていても画面ごと落とさない
-   （parse に失敗した文書だけ「読めません」に差し替える）。 */
-const RUNNER_CLS = {routine:'routine', task:'task', poller:'poller'};
-// 表の領域分け見出し。このダッシュボードの主目的（YouTube制作）を先頭にする
-const CHANNEL_ORDER = ['youtube', 'x', 'other'];
-const CHANNEL_LABEL = {youtube: 'YouTube制作', x: 'X運用', other: 'その他・共通基盤'};
-
-/* 時間軸の並べ方: entries は既にバックエンド側で時系列ソート済みなので、その順番に
-   ①②③…と採番するだけ（軸の丸バッジと表の1列目が同じ番号になる）。
-   分類（YouTube/X/その他）は色つきの小さなタグではなく、帯（背景色の帯）を分類ごとに
-   分けて縦位置そのもので表す（オーナー指摘: タグは分かりにくい・8/18）。帯の中では
-   1件=1段にして名前同士が重ならないようにする（重なり回避のための間引きはしない）。
-   帯は表と同じ並び（YouTube制作→X運用→その他）を上から出す。 */
-const TL_HOUR_TICKS = Array.from({length: 25}, (_, i) => i);   // 0時〜24時の1時間刻み
-const TL_ROW_H = 28;
-const TL_PIN = 22;
-const TL_BAND_PAD = 8;
-const TL_BAND_GAP = 10;
-const TL_ALWAYS_H = 26;   // 常時稼働（5分間隔など）の黒帯1本ぶんの高さ
-
-function timeToMinutes(hhmm){
-  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || '').trim());
-  return m ? (+m[1]) * 60 + (+m[2]) : null;
-}
-
-function buildTimelinePins(entries, numOf){
-  const raw = [];
-  const alwaysOnByChannel = {};   // 特定の時刻を持たない常時稼働タスク（例: 5分間隔ポーラー）
-  entries.forEach(e => {
-    const channel = CHANNEL_ORDER.includes(e.channel) ? e.channel : 'other';
-    if (e.time) {
-      // parse_cron は同一cronが複数時刻にマッチすると "06:00 / 06:30" のように束ねて返す
-      String(e.time).split('/').forEach(part => {
-        const min = timeToMinutes(part);
-        if (min != null) raw.push({e, min, num: numOf.get(e), channel});
-      });
-    } else if (e.interval_min) {
-      (alwaysOnByChannel[channel] = alwaysOnByChannel[channel] || []).push({e, num: numOf.get(e)});
-    }
-  });
-  raw.sort((a, b) => a.min - b.min);
-
-  // 段は帯（チャンネル）ごとに独立して振る＝同じ帯の中だけ重なりを避ければよい
-  const laneCounters = {};
-  raw.forEach(p => {
-    p.lane = laneCounters[p.channel] || 0;
-    laneCounters[p.channel] = p.lane + 1;
-  });
-
-  // 帯は軸線に近い側（下）から積む。読み順を表と同じ「YouTube→X→その他」を上にしたいので
-  // 逆順（その他→X→YouTube）に積む。該当タスクが無い帯は作らない（高さ0で場所を取らない）。
-  // 常時稼働タスクがある帯は、通常のピンの上にさらに黒帯ぶんの高さを足す
-  // （bottom基準: pad→通常ピン→隙間→常時稼働の黒帯→pad の順に積む）。
-  const bandLayout = {};
-  let cursor = 0;
-  [...CHANNEL_ORDER].reverse().forEach(ch => {
-    const laneCount = laneCounters[ch] || 0;
-    const always = alwaysOnByChannel[ch] || [];
-    if (!laneCount && !always.length) return;
-    const pinsInnerH = laneCount > 0 ? (laneCount - 1) * TL_ROW_H + TL_PIN : 0;
-    const alwaysInnerH = always.length ? always.length * TL_ALWAYS_H + (always.length - 1) * 4 : 0;
-    const midGap = (laneCount > 0 && always.length) ? TL_BAND_PAD : 0;
-    const innerH = pinsInnerH + midGap + alwaysInnerH;
-    const bandH = innerH + TL_BAND_PAD * 2;
-    bandLayout[ch] = {
-      bottom: cursor, height: bandH,
-      innerBottom: cursor + TL_BAND_PAD,
-      alwaysBottom: cursor + TL_BAND_PAD + pinsInnerH + midGap,
-    };
-    cursor += bandH + TL_BAND_GAP;
-  });
-  const totalHeight = Math.max(TL_PIN, cursor - TL_BAND_GAP);
-
-  return {pins: raw, alwaysOnByChannel, bandLayout, totalHeight};
-}
-
-function parseDoc(doc){
-  if (!doc) return null;
-  try { return JSON.parse(doc.content); } catch { return null; }
-}
-/* 中身がまだ入っていないときの表示。理由（同期の仕組み）は画面に出さない
-   （オーナー指定 2026-08-20: ダッシュボードには裏側の話を書かない） */
-const notSynced = what => `<div class="noitem">${esc(what)}をまだ読み込めていません</div>`;
-
-/* 外部リンク集。スマホから GitHub の課題ボード等へ1タップで飛ぶための入口
-   （アプリが入っていればアプリ側で開く）。中身は静的なのでコード内に持つ。 */
-const SYS_LINKS = [
-  {group:'課題ボード（GitHub Projects）', items:[
-    {label:'課題管理', url:'https://github.com/orgs/ikemin-agents/projects/1/views/2',
-     note:'SNS自動化タスクの本体。バグ・作業・改善'},
-    {label:'リサーチ', url:'https://github.com/orgs/ikemin-agents/projects/1/views/3',
-     note:'調査・検討中のテーマ'},
-    {label:'秘書タスク', url:'https://github.com/orgs/ikemin-agents/projects/1/views/5',
-     note:'生活・家まわり'},
-  ]},
-  {group:'課題一覧', items:[
-    {label:'未対応の課題', url:'https://github.com/ikemin-agents/sns-automation/issues',
-     note:'未クローズの課題を新しい順に'},
-    {label:'自分に割り当て', url:'https://github.com/issues/assigned',
-     note:'全リポ横断で自分宛のもの'},
-  ]},
-];
-
-function linksSection(){
-  return `<details class="opsec">
-    <summary>🔗 リンク集<span class="s">スマホから1タップ</span></summary>
-    <div class="note"><span>📱</span><div>GitHub アプリを入れているスマホでは、
-      タップするとアプリ側で開きます。ホーム画面に置きたいときはブラウザの共有 →
-      「ホーム画面に追加」。</div></div>
-    ${SYS_LINKS.map(g => `<div class="glgroup">
-      <h3>${esc(g.group)}</h3>
-      ${g.items.map(it => `<a class="glit syslink" href="${esc(it.url)}"
-          target="_blank" rel="noopener noreferrer">
-        <div class="t">${esc(it.label)} ↗</div>
-        <div class="m">${esc(it.note)}</div></a>`).join('')}
-    </div>`).join('')}</details>`;
-}
-
-
-/* 定時タスクの時刻表。畳んだ節を返す（月に一度見るかどうかの情報なので既定は閉じる） */
-function scheduleSection(doc){
-  const d = parseDoc(doc);
-  if (!d || !Array.isArray(d.entries)) return `<details class="opsec">
-    <summary>⏰ 定時タスクの時刻表<span class="s">まだ読み込めていません</span></summary>
-    ${notSynced('スケジュール')}</details>`;
-
-  const runnerLabel = {};
-  (d.runners || []).forEach(r => { runnerLabel[r.key] = r.label; });
-
-  // 番号は entries の並び順（=バックエンドで時系列ソート済み）にそのまま採番する
-  const numOf = new Map();
-  d.entries.forEach((e, i) => numOf.set(e, i + 1));
-
-  const {pins, alwaysOnByChannel, bandLayout, totalHeight} = buildTimelinePins(d.entries, numOf);
-
-  const pinsHtml = pins.map(p => {
-    const cls = RUNNER_CLS[p.e.runner] || 'routine';
-    const off = p.e.enabled === false;
-    const title = p.e.title_ja || p.e.id;
-    const leftPct = p.min / 1440 * 100;
-    const flip = leftPct > 50;   // 時刻が後半(50%超)は名前を左へ伸ばし、右端でのはみ出しを防ぐ
-    const L = bandLayout[p.channel];
-    const bottom = (L ? L.innerBottom : 0) + p.lane * TL_ROW_H;
-    const tip = `${p.e.when || ''}　${title}`;
-    const badge = `<span class="tlpin ${cls}" title="${esc(tip)}">${p.num}</span>`;
-    const label = `<span class="tlname">${esc(title)}</span>`;
-    const pos = flip ? `right:calc(${(100 - leftPct).toFixed(2)}% - 11px)` : `left:calc(${leftPct.toFixed(2)}% - 11px)`;
-    const body = flip ? label + badge : badge + label;
-    return `<span class="tlrow${off ? ' off' : ''}" style="${pos}; bottom:${bottom}px">${body}</span>
-      <i class="tlstem${off ? ' off' : ''}" style="left:${leftPct.toFixed(2)}%; height:${bottom}px"></i>`;
-  }).join('');
-
-  // 分類は縦位置（レーン）と区切り線だけで表す。背景色は使わない（色は実行主体のため・
-  // オーナー要望 8/19）。ラベルは左に固定表示するカード（横スクロールしても常に見える・8/18）。
-  const chBandsHtml = CHANNEL_ORDER.map(ch => {
-    const L = bandLayout[ch];
-    return L ? `<div class="tlchband ${ch}" style="bottom:${L.bottom}px; height:${L.height}px"></div>` : '';
-  }).join('');
-
-  const sidebarHtml = CHANNEL_ORDER.map(ch => {
-    const L = bandLayout[ch];
-    if (!L) return '';
-    const count = d.entries.filter(e => (CHANNEL_ORDER.includes(e.channel) ? e.channel : 'other') === ch).length;
-    return `<div class="tlcard ${ch}" style="bottom:${L.bottom}px; height:${L.height}px">
-      <span class="tlcardtitle">${esc(CHANNEL_LABEL[ch] || ch)}</span>
-      <span class="tlcardcount">${count}件</span></div>`;
-  }).join('');
-
-  const ticksHtml = TL_HOUR_TICKS.map(h =>
-    `<div class="tltick" style="left:${(h / 24 * 100).toFixed(2)}%"><i></i><b>${h}</b></div>`).join('');
-
-  // 常時稼働（5分間隔など）は特定の時刻を持たないので点は打たず、該当する帯の一番上に
-  // 黒帯として全幅で出す（オーナー指摘: 独立したバナーではなく帯の中に置きたい・8/18）。
-  const alwaysHtml = CHANNEL_ORDER.map(ch => {
-    const L = bandLayout[ch];
-    const list = alwaysOnByChannel[ch] || [];
-    if (!L || !list.length) return '';
-    return list.map((a, i) => {
-      const title = a.e.title_ja || a.e.id;
-      const off = a.e.enabled === false;   /* 止めてあるものは「常時稼働」と言わない */
-      const bottom = L.alwaysBottom + i * (TL_ALWAYS_H + 4);
-      const tip = `${off ? (a.e.status || '停止中') : (a.e.when || '')}　${title}`;
-      const cls = RUNNER_CLS[a.e.runner] || 'poller';   /* 枠線と丸バッジを実行主体の色に揃える */
-      return `<div class="tlalways ${cls}${off ? ' off' : ''}" style="bottom:${bottom}px; height:${TL_ALWAYS_H}px">
-        <span class="tlpin ${cls}" title="${esc(tip)}">${a.num}</span>
-        <span>${off ? `${esc(title)}・${esc(a.e.status || '停止中')}`
-                    : `${esc(a.e.when || '')}で常時稼働・${esc(title)}`}</span></div>`;
-    }).join('');
-  }).join('');
-
-  const timelineHtml = `
-    <div class="tltrack">
-      <div class="tlsidebar" style="height:${totalHeight}px">${sidebarHtml}</div>
-      <div class="tlouter"><div class="timeline">
-        <div class="tlpins" style="height:${totalHeight}px">${chBandsHtml}${alwaysHtml}${pinsHtml}</div>
-        <div class="tlaxis">${ticksHtml}</div>
-        <div class="tlaxistitle">時刻（24時間・当日）</div>
-      </div></div>
-    </div>`;
-
-  // 表は「どの領域(YouTube制作／X運用／その他)の仕事か」で区切って読めるようにする。
-  // 各領域の中は entries の時系列順のまま（採番はグループ化の前後で変わらない）。
-  const rowHtml = e => {
-    const off = e.enabled === false;
-    const cls = RUNNER_CLS[e.runner] || 'routine';
-    return `<tr${off ? ' class="off"' : ''}>
-      <td class="no"><span class="tlpin ${cls}">${numOf.get(e)}</span></td>
-      <td class="when">${esc(e.when || '—')}</td>
-      <td class="what">
-        <span class="nm">${esc(e.title_ja || e.id)}</span>
-        <span class="runner ${cls}">${esc(runnerLabel[e.runner] || e.runner)}</span>
-        ${e.status && e.status !== '運用中' ? `<span class="sysflag">${esc(e.status)}</span>` : ''}
-        ${e.description ? `<span class="ds">${esc(e.description)}</span>` : ''}</td></tr>`;
-  };
-  const rows = CHANNEL_ORDER.map(ch => {
-    const group = d.entries.filter(e => (e.channel || 'other') === ch);
-    if (!group.length) return '';
-    return `<tr class="chgroup"><td colspan="3">${esc(CHANNEL_LABEL[ch] || ch)}</td></tr>${group.map(rowHtml).join('')}`;
-  }).join('') || `<tr class="emptyrow"><td colspan="3">登録された定時タスクがありません</td></tr>`;
-
-  const legend = (d.runners || []).map(r =>
-    `<span class="lg"><span class="runner ${RUNNER_CLS[r.key] || 'routine'}">${esc(r.label)}</span>${esc(r.note || '')}</span>`).join('');
-  const notes = (d.notes || []).map(n => `<li>${esc(n)}</li>`).join('');
-
-  return `<details class="opsec">
-    <summary>⏰ ${esc(doc.title || '定時タスク')}<span class="s">${esc(d.timezone || '')}
-      ・${esc(fmtDT(doc.updated_at) || '')} 同期</span></summary>
-    ${legend ? `<div class="syslegend">${legend}</div>` : ''}
-    ${timelineHtml}
-    <div class="tblwrap systbl"><table>
-      <thead><tr><th class="no"></th><th class="when">時刻</th><th>内容</th></tr></thead>
-      <tbody>${rows}</tbody></table></div>
-    ${notes ? `<ul class="sysnotes">${notes}</ul>` : ''}</details>`;
-}
-
-/* ══ gen-farm のいま（システムタブの先頭・オーナー要望 2026-08-19）══════════════
-   「実家の生成機に何本たまっていて、いつ終わるか」を1枚で見せる。数え方は
-   コマンドラインの genfarm-status（00-config/tools/genfarm-status/）と同じ:
-     ・待ち行列＝まだ手元に無いジョブ（materialized_at が空／発注中・実行中・生成済み）
-     ・完了見込み＝1件ずつ順に処理される前提で、残り時間を積み上げた概算
-     ・「できあがったのに手元へ降りていない」が長く続いたら詰まりを疑う（2026-08-19 の障害と
-       同じ形）。数えはじめはできあがった時刻で、しきい値は GF_STALE_DONE_MIN
-   見込み時間は、発注時に記録した見込み秒（estimated_sec）が近い実測で較正する。
-   実測が無い種類は既定値（H3映像 223秒／FLUX画像 76秒）に落とす。 */
-const GF_MAX_SANE_SEC = 6 * 3600;
-function gfEstimator(recent){
-  const byKind = {}, calib = {};
-  (recent || []).forEach(m => {
-    const dur = (new Date(m.finished_at) - new Date(m.started_at)) / 1000;
-    if (!(dur > 0 && dur < GF_MAX_SANE_SEC)) return;
-    const k = m.kind || 'unknown';
-    (byKind[k] = byKind[k] || []).push(dur);
-    const e = Number(m.estimated_sec);
-    if (e > 0) (calib[k] = calib[k] || []).push([e, dur]);
-  });
-  const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
-  return (kind, hint) => {
-    const pairs = calib[kind] || [];
-    if (hint > 0 && pairs.length) {
-      const same = pairs.filter(p => Math.abs(p[0] - hint) <= hint * 0.10).map(p => p[1]);
-      if (same.length) return mean(same);
-      const near = pairs.reduce((b, p) => Math.abs(p[0] - hint) < Math.abs(b[0] - hint) ? p : b);
-      return mean(pairs.filter(p => p[0] === near[0]).map(p => p[1])) * hint / near[0];
-    }
-    if ((byKind[kind] || []).length) return mean(byKind[kind]);
-    return hint > 0 ? hint : (GF_FALLBACK_SEC[kind] || 200);
-  };
-}
-/* 時刻の文字列 → ミリ秒。空・壊れた値は null（起点の取り違えを黙って通さない） */
-function gfMs(v){ const t = v ? Date.parse(v) : NaN; return isFinite(t) ? t : null; }
-/* できあがった時刻＝ status が done になった時刻。生成機が記録する finished_at が正で、
-   古い記録で欠けていれば更新時刻・発注時刻の順に落とす。 */
-function gfDoneAt(r){ return gfMs(r.finished_at) || gfMs(r.updated_at) || gfMs(r.submitted_at); }
-/* 経過の起点の言い方。オーナーに見せる言葉はこの2つだけに絞る（同じものを別名で呼ばない）:
-   作りはじめてから … 生成機が実際に手を付けてからの時間
-   発注から         … まだ手を付けたか分からないので、投げてからの時間で代用している */
-const GF_FROM_LABEL = {make:'作りはじめてから', order:'発注から'};
-function gfState(gf){
-  const est = gfEstimator(gf.recent), now = Date.now();
-  const open = gf.open || [];
-  /* 生成機は1件ずつしか作らない。DB が持っているのは「投げたところまで」なので、
-     投げた分（in_flight）のうち**いちばん早く投げた1件だけ**を「作成中」とみなし、
-     残りは生成機の中で順番待ちとして扱う（先入れ先出しなので実態とほぼ一致する）。
-     オーナー指摘 2026-08-20「なぜ両方実行中なのか」への対応。 */
-  const runningId = (open.find(r => r.status === 'in_flight') || {}).id;
-  /* 作成中の1件が「作りはじめた時刻」の求め方（オーナー指摘 2026-08-28: 発注からの経過だと
-     大げさに見える）。生成機は1件ずつ順に作るので、**直前の1本ができあがった時刻＝次の1本を
-     作りはじめた時刻**（実測でミリ秒まで一致する）。処理開始時刻（started_at）は終わってから
-     しか入らないので、待っているあいだはこの繰り上がりがいちばん正確な起点になる。
-     どちらも取れなければ発注時刻に落とし、そのときは「発注から」と名乗って超過は主張しない。 */
-  const prevDone = open.filter(r => r.status === 'done').map(gfDoneAt).filter(Boolean);
-  const lastDoneAt = prevDone.length ? Math.max(...prevDone) : null;
-  let cursor = 0;
-  const jobs = open.map(r => {
-    const kind = r.kind || 'unknown';
-    const e = est(kind, Number(r.estimated_sec) || 0);
-    const isRunning = r.id === runningId;
-    const sub = gfMs(r.submitted_at);
-    let from = null, fromKind = null;
-    if (isRunning) {
-      const started = gfMs(r.started_at);
-      if (started) { from = started; fromKind = 'make'; }
-      else if (lastDoneAt && sub && lastDoneAt > sub) { from = lastDoneAt; fromKind = 'make'; }
-      else { from = sub; fromKind = 'order'; }
-    }
-    const elapsed = from ? (now - from) / 1000 : null;
-    const remaining = r.status === 'done' ? 0
-      : (isRunning && elapsed != null) ? Math.max(0, e - elapsed) : e;
-    cursor += remaining;
-    const state = r.status === 'done' ? 'ready'
-      : isRunning ? 'running'
-      : r.status === 'in_flight' ? 'queued' : 'todo';
-    /* 見込みを何分超えたか。**作りはじめた時刻が取れているときだけ**数える。発注起点の
-       経過は順番待ちの時間を含むので、そこから超過を名乗ると嘘になる（オーナー指摘の型）。 */
-    const overBy = (isRunning && fromKind === 'make' && elapsed != null && elapsed > e)
-      ? elapsed - e : null;
-    return { r, kind, state, est: e, elapsed, fromKind, overBy, remaining,
-             age: (r.status === 'done' ? (now - gfDoneAt(r)) : (now - sub)) / 1000,
-             eta: r.status === 'done' ? null : now + cursor * 1000 };
-  });
-  const by = st => jobs.filter(j => j.state === st);
-  return { jobs, now, running: by('running'), queued: by('queued'), todo: by('todo'),
-           stale: by('ready'), allDoneAt: cursor > 0 ? now + cursor * 1000 : null };
-}
-/* 秒 → 「3分20秒」「1時間5分」。1分未満は秒だけ（進行中の経過が動いて見える） */
-function gfDur(sec){
-  if (sec == null || !isFinite(sec)) return '—';
-  const s = Math.max(0, Math.round(sec));
-  if (s < 60) return `${s}秒`;
-  const m = Math.round(s / 60);
-  return m < 60 ? `${m}分` : `${Math.floor(m / 60)}時間${m % 60}分`;
-}
-const gfClock = ms => ms == null ? '—' : fmtTime(new Date(ms).toISOString());
-
-/* ── 「どの企画の・どの動画の・何を作っているか」を出すための言い換え ───────────
-   動画の番号の頭2文字で企画が分かる（BZ=世界のバズ雑学／DT=歯科医番長／
-   RW=人類の力わざ。2026-08-25 の付け替え後の体系）。ただし 9000 番台は本編ではなく
-   試作・検証なので、頭2文字より番号を優先してそちらの札を出す。
-   付け替え前の旧番号（D007・K001・R001・071 など）の記録もまだ残っているので、
-   下段のフォールバックで拾う。
-   動画として登録済みならチャンネルとタイトルが引けるのでそちらを優先し、
-   試作・練習のものは番号だけで出す。 */
-const EP_PILOT = {icon: PILOT_META.icon, name: '試作・検証'};
-const EP_HINT = [
-  {re: /^BZ/i,  icon: '🌏', name: '世界のバズ雑学'},
-  {re: /^DT/i,  icon: '🦷', name: '歯科医番長'},
-  {re: /^RW/i,  icon: '🏗', name: '人類の力わざ'},
-  /* ── ここから下は旧番号（2026-08-25 の付け替え前）。過去の記録のためだけに残す ── */
-  {re: /^D\d/i, icon: '🦷', name: '歯科医番長'},
-  {re: /^K\d/i, icon: '🏗', name: '人類の力わざ'},
-  {re: /^R\d/i, icon: '🧪', name: '試作・検証'},
-  {re: /^\d/,   icon: '🌏', name: '世界のバズ雑学'}
-];
-/* 番号（末尾の3〜4桁）が 9000 以上なら試作・検証。BZ9006・RW9001 のように
-   企画の頭2文字が付いていても本編ではないので、企画名では出さない。 */
-function epHint(seq){
-  const s = String(seq || '');
-  if (isPilotSeq(s)) return EP_PILOT;         /* 見分け方の正本は isPilotSeq（1か所だけ） */
-  return EP_HINT.find(h => h.re.test(s)) || null;
-}
-function gfWhose(r, titles){
-  const t = (titles || {})[r.video_id];
-  if (r.channel && pilotSlugs().includes(r.channel)) {
-    const m = chMeta(r.channel);
-    return { icon: m.icon, name: m.name, title: (t && t.title) || '' };
-  }
-  const hit = epHint(r.episode_seq);
-  return { icon: hit ? hit.icon : '🎬', name: hit ? hit.name : 'その他',
-           title: (t && t.title) || '' };
-}
-/* 何を作っているか。scene05 → シーン5の映像 / S02a・S02b → シーン2の開始・終了フレーム */
-function gfPart(j){
-  const k = String(j.r.artifact_key || '');
-  let m = /^scene0*(\d+)/i.exec(k);
-  if (m) return `シーン${Number(m[1])}の映像`;
-  m = /^S0*(\d+)([ab])?/i.exec(k);
-  if (m) return `シーン${Number(m[1])}の${m[2] === 'b' ? '終了フレーム' : '開始フレーム'}`;
-  return j.kind === 'h3_video' ? 'シーンの映像' : 'フレームの絵';
-}
-/* 1件の右端に出す時刻・経過。**起点を必ず名乗る**（オーナー指摘 2026-08-28: どこから
-   数えた時間か分からないと大げさに見える）。できあがったものは「できあがりから」。 */
-function gfWhen(j){
-  if (j.state === 'running') {
-    const head = `${GF_FROM_LABEL[j.fromKind] || ''}${gfDur(j.elapsed)}`;
-    if (j.overBy > 0) return `${head}・見込み+${gfDur(j.overBy)}`;
-    /* 発注起点の経過には順番待ちが混ざっているので、そこから「残り」も「まもなく」も
-       言えない（言うと嘘になる）。起点と経過だけを出して、時刻は束の見込みに任せる。 */
-    if (j.fromKind !== 'make') return head;
-    return `${head}・${j.remaining > 0 ? `残り${gfDur(j.remaining)}` : 'まもなく'}`;
-  }
-  if (j.state === 'ready') return `できあがりから${gfDur(j.age)}`;
-  return `${gfClock(j.eta)}ごろ`;
-}
-
-/* エピソード（動画1本）ごとに束ねる。畳んだ状態で「どこまで進んだか」「いつ揃うか」を
-   見せるので、束ねる時点で進捗と状態の札まで決めておく。
-   分母は「いまこの動画で待っている数」。手元へ降りた（回収済みの）ぶんは発注台帳の
-   引き方からして入っていないので、そこは数えない。 */
-const GF_UNIT = {h3_video:'映像', flux_image:'フレーム'};
-function gfGroups(s, titles){
-  const map = new Map();
-  s.jobs.forEach(j => {
-    const key = `${j.r.channel || ''}|${j.r.episode_seq || '—'}`;
-    if (!map.has(key)) map.set(key, { key, seq: j.r.episode_seq || '—', who: gfWhose(j.r, titles),
-                                      videoId: j.r.video_id || null, jobs: [] });
-    map.get(key).jobs.push(j);
-  });
-  return [...map.values()].map(g => {
-    const n = st => g.jobs.filter(j => j.state === st).length;
-    const eta = g.jobs.reduce((mx, j) => Math.max(mx, j.eta || 0), 0);
-    const kinds = [...new Set(g.jobs.map(j => j.kind))];
-    const run = g.jobs.find(j => j.state === 'running');
-    const ready = n('ready');
-    const making = n('running') + n('queued') + n('todo');
-    /* 見込みを超えて作り続けている1件があれば、それをいちばん強い札にする。
-       **どれだけ超えたかを札に書く**（オーナー要望 2026-08-28: 超過とだけ出ても量が分からない）。
-       超過を名乗れるのは作りはじめた時刻が取れているときだけ（gfState の overBy を参照）。 */
-    const over = run && run.overBy > 0 ? run.overBy : null;
-    const late = !!over;
-    /* できあがりと生成中が混ざっている束は、畳んだままでも内訳が読めるようにする */
-    const mix = (ready && making)
-      ? `できあがり${ready}本は回収待ち・${making}本は生成中` : '';
-    return Object.assign(g, {
-      running: n('running'), queued: n('queued') + n('todo'), ready,
-      eta: eta || null, late, over, mix,
-      /* 回収待ちの最長経過（できあがりからの時間）。詰まりの判定に使う */
-      readyAge: ready ? Math.max(...g.jobs.filter(j => j.state === 'ready').map(j => j.age)) : null,
-      unit: kinds.length === 1 ? (GF_UNIT[kinds[0]] || '素材') : '素材',
-      done: ready, total: g.jobs.length,
-      badge: late ? {t:`見込み超過 +${gfDur(over)}`, c:'late'}
-           : run ? {t:'制作中', c:'run'}
-           : ready === g.jobs.length ? {t:'回収待ち', c:'ready'}
-           : {t:'待ち', c:''}
-    });
-  });
-}
-
-/* 開いている束を覚えておく。カードは1分ごとに丸ごと描き直すので、覚えていないと
-   開いたそばから閉じてしまう。キーはチャンネル＋動画の番号。
-   toggle は泡立たない仕様なので捕捉フェーズ（第3引数 true）で拾う。 */
-const gfOpen = new Set();
+/* ══ ④ 決まりの一覧・素材の一覧（#574・オーナー決定 2026-09-29）═══════════════
+   読むだけの2画面（旧「運営」タブの代わり）。本文は DB のビューから**ログイン後にだけ**読む
+   （公開ページには書かない）。絞り込みは画面の中でする（行は百件ほどで、全部取ってから絞る）。
+     決まり … v_production_rules_current（080）。いま有効な版だけ
+     素材   … v_production_assets。ビューが無い・読めないときは「素材なし」を出して止まらない
+   行は <details> で、押すと中身が開く。開いている行は絞り込みを変えても開いたまま（下の rulesOpen / assetsOpen） */
+const RULE_KINDS = ['規則', '方針', '知見', '仮説'];
+const RULE_STRENGTHS = ['必須', '推奨', '参考'];
+const ASSET_KINDS = ['材質', '部品', '景色', '動きの型', '強調', '検査'];
+const rulesOpen = new Set(), assetsOpen = new Set();
 document.addEventListener('toggle', e => {
   const d = e.target;
-  if (!d || !d.classList || !d.classList.contains('gfgrp')) return;
-  if (d.open) gfOpen.add(d.dataset.gfkey); else gfOpen.delete(d.dataset.gfkey);
+  if (!d || !d.dataset) return;
+  if (d.dataset.rno) (d.open ? rulesOpen.add(d.dataset.rno) : rulesOpen.delete(d.dataset.rno));
+  else if (d.dataset.akey) (d.open ? assetsOpen.add(d.dataset.akey) : assetsOpen.delete(d.dataset.akey));
 }, true);
+const chName = slug => store.chNames[slug] || slug;
+const KV_NONE = '<span class="none">なし</span>';
+/* 見出しと中身の並び（中身は HTML。空は「なし」） */
+const kvHTML = rows => `<dl class="kv">${rows.map(([k, v]) =>
+  `<dt>${esc(k)}</dt><dd>${v == null || v === '' ? KV_NONE : v}</dd>`).join('')}</dl>`;
+const kvText = s => (s == null || String(s).trim() === '') ? '' : esc(s);
+/* 絞り込みの選び箱。attr は data-rf（決まり）か data-af（素材） */
+const pickHTML = (attr, key, all, opts, cur) => `<select data-${attr}="${key}" aria-label="${esc(all)}">
+  <option value="">${esc(all)}</option>${opts.map(o =>
+    `<option value="${esc(o.v)}"${o.v === cur ? ' selected' : ''}>${esc(o.t)}</option>`).join('')}</select>`;
 
-function genfarmCard(gf){
-  const s = gfState(gf);
-  const titles = gf.titles || {};
-  const stuck = s.stale.filter(j => j.age > GF_STALE_DONE_MIN * 60);
-  const waitN = s.queued.length + s.todo.length;
-
-  /* いちばん大きく出す1行。詰まりの疑い＞作成中＞順番待ち＞回収待ち＞空き の順で強い方を出す。
-     **できあがりを待っているだけの状態を赤くしない**（オーナー指摘 2026-08-28: 生成が全部
-     終わるまで回収しない作りなので、合間の待ちは正常）。赤は GF_STALE_DONE_MIN を超えたときだけ。 */
-  const cur = s.running[0];
-  const curWho = cur ? gfWhose(cur.r, titles) : null;
-  const readyMax = s.stale.length ? Math.max(...s.stale.map(j => j.age)) : null;
-  const head = stuck.length
-    ? {cls:'bad', mark:'⚠', text:`できあがったのに手元へ降りてきていません（${stuck.length}件・できあがりから最長${gfDur(readyMax)}）`}
-    : cur
-      ? {cls:'run', mark:'●', text:`制作中 — ${esc(curWho.icon + ' ' + curWho.name)} ${
-          esc(cur.r.episode_seq || '')}${curWho.title ? ' ' + esc(curWho.title) : ''} の${esc(gfPart(cur))}`}
-      : waitN
-        ? {cls:'warn', mark:'●', text:`${waitN}件が順番待ち（まだ動き出していません）`}
-        : s.stale.length
-          ? {cls:'info', mark:'●', text:`回収待ち ${s.stale.length}件（生成の合間にまとめて受け取ります）`}
-          : {cls:'ok', mark:'✓', text:'空いています（待ちはありません）'};
-
-  /* 数字3つ。**経過は必ず起点を名乗る**（発注からなのか、作りはじめてからなのか）。 */
-  const tiles = [
-    {k:'作成中', v:s.running.length,
-     s:cur ? `${GF_FROM_LABEL[cur.fromKind] || ''}${gfDur(cur.elapsed)}${
-         cur.overBy > 0 ? `（見込み+${gfDur(cur.overBy)}）` : ''}` : '—'},
-    {k:'順番待ち', v:waitN,
-     s:s.allDoneAt ? `${cur && cur.overBy > 0 ? '再見積り ' : ''}${gfClock(s.allDoneAt)} ごろ全部そろう`
-       : '—'},
-    {k:'回収待ち', v:s.stale.length,
-     s:s.stale.length ? `できあがりから最長${gfDur(readyMax)}` : '—'}
-  ].map(t => `<div class="gfm"><div class="k">${esc(t.k)}</div><div class="v">${t.v}</div>
-      <div class="s">${esc(t.s)}</div></div>`).join('');
-
-  /* 動画ごとに束ねる。既定は畳んだ状態で、押すと中のシーンが開く（オーナー要望 2026-08-27:
-     シーン別の行が全部並ぶと縦に長く、行そのものには情報がほとんど無い）。
-     畳んだまま読めるのは「進捗」と「全部そろう時刻」と「状態の札」の3つ。 */
-  const groups = gfGroups(s, titles).map(g => {
-    /* 1件は「何を作っているか」と「いつ」の2列だけ。状態はまとめて見出しに出すので
-       ここには繰り返さない（オーナー指摘 2026-08-20: 同じことが2か所に出て分かりづらい） */
-    const rows = g.jobs.map(j => `<div class="gfjob is-${esc(j.state)}">
-        <span class="wt">${esc(gfPart(j))}</span>
-        <span class="tm">${esc(gfWhen(j))}</span></div>`).join('');
-    /* 動画として登録済みなら、開いたときだけ詳細（素材とレビューの記録）への口を出す。
-       カード本体を押すと開閉するようになったので、見出しからの遷移はここへ分けた */
-    const go = g.videoId
-      ? `<div class="gfgo"><button type="button" data-gfvid="${esc(g.videoId)}"
-           >この動画の記録を見る ›</button></div>` : '';
-    /* 見込みを超えているあいだの時刻は「当初の見込み」ではなく引き直した見積り。
-       同じ見た目で意味が変わらないよう「再見積り」と名乗る（オーナー要望 2026-08-28）。 */
-    const etaWord = g.total > 1 ? 'ごろ 全部そろう' : 'ごろ できあがる';
-    const eta = g.eta
-      ? `<span class="et${g.late ? ' late' : ''}">${g.late
-           ? '<span class="u2">再見積り</span>' : ''}${esc(gfClock(g.eta))}<span
-           class="u">${etaWord}</span></span>`
-      : `<span class="et"><span class="u">${g.readyAge != null
-           ? `できあがりから${esc(gfDur(g.readyAge))}・手元に降りるのを待っています`
-           : '手元に降りるのを待っています'}</span></span>`;
-    return `<details class="gfgrp" data-gfkey="${esc(g.key)}"${gfOpen.has(g.key) ? ' open' : ''}>
-      <summary class="gfghead">
-        <span class="g1">
-          <span class="who">${esc(g.who.icon)} ${esc(g.who.name)}</span>
-          <span class="seq">${esc(g.seq)}</span></span>
-        <span class="n ${g.badge.c}">${esc(g.badge.t)}</span>
-        <span class="ttl">${esc(g.who.title)}</span>
-        <span class="caret" aria-hidden="true">▾</span>
-        <span class="gfbig">
-          <span class="pg" title="できあがった数 ／ この動画で待っている数"><span
-            class="u">${esc(g.unit)}</span>${g.done}<span class="d">/${g.total}</span></span>
-          ${eta}</span>
-        ${g.mix ? `<span class="sub">${esc(g.mix)}</span>` : ''}</summary>
-      <div class="gfjobs">${rows}</div>${go}</details>`;
-  }).join('');
-
-  return `<section class="card gfcard">
-    <div class="sectionhead" style="margin:0 0 var(--sp-3)"><h2>🖥 gen-farm（実家の生成機）のいま</h2>
-      <span class="hint">${gf.at ? `${esc(gfClock(gf.at))} 時点` : ''}</span></div>
-    <div class="gfhead ${head.cls}"><span class="mk">${head.mark}</span><span>${head.text}</span></div>
-    <div class="gfmetrics">${tiles}</div>
-    ${s.jobs.length ? `<div class="gfgroups">${groups}</div>`
-      : `<div class="noitem">待っている生成はありません</div>`}
-    ${stuck.length ? `<div class="note" style="margin:var(--sp-3) 0 0"><span>⚠</span><div>生成機の中では
-      出来上がっているのに、<b>できあがりから${esc(gfDur(readyMax))}</b>のあいだ手元のパソコンへ
-      降りてきていません。<b>その動画の生成をやり直す</b>と回収されます。</div></div>` : ''}
-  </section>`;
+async function loadRules(){
+  if (store.rules) return store.rules;
+  store.rules = await q(sb.from('v_production_rules_current')
+    .select('rule_no,version,kind,strength,all_channels,channels,stages,subject,body,applies_when,exceptions,pass_criteria,check_method,judged_by,examples,basis,change_reason,created_at')
+    .order('rule_no', { ascending: true }));
+  return store.rules;
 }
-
-/* ══ 自動運転のいま（#330・オーナー要望 2026-08-24）═══════════════════════════
-   「承認を押したのに生成機が動かない」とき、理由を3択に分解して見せる:
-   本当に暇 ／ 裏でAIが考え中 ／ 進行係が落ちている。今までは全部同じに見えたので、
-   オーナーは次の承認を押して様子を見る探り運転になっていた。
-
-   データは既存の権限のまま読む（DB 変更なし）:
-     ・進行係の心拍   … system_heartbeat（誰でも読める・5分ごとに更新される1行。
-                        2026-08-28 からレビュー見張りに代わって進行係が打つ）
-     ・実行中のAI     … agent_runs の未終了行＋最新の途中経過（全チャンネル可ユーザー限定。
-                        読めないユーザーではこの行だけ静かに消える） */
-const AUTO_TTL_MS = 60000;
-/* 「いま動いている」側の言い方。ここに無い種類は下の記録側の対応表（RUN_KIND_JA）に
-   落として拾うので、新しい種類は原則あちらに足すだけでよい（制作の工程 dispatcher-* は
-   全部あちらにある）。 */
-const AUTO_RUN_JA = {
-  'daily-log':'日次ログ同期', 'x-reply':'Xのリプ投稿', 'x-post-publish':'Xの投稿',
-  'x-post-propose':'Xのネタ提案', 'weekly-review':'週次レビュー'};
-async function loadAutomationNow(force){
-  if (!force && store.autonow && Date.now() - store.autonow.at < AUTO_TTL_MS) return store.autonow;
-  const out = { beat: null, runs: [], runNotes: {}, at: Date.now() };
-  try {
-    out.beat = (await q(sb.from('system_heartbeat').select('beat_at,source').limit(1)))[0] || null;
-  } catch (_) {}
-  try {
-    const cut = new Date(Date.now() - 2 * 3600e3).toISOString();   /* 心拍の切れた残骸は見せない */
-    /* ⚠️ 実行記録は全チャンネルを1回で処理するのでチャンネルの列を持たない。
-       持たない列を選ぶと問い合わせそのものが弾かれ、この区画が60秒ごとに
-       失敗し続ける（#536 低）。チャンネルの印は実行記録の中の出来事の側に付く */
-    out.runs = (await q(sb.from('agent_runs').select('id,kind,started_at,heartbeat_at')
-      .is('finished_at', null).gte('heartbeat_at', cut)
-      .order('id', { ascending: false }).limit(3))) || [];
-    if (out.runs.length) {
-      const evs = await q(sb.from('agent_run_events').select('run_id,body')
-        .in('run_id', out.runs.map(r => r.id)).order('id', { ascending: false }).limit(10));
-      (evs || []).forEach(e => { if (!(e.run_id in out.runNotes)) out.runNotes[e.run_id] = e.body; });
-    }
-  } catch (_) {}   /* 全チャンネル可ユーザー以外は読めない＝0件のまま */
-  store.autonow = out;
-  return out;
+const rulesFiltered = () => Object.values(state.rulesF).some(v => v);
+function ruleHits(){
+  const f = state.rulesF, w = f.q.trim().toLowerCase();
+  const text = r => [r.rule_no, r.subject, r.body, r.applies_when, r.exceptions, r.pass_criteria, r.check_method,
+    ...(((r.basis || {}).owner_quotes) || []).map(x => x && x.text)].filter(v => v != null).join('\n').toLowerCase();
+  /* 番組を選んだときは「その番組を含む行」と「全番組の行（channels が空）」の両方を出す */
+  return (store.rules || []).filter(r =>
+    (!f.ch || r.all_channels || !(r.channels || []).length || r.channels.includes(f.ch))
+    && (!f.stage || (r.stages || []).includes(f.stage))
+    && (!f.kind || r.kind === f.kind)
+    && (!f.strength || r.strength === f.strength)
+    && (!f.subject || r.subject === f.subject)
+    && (!w || text(r).includes(w)));
 }
-function automationCard(an){
-  const mins = ts => Math.max(0, Math.round((Date.now() - new Date(ts)) / 60000));
-  /* 心拍。進行係は5分ごとに打つので、15分空いたら「落ちているかも」と言い切る
-     （2026-08-28 にレビュー見張りから進行係へ引き継いだ・打ち手は system_heartbeat.source） */
-  let beat;
-  if (!an.beat) {
-    beat = `<div class="gfhead warn"><span class="mk">–</span><span>進行係の心拍を読み込めませんでした</span></div>`;
-  } else {
-    const m = mins(an.beat.beat_at);
-    beat = m < 15
-      ? `<div class="gfhead ok"><span class="mk">●</span><span>進行係: 稼働中（最終確認 ${m}分前）</span></div>`
-      : `<div class="gfhead bad"><span class="mk">⚠</span><span>進行係: <b>${m}分間 音沙汰がありません</b> — 止まっているかもしれません（自動の復旧を待っても直らなければ PC を確認）</span></div>`;
-  }
-  const runs = an.runs.map(r => {
-    const what = AUTO_RUN_JA[r.kind] || RUN_KIND_JA[r.kind] || r.kind;
-    /* 実行記録と同じく、内部の言葉を落としてから出す（#536 低） */
-    const raw = an.runNotes[r.id] ? (plainWords(an.runNotes[r.id]) || String(an.runNotes[r.id])) : '';
-    const note = raw ? ` — ${esc(raw.slice(0, 80))}` : '';
-    return `<div style="display:flex;gap:8px;align-items:baseline;font-size:var(--fs-sm)">
-      <span>↻</span><div>${AI_TAG}作業中: <b>${esc(what)}</b>
-      （${esc(fmtDT(r.started_at) || '')} 開始）${note}</div></div>`;
-  }).join('');
-  const idle = !runs
-    ? `<div class="noitem">いま動いている自動の作業はありません</div>` : '';
-  return `<section class="card gfcard">
-    <div class="sectionhead" style="margin:0 0 var(--sp-3)"><h2>🤖 自動運転のいま</h2>
-      <span class="hint">生成機が空でも、下に${AI_TAG}作業中が出ていれば裏で進んでいます</span></div>
-    ${beat}
-    ${runs ? `<div class="stack" style="gap:6px;margin-top:var(--sp-3)">${runs}</div>` : idle}
-  </section>`;
+function ruleExamples(ex){
+  const part = (arr, lb) => (Array.isArray(arr) ? arr : []).map(x => `<li><span class="exk">${lb}</span> ${
+    esc(x && x.path)}${x && x.note ? `<span class="exn"> — ${esc(x.note)}</span>` : ''}</li>`).join('');
+  const li = part(ex && ex.good, '良い例') + part(ex && ex.bad, '悪い例');
+  return li ? `<ul class="exl">${li}</ul>` : '';
 }
-
-/* ── gen-farm カードの自動更新（オーナー指定 2026-08-20: 1分おき・見ている間だけ）──────
-   条件を絞って無駄打ちしない: システムタブを開いていて、かつブラウザのタブが手前に
-   ある間だけ取りに行く（裏に回している間は止める。戻ってきたら即1回取り直す）。
-   描き直すのはカードの中だけ（#gfslot）＝ページ全体を再描画しないのでスクロール位置も動かない。 */
-const GF_AUTO_MS = 60000;
-let gfTimer = null;
-function stopGenfarmAuto(){ if (gfTimer) { clearInterval(gfTimer); gfTimer = null; } }
-function startGenfarmAuto(){
-  stopGenfarmAuto();
-  gfTimer = setInterval(refreshGenfarmCard, GF_AUTO_MS);
+/* 根拠はオーナーの発言（原文と日時）と由来の動画だけ出す。記録の覚え書き（note）は作る側の内部の話なので出さない */
+function ruleBasis(b){
+  const qs = (((b || {}).owner_quotes) || []).map(x => `<li>「${esc(x && x.text)}」<span class="exn"> ${
+    esc(fmtDT(x && x.said_at) || '')}</span></li>`).join('');
+  const vids = ((b || {}).videos || []).length ? `<div class="exn">由来の動画 ${esc(b.videos.join('・'))}</div>` : '';
+  return (qs ? `<ul class="exl">${qs}</ul>` : '<span class="none">オーナーの発言なし</span>') + vids;
 }
-async function refreshGenfarmCard(){
-  const slot = $('#gfslot');
-  /* 画面が変わった／タブが裏に回った／ログアウトした ならこの回は何もしない */
-  if (!slot || state.view !== 'admin' || document.hidden || !state.user
-      || state.detail != null) return;      /* 詳細を開いている間は取りに行かない */
-  let gf;
-  try { gf = await loadGenfarm(true); }
-  catch (_) { return; }                 /* 一時的に読めなくても前の表示を残す */
-  if (!$('#gfslot') || state.view !== 'admin') return;   /* 待っている間に画面が変わった */
-  $('#gfslot').innerHTML = genfarmCard(gf);
-  /* 自動運転のカードも同じ1分周期で取り直す（#330。失敗しても前の表示を残す） */
-  try {
-    const an = await loadAutomationNow(true);
-    if ($('#autoslot') && state.view === 'admin') $('#autoslot').innerHTML = automationCard(an);
-  } catch (_) {}
+function ruleRowHTML(r){
+  const no = String(r.rule_no);
+  const judge = [kvText(r.check_method), r.judged_by ? '見る係: ' + esc(r.judged_by) : ''].filter(Boolean).join('\n');
+  const ver = `第${esc(r.version)}版 ${esc(fmtDate(r.created_at) || '')}`
+    + (r.change_reason ? `\n変更の理由: ${esc(r.change_reason)}` : '');
+  return `<details class="rl" data-rno="${esc(no)}"${rulesOpen.has(no) ? ' open' : ''}>
+    <summary class="rlrow"><span class="no">${esc(no)}</span>
+      <span class="tagk">${esc(r.kind)}</span>
+      <span class="tagk${r.strength === '必須' ? ' must' : ''}">${esc(r.strength)}</span>
+      <span class="sb">${esc(r.subject)}</span><span class="bd">${esc(r.body)}</span>
+      <span class="caret" aria-hidden="true">▸</span></summary>
+    <div class="lstbody">${kvHTML([
+      ['番組', r.all_channels ? '全番組' : esc((r.channels || []).map(chName).join('・'))],
+      ['工程', esc((r.stages || []).join('・'))],
+      ['当てはまる条件', kvText(r.applies_when)],
+      ['例外', kvText(r.exceptions)],
+      ['合格の条件', kvText(r.pass_criteria)],
+      ['判定のしかた', judge],
+      ['手本', ruleExamples(r.examples)],
+      ['根拠', ruleBasis(r.basis)],
+      ['版', ver]])}</div></details>`;
 }
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && state.view === 'admin') refreshGenfarmCard();
-});
-
-/* ── 費用（#321）───────────────────────────────────────────────
-   手元PCのステータスパネルが30分ごとに書いた値を読むだけ。**PCが落ちている間は
-   更新されない**ので、必ず「いつ時点の値か」を添える。
-   配色は手元パネルと同じ約束: 緑→赤＝使い切ると困るもの / 琥珀＝お金。 */
-const COST_TTL_MS = 60000;
-
-async function loadCost(force){
-  if (!force && store.cost && Date.now() - store.cost.at < COST_TTL_MS) return store.cost;
-  const pick = kind => q(sb.from('usage_snapshots').select('captured_at,payload')
-    .eq('kind', kind).order('captured_at', { ascending: false }).limit(1));
-  const [ai, bill] = await Promise.all([pick('ai_usage'), pick('billing')]);
-  store.cost = { at: Date.now(), ai: ai[0] || null, billing: bill[0] || null };
-  return store.cost;
-}
-
-function costAgo(iso){
-  if (!iso) return '—';
-  const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 90) return 'たった今';
-  if (s < 3600) return Math.round(s / 60) + '分前';
-  if (s < 86400) return Math.round(s / 3600) + '時間前';
-  return Math.round(s / 86400) + '日前';
-}
-const costUsd = n => '$' + Number(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const costYen = n => '¥' + Math.round(Number(n ?? 0)).toLocaleString('ja-JP');
-/* ⚠ 色は**このダッシュボードに定義がある変数**を使うこと。存在しない名前（--bad 等）を書くと
-   background が無効になり、バーが透明になって「100%なのに何も出ない」になる（2026-08-24 に発生）。
-   ここは手元パネルと同じ約束（緑→黄→橙→赤＝使い切ると困るもの）。 */
-const costLvl = p => p >= 95 ? '#d03b3b' : p >= 80 ? '#ec835a' : p >= 50 ? '#fab219' : '#0ca30c';
-
-function costMeter(label, pct, right, color, sub){
-  if (pct == null) {
-    return `<div class="cm"><div class="cm-k">${esc(label)}</div><div class="cm-t"></div>
-      <div class="cm-v" style="opacity:.5">—</div></div>` + (sub ? `<div class="cm-s">${esc(sub)}</div>` : '');
-  }
-  const p = Math.max(0, Math.min(100, Number(pct) || 0));
-  return `<div class="cm"><div class="cm-k">${esc(label)}</div>
-    <div class="cm-t"><i style="width:${p}%;background:${color}"></i><u></u></div>
-    <div class="cm-v">${esc(right)}</div></div>` + (sub ? `<div class="cm-s">${esc(sub)}</div>` : '');
-}
-
-function costView(d){
-  const ai = d.ai && d.ai.payload, bill = d.billing && d.billing.payload;
-  const stamp = [d.ai && d.ai.captured_at, d.billing && d.billing.captured_at].filter(Boolean).sort().pop();
-  const stale = stamp && (Date.now() - new Date(stamp).getTime()) > 3 * 3600 * 1000;
-
-  let html = `<style>
-    .cost-wrap{display:grid;gap:14px;grid-template-columns:1fr}
-    @media(min-width:860px){.cost-wrap{grid-template-columns:1fr 1fr}}
-    .cost-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
-    .cost-card h3{font-size:12px;letter-spacing:.04em;color:var(--muted);margin:0 0 11px;font-weight:600}
-    .cost-note{font-size:11.5px;color:var(--muted);margin:0 0 12px}
-    .cost-note.stale{color:#ec835a}
-    .cost-prov{display:flex;align-items:center;gap:8px;background:rgba(127,127,127,.09);
-      border-radius:8px;padding:5px 9px;margin:11px -3px 6px;font-weight:700;font-size:13px}
-    .cost-prov:first-of-type{margin-top:0}
-    .cost-prov span{font-weight:400;font-size:10.5px;color:var(--muted)}
-    .cm{display:grid;grid-template-columns:88px 1fr 50px;gap:9px;align-items:center;padding:3px 0}
-    .cm-k{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .cm-t{height:7px;border-radius:4px;background:rgba(127,127,127,.18);position:relative;overflow:hidden}
-    .cm-t i{display:block;height:100%;border-radius:4px}
-    .cm-t u{position:absolute;inset:0;background:repeating-linear-gradient(to right,
-      transparent 0 calc(10% - 1px),rgba(127,127,127,.45) calc(10% - 1px) 10%)}
-    .cm-v{text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
-    .cm-s{font-size:10.5px;color:var(--muted);margin:0 0 6px 97px}
-    .cost-kv{display:flex;justify-content:space-between;align-items:center;padding:7px 9px;
-      margin:8px -3px 0;border-radius:8px;background:rgba(127,127,127,.09)}
-    .cost-kv b{font-size:13px}
-    .cost-kv .amt{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
-    .cost-hero{font-size:31px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:2px 0 3px}
-    .cost-hero small{font-size:14px;font-weight:500;color:var(--muted);margin-left:7px}
-    .cost-item{display:grid;grid-template-columns:1fr 70px;gap:9px;font-size:11.5px;padding:3px 0}
-    .cost-item .c{text-align:right;font-variant-numeric:tabular-nums}
-    .cost-bd{margin:5px 0 2px 12px;padding-left:12px;border-left:2px solid var(--line)}
-  </style>
-  <p class="cost-note${stale ? ' stale' : ''}">
-    ${stamp ? `${esc(costAgo(stamp))}の値（${esc(fmtDT(stamp))}）` : 'まだ記録がありません'}
-    ${stale ? ' ・ 自宅PCが止まっている間は更新されません' : ''}
-  </p><div class="cost-wrap">`;
-
-  /* AI残量 */
-  html += `<div class="cost-card"><h3>AI残量</h3>`;
-  if (!ai) html += `<div class="cost-note">まだ記録がありません</div>`;
-  else {
-    const jp = { claude: 'Claude', codex: 'Codex', grok: 'Grok' };
-    /* ⚠ 保存先が JSONB なので**キーの順序は保たれない**（短い順→辞書順になり grok が先頭に来る）。
-       手元のパネルと同じ並びに揃える（オーナー指摘 2026-08-24） */
-    const ORDER = ['claude', 'codex', 'grok'];
-    const rank = k => { const i = ORDER.indexOf(k); return i < 0 ? 99 : i; };
-    /* Claude は複数アカウントを並べる（#319）。1つしか無ければ従来どおり1件 */
-    const rows = [];
-    for (const [k, p] of Object.entries(ai.providers || {}).sort((a, b) => rank(a[0]) - rank(b[0]))) {
-      if (k === 'claude' && Array.isArray(p.accounts) && p.accounts.length) p.accounts.forEach(a => rows.push([k, a]));
-      else rows.push([k, p]);
-    }
-    const multiClaude = rows.filter(r => r[0] === 'claude').length > 1;
-
-    for (const [k, p] of rows) {
-      const who = (k === 'claude' && p.email && multiClaude)
-        ? ` <span style="font-weight:400;opacity:.75">${esc(String(p.email).split('@')[0])}</span>` : '';
-      html += `<div class="cost-prov">${jp[k] || k}${who}<span>${esc(p.plan || '')}</span></div>`;
-      if (!p.ok) { html += `<div class="cm-s" style="margin-left:0">取得できませんでした</div>`; continue; }
-      for (const w of p.windows || []) {
-        if (w.percent == null) { html += costMeter(w.label, null, '', '', p.note || '使用率を取得できません'); continue; }
-        const pc = Math.round(w.percent);
-        html += costMeter(w.label, pc, pc + '%', costLvl(pc),
-          w.resets_at ? 'リセット ' + fmtDT(w.resets_at) : '');
-      }
-      /* Grok の製品別の内訳（統合請求で追加） */
-      if (p.products && p.products.length)
-        html += `<div class="cm-s" style="margin-left:0">内訳 ${esc(p.products.map(x => `${x.name} ${x.percent}%`).join(' · '))}</div>`;
-      /* 追加クレジット（枠超過分を従量で買う設定。無効なら「無効」と出す・オーナー指定） */
-      if (k === 'claude') {
-        const c = p.credit;
-        html += `<div class="cm-s" style="margin-left:0">追加クレジット ` + (
-          c ? `${esc(costUsd(c.used ?? 0))} / ${esc(costUsd(c.limit ?? 0))}`
-              + `（${Math.round(c.percent ?? 0)}%）　残り ${esc(costUsd(c.remaining ?? 0))}`
-            : (p.extra_usage ? '有効（まだ使っていません）' : '無効')) + `</div>`;
-      }
-    }
-  }
-  html += `</div>`;
-
-  /* 今月の請求 */
-  html += `<div class="cost-card"><h3>今月の請求</h3>`;
-  if (!bill) html += `<div class="cost-note">まだ記録がありません</div>`;
-  else {
-    const fal = bill.fal || {}, gcp = bill.gcp || {}, el = bill.elevenlabs || {};
-    const falNow = (fal.this_month || {}).total, gcpNow = gcp.ok ? (gcp.this_month || {}).total : null;
-    html += `<div class="cost-hero">${esc(costUsd((falNow || 0) + (gcpNow || 0)))}<small>USD</small></div>
-      <p class="cost-note">fal.ai${gcp.ok ? ' ＋ Google Cloud' : ''} の合計</p>`;
-    if (fal.ok) {
-      html += `<div class="cost-kv"><b>fal.ai</b><span class="amt">${esc(costUsd(falNow))}</span></div>
-        <div class="cost-bd">`;
-      for (const i of ((fal.this_month || {}).items || []).slice(0, 5))
-        html += `<div class="cost-item"><div>${esc(String(i.name).replace(/^fal-ai\//, ''))}</div>
-          <div class="c">${esc(costUsd(i.cost))}</div></div>`;
-      html += `</div>`;
-      if (fal.balance != null)
-        html += `<div class="cm-s" style="margin-left:12px;${fal.balance < 20 ? 'color:#ec835a' : ''}">
-          ${fal.balance < 20 ? '⚠ ' : ''}残高 ${esc(costUsd(fal.balance))}（前払い式）</div>`;
-    }
-    if (gcp.ok) {
-      const jpy = (gcp.this_month || {}).total_local;
-      html += `<div class="cost-kv"><b>Google Cloud</b><span class="amt">${esc(costUsd(gcpNow))}
-        ${jpy != null && gcp.currency === 'JPY' ? `<small style="font-size:11px;font-weight:400;opacity:.7">${esc(costYen(jpy))}</small>` : ''}</span></div>
-        <div class="cost-bd">`;
-      for (const i of ((gcp.this_month || {}).items || []).slice(0, 4))
-        html += `<div class="cost-item"><div>${esc(i.name)}</div>
-          <div class="c">${esc(i.cost_local != null && gcp.currency === 'JPY' ? costYen(i.cost_local) : costUsd(i.cost))}</div></div>`;
-      html += `</div>`;
-    } else {
-      html += `<div class="cost-kv"><b>Google Cloud</b><span class="cm-s" style="margin:0">${esc(gcp.pending ? '書き出し待ち' : '取得できません')}</span></div>`;
-    }
-    if (el.ok) {
-      html += `<div class="cost-kv"><b>ElevenLabs</b><span class="cm-s" style="margin:0">月額固定（${esc(el.tier || '')}）</span></div>`;
-      html += costMeter('音声の文字数', el.percent, (el.percent ?? 0) + '%', costLvl(el.percent ?? 0),
-        `${Number(el.used || 0).toLocaleString('ja-JP')} / ${Number(el.limit || 0).toLocaleString('ja-JP')} 字`);
-    }
-  }
-  html += `</div></div>`;
-  return html;
-}
-
-
-
-/* ══ ④ 運営 ═══════════════════════════════════════════════════
-   稼働・システム・費用を1つに畳んだ横断タブ（オーナー決定 2026-08-24）。
-   並びは「いま → お金 → 記録 → 調べる」。常に開いているのは「いま」だけで、下の3つは畳む。
-   ただし異常・残量僅少のときは畳んだ節が自分から開く（見てほしいものは隠さない）。 */
-
-/* 実行記録（旧「稼働」タブ・旧見出し「自動で動いた記録」）。1件の状態を4つに畳む。ok は「最後まで走ったか」しか
-   表さないので、業務上の注意（⚠ 付きの要約）は別に拾う。
-   「いま実行中」の1枚はここには出さない — 同じ agent_runs の走っている行を、上の
-   「自動運転のいま」がすでに出しているため（3タブ時代は同じものを2か所に出していた）。
-   絞り込みは「上のカードが実際に出した行」だけを外す形にする（2026-08-26 修正: それまで
-   コメントだけで実装が無く、二重に出ていた）。上が拾わなかった走行中の行——心拍が
-   切れて久しい残骸など——はここに残す。「途中で止まった」と見せたいのはこちらのため。 */
-function recordSection(ops, an){
-  const shownNow = new Set(((an && an.runs) || []).map(r => r.id));
-  if (shownNow.size) ops = { ...ops, runs: ops.runs.filter(r => !shownNow.has(r.id)) };
-  const stateOf = r => {
-    const stale = r.ok == null && r.started_at
-      && (Date.now() - new Date(r.started_at).getTime()) > STALE_RUN_MS;
-    if (r.ok === false || stale) return {key:'err', cls:'err', txt: r.ok === false ? '✕ エラー' : '✕ 途中で止まった'};
-    if (r.ok == null) return {key:'run', cls:'run', txt:'● 実行中'};
-    return String(r.summary || '').includes('⚠')
-      ? {key:'warn', cls:'warn', txt:'⚠ 注意あり'} : {key:'ok', cls:'ok', txt:'✓ 正常終了'};
-  };
-  const states = ops.runs.map(stateOf);
-  const nErr  = states.filter(s => s.key === 'err').length;
-  const nWarn = states.filter(s => s.key === 'warn').length;
-  const head = !ops.runs.length ? {cls:'', text:'— まだ記録がありません'}
-    : nErr  ? {cls:'bad',  text:`✕ 直近${ops.runs.length}件のうち ${nErr}件でエラー`}
-    : nWarn ? {cls:'warn', text:`⚠ 直近${ops.runs.length}件のうち ${nWarn}件に注意あり`}
-    : {cls:'', text:`✓ 直近${ops.runs.length}件はすべて正常`};
-
-  const runs = ops.runs.map((r, i) => {
-    const st = states[i];
-    const evs = ops.events.filter(e => e.run_id === r.id);
-    const dur = durText(r.started_at, r.finished_at);
-    const acts = evs.map(e => {
-      const m = e.channel ? chMeta(e.channel) : null;
-      const tag = m ? `<span class="cq" style="background:${m.tint}" title="${esc(m.name)}">${m.icon}</span>`
-                    : `<span class="cq">共通</span>`;
-      const sev = e.severity === 'error' ? 'bad' : (e.severity === 'warn' ? 'warn' : '');
-      const mk = e.severity === 'error' ? '✕' : (e.severity === 'warn' ? '⚠' : '✓');
-      /* 記録の本文は制作側が内部向けに書いたもの。承認画面と同じ plainWords を通して
-         内部の識別子・英語の判定語が混ざった括弧書きを落とす（#536 低）。
-         落とした結果が空になる行は、時刻と印だけ残さず元の本文を出す */
-      const body = plainWords(e.body) || e.body || '';
-      return `<li class="${sev}">${tag}<span class="mk">${mk}</span><span class="tm">${esc(fmtTime(e.at))}</span><span class="bd">${esc(body)}</span></li>`;
-    }).join('');
-    /* 異常があったものだけ最初から開いておく（見てほしいものを隠さない） */
-    const open = st.key === 'err' || st.key === 'warn' || st.key === 'run';
-    return `<details class="run ${st.cls === 'run' ? 'run-' : st.cls}"${open ? ' open' : ''}>
-      <summary class="runhead"><span class="tri">▸</span>
-        <span class="when">${esc(fmtDT(r.started_at) || '—')}</span>
-        <span class="kind">${esc(RUN_KIND_JA[r.kind] || r.kind)}</span>
-        ${dur ? `<span class="dur">所要 ${esc(dur)}</span>` : ''}
-        <span class="stat ${st.cls}">${st.txt}</span></summary>
-      <div class="runbody">
-        ${r.summary ? `<div class="runsummary">${esc(plainWords(r.summary) || r.summary)}</div>` : ''}
-        ${laneChips(r.lanes)}
-        ${evs.length ? `<ul class="acts">${acts}</ul>`
-          : `<div class="dhint">この回の細かい記録は残っていません</div>`}
-      </div></details>`;
-  }).join('');
-
-  return `<details class="opsec"${(nErr || nWarn) ? ' open' : ''}>
-    <summary>🌙 実行記録<span class="s ${head.cls}">${esc(head.text)}</span></summary>
-    <p class="opsnote">動画の制作やXの投稿など、自動で走った仕事の結果です。
-      行を押すと中身が見られます（異常があった回は最初から開いています）。</p>
-    ${ops.runs.length ? `<div class="runs">${runs}</div>`
-      : `<div class="noitem">まだ記録がありません</div>`}</details>`;
-}
-
-/* お金（旧「費用」タブ）。畳んだままでも「今月いくら」が見えるようにし、
-   目立たせるのは尽きそうなときだけ（前払い残高が少ない・AI残量が残りわずか・値が古い）。 */
-function moneySection(d){
-  const ai = d.ai && d.ai.payload, bill = d.billing && d.billing.payload;
-  const stamp = [d.ai && d.ai.captured_at, d.billing && d.billing.captured_at].filter(Boolean).sort().pop();
-  const stale = stamp && (Date.now() - new Date(stamp).getTime()) > 3 * 3600 * 1000;
-
-  let total = null;
-  if (bill) {
-    const fal = bill.fal || {}, gcp = bill.gcp || {};
-    const f = (fal.this_month || {}).total, g = gcp.ok ? (gcp.this_month || {}).total : null;
-    if (f != null || g != null) total = (f || 0) + (g || 0);
-  }
-  let hot = 0;
-  if (ai) for (const pv of Object.values(ai.providers || {}))
-    for (const w of (pv.windows || [])) if (w.percent != null && w.percent >= 90) hot++;
-  const lowBal = bill && bill.fal && bill.fal.balance != null && bill.fal.balance < 20;
-
-  let cls = '', note = '';
-  if (lowBal)     { cls = 'bad';  note = ' ・ ⚠ fal.ai の残高が少なくなっています'; }
-  else if (hot)   { cls = 'warn'; note = ` ・ ⚠ 残りわずかなAIの枠が${hot}件`; }
-  else if (stale) { cls = 'warn'; note = ' ・ 自宅PCが止まっていて値が古いままです'; }
-
-  const sum = (total == null ? 'まだ記録がありません' : `今月 ${costUsd(total)}`) + note;
-  return `<details class="opsec"${cls ? ' open' : ''}>
-    <summary>💰 今月の請求とAI残量<span class="s ${cls}">${esc(sum)}</span></summary>
-    ${costView(d)}</details>`;
-}
-
-/* 1本が読めなくても画面ごと落とさない。落とすのはその節だけにする */
-const settled = pr => pr.then(v => ({ v }), e => ({ e: (e && e.message) || String(e) }));
-
-async function renderAdmin(){
-  const el = $('#view-admin');
-  if (!store.system) el.innerHTML = loading();
-  /* お金・記録は運営の内側の数字なので全チャンネル可の人にだけ出す（制限ありの人は
-     読んでも RLS で 0 行になるが、空の節を並べても意味がないので節ごと出さない） */
-  const full = fullAccess();
-
-  const [docsR, gfR, anR, opsR, costR] = await Promise.all([
-    settled(loadSystem()), settled(loadGenfarm()), settled(loadAutomationNow()),
-    full ? settled(loadOps())  : Promise.resolve({ v: null }),
-    full ? settled(loadCost()) : Promise.resolve({ v: null })
-  ]);
-  if (docsR.e) { el.innerHTML = errBox(docsR.e); return; }
-  /* gen-farm が読めなかったときの生のエラー文は画面に出さない（オーナーには読めない文字列）。
-     原因を追うのは開発者なので console へ回す（2026-09-06・#440 中12） */
-  if (gfR.e) console.warn('[dashboard] gen-farm の待ち行列を読めませんでした:', gfR.e);
-  const docs = docsR.v || {};
-
+async function renderRules(){
+  const el = $('#view-rules');
+  if (!store.rules) el.innerHTML = loading();
+  let rows;
+  try { rows = await loadRules(); } catch (e) { el.innerHTML = errBox(e.message); return; }
+  const f = state.rulesF;
+  const seen = (get) => { const s = new Set(); rows.forEach(r => [].concat(get(r) || []).forEach(v => s.add(v))); return s; };
+  const stages = seen(r => r.stages), kinds = seen(r => r.kind),
+        strs = seen(r => r.strength), subs = [...seen(r => r.subject)];
+  const opt = v => ({ v, t: v });
+  /* 番組の選択肢は番組の登録簿（動画の番組の一覧）から作る。行に出てこない番組も選べる（全番組の行が出る） */
+  const chOpts = (store.pilotChannels || store.channels || []).map(c => ({ v: c.slug, t: c.name || c.slug }));
   el.innerHTML = `
-    <div class="pagehead">
-      <div class="eyebrow">運営</div>
-      <h1>🛠 いまの状態と記録</h1>
-      <p>いちばん上は生成機のいまの状況。その下は畳んであり、押すと開きます。</p>
+    <div class="pagehead"><div class="eyebrow">決まり</div><h1>📏 決まりの一覧</h1></div>
+    <div class="toolbar">
+      <input type="search" id="rulesq" placeholder="文字で探す" aria-label="文字で探す" value="${esc(f.q)}">
+      ${pickHTML('rf', 'ch', 'すべての番組', chOpts, f.ch)}
+      ${pickHTML('rf', 'stage', 'すべての工程', SV_STEPS.map(s => s.name).filter(n => stages.has(n)).map(opt), f.stage)}
+      ${pickHTML('rf', 'kind', 'すべての種類', RULE_KINDS.filter(k => kinds.has(k)).map(opt), f.kind)}
+      ${pickHTML('rf', 'strength', 'すべての強さ', RULE_STRENGTHS.filter(k => strs.has(k)).map(opt), f.strength)}
+      ${pickHTML('rf', 'subject', 'すべての対象', subs.map(opt), f.subject)}
+      <button type="button" class="btn" id="rulesreset" hidden>条件を外す</button>
+      <span class="hits" id="ruleshits"></span>
     </div>
-    <div class="stack">
-      <!-- 「自動運転のいま」は 2026-08-28 に非表示（オーナー指示・v2切替 #361）。
-           実行記録は機械の稼働ログでオーナーが日々見るものではないため。
-           戻すときはこの行を <div id="autoslot">${anR.v ? automationCard(anR.v) : ''}</div> に -->
-      <div id="gfslot">${gfR.v ? genfarmCard(gfR.v)
-        : `<section class="card gfcard"><h2>🖥 gen-farm（実家の生成機）のいま</h2>
-            <div class="noitem">待ち行列を読み込めませんでした
-            <span class="s">しばらくして再読込してください</span></div></section>`}</div>
-      ${full && costR.v ? moneySection(costR.v) : ''}
-      ${full && opsR.v ? recordSection(opsR.v, anR.v) : ''}
-      ${scheduleSection(docs['schedule'])}
-      ${linksSection()}
-    </div>`;
-
-  startGenfarmAuto();   /* この画面を開いている間だけ1分ごとに gen-farm を取り直す */
+    <div class="lst" id="rulelist"></div>`;
+  paintRules();
 }
+function paintRules(){
+  const box = $('#rulelist');
+  if (!box) return;
+  const hits = ruleHits();
+  $('#ruleshits').textContent = hits.length + '件';
+  $('#rulesreset').hidden = !rulesFiltered();
+  box.innerHTML = `<div class="lsthead rl" aria-hidden="true"><span>番号</span><span>種類</span><span>強さ</span><span>対象</span><span>本文</span><span></span></div>`
+    + (hits.length ? hits.map(ruleRowHTML).join('')
+       : `<div class="lstnone">${(store.rules || []).length ? '当てはまる決まりはありません' : '決まりなし'}</div>`);
+}
+
+async function loadProdAssets(){
+  if (store.prodAssets && Date.now() - store.prodAssets.at < ASSET_CACHE) return store.prodAssets;
+  let rows = [];
+  try {
+    rows = await q(sb.from('v_production_assets')
+      .select('asset_key,name_ja,kind,call,sample_image,source,note,updated_at,used_in'));
+  } catch (e) {
+    console.warn('[dashboard] 素材の一覧を読めませんでした:', e.message);   /* 画面は「素材なし」 */
+  }
+  const ki = k => { const i = ASSET_KINDS.indexOf(k); return i < 0 ? 99 : i; };
+  rows.sort((a, b) => ki(a.kind) - ki(b.kind) || String(a.name_ja || '').localeCompare(String(b.name_ja || ''), 'ja'));
+  /* 見本の絵は非公開の置き場にあるので、まとめて署名URLにする（1時間で切れるのは他の素材と同じ） */
+  const urls = {}, paths = [...new Set(rows.map(r => r.sample_image).filter(Boolean))];
+  if (paths.length) {
+    try {
+      const { data } = await sb.storage.from(ASSET_BUCKET).createSignedUrls(paths, ASSET_TTL);
+      (data || []).forEach((r, i) => { if (r && r.signedUrl) urls[r.path || paths[i]] = r.signedUrl; });
+    } catch (_) { /* 取れなければ「素材なし」の面になるだけ */ }
+  }
+  store.prodAssets = { rows, urls, at: Date.now() };
+  return store.prodAssets;
+}
+const usedOf = r => (Array.isArray(r.used_in) ? r.used_in : []).filter(u => u && u.seq);
+const assetsFiltered = () => Object.values(state.assetsF).some(v => v);
+function assetHits(){
+  const f = state.assetsF;
+  return ((store.prodAssets || {}).rows || []).filter(r =>
+    (!f.kind || r.kind === f.kind) && (!f.seq || usedOf(r).some(u => u.seq === f.seq)));
+}
+/* 出典とライセンス（081 の source）。{made_from:{type, from, license}（切り出した元）,
+   external:[{name, page, license, authors[]}]（外から取ってきた物）, photos:[{title, url, license, author}]（見比べた写真）}
+   を1件1行に並べる。どれにも当たらない形はそのまま文字で出す。
+   オーナーが読む画面なので、フォルダのパス（/ を含む括弧）と、ライセンスの末尾の括弧書き
+   （「自作（リポジトリの中だけで使う）」→「自作」）は出さない。データはそのまま */
+const srcNoPath = t => String(t == null ? '' : t).replace(/\s*[（(][^（）()]*\/[^（）()]*[）)]/g, '').trim();
+const srcNoNote = t => String(t == null ? '' : t).replace(/\s*[（(][^（）()]*[）)]\s*$/, '').trim();
+function assetSource(s){
+  if (s == null || s === '') return '';
+  const list = (typeof s === 'object' && !Array.isArray(s) && ('made_from' in s || 'external' in s || 'photos' in s))
+    ? [].concat(s.made_from ? [s.made_from] : [], s.external || [],
+                (s.photos || []).map(p => Object.assign({ pre: '見比べた写真' }, p)))
+    : (Array.isArray(s) ? s : [s]);
+  return list.length ? `<ul class="exl">${list.map(x => {
+    if (!x || typeof x !== 'object') return `<li>${esc(x)}</li>`;
+    const from = srcNoPath(x.from || x.name || x.title || x.type || '');
+    const who = [].concat(x.authors || [], x.author ? [x.author] : []).join('・');
+    const lic = srcNoNote(x.license);
+    const url = String(x.url || x.page || '');
+    if (!from && !lic && !url) return `<li>${esc(JSON.stringify(x))}</li>`;
+    return `<li>${x.pre ? `<span class="exk">${esc(x.pre)}</span> ` : ''}${esc(from)}${
+      who ? `<span class="exn"> ・ ${esc(who)}</span>` : ''}${lic ? `<span class="exn"> ・ ${esc(lic)}</span>` : ''}${
+      /^https?:\/\//.test(url) ? ` <a href="${esc(url)}" target="_blank" rel="noopener noreferrer">出典 ↗</a>` : ''}</li>`;
+  }).join('')}</ul>` : '';
+}
+/* 使った動画とショット。shots はショットの番号（承認画面の目録の n と同じ）。空は動画全体で使った物 */
+function assetUsed(used){
+  return used.length ? `<ul class="exl">${used.map(u => `<li><b>${esc(u.seq)}</b> ${esc(u.title || '')}<div class="exn">${
+    (u.shots || []).length ? 'ショット ' + esc(u.shots.join('・')) : '動画全体'}</div></li>`).join('')}</ul>` : '';
+}
+/* 呼び方（081 の call）。{functions:[{function, signature, doc}]（最初が主な呼び口）, …} の関数ごとに
+   呼び方の1行と説明を出す。それ以外の形はそのまま文字で出す */
+function assetCall(c){
+  if (c && typeof c === 'object' && !Array.isArray(c) && Array.isArray(c.functions)) c = c.functions;
+  const list = Array.isArray(c) ? c : (c == null || c === '') ? [] : [c];
+  return list.map(x => (x && typeof x === 'object' && (x.signature || x.function))
+    ? `<pre class="code">${esc(x.signature || x.function)}</pre>${x.doc ? `<div class="exn pre">${esc(x.doc)}</div>` : ''}`
+    : `<pre class="code">${esc(typeof x === 'string' ? x : JSON.stringify(x, null, 1))}</pre>`).join('');
+}
+function assetRowHTML(r, urls){
+  const key = String(r.asset_key || ''), name = r.name_ja || key, used = usedOf(r);
+  const u = r.sample_image ? urls[r.sample_image] : null;
+  const thumb = u
+    ? `<button type="button" class="athumb" data-plbox="${esc(u)}" data-plcap="${esc(name)}" aria-label="${esc(name)}の見本を大きく見る"><img src="${esc(u)}" alt="" loading="lazy"></button>`
+    : `<span class="athumb none">素材なし</span>`;
+  return `<details class="al" data-akey="${esc(key)}"${assetsOpen.has(key) ? ' open' : ''}>
+    <summary class="alrow">${thumb}<span class="nm">${esc(name)}</span>
+      <span class="tagk">${esc(r.kind || '—')}</span><span class="cnt">${used.length}本</span>
+      <span class="caret" aria-hidden="true">▸</span></summary>
+    <div class="lstbody">${kvHTML([
+      ['出典とライセンス', assetSource(r.source)],
+      ['使った動画', assetUsed(used)],
+      ['呼び方', assetCall(r.call)],
+      ['メモ', kvText(r.note)]])}</div></details>`;
+}
+async function renderAssets(){
+  const el = $('#view-assets');
+  if (!store.prodAssets) el.innerHTML = loading();
+  const { rows } = await loadProdAssets();
+  const f = state.assetsF;
+  const kinds = new Set(rows.map(r => r.kind)), seqs = new Map();
+  rows.forEach(r => usedOf(r).forEach(u => { if (!seqs.has(u.seq)) seqs.set(u.seq, u.title || ''); }));
+  el.innerHTML = `
+    <div class="pagehead"><div class="eyebrow">素材</div><h1>🧱 素材の一覧</h1></div>
+    <div class="toolbar">
+      ${pickHTML('af', 'kind', 'すべての種類',
+         [...ASSET_KINDS.filter(k => kinds.has(k)), ...[...kinds].filter(k => k && !ASSET_KINDS.includes(k))]
+           .map(v => ({ v, t: v })), f.kind)}
+      ${pickHTML('af', 'seq', 'すべての動画',
+         [...seqs].sort((a, b) => a[0].localeCompare(b[0])).map(([v, t]) => ({ v, t: t ? `${v} ${t}` : v })), f.seq)}
+      <button type="button" class="btn" id="assetsreset" hidden>条件を外す</button>
+      <span class="hits" id="assetshits"></span>
+    </div>
+    <div class="lst" id="assetlist"></div>`;
+  paintAssets();
+}
+function paintAssets(){
+  const box = $('#assetlist');
+  if (!box) return;
+  const hits = assetHits(), urls = (store.prodAssets || {}).urls || {};
+  $('#assetshits').textContent = hits.length + '件';
+  $('#assetsreset').hidden = !assetsFiltered();
+  box.innerHTML = `<div class="lsthead al" aria-hidden="true"><span>見本</span><span>名前</span><span>種類</span><span>使った動画</span><span></span></div>`
+    + (hits.length ? hits.map(r => assetRowHTML(r, urls)).join('')
+       : `<div class="lstnone">${((store.prodAssets || {}).rows || []).length ? '当てはまる素材はありません' : '素材なし'}</div>`);
+}
+/* 見本の絵を大きく見る（Esc・背景・閉じるで閉じる） */
+function openPlbox(src, cap){
+  $('#plboximg').src = src; $('#plboximg').alt = cap || '';
+  $('#plboxcap').textContent = cap || '';
+  $('#plbox').hidden = false;
+  $('#plbox [data-plbox-close]').focus({ preventScroll: true });
+}
+function closePlbox(){ $('#plbox').hidden = true; $('#plboximg').src = ''; }
+const plboxOpen = () => !$('#plbox').hidden;
 
 /* ══ ツールチップ ═══════════════════════════════════════════════ */
 const tip = $('#tip');
@@ -9494,12 +8393,12 @@ function syncStickyOffsets(){
 
 async function render(){
   renderShell();
-  stopGenfarmAuto();          /* 画面を離れたら gen-farm の自動更新は止める（開いた画面が付け直す） */
   state.busy = true; renderShell();
   try {
     if (state.view === 'stock')          await renderStock();
     else if (state.view === 'analytics') await renderAnalytics();
-    else if (state.view === 'admin')     await renderAdmin();
+    else if (state.view === 'rules')     await renderRules();
+    else if (state.view === 'assets')    await renderAssets();
     state.lastSync = new Date().toISOString();
   } catch (e) {
     $('#view-' + state.view).innerHTML = errBox(e.message);
@@ -9512,9 +8411,7 @@ async function render(){
 }
 
 async function reloadAll(){
-  clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {}; store.system = null;
-  store.cost = null; store.autonow = null;   /* 運営タブ（お金・自動運転のいま） */
-  store.genfarm = null;         /* gen-farm の待ち行列は30秒キャッシュ。⟳ では必ず取り直す */
+  clearVideoCaches(); store.analytics = {}; store.assets = {}; store.rules = null; store.prodAssets = null;
   state.busy = true; renderShell();
   try { await loadBootstrap(); } catch (e) { toast('再読み込みに失敗: ' + e.message); }
   await render();
@@ -9553,6 +8450,18 @@ document.addEventListener('click', e => {
 
   /* 詳細内の「戻る／閉じる」は履歴を戻す（popstate で一覧へ復帰・経路を一本化） */
   if (e.target.closest('[data-close]')) { history.back(); return; }
+
+  /* 素材の一覧: 見本の絵を押したら大きく見る（行の中にあるので、行の開閉は止める） */
+  const plb = e.target.closest('[data-plbox]');
+  if (plb) { e.preventDefault(); openPlbox(plb.dataset.plbox, plb.dataset.plcap); return; }
+  if (e.target.closest('[data-plbox-close]') || e.target.id === 'plbox') { closePlbox(); return; }
+  /* 決まり・素材の「条件を外す」 */
+  if (e.target.closest('#rulesreset')) {
+    Object.keys(state.rulesF).forEach(k => { state.rulesF[k] = ''; }); renderRules(); return;
+  }
+  if (e.target.closest('#assetsreset')) {
+    Object.keys(state.assetsF).forEach(k => { state.assetsF[k] = ''; }); renderAssets(); return;
+  }
 
   /* チャンネル名そのものを押したときは、開閉ではなく切り替えとして扱う（2026-08-20） */
   const goBtn = e.target.closest('.chgo[data-ch]');
@@ -9622,10 +8531,6 @@ document.addEventListener('click', e => {
     return;
   }
 
-  /* gen-farm の動画カードを押したら、その動画の詳細（素材とレビューの記録）を開く */
-  const gfRow = e.target.closest('[data-gfvid]');
-  if (gfRow) { pushDetail(gfRow.dataset.gfvid); return; }
-
   const row = e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
   if (row) { pushDetail(row.dataset.vid); return; }
 
@@ -9684,6 +8589,8 @@ document.addEventListener('input', e => {
     stockQTimer = setTimeout(refreshStockTable, 250);
     return;
   }
+  /* 決まりの一覧の文字の検索は画面の中で絞るだけ（DB へは問い合わせない） */
+  if (e.target.id === 'rulesq') { state.rulesF.q = e.target.value; paintRules(); return; }
   /* 没の確定ボタンは理由が入るまで押せない（#205） */
   if (e.target.classList && e.target.classList.contains('rta')) {
     const box = e.target.closest('[data-rjbox]');
@@ -9700,8 +8607,14 @@ document.addEventListener('change', e => {
   if (e.target.id === 'stockgenre') {
     state.stockGenre = e.target.value; state.stockPage = 0; refreshStockTable();
   }
+  /* 決まり・素材の絞り込み（選び箱） */
+  const rf = e.target.dataset && e.target.dataset.rf, af = e.target.dataset && e.target.dataset.af;
+  if (rf) { state.rulesF[rf] = e.target.value; paintRules(); }
+  else if (af) { state.assetsF[af] = e.target.value; paintAssets(); }
 });
 document.addEventListener('keydown', e => {
+  /* 素材の見本を大きく見ているあいだは Esc で閉じる（ほかの操作より先に受ける） */
+  if (plboxOpen()) { if (e.key === 'Escape') { closePlbox(); e.preventDefault(); } return; }
   /* Ctrl + Enter はコメント欄だけ。承認メモ（.ata）では発火させない（誤送信防止・#205） */
   if (e.target.classList && e.target.classList.contains('wta') && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     const box = e.target.closest('[data-wbox]');
@@ -9735,8 +8648,6 @@ document.addEventListener('keydown', e => {
     state.secOpen[sec.dataset.secfold] = !state.secOpen[sec.dataset.secfold];
     refreshStockTable(); return;
   }
-  const gfRow = e.target.closest && e.target.closest('[data-gfvid]');
-  if (gfRow && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pushDetail(gfRow.dataset.gfvid); return; }
   const row = e.target.closest && e.target.closest('.mtx tbody tr[data-vid], .scard[data-vid]');
   if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pushDetail(row.dataset.vid, row.dataset.gate); }
 });
@@ -9782,8 +8693,7 @@ $('#loginform').addEventListener('submit', async ev => {
 
 async function signOut(){
   await sb.auth.signOut();
-  clearVideoCaches(); store.ops = null; store.analytics = {}; store.assets = {}; store.system = null;
-  store.cost = null;   /* 費用（#321） */
+  clearVideoCaches(); store.analytics = {}; store.assets = {}; store.rules = null; store.prodAssets = null;
   store.channels = []; store.pilotChannels = []; store.accounts = [];
   state.user = null; state.me = null; state.ch = null; state.view = 'stock'; state.stockPage = 0;
   showLogin();
@@ -9798,7 +8708,6 @@ function showLogin(){
   $('#app').hidden = true;
   $('#login').hidden = false;
   $('#menupop').hidden = true;
-  stopGenfarmAuto();
   closeDetail();
   if (location.hash) history.replaceState({}, '', location.pathname + location.search);
   document.title = '制作ダッシュボード — ログイン';
