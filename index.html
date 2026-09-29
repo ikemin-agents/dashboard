@@ -2403,8 +2403,10 @@ const isPilotSeq = seq => {
      ・承認ポイントの呼び名（storyboard は「モック＋静止画」） */
 const offDispatcherItem = it => !!it && (isPilotSeq(it.seq) || STORAGE_ONLY_CH.has(it.channel));
 const ONE_DIR = 'final';
-/* 読みに行く順番（Storage のフォルダ名）。02・03 は承認ポイントのフォルダだけ */
-const assetDirsOf = (it, gate) => offDispatcherItem(it) ? [ONE_DIR, 'storyboard'] : [gate];
+/* 読みに行く順番（Storage のフォルダ名）。**全番組で同じ**（オーナー決定 2026-09-29 15:07）——
+   動画の置き場1つ → 空なら旧い置き場。台本の承認ポイントだけは文章なので script/ のまま。
+   02・03 はもともと final/ にしか出していないので、見え方は変わらない */
+const assetDirsOf = (it, gate) => gate === 'script' ? ['script'] : [ONE_DIR, 'storyboard'];
 /* 検証のタブは実在のチャンネルではないので、擬似のチャンネル名を1つ決めて同じ器に乗せる */
 const PILOT_CH = '__pilot__';
 const PILOT_META = {icon:'🧪', name:'検証'};
@@ -2460,7 +2462,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 15:01';
+const BUILT_AT = '9/29 15:14';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2828,7 +2830,7 @@ async function loadPending(ch){
   }
   if (sbCheck.length) {
     try {
-      const evs = await q(sb.from('review_events').select('id,video_id,gate,kind,created_at')
+      const evs = await q(sb.from('review_events').select('id,video_id,gate,kind,revision,created_at')
         .in('video_id', sbCheck));
       const gone = new Set(sbCheck.filter(id => {
         const t = sbSupersededEvents(evs.filter(e => e.video_id === id));
@@ -2992,7 +2994,9 @@ function sbSupersededEvents(events){
     if (e.gate === 'storyboard' && e.kind === 'request_review') { if (!sbE || evNewer(e, sbE)) sbE = e; }
     else if (e.gate === 'final') { if (!fin || evNewer(e, fin)) fin = e; }
   }
-  return (sbE && fin && evNewer(fin, sbE)) ? +new Date(sbE.created_at) : null;
+  /* 古い版の完成の記録が後から付いても、新しい版のモック＋静止画の承認待ちは隠さない */
+  const rev = e => Number(e.revision == null ? 1 : e.revision);
+  return (sbE && fin && evNewer(fin, sbE) && rev(fin) >= rev(sbE)) ? +new Date(sbE.created_at) : null;
 }
 
 /* 発言者が審査AIか（review_events.author の語彙は koike / kohnosuke / ai:* に
@@ -3456,9 +3460,11 @@ function displayIdx(it){
   /* 進行係を通らない動画（#569）は status を進める者がいないので、オーナーの承認の記録でも位置を
      上げる（その承認ポイントがいま状態を持っていないときだけ、次の工程へ）。追い越された
      「モック＋静止画」の承認待ちを外した動画が、status の「台本」まで戻って見えないようにするため */
-  if (offDispatcherItem(it)) {
+  /* 承認待ち・修正中の承認ポイントがあるあいだは上げない（前の版の完成の承認で、新しい版の
+     モック＋静止画の承認待ちが「投稿待ち」の位置へ進んで見えるのを防ぐ） */
+  if (!rv && offDispatcherItem(it)) {
     for (const g of ['storyboard', 'final']) {
-      if (it[GATE_COLUMN_FIELD[g]] && !it[g + '_state'] && it._rv !== g && it._rc !== g
+      if (it[GATE_COLUMN_FIELD[g]] && !it[g + '_state']
           && GATE_COL[g] + 1 > i) i = GATE_COL[g] + 1;
     }
   }
@@ -3973,7 +3979,7 @@ function detailHTML(it){
      完成(mp4) のどれでも assetsHTML が同じ形で描く。素材が無いゲートでは左列を畳んで1列にする。
      進行係を通らない動画は承認ポイントに依らず動画の置き場1つを読む（空なら旧い置き場・#569）。
      data-gate は承認ポイント（承認・指摘に渡す）、data-dirs は読みに行く置き場の順番 */
-  const dirsAttr = offDispatcherItem(it) && rvGate
+  const dirsAttr = rvGate
     ? ` data-dirs="${esc(assetDirsOf(it, rvGate).join(','))}"` : '';
   const stage = rvGate ? `<div class="dstage">
       <div class="assets" data-assets="${esc(it.id + '|' + rvGate)}" data-ch="${esc(it.channel)}"
@@ -4104,17 +4110,21 @@ async function useSceneView(it){
   if (!gate && one) gate = 'storyboard';
   if (gate !== 'final' && gate !== 'storyboard') return null;
   if (gate === 'final' && displayIdx(it) < GATE_COL.final) return null;
-  /* 読む置き場（Storage のフォルダ）は承認ポイントと別に決める。02・03 は承認ポイントのフォルダ、
-     進行係を通らない動画は動画の置き場1つ → 空なら旧い置き場（storyboard/） */
+  /* 読む置き場（Storage のフォルダ）は承認ポイントと別に決める。全番組とも動画の置き場1つ →
+     空なら旧い置き場（storyboard/）。**物が1つでもある最初の置き場で決める**（loadAssetsFirst と
+     同じ条件）——新しい置き場に出せる動画が無いからといって旧い置き場の動画へ戻ると、新しい提出の
+     承認ボタンと旧い素材が同じ画面に並ぶ（#569 の Codex レビュー指摘1） */
   for (const dir of assetDirsOf(it, gate)) {
     try {
       const a = await loadAssets(it.channel, it.seq, dir);
       const files = a.files || [];
+      if (!files.length) continue;
       if (svVariants(files, one, dir).list.length) return { gate, dir, kind:'variant' };
       if (svMainFile(files, dir, one))  return { gate, dir, kind:'video' };
       const mat = sceneMaterials(files, '');
       if (mat && mat.ref_video_full) return { gate, dir, kind:'ref' };
-    } catch (_) { /* 読めなければ次の置き場（どれも駄目なら従来の画面） */ }
+      return null;
+    } catch (_) { return null; }
   }
   return null;
 }
