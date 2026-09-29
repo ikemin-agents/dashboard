@@ -1714,19 +1714,35 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-mattabs button[aria-pressed="true"]{background:var(--act-soft); color:var(--sub-ink);
   border-color:var(--act-line); font-weight:680}
 
-/* ── 同じ検証の複数の案のタブ（#523）──────────────────────────────
-   主画面の動画のすぐ上に置く。押すと映像と素材と時刻表が入れ替わる（指摘の一覧は共通のまま） */
-.sview .sv-vtabs{display:flex; align-items:center; gap:4px; min-width:0; overflow-x:auto;
-  scrollbar-width:none; padding:0 2px}
+/* ── 同じ検証の複数の案のタブ（#523・置き場所と見た目はオーナー決定 2026-09-29 案A）──────
+   ①「素材・作ったもの」の見出し行の中（見出しの文字の右・facts の左）に置く下線型のタブ。
+   押すと映像と素材と時刻表が入れ替わる（指摘の一覧は共通のまま）。
+   見出し行と同じ 32px に収める（行を高くしない＝動画が縮まない）。案が無い動画ではタブ帯は
+   hidden のままで、下線も引かれず見出し行は今までと同じ見た目になる。
+   スマホ（899px 以下）は svMobileLayout が上の帯へ移す（大きさの調整はスマホの @media の中） */
+.sview .sv-sechd .sttl{flex:0 0 auto; white-space:nowrap}   /* 見出しの文字（タブに押されて折り返さない）*/
+/* 行の幅いっぱいの下線（box-shadow なので高さは増えない）。タブ帯があるときだけ */
+.sview .sv-sechd:has(> .sv-vtabs:not([hidden])){box-shadow:inset 0 -1px 0 var(--border)}
+/* 幅が足りないときに縮むのはタブの側（facts は押し出さない・タブは横スクロールになる） */
+.sview .sv-sechd:has(> .sv-vtabs:not([hidden]))>.facts{flex-shrink:0}
+.sview .sv-vtabs{flex:0 1 auto; align-self:stretch; display:flex; gap:4px; min-width:0;
+  overflow-x:auto; overflow-y:hidden; scrollbar-width:none}   /* 収まらなければ横スクロール（バーは隠す）*/
 .sview .sv-vtabs::-webkit-scrollbar{display:none}
-.sview .sv-vtabs .vtab{font-family:inherit; font-size:var(--fs-2xs); cursor:pointer; height:24px;
-  flex:0 0 auto; padding:0 12px; border:1px solid var(--border); background:var(--surface-2);
-  color:var(--ink-2); border-radius:var(--r-pill); white-space:nowrap}
-.sview .sv-vtabs .vtab[aria-selected="true"]{background:var(--act-soft); color:var(--sub-ink);
-  border-color:var(--act-line); font-weight:680}
-/* 読めない案は押せない見た目に（「素材なし」の面と同じ流儀の薄い無彩色） */
-.sview .sv-vtabs .vtab.none{color:var(--muted); background:var(--surface-3); cursor:default;
-  font-weight:400}
+.sview .sv-vtabs .vtab{flex:0 0 auto; height:32px; padding:0 14px; display:inline-flex;
+  flex-direction:column; align-items:center; justify-content:center; white-space:nowrap; cursor:pointer;
+  font-family:inherit; font-size:var(--fs-sm); font-weight:400; color:var(--ink-2);
+  background:transparent; border:0; border-radius:var(--r-sm) var(--r-sm) 0 0}
+.sview .sv-vtabs .vtab:hover{background:var(--surface-2)}   /* 非選択のタブ: ホバーで薄い地 */
+.sview .sv-vtabs .vtab[aria-selected="true"]{font-weight:700; color:var(--ink);
+  box-shadow:inset 0 -3px 0 var(--act); background:transparent}   /* 選択中: 太字＋下端の線 */
+.sview .sv-vtabs .vtab:focus-visible{outline:2px solid var(--act-line); outline-offset:-2px}
+/* 太字になっても幅が変わらないよう、太字の幅を先に取っておく（押したときにタブが横にずれない）。
+   data-label には svBuildVariantTabs がタブの文字と同じものを入れる */
+.sview .sv-vtabs .vtab::after{content:attr(data-label); font-weight:700; height:0; overflow:hidden;
+  visibility:hidden}
+/* 読めない案は押せない見た目に（「素材なし」の面と同じ流儀の薄い無彩色の文字・ホバーしても地を付けない） */
+.sview .sv-vtabs .vtab.none{color:var(--muted); cursor:default; font-weight:400}
+.sview .sv-vtabs .vtab.none:hover{background:transparent}
 
 /* ── 動画のかたまり ── */
 .sview .sv-screens{display:grid; grid-template-columns:repeat(2, minmax(0, var(--video-w)));
@@ -1792,9 +1808,6 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   padding:0 2px; display:flex; align-items:center; gap:var(--sp-2); height:18px; line-height:18px}
 .sview .sv-colhd .n{font-weight:400; letter-spacing:0; margin-left:auto}
 .sview .sv-scrhd{height:18px; line-height:18px; align-items:center}
-/* 見出しの行に入れた案のタブ（広い画面）。行の高さを増やさないよう低くして右へ寄せる */
-.sview .sv-scrhd .sv-vtabs{margin-left:auto; flex:0 1 auto}
-.sview .sv-scrhd .sv-vtabs .vtab{height:18px; line-height:16px; padding-top:0; padding-bottom:0}
 .sview .sv-script{min-width:0; min-height:0; display:flex; flex-direction:column; gap:var(--sp-2)}
 .sview .sv-script>.shd{display:flex; align-items:center; gap:var(--sp-2); font-size:var(--fs-xs);
   font-family:inherit; background:none; border:none; width:100%; text-align:left;
@@ -2117,8 +2130,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .dtop .tags{display:none}
   .sview .dtop .sv-mver{flex:0 0 auto; font-size:var(--fs-xs); color:var(--muted);
     font-variant-numeric:tabular-nums}
-  /* 案のタブ（検証の動画だけ）。両方の案が見える幅を優先し、題名のほうを「…」で縮める */
-  .sview .dtop .sv-vtabs{flex:0 0 auto; max-width:58%; gap:3px}
+  /* 案のタブ（検証の動画だけ）。両方の案が見える幅を優先し、題名のほうを「…」で縮める。
+     見た目は広い画面と同じ下線型。帯は 48px 以上あるので、タブ帯を引き伸ばさず縦の真ん中に置く */
+  .sview .dtop .sv-vtabs{flex:0 0 auto; align-self:center; max-width:58%; gap:3px}
   .sview .dtop .sv-vtabs .vtab{height:32px; padding:0 7px; font-size:11px}
 
   /* ── 動画（切らずに・入るだけ大きく）── */
@@ -2426,7 +2440,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/27 18:22';
+const BUILT_AT = '9/29 12:13';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5397,7 +5411,14 @@ function sceneDetailHTML(it, plan){
     ${svFlowHTML(it)}
     <div class="sv-wrap">
       <section class="sv-sec sa" aria-label="素材・作ったもの">
-        <div class="sv-sechd">素材・作ったもの<span class="facts" data-sv-facts>読み込み中…</span></div>
+        <!-- 案のタブ（#523）は①の見出し行の中（見出しの文字の右・facts の左）に置く（オーナー決定
+             2026-09-29 案A）。見出し行はもともと 32px あるので、タブを入れても行は増えず動画も縮まない。
+             以前は完成の動画の見出し行の右端に 18px で置いていた——動画の上に1段足すと、隣の参照動画と
+             高さがずれ、動画の下端が再生の操作に重なったため（RW0004 版3 で実測 2026-09-27）。
+             案が無い動画では hidden のまま＝見出し行は今までと同じ見た目。スマホは svMobileLayout が上の帯へ移す -->
+        <div class="sv-sechd"><span class="sttl">素材・作ったもの</span>
+          <div class="sv-vtabs" data-sv-vtabs hidden role="tablist" aria-label="案"></div>
+          <span class="facts" data-sv-facts>読み込み中…</span></div>
         <div class="sv-stage" data-sv-stage data-view="final" data-cmp="off" data-mat="mat">
           <div class="sv-viewswitch" data-sv-switch hidden>
             <div class="seg">
@@ -5417,11 +5438,8 @@ function sceneDetailHTML(it, plan){
           </div>
           <div class="sv-screens">
             <div class="sv-screen final" data-sv-screenfinal>
-              <!-- 案のタブは見出しの行の右端に置く（行を1段増やすと、隣の参照動画と高さがずれ、
-                   動画の下端が再生の操作に重なった・RW0004 版3 で実測 2026-09-27） -->
               <div class="sv-scrhd"><span class="scrttl" data-sv-mainttl>${esc(gname)}の動画</span>
-                <span class="scrsub" data-sv-finallbl></span>
-                <div class="sv-vtabs" data-sv-vtabs hidden role="tablist" aria-label="案"></div></div>
+                <span class="scrsub" data-sv-finallbl></span></div>
               <div class="loadbox" data-sv-finalslot>素材を読み込み中…</div>
             </div>
             <div class="sv-screen ref">
@@ -5510,7 +5528,7 @@ function svMobileLayout(){
   if (!root) return;
   const q = s => root.querySelector(s);
   const ref = q('.sv-screen.ref'), mat = q('.sv-matcol'), screens = q('.sv-screens');
-  const vt = q('[data-sv-vtabs]'), dtop = q('.dtop'), fin = q('.sv-screen.final');
+  const vt = q('[data-sv-vtabs]'), dtop = q('.dtop'), shd = q('.sv-sec.sa>.sv-sechd');
   const sc = q('.sv-sec.sc'), wrap = q('.sv-wrap');
   const tb = q('.decide [data-tapbox]'), abox = q('.decide [data-abox]');
   if (mob) {
@@ -5527,8 +5545,8 @@ function svMobileLayout(){
     if (sv) root.classList.toggle('sv-noref', !(sv.hasRefVideo || (sv.mat && sv.mat.ref_video_full && !sv.mainLabel)));
   } else {
     if (ref && screens && ref.parentNode !== screens) screens.appendChild(ref);
-    const fhd = fin && fin.querySelector('.sv-scrhd');
-    if (vt && fhd && vt.parentNode !== fhd) fhd.appendChild(vt);
+    /* 案のタブの広い画面での置き場所は①の見出し行の中・facts の左（オーナー決定 2026-09-29 案A） */
+    if (vt && shd && vt.parentNode !== shd) shd.insertBefore(vt, shd.querySelector(':scope > .facts'));
     if (sc && wrap && sc.parentNode !== wrap) wrap.appendChild(sc);
     if (abox && tb) {
       const fold = abox.querySelector(':scope > .afold');
@@ -6226,7 +6244,7 @@ function svPaintMainHead(){
 }
 
 /* ── 同じ検証の複数の案（#523）────────────────────────────────────
-   索引があれば主画面の上にタブを出す。切り替えると映像・素材・時刻表・台本が入れ替わり、
+   索引があれば①の見出し行にタブを出す。切り替えると映像・素材・時刻表・台本が入れ替わり、
    指摘の一覧・メモ・下端バーは共通のまま残る（どの案を見て書いたかは指摘1件ごとに持つ）。 */
 function svBuildVariantTabs(){
   const box = sv.q('[data-sv-vtabs]');
@@ -6239,6 +6257,7 @@ function svBuildVariantTabs(){
     b.type = 'button'; b.className = 'vtab' + (bad ? ' none' : ''); b.setAttribute('role', 'tab');
     /* 読めない案は押せない見た目にして「素材なし」と分かるようにする（#523 のレビュー指摘5） */
     b.textContent = v.label + (bad ? '（素材なし）' : '');
+    b.dataset.label = b.textContent;   /* 太字の幅を先に取る（CSS の .vtab::after）。選んでもタブが横にずれない */
     b.dataset.vkey = v.key;
     b.disabled = bad;
     b.setAttribute('aria-selected', String(v.key === sv.variant));
