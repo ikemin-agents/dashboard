@@ -2382,6 +2382,10 @@ const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'e
 /* 検証だけを持つ番組（#551・05-experiment）。動画は 9000番台だけなので、自分のタブは常に空になる。
    **タブには出さず、検証タブの集め先にだけ入れる**（store.pilotChannels）。登録簿にある番組だけを書く */
 const PILOT_ONLY_CH = new Set(['experiment']);
+/* 進行係を通らない番組（登録簿の dispatcher_mode が storage_only・#569）。登録簿にある番組だけを書く
+   （test_channel_registry.py が登録簿と突き合わせる）。この番組の動画と検証用の動画は、手元の提出の
+   入口から出し、**レビュー素材の置き場が動画ごとに1つ**になる（下の offDispatcherItem） */
+const STORAGE_ONLY_CH = new Set(['rikiwaza', 'experiment']);
 /* ── 検証用の動画（試作・検証）の見分け方 ──────────────────────────────
    番号の数字部が 9000 以上なら本編ではない。**見分け方はこの1か所だけ**（gen-farm の
    札 epHint も、チャンネルの振り分けもここを通す）。検証用は各番組のタブ・在庫の数・
@@ -2390,6 +2394,17 @@ const isPilotSeq = seq => {
   const m = /(\d{3,4})$/.exec(String(seq == null ? '' : seq));
   return !!(m && Number(m[1]) >= 9000);
 };
+/* ── 進行係を通らない動画（検証用と storage_only の番組・#569）─────────────────
+   手元の提出の入口（submit_for_review.py）から出す動画。**02・03 の本編はここに入らない**。
+   この動画だけ次の3つが違う（オーナー決定 2026-09-29「置き場は動画ごとに1つ」）:
+     ・レビュー素材の置き場が承認ポイントに依らず1つ（ONE_DIR）。モックは参照動画の欄に、
+       完成動画が出来たら主画面の欄に出る。旧い置き場（storyboard/）は新しい置き場が空のときだけ読む
+     ・モック＋静止画（storyboard）の承認待ちが、そのあとの完成の動きに追い越されたら数えない
+     ・承認ポイントの呼び名（storyboard は「モック＋静止画」） */
+const offDispatcherItem = it => !!it && (isPilotSeq(it.seq) || STORAGE_ONLY_CH.has(it.channel));
+const ONE_DIR = 'final';
+/* 読みに行く順番（Storage のフォルダ名）。02・03 は承認ポイントのフォルダだけ */
+const assetDirsOf = (it, gate) => offDispatcherItem(it) ? [ONE_DIR, 'storyboard'] : [gate];
 /* 検証のタブは実在のチャンネルではないので、擬似のチャンネル名を1つ決めて同じ器に乗せる */
 const PILOT_CH = '__pilot__';
 const PILOT_META = {icon:'🧪', name:'検証'};
@@ -2398,6 +2413,15 @@ const TINTS   = ['var(--s1-tint)','var(--s2-tint)','var(--stage-bg)','var(--warn
 /* チャンネル別の承認ゲート（DB に列が無いため UI 側の定義。既定は3ゲート） */
 const CH_GATES = {'buzz-zatsugaku':['final'], 'dental':['final']};
 const GATE_LABEL = {script:'台本', storyboard:'絵コンテ', final:'完成'};
+/* 承認ポイントの呼び名は**この関数を通す**（#569）。進行係を通らない動画の storyboard は
+   「モック＋静止画」の承認（rikiwaza-produce の工程表と同じ呼び名）。02・03 は GATE_LABEL のまま。
+   it は動画の行（seq と channel があればよい）。無ければ GATE_LABEL と同じ */
+const GATE_LABEL_OFF = {storyboard:'モック＋静止画'};
+const gateName = (gate, it) => (offDispatcherItem(it) && GATE_LABEL_OFF[gate]) || GATE_LABEL[gate] || gate;
+/* 工程の名前も同じ（「絵コンテ」の工程＝モックと静止画を作る工程）。列見出しの短い名前（short）は
+   全行で共通なので替えない */
+const stageName = (s, it) => (offDispatcherItem(it) && s && s.key === 'board') ? GATE_LABEL_OFF.storyboard : (s ? s.name : '');
+const stageWork = (s, it) => (offDispatcherItem(it) && s && s.key === 'board') ? GATE_LABEL_OFF.storyboard + 'の作成中' : (s ? s.work : '');
 const GATE_COL = {script:1, storyboard:2, final:4};
 const GATE_COLUMN_FIELD = {script:'approved_script_at', storyboard:'approved_storyboard_at', final:'approved_final_at'};
 
@@ -2436,7 +2460,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 14:35';
+const BUILT_AT = '9/29 15:01';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2554,16 +2578,18 @@ function loadUI(){
    pending = 承認待ち／【AI】修正中の行（レビュータブと左ナビのバッジ）
    threads = 動画ごとのレビュー記録。詳細を開いた動画のぶんだけ貯める
    byId    = これまでに取得した動画を id で引く索引（別ページの動画を開くため）
-   rework  = 動画ごとの「この版は何の作り直しか」（human / ai / null）。一覧の札に使う */
+   rework  = 動画ごとの「この版は何の作り直しか」（human / ai / null）。一覧の札に使う
+   sbGone  = 完成の動きに追い越された「モック＋静止画」の承認待ち（#569）。動画の id →
+             追い越された提出の時刻（ms）。レビュー記録で確かめた結果を一覧の行にも効かせる */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
-                threads:{}, rework:{}, looks:{}, rvRev:{}, ops:null, analytics:{}, assets:{}, system:null,
+                threads:{}, rework:{}, looks:{}, rvRev:{}, sbGone:{}, ops:null, analytics:{}, assets:{}, system:null,
                 genfarm:null, autonow:null,
                 /* 検証用の動画が1本でもあるか（#523）。loadPilotFlag が入れる */
                 pilot:{has:false} };
 const clearVideoCaches = () => {
   store.byId = new Map();
   store.core = {}; store.facets = {}; store.pending = {}; store.threads = {};
-  store.rework = {}; store.looks = {};
+  store.rework = {}; store.looks = {}; store.sbGone = {};
 };
 const resetStockFilters = () => {
   state.stockFilter=null; state.stockQ=''; state.stockGenre=''; state.stockSort=null; state.stockPage=0;
@@ -2726,6 +2752,8 @@ function mapRow(r){
   /* 一覧の状態バッジ・指摘件数はビューの値をそのまま使う（review_events は読まない） */
   it._rv   = r.rv_gate || null;
   it._rc   = r.rc_gate || null;
+  /* 完成の動きに追い越された「モック＋静止画」の承認待ちは数えない（#569・進行係を通らない動画だけ） */
+  if (it._rv === 'storyboard' && sbSupersededRow(r)) it._rv = null;
   it._open = r.open_feedback_count || 0;
   /* 指摘の内訳と差し戻しの出どころ（M051）。未適用の DB では列そのものが返らない＝
      0 / null になり、従来どおり「あなたの指摘」扱いで描画される（壊れずに退行するだけ） */
@@ -2781,16 +2809,37 @@ async function loadPending(ch){
   if (store.pending[ch]) return store.pending[ch];
   const items = (await q(scopeCh(sb.from('v_dashboard_list').select('*'), ch)
     .eq('has_gate_state', true))).filter(r => inScope(ch, r.seq)).map(mapRow);
-  const rv = [], rc = [];
+  const rv = [], rc = [], sbCheck = [];
   for (const it of items) {
     const gates = chMeta(it.channel || ch).gates || [];
     for (const g of ['script', 'storyboard', 'final']) {
       if (!gates.includes(g)) continue;
       const st = it[g + '_state'];
       if (!st) continue;
+      /* 追い越された「モック＋静止画」の承認待ちは数えない（#569）。行だけで決まらない動画は
+         下でレビュー記録を引いて確かめる */
+      if (st === 'review' && g === 'storyboard' && offDispatcherItem(it)) {
+        if (sbSupersededRow(it)) continue;
+        sbCheck.push(it.id);
+      }
       const at = it[g + '_state_at'];
       (st === 'review' ? rv : rc).push({ item: it, gate: g, at, wait: daysSince(at), open: it._open });
     }
+  }
+  if (sbCheck.length) {
+    try {
+      const evs = await q(sb.from('review_events').select('id,video_id,gate,kind,created_at')
+        .in('video_id', sbCheck));
+      const gone = new Set(sbCheck.filter(id => {
+        const t = sbSupersededEvents(evs.filter(e => e.video_id === id));
+        if (t != null) store.sbGone[id] = t;
+        return t != null;
+      }));
+      for (let i = rv.length - 1; i >= 0; i--) {
+        if (rv[i].gate === 'storyboard' && gone.has(rv[i].item.id)) rv.splice(i, 1);
+      }
+      for (const it of items) if (gone.has(it.id) && it._rv === 'storyboard') it._rv = null;
+    } catch (_) { /* 引けなければ行の判定のまま（数が1つ多く出るだけ） */ }
   }
   /* ネタの仕分け待ち（#314）はゲートを持たないので上の展開に乗らない。左ナビのバッジは
      「あなたが動く番」の総数を出したいので、別に1本だけ数える（件数だけ・行は引かない）。 */
@@ -2915,6 +2964,37 @@ function gateStateMap(events, curRev){
   return m;
 }
 
+/* ── 追い越された「モック＋静止画」の承認待ち（#569・進行係を通らない動画だけ）──────────
+   置き場が動画ごとに1つになり、どちらの承認ポイントを開いても同じ画面・同じ素材が出る。
+   そのため「モック＋静止画」の提出のあとに**完成が動いた**（提出・修正の依頼・承認・没の
+   どれかが後から付いた）動画では、手前の承認待ちを表に残さない——残すと、承認済みの完成より
+   前の段階として一覧の「承認待ち」に並び続ける（RW9004 で実発生・2026-09-29）。
+   ⚠️ DB（一覧のビュー）は変えていない。ビューの rv_gate / storyboard_state は今までどおり
+   storyboard を返すので、**画面の側で読み替える**。並び順（ビューの sort_rank）だけは承認待ちの
+   位置に残る。02・03 は対象外（何も変えない）。 */
+/* 一覧の行だけで分かる範囲。完成の状態の時刻・完成の最初の承認の時刻が、モック＋静止画の
+   提出より後なら追い越し。レビュー記録で確かめ済み（store.sbGone）の提出もここで効かせる */
+function sbSupersededRow(r){
+  if (!offDispatcherItem(r) || r.storyboard_state !== 'review') return false;
+  const at = +new Date(r.storyboard_state_at);
+  if (!isFinite(at)) return false;
+  const t = x => { const v = x ? +new Date(x) : 0; return isFinite(v) ? v : 0; };
+  if (Math.max(r.final_state ? t(r.final_state_at) : 0, t(r.approved_final_at)) > at) return true;
+  const memo = store.sbGone[r.id];
+  return memo != null && memo >= at;
+}
+/* レビュー記録で確かめる（完成の承認は最初の1回しか行に残らないので、2回目以降はこちらで拾う）。
+   追い越されていれば、その「モック＋静止画」の提出の時刻（ms）を返す。いなければ null */
+function sbSupersededEvents(events){
+  let sbE = null, fin = null;
+  for (const e of (events || [])) {
+    if (!STATE_KINDS.includes(e.kind)) continue;
+    if (e.gate === 'storyboard' && e.kind === 'request_review') { if (!sbE || evNewer(e, sbE)) sbE = e; }
+    else if (e.gate === 'final') { if (!fin || evNewer(e, fin)) fin = e; }
+  }
+  return (sbE && fin && evNewer(fin, sbE)) ? +new Date(sbE.created_at) : null;
+}
+
 /* 発言者が審査AIか（review_events.author の語彙は koike / kohnosuke / ai:* に
    閉じているので、ai: で始まらなければ人間・M017 の CHECK）。DB 側（M051）が
    `author IN ('koike','kohnosuke')` で数えているのと同じ集合になる。 */
@@ -2970,7 +3050,13 @@ async function loadRework(items){
   for (const id of ids) {
     const evs = by.get(id) || [];
     store.rework[id] = reworkSrcOf(evs); rememberSubmitted(id, evs);
-    const it = (items || []).find(i => i.id === id), cur = it ? it._rv + '|' + submittedRevOf(id, it._rv) : '';
+    const it = (items || []).find(i => i.id === id);
+    /* 行だけでは決められなかった追い越し（#569）をレビュー記録で確かめて、表に出す前に外す */
+    if (it && it._rv === 'storyboard' && offDispatcherItem(it)) {
+      const gone = sbSupersededEvents(evs);
+      if (gone != null) { store.sbGone[id] = gone; it._rv = null; }
+    }
+    const cur = it ? it._rv + '|' + submittedRevOf(id, it._rv) : '';
     const seen = new Set(evs.filter(e => !isAiAuthor(e.author) && (e.kind === 'approve' || e.kind === 'request_changes'))
       .map(e => e.gate + '|' + (e.revision == null ? 1 : e.revision)));
     seen.delete(cur);
@@ -3012,7 +3098,13 @@ function rcSrcOf(gate, events){
    没にした動画はどちらのキューにも出さない（#203） */
 function annotate(it, events, curRev){
   let rv = null, rc = null;
-  for (const p of gateStateMap(events, curRev).values()) { if (p.st === 'review') rv = p.gate; else rc = p.gate; }
+  /* 完成の動きに追い越された「モック＋静止画」の承認待ちは数えない（#569・進行係を通らない動画だけ） */
+  const gone = offDispatcherItem(it) ? sbSupersededEvents(events) : null;
+  if (gone != null) store.sbGone[it.id] = gone;
+  for (const p of gateStateMap(events, curRev).values()) {
+    if (p.st === 'review') { if (!(gone != null && p.gate === 'storyboard')) rv = p.gate; }
+    else rc = p.gate;
+  }
   const drop = it.stage === 'dropped';
   const open = drop ? [] : (events || []).filter(e => e.resolution_status === 'open');
   it._rv    = drop ? null : rv;
@@ -3036,7 +3128,10 @@ function threadOf(videoId){
    非公開バケット review-assets。ログイン中のユーザーは Storage の RLS で
    SELECT できる（ポリシーが無い＝一覧が 0 件なので「素材未搬出」表示になる）。
    各ファイルは有効期限つき署名URLにしてから表示する。                        */
-const assetPath = (ch, seq, gate) => `${ch}/${seq}/${gate}`;
+/* 3つめはフォルダ名（置き場）。02・03 は承認ポイントの名前と同じ。進行係を通らない動画は
+   承認ポイントに依らず ONE_DIR（旧い提出だけ storyboard/ に残る・#569）——**承認ポイントと
+   置き場を取り違えない**（承認・指摘に渡すのは承認ポイント、ここへ渡すのは置き場） */
+const assetPath = (ch, seq, dir) => `${ch}/${seq}/${dir}`;
 const assetKind = name => RE_IMG.test(name) ? 'image'
   : RE_VID.test(name) ? 'video' : (RE_TXT.test(name) ? 'text' : 'file');
 function fmtSize(b){
@@ -3046,8 +3141,8 @@ function fmtSize(b){
   return (b / 1024 / 1024).toFixed(1) + ' MB';
 }
 
-async function loadAssets(ch, seq, gate){
-  const key = assetPath(ch, seq, gate);
+async function loadAssets(ch, seq, dir){
+  const key = assetPath(ch, seq, dir);
   const hit = store.assets[key];
   if (hit && Date.now() - hit.at < ASSET_CACHE) return hit;
 
@@ -3080,6 +3175,16 @@ async function loadAssets(ch, seq, gate){
   const res = { files: out, at: Date.now() };
   store.assets[key] = res;
   return res;
+}
+/* 置き場の候補（assetDirsOf）を順に見て、ファイルが1つでもある最初の置き場を返す（#569 の
+   後方互換: 新しい置き場が空のときだけ旧い置き場を読む）。どれも空なら最後の候補の空の結果 */
+async function loadAssetsFirst(ch, seq, dirs){
+  let a = { files: [] }, d = dirs[dirs.length - 1];
+  for (const x of dirs) {
+    a = await loadAssets(ch, seq, x); d = x;
+    if ((a.files || []).length) break;
+  }
+  return { dir: d, files: a.files || [], at: a.at };
 }
 
 async function loadOps(){
@@ -3348,6 +3453,15 @@ function displayIdx(it){
   let i = Math.max(0, PSTAGES.findIndex(s => s.key === it.stage));
   const rv = it._rv || it._rc;          /* 【AI】修正中もそのゲートの工程で止まっている */
   if (rv && GATE_COL[rv] > i) i = GATE_COL[rv];
+  /* 進行係を通らない動画（#569）は status を進める者がいないので、オーナーの承認の記録でも位置を
+     上げる（その承認ポイントがいま状態を持っていないときだけ、次の工程へ）。追い越された
+     「モック＋静止画」の承認待ちを外した動画が、status の「台本」まで戻って見えないようにするため */
+  if (offDispatcherItem(it)) {
+    for (const g of ['storyboard', 'final']) {
+      if (it[GATE_COLUMN_FIELD[g]] && !it[g + '_state'] && it._rv !== g && it._rc !== g
+          && GATE_COL[g] + 1 > i) i = GATE_COL[g] + 1;
+    }
+  }
   return i;
 }
 /* 一覧の行／カードに付ける状態クラス（左端の色帯）と状態バッジ。
@@ -3362,8 +3476,8 @@ const badgeHTML = b => b ? `<span class="sbadge ${b.cls}"${b.tip ? ` title="${es
    AI審査だけが起点のもの（基準に届かず作り直しているだけ）は無彩色に落とす。
    文言は必ずこの2つの関数を通す＝表記のゆれを1か所に閉じる。 */
 const rcAiOnly = it => it._rcSrc === 'ai';
-const rcText  = it => rcAiOnly(it) ? `AI審査で${GATE_LABEL[it._rc]}作り直し中`
-                                   : `${AI_TAG}${GATE_LABEL[it._rc]}修正対応中`;
+const rcText  = it => rcAiOnly(it) ? `AI審査で${gateName(it._rc, it)}作り直し中`
+                                   : `${AI_TAG}${gateName(it._rc, it)}修正対応中`;
 /* 列に出す短い文言（オーナー要望 2026-09-03）。長い説明は tip（ツールチップ）に回す */
 const rcShort = it => rcAiOnly(it) ? '作り直し中' : 'AI修正中';
 const rcCls   = it => rcAiOnly(it) ? 'rcai' : 'rc';
@@ -3377,7 +3491,7 @@ const openSplit = (it, b) => {
 /* ゲート名（完成／台本／絵コンテ）は工程7マスを見れば分かるので状態の文言には入れない。
    知りたいときのためにツールチップには今までどおり全文を残す。 */
 const stateBadgeOf = it =>
-    it._rv ? {cls:'rv', gl:'●', text:'承認待ち', tip:`${GATE_LABEL[it._rv]}承認待ち（あなたの番）`}
+    it._rv ? {cls:'rv', gl:'●', text:'承認待ち', tip:`${gateName(it._rv, it)}承認待ち（あなたの番）`}
   : it._rc ? {cls:rcCls(it), gl:'↺', text:rcShort(it), tip:rcText(it)} : null;
 const openBadgeHTML = it => it._open
   ? `<span class="sbadge open" title="未対応の指摘 ${esc(openSplit(it, false) || it._open + '件')}">💬 ${it._open}</span>` : '';
@@ -3421,7 +3535,7 @@ function flagsHTML(it){
    言葉は詳細画面と同じ actWords を通す——検証用の動画は「この方向でOK」（#523）。 */
 const quickOkHTML = it => {
   if (!it._rv) return '';
-  const w = actWords(it), gname = GATE_LABEL[it._rv] || it._rv;
+  const w = actWords(it), gname = gateName(it._rv, it);
   const lb = isPilotItem(it) ? w.approve() : '承認';
   return `<button class="okbtn" data-act="approve-quick" data-key="${it.id}|${esc(it._rv)}"
       data-label="${esc(lb)}" data-donelabel="${esc(w.approved)}"
@@ -3431,13 +3545,14 @@ function progressCells(it){
   const cur = displayIdx(it), done = it.stage === 'posted';
   return PSTAGES.map((s, j) => {
     const pos = j === 0 ? ' first' : (j === PSTAGES.length - 1 ? ' last' : '');
-    let cls = 'todo', gl = '·', tt = `${s.name} 未到達`;
-    if (cur < 0) { cls = 'todo'; gl = '·'; tt = `${s.name}（没）`; }
-    else if (done || j < cur) { cls = 'done'; gl = '✓'; tt = `${s.name} 完了`; }
+    const nm = stageName(s, it);
+    let cls = 'todo', gl = '·', tt = `${nm} 未到達`;
+    if (cur < 0) { cls = 'todo'; gl = '·'; tt = `${nm}（没）`; }
+    else if (done || j < cur) { cls = 'done'; gl = '✓'; tt = `${nm} 完了`; }
     else if (j === cur) {
-      if (it._rv)      { cls = 'rv'; gl = '●'; tt = `${GATE_LABEL[it._rv]}承認待ち（あなたの番）`; }
+      if (it._rv)      { cls = 'rv'; gl = '●'; tt = `${gateName(it._rv, it)}承認待ち（あなたの番）`; }
       else if (it._rc) { cls = rcCls(it); gl = '↺'; tt = rcText(it); }
-      else             { cls = 'work'; gl = '●'; tt = `${AI_TAG}${s.work}`; }
+      else             { cls = 'work'; gl = '●'; tt = `${AI_TAG}${stageWork(s, it)}`; }
     }
     return `<td class="st${pos}"><span class="mark ${cls}" title="${esc(tt)}">${gl}</span></td>`;
   }).join('');
@@ -3626,11 +3741,11 @@ function stageBadge(it){
   if (it.stage === 'idea')    return {cls:'idea', gl:'○', text:'ネタ案'};
   /* 投稿待ちは誰も作業していない（公開時刻待ち）ので【AI】は付けない */
   if (it.stage === 'queue')   return {cls:'work', gl:'●', text:'投稿待ち'};
-  return {cls:'work', gl:'●', text:'AI作業中', tip:`${AI_TAG}${PSTAGES[displayIdx(it)].work}`};
+  return {cls:'work', gl:'●', text:'AI作業中', tip:`${AI_TAG}${stageWork(PSTAGES[displayIdx(it)], it)}`};
 }
 function progressDots(it){
   const cur = displayIdx(it), done = it.stage === 'posted';
-  const curLabel = cur < 0 ? (it.stage === 'triage' ? '仕分け待ち' : '没') : PSTAGES[cur].name;
+  const curLabel = cur < 0 ? (it.stage === 'triage' ? '仕分け待ち' : '没') : stageName(PSTAGES[cur], it);
   return `<div class="dotrow" role="img" aria-label="工程 ${esc(curLabel)}">` + PSTAGES.map((s, j) => {
     let cls = 'todo', gl = '·';
     if (cur >= 0 && (done || j < cur)) { cls = 'done'; gl = '✓'; }
@@ -3638,7 +3753,7 @@ function progressDots(it){
       cls = it._rv ? 'rv' : (it._rc ? rcCls(it) : 'work'); gl = it._rc && !it._rv ? '↺' : '●';
     }
     const here = cur >= 0 && j === cur;
-    return `<span class="pstep"><span class="dot ${cls}" title="${esc(s.name)}">${gl}</span>` +
+    return `<span class="pstep"><span class="dot ${cls}" title="${esc(stageName(s, it))}">${gl}</span>` +
       `<span class="plbl${here ? ' cur' : ''}">${esc(s.short)}</span></span>`;
   }).join('') + `</div>`;
 }
@@ -3811,11 +3926,11 @@ function timelineRows(it){
     } else if (j === cur) {
       mk = it._rv ? 'rv' : (it._rc ? rcCls(it) : 'work'); cls = '';
       const since = fmtDate(it.status_changed_at);
-      dt = (it._rv ? '承認待ち' : it._rc ? rcShort(it) : `${AI_TAG}${s.work}`) + (since ? `（${since}〜）` : '');
+      dt = (it._rv ? '承認待ち' : it._rc ? rcShort(it) : `${AI_TAG}${stageWork(s, it)}`) + (since ? `（${since}〜）` : '');
     }
     return `<div class="row${cls}"><span class="mark ${mk}">${
       mk === 'done' ? '✓' : (mk === 'todo' ? '·' : (mk.startsWith('rc') ? '↺' : '●'))}</span>
-      <span class="nm">${s.name}</span><span class="dt">${esc(dt)}</span></div>`;
+      <span class="nm">${esc(stageName(s, it))}</span><span class="dt">${esc(dt)}</span></div>`;
   }).join('');
 }
 
@@ -3832,7 +3947,7 @@ const foldHTML = (label, body, sub) =>
    断られたときの描き直し、没の2段階）は動かしていない——置き場所だけを変えている。 */
 function detailHTML(it){
   const m = chMeta(it.channel), cur = displayIdx(it);
-  const curName = cur < 0 ? (it.stage === 'triage' ? '仕分け待ち' : '没') : PSTAGES[cur].name;
+  const curName = cur < 0 ? (it.stage === 'triage' ? '仕分け待ち' : '没') : stageName(PSTAGES[cur], it);
   const rvGate = it._rv || it._rc;
   const evs = threadOf(it.id);
 
@@ -3841,7 +3956,7 @@ function detailHTML(it){
      ゲートが1つしか無い動画（02の完成だけ）では毎行に同じ札を出しても読み分けに使えない */
   const showGate = new Set(evs.map(e => e.gate)).size > 1;
   const you   = evs.length ? youHTML(evs, showGate, it) : '';
-  const ailog = evs.length ? aiLogHTML(evs) : '';
+  const ailog = evs.length ? aiLogHTML(evs, it) : '';
 
   /* 承認待ちなら「決める枠」（ゲート名＋版・変えたこと・メモ・入力欄）と下端のバー。
      承認待ちでなければ現状を言う1行だけ。文言は差し戻しの出どころで分ける（M051）——
@@ -3850,15 +3965,19 @@ function detailHTML(it){
     ? decideHTML(it, it._rv, changeLines(evs))
     : `<div class="decide">${it._rc
         ? (rcAiOnly(it)
-            ? `<div class="dstate rcai">↺ AI審査の指摘で${GATE_LABEL[it._rc]}を作り直しています。あなたの操作は要りません。</div>`
-            : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${GATE_LABEL[it._rc]}）。直り次第、新しい版で出し直します。</div>`)
+            ? `<div class="dstate rcai">↺ AI審査の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
+            : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${esc(gateName(it._rc, it))}）。直り次第、新しい版で出し直します。</div>`)
         : `<div class="dstate">● いまは「${esc(curName)}」の工程です。</div>`}</div>`;
 
   /* 左列＝いま見るべき素材（承認待ち／AI修正中のゲートのもの）。台本(.md)・絵コンテ(画像)・
-     完成(mp4) のどれでも assetsHTML が同じ形で描く。素材が無いゲートでは左列を畳んで1列にする */
+     完成(mp4) のどれでも assetsHTML が同じ形で描く。素材が無いゲートでは左列を畳んで1列にする。
+     進行係を通らない動画は承認ポイントに依らず動画の置き場1つを読む（空なら旧い置き場・#569）。
+     data-gate は承認ポイント（承認・指摘に渡す）、data-dirs は読みに行く置き場の順番 */
+  const dirsAttr = offDispatcherItem(it) && rvGate
+    ? ` data-dirs="${esc(assetDirsOf(it, rvGate).join(','))}"` : '';
   const stage = rvGate ? `<div class="dstage">
       <div class="assets" data-assets="${esc(it.id + '|' + rvGate)}" data-ch="${esc(it.channel)}"
-           data-seq="${esc(it.seq)}" data-gate="${esc(rvGate)}">
+           data-seq="${esc(it.seq)}" data-gate="${esc(rvGate)}"${dirsAttr}>
         <div class="loadbox">素材を読み込み中…</div></div></div>` : '';
 
   /* ネタの仕分け（#314）。ゲートを持たないので決める枠とは排他 */
@@ -3970,26 +4089,34 @@ async function openDetail(vid, gate){
   checkForUpdate();             /* 詳細を開くときにも新しい版が出ていないか確かめる（#523） */
 }
 
-/* この動画を「完成のシーン素材つきの画面」で開くか（#519 段2）。
-   ・見ているゲートが完成であること（台本・絵コンテの承認待ちは従来の画面）
-   ・その版の mp4 が Storage にあること（無ければ従来の画面）
-   ネタの仕分け・没・完成に到達していない動画は対象外。 */
+/* この動画を「シーン素材つきの画面」で開くか（#519 段2 → #523 で絵コンテにも → #569）。
+   ・見ている承認ポイントが完成か絵コンテ（モック＋静止画）であること（台本は従来の画面）
+   ・主画面に出せる動画（決まりの名前の mp4・案・通しのモック）が置き場にあること
+   ネタの仕分け・没は対象外。返すのは { gate:承認ポイント, dir:読む置き場, kind }。 */
 async function useSceneView(it){
   if (!it || it.stage === 'triage' || it.stage === 'dropped') return null;
   const rv = it._rv || it._rc;
-  /* いま見ている承認ポイント。状態を持っていなければ、完成まで進んでいる動画だけ対象 */
-  const gate = rv || (displayIdx(it) >= GATE_COL.final ? 'final' : null);
+  const one = offDispatcherItem(it);
+  /* いま見ている承認ポイント。状態を持っていなければ、完成まで進んでいる動画だけ対象。
+     進行係を通らない動画は段階に関係なく1つの画面なので、状態が無くても置き場を見に行く
+     （呼び名だけに使う承認ポイントは、完成まで進んでいれば完成・手前ならモック＋静止画・#569） */
+  let gate = rv || (displayIdx(it) >= GATE_COL.final ? 'final' : null);
+  if (!gate && one) gate = 'storyboard';
   if (gate !== 'final' && gate !== 'storyboard') return null;
   if (gate === 'final' && displayIdx(it) < GATE_COL.final) return null;
-  try {
-    const a = await loadAssets(it.channel, it.seq, gate);
-    const files = a.files || [];
-    if (svVariants(files).list.length) return { gate, kind:'variant' };
-    if (svMainFile(files, gate))  return { gate, kind:'video' };
-    const mat = sceneMaterials(files, '');
-    if (mat && mat.ref_video_full) return { gate, kind:'ref' };
-    return null;
-  } catch (_) { return null; }
+  /* 読む置き場（Storage のフォルダ）は承認ポイントと別に決める。02・03 は承認ポイントのフォルダ、
+     進行係を通らない動画は動画の置き場1つ → 空なら旧い置き場（storyboard/） */
+  for (const dir of assetDirsOf(it, gate)) {
+    try {
+      const a = await loadAssets(it.channel, it.seq, dir);
+      const files = a.files || [];
+      if (svVariants(files, one, dir).list.length) return { gate, dir, kind:'variant' };
+      if (svMainFile(files, dir, one))  return { gate, dir, kind:'video' };
+      const mat = sceneMaterials(files, '');
+      if (mat && mat.ref_video_full) return { gate, dir, kind:'ref' };
+    } catch (_) { /* 読めなければ次の置き場（どれも駄目なら従来の画面） */ }
+  }
+  return null;
 }
 
 /* 一覧へ戻す（履歴は操作しない）。scrollY 指定があればそこへ、無ければ開いた時点へ復元 */
@@ -4233,7 +4360,9 @@ async function mountAssets(node){
   if (!node) return;
   const { ch, seq, gate } = node.dataset;
   try {
-    const a = await loadAssets(ch, seq, gate);
+    /* 読む置き場: data-dirs（候補の順番）→ data-dir（決め打ち）→ 承認ポイントのフォルダ（02・03・#569） */
+    const a = node.dataset.dirs ? await loadAssetsFirst(ch, seq, node.dataset.dirs.split(','))
+      : await loadAssets(ch, seq, node.dataset.dir || gate);
     if (!node.isConnected) return;
     /* 素材つきの画面は主画面の動画1本だけを組み立てる（#519 段2/段3 → #523 で絵コンテにも） */
     if (node.dataset.sv === '1') { await armScene(node, a.files); return; }
@@ -4268,6 +4397,9 @@ const MATERIAL_FOLDS = [
 function materialsHTML(it, rvGate){
   const cur = displayIdx(it);
   if (cur < 0) return '';                 /* 没・ネタの仕分け待ちは工程の並びの外 */
+  /* 進行係を通らない動画はレビュー節（左列）が既に動画の置き場1つを出している（#569）ので、
+     同じ置き場を畳みにもう一度並べない */
+  if (rvGate && offDispatcherItem(it)) return '';
   return MATERIAL_FOLDS
     .filter(g => g.gate !== rvGate && cur >= GATE_COL[g.gate])
     .map(g => {
@@ -5275,10 +5407,10 @@ function sceneMaterials(files, videoName){
 }
 /* 素材表の中の相対パスをまとめて署名URLにする（1時間で切れるのは他の素材と同じ扱い）。
    まとめて発行する API を使うので、シーン数ぶんの往復にはならない */
-async function svSign(ch, seq, gate, rels, sub){
-  /* sub＝案のフォルダ（variants/a）。案の目録の中のパスは「その json と同じフォルダから」なので、
-     署名を出す起点をそこへずらす（#523） */
-  const base = assetPath(ch, seq, gate) + (sub ? '/' + String(sub).replace(/^\/+|\/+$/g, '') : '');
+async function svSign(ch, seq, dir, rels, sub){
+  /* dir＝置き場（承認ポイントではない・#569）。sub＝案のフォルダ（variants/a）。案の目録の中のパスは
+     「その json と同じフォルダから」なので、署名を出す起点をそこへずらす（#523） */
+  const base = assetPath(ch, seq, dir) + (sub ? '/' + String(sub).replace(/^\/+|\/+$/g, '') : '');
   const uniq = [...new Set((rels || []).filter(Boolean))];
   const out = {};
   if (!uniq.length) return out;
@@ -5309,7 +5441,7 @@ function svFlowSub(it){
   if (it._rv) return '承認待ち';
   if (it._rc) return rcShort(it);
   const i = displayIdx(it);
-  return i < 0 ? '' : AI_TAG + PSTAGES[i].work;
+  return i < 0 ? '' : AI_TAG + stageWork(PSTAGES[i], it);
 }
 function svFlowHTML(it){
   const cur = svFlowAt(it);
@@ -5366,9 +5498,12 @@ function svPrevNotes(it, evs, gate){
 /* ── 画面の組み立て ─────────────────────────────────────────────── */
 function sceneDetailHTML(it, plan){
   const gate = (plan && plan.gate) || 'final';
-  const gname = GATE_LABEL[gate] || gate;
+  /* 置き場（Storage のフォルダ）は承認ポイントと別（#569）。無ければ承認ポイントのフォルダ（02・03） */
+  const dir = (plan && plan.dir) || gate;
+  const gname = gateName(gate, it);
+  const mainName = svMainTitle(it, gate);
   const m = chMeta(it.channel), cur = displayIdx(it);
-  const curName = cur < 0 ? '—' : PSTAGES[cur].name;
+  const curName = cur < 0 ? '—' : stageName(PSTAGES[cur], it);
   const evs = threadOf(it.id);
   const sub = latestSub(evs);
   const ver = subRevLabel(sub);
@@ -5385,8 +5520,8 @@ function sceneDetailHTML(it, plan){
     ? decideHTML(it, gate, [], barFacts, true)
     : `<div class="decide">${it._rc
         ? (rcAiOnly(it)
-            ? `<div class="dstate rcai">↺ AI審査の指摘で${GATE_LABEL[it._rc]}を作り直しています。あなたの操作は要りません。</div>`
-            : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${GATE_LABEL[it._rc]}）。直り次第、新しい版で出し直します。</div>`)
+            ? `<div class="dstate rcai">↺ AI審査の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
+            : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${esc(gateName(it._rc, it))}）。直り次第、新しい版で出し直します。</div>`)
         : `<div class="dstate">● いまは「${esc(curName)}」の工程です。ここは見るだけの画面です。</div>`}</div>`;
 
   return `<div class="dview sview${it._rv === gate ? ' hasbar' : ''}" role="region"
@@ -5419,7 +5554,7 @@ function sceneDetailHTML(it, plan){
           <div class="sv-viewswitch" data-sv-switch hidden>
             <div class="seg">
               <button class="segbtn" type="button" data-svact="view-final" aria-pressed="true"
-                data-sv-segmain>${esc(gname)}の動画</button>
+                data-sv-segmain>${esc(mainName)}</button>
               <button class="segbtn" type="button" data-svact="view-ref" aria-pressed="false" data-sv-segref>参照動画</button>
             </div>
             <button class="btn sm cmpbtn" type="button" data-svact="cmp" aria-pressed="false">並べて比較</button>
@@ -5434,7 +5569,7 @@ function sceneDetailHTML(it, plan){
           </div>
           <div class="sv-screens">
             <div class="sv-screen final" data-sv-screenfinal>
-              <div class="sv-scrhd"><span class="scrttl" data-sv-mainttl>${esc(gname)}の動画</span>
+              <div class="sv-scrhd"><span class="scrttl" data-sv-mainttl>${esc(mainName)}</span>
                 <span class="scrsub" data-sv-finallbl></span></div>
               <div class="loadbox" data-sv-finalslot>素材を読み込み中…</div>
             </div>
@@ -5481,7 +5616,7 @@ function sceneDetailHTML(it, plan){
       <button class="btn ghost" type="button" data-svact="pick-cancel">やめる</button>
     </div>
     <div class="assets" data-assets="${esc(it.id + '|' + gate)}" data-sv="1" data-ch="${esc(it.channel)}"
-         data-seq="${esc(it.seq)}" data-gate="${esc(gate)}" hidden></div>
+         data-seq="${esc(it.seq)}" data-gate="${esc(gate)}" data-dir="${esc(dir)}" hidden></div>
     <div class="sv-lbox" data-sv-lbox hidden>
       <img data-sv-lboximg alt="">
       <div class="lcap" data-sv-lboxcap>—</div>
@@ -6112,27 +6247,47 @@ function svPaintBar(){
 /* ── 主画面の動画と案（#523）─────────────────────────────────────────
    主画面に出すのは「その承認ポイントのフォルダの {承認ポイント}_v{NN}.mp4」。無ければ
    目録の「通しの参照動画」（ref_video_full）。どちらも無ければこの画面は使わない。 */
-function svMainFile(files, gate){
-  const re = new RegExp('^' + gate + '_v(\\d+)\\.[A-Za-z0-9]+$', 'i');
+/* dir＝置き場のフォルダ名（動画の名前の頭もこれ: final/final_v01.mp4・storyboard/storyboard_v01.mp4）。
+   latest＝進行係を通らない動画（#569）。置き場が1つなので、別の版の提出が同じフォルダに並ぶ——
+   **置き場の中でいちばん新しい版**（動画と目録の版の大きい方）の動画だけを主画面にする。
+   その版が目録だけ（モックだけの提出）なら null を返し、その版の通しのモックを主画面に借りる。
+   古い版の完成動画を新しい版のモックより先に出さないため */
+function svMainFile(files, dir, latest){
+  const re = new RegExp('^' + dir + '_v(\\d+)\\.[A-Za-z0-9]+$', 'i');
   let best = null, bv = -1;
   for (const f of files) {
     if (f.kind !== 'video' || !f.url) continue;
     const m = re.exec(f.name || '');
     if (m && Number(m[1]) > bv) { bv = Number(m[1]); best = f; }
   }
-  if (best) return best;
+  if (best) return (latest && svNewestMaterialsVer(files) > bv) ? null : best;
   /* 完成だけは 02・03 の従来どおり「決まりの名前が無ければ最後の動画」を使う。
      絵コンテは決まりの名前だけを候補にする——**関係のない動画が通しのモックより先に出る**のを
      防ぐため（#523 のレビュー指摘8）。ここで null を返せば ref_video_full へ落ちる */
-  if (gate !== 'final') return null;
+  if (dir !== 'final') return null;
   const vids = files.filter(f => f.kind === 'video' && f.url);
   return vids.length ? vids[vids.length - 1] : null;
+}
+/* 置き場の直下の目録（materials_vNN.json）の最大の版。無ければ -1 */
+function svNewestMaterialsVer(files){
+  let v = -1;
+  for (const f of files) { const m = RE_MATERIALS.exec(f.name || ''); if (m && Number(m[1]) > v) v = Number(m[1]); }
+  return v;
+}
+/* 置き場の直下の「案なしの提出」の最大の版（決まりの名前の動画か目録）。無ければ -1 */
+function svNewestTopVer(files, dir){
+  const re = new RegExp('^' + dir + '_v(\\d+)\\.[A-Za-z0-9]+$', 'i');
+  let v = svNewestMaterialsVer(files);
+  for (const f of files) { const m = f.kind === 'video' && re.exec(f.name || ''); if (m && Number(m[1]) > v) v = Number(m[1]); }
+  return v;
 }
 /* ファイル名の中の版（`…_v08.mp4` → 8）。無ければ null */
 const verOfName = name => { const m = /_v(\d+)(?:\.|$)/i.exec(String(name || '')); return m ? Number(m[1]) : null; };
 /* 案の索引（同じ検証の複数の案）。索引の**版**も返す——案の目録と動画はこの版で揃える。
-   無ければ {ver:null, list:[]}＝今までどおりタブは出ない */
-function svVariants(files){
+   無ければ {ver:null, list:[]}＝今までどおりタブは出ない。
+   latest（進行係を通らない動画・#569）のときは、索引より新しい版の「案なしの提出」が置き場の
+   直下にあれば索引を使わない（同じ版なら、提出の入口が案なしのときに空の索引で上書きする） */
+function svVariants(files, latest, dir){
   let best = null, bv = -1;
   for (const f of files) {
     const m = RE_VARIANTS.exec(f.name || '');
@@ -6140,6 +6295,7 @@ function svVariants(files){
     if (Number(m[1]) > bv) { bv = Number(m[1]); best = f.text; }
   }
   if (best == null) return { ver: null, list: [] };
+  if (latest && svNewestTopVer(files, dir || ONE_DIR) > bv) return { ver: null, list: [] };
   try {
     const o = JSON.parse(best);
     if (!o || Number(o.v) !== 1 || !Array.isArray(o.variants)) return { ver: null, list: [] };
@@ -6158,16 +6314,17 @@ const svVariantLabel = key => {
 
 /* 1つの「見せるもの」（目録・署名URL・主画面の動画）をそろえる。
    案のタブが無ければ動画と同じフォルダから、あれば案のフォルダから読む。 */
-async function svSource(ch, seq, gate, files, v, ver){
+/* dir＝置き場（承認ポイントではない・#569）。latest＝進行係を通らない動画（置き場の中の最新の版だけ） */
+async function svSource(ch, seq, dir, files, v, ver, latest){
   const out = { mat:null, urls:{}, videoUrl:null, videoName:null, mainLabel:null };
   if (!v) {
-    const f = svMainFile(files, gate);
+    const f = svMainFile(files, dir, latest);
     out.mat = sceneMaterials(files, f ? f.name : '');
     if (f) { out.videoUrl = f.url; out.videoName = f.name; }
   } else {
     /* 案の目録は**索引と同じ版**だけを使う（`variants_v08.json` なら `materials_v08.json`）。
        いちばん新しいものを拾うと、古い動画と新しい目録が組み合わさる（#523 のレビュー指摘3） */
-    const base = assetPath(ch, seq, gate) + '/' + v.dir;
+    const base = assetPath(ch, seq, dir) + '/' + v.dir;
     let name = null;
     try {
       const { data } = await sb.storage.from(ASSET_BUCKET)
@@ -6185,7 +6342,7 @@ async function svSource(ch, seq, gate, files, v, ver){
     }
     /* 動画も索引の video だけ。名前に版が入っていて索引の版と違うものは使わない */
     if (v.video && !(verOfName(v.video) != null && ver != null && verOfName(v.video) !== Number(ver))) {
-      const u = await svSign(ch, seq, gate, [v.video]);
+      const u = await svSign(ch, seq, dir, [v.video]);
       out.videoUrl = u[v.video] || null;
       out.videoName = v.video.split('/').pop();
     }
@@ -6198,7 +6355,7 @@ async function svSource(ch, seq, gate, files, v, ver){
       for (const r of s.ref_videos) rels.push(r.src);
     }
     if (out.mat.ref_video_full) rels.push(out.mat.ref_video_full.src);
-    out.urls = await svSign(ch, seq, gate, rels, v ? v.dir : null);
+    out.urls = await svSign(ch, seq, dir, rels, v ? v.dir : null);
     /* 主画面の動画がまだ無ければ、通しの参照動画を主画面にする（左の見出しは目録の label） */
     if (!out.videoUrl && out.mat.ref_video_full) {
       out.videoUrl = out.urls[out.mat.ref_video_full.src] || null;
@@ -6215,12 +6372,15 @@ async function svSource(ch, seq, gate, files, v, ver){
    ⚠️ ショットごとの参照動画がある回は入れ替えない——右の列はそちらが使うので潰さない。
    `hasRefVideo` が決まるのは尺の照合のあと（apply）なので、決まるまでは今までどおりの並び。 */
 const svBorrowed = () => !!(sv && sv.mainLabel && sv.hasRefVideo === false);
+/* 主画面の動画の見出し（目録の label を借りていないとき）。02・03 は「完成の動画」。
+   進行係を通らない動画は置き場が1つで、主画面は承認ポイントに依らず「作った映像」なので
+   「映像」と書く（「モック＋静止画の動画」「絵コンテの動画」は意味が取れない・#569） */
+const svMainTitle = (it, gate) => offDispatcherItem(it) ? '映像' : gateName(gate, it) + 'の動画';
 
 /* 動画2本の枠の見出し。借りている状態では左右の見出しも入れ替える（中身と同じ順に読めるように） */
 function svPaintMainHead(){
   if (!sv) return;
-  const gname = GATE_LABEL[sv.gate] || sv.gate;
-  const label = sv.mainLabel || (gname + 'の動画');
+  const label = sv.mainLabel || svMainTitle(sv.it, sv.gate);
   const borrow = svBorrowed();
   /* 借りているときの左の見出し。「絵コンテの動画」は意味が取れない（オーナー指摘 2026-09-22）——
      ここに入るのは、これから作る映像なので「映像」と書く */
@@ -6281,7 +6441,7 @@ async function svSwitchVariant(key){
   const stale = () => sv !== mine || mine.switchSeq !== token || !mine.root.isConnected;
   const keep = { t: sv.ctl.video.currentTime, n: sv.curN };
   svStopBoth();
-  const src = await svSource(mine.ch, mine.seq, mine.gate, mine.files, v, mine.variantsVer);
+  const src = await svSource(mine.ch, mine.seq, mine.dir, mine.files, v, mine.variantsVer, mine.latest);
   if (stale()) return;
   if (!src.videoUrl) {
     mine.badVariants.add(key);
@@ -6313,22 +6473,26 @@ async function armScene(node, files){
   if (!root || !node.isConnected) return;
   const q = s => root.querySelector(s);
   const ch = node.dataset.ch, seq = node.dataset.seq, gate = node.dataset.gate;
+  /* gate＝承認ポイント（承認・指摘・版に使う）、dir＝置き場（Storage のフォルダ・#569）。
+     02・03 は同じもの。進行係を通らない動画は置き場が1つなので別になりうる */
+  const dir = node.dataset.dir || gate;
+  const latest = offDispatcherItem(curItem);
   const fail = msg => { const s = q('[data-sv-finalslot]'); if (s) s.textContent = msg; };
 
   /* 案があれば**読める最初の案**を開く。読めなかった案は控えておいてタブを押せなくする。
      全部読めなければ索引が無いのと同じ扱いへ退避する（#523 のレビュー指摘5） */
-  const vx = svVariants(files);
+  const vx = svVariants(files, latest, dir);
   const bad = new Set();
   let variants = vx.list, variant = null, src = null;
   for (const v of variants) {
-    const s = await svSource(ch, seq, gate, files, v, vx.ver);
+    const s = await svSource(ch, seq, dir, files, v, vx.ver, latest);
     if (!root.isConnected || !node.isConnected) return;
     if (s.videoUrl) { src = s; variant = v.key; break; }
     bad.add(v.key);
   }
   if (!src) {
     if (variants.length) { variants = []; bad.clear(); }   /* 索引なしと同じ扱いへ退避 */
-    src = await svSource(ch, seq, gate, files, null);
+    src = await svSource(ch, seq, dir, files, null, null, latest);
     if (!root.isConnected || !node.isConnected) return;
   }
   if (!src.videoUrl) { fail('動画を読み込めませんでした'); return; }
@@ -6353,7 +6517,7 @@ async function armScene(node, files){
   big.className = 'bigplay'; big.setAttribute('aria-hidden', 'true'); big.hidden = true;
   vbox.appendChild(big);
 
-  sv = { root, q, it: curItem, ctl, mode, ch, seq, gate, files,
+  sv = { root, q, it: curItem, ctl, mode, ch, seq, gate, dir, latest, files,
          variants, variant, variantsVer: vx.ver, badVariants: bad, switchSeq: 0,
          watchedBy: {},
          refvid: q('[data-sv-refvid]'), refSrc: null, refLoadOK: true, refIdx: 0,
@@ -6546,7 +6710,7 @@ const actWords = it => isPilotItem(it) ? ACT_WORDS.pilot : ACT_WORDS.normal;
 
 function decideHTML(it, gate, changes, barFacts, plain){
   const key = it.id + '|' + gate;
-  const gname = GATE_LABEL[gate] || gate;
+  const gname = gateName(gate, it);
   const w = actWords(it), pilot = isPilotItem(it);
   /* 検証用の動画は先の工程が決まっていないので、進む先の注意書きは出さない（#523） */
   const caution = pilot ? null : (GATE_CAUTION[gate] || null);
@@ -6865,8 +7029,11 @@ async function submitComment(box, key){
    一覧の行からも詳細のボタンからも、押した1回で承認まで通す。押した瞬間は DB へ
    書かず、数秒の猶予をおいてから書く（その間は「取り消す」で無かったことにできる）。
    詳細でメモを開いて書いてあれば、その内容を添えて承認する。 */
+/* 動画の id から行を引く（承認ポイントの呼び名を決めるため・#569）。一覧の索引に無ければ開いている動画 */
+const itemOfVid = vid => store.byId.get(Number(vid))
+  || (curItem && curItem.id === Number(vid) ? curItem : null);
 async function approveNow(vid, gate, note, rev){
-  const gname = GATE_LABEL[gate] || gate;
+  const gname = gateName(gate, itemOfVid(vid));
   const pilot = isPilotItem(store.byId.get(Number(vid)));
   /* 見ていた提出物の版（押した時点の値）を添える。裏で新しい版が提出されていたら DB が P0003 で断る（073・#502） */
   const { data, error } = await sb.rpc('approve_gate',
@@ -6913,7 +7080,7 @@ function markApproved(vid, gate, done){
 }
 function quickApprove(key, btn){
   const [vidS, gate] = String(key).split('|');
-  const gname = GATE_LABEL[gate] || gate;
+  const gname = gateName(gate, itemOfVid(vidS));
   const w = actWords(store.byId.get(Number(vidS)));
   /* 指摘を書いたまま承認を押したら1回だけ聞く。押し間違いなら戻れるし、
      わざと「送らずに承認」したい回もあるので止めはしない（#509 段4） */
@@ -6937,8 +7104,9 @@ function quickApprove(key, btn){
   const note = ((ta && ta.value) || '').trim();
   if (btn) { btn.disabled = true; btn.textContent = w.approved; }
   const rev = submittedRevOf(vidS, gate);
+  const oit = store.byId.get(Number(vidS)) || curItem || {};
   outboxPut({ vid: Number(vidS), gate, note, rev, uid: state.user && state.user.id,
-              seq: (store.byId.get(Number(vidS)) || curItem || {}).seq || null, at: Date.now() });
+              seq: oit.seq || null, ch: oit.channel || null, at: Date.now() });
   approveNow(vidS, gate, note, rev);
 }
 
@@ -7017,8 +7185,8 @@ const subVer = body => {
   const m = /\bv(\d{1,3})\b/i.exec(String(body || '').split('\n')[0] || '');
   return m ? 'v' + m[1] : '';
 };
-function aiSummaryLine(e){
-  const g = GATE_LABEL[e.gate] || e.gate || '—';
+function aiSummaryLine(e, it){
+  const g = e.gate ? gateName(e.gate, it) : '—';
   if (e.kind === 'request_changes') return aiChangesLine(e);
   if (e.kind === 'approve')  { const r = aiRoleOf(e.author); return `承認印（${g}${r ? '・' + r : ''}）`; }
   if (e.kind === 'request_review') {
@@ -7157,20 +7325,20 @@ function youHTML(evs, showGate, it){
     <div class="cmt"><div class="bub">
       <div class="who"><span>${esc(fmtDT(e.created_at) || '')}</span>${
         e.revision == null ? '' : `<span>（v${esc(String(e.revision).padStart(2, '0'))}）</span>`}${
-        showGate ? `<span class="gatechip">${esc(GATE_LABEL[e.gate] || e.gate || '—')}</span>` : ''}</div>
+        showGate ? `<span class="gatechip">${esc(e.gate ? gateName(e.gate, it) : '—')}</span>` : ''}</div>
       ${o ? `<div class="ctxt">${youNotesHTML(o, live)}</div>`
           : `<div class="ctxt mdbody">${mdToHTML(e.body)}</div>`}
     </div></div>`;
   }).join('')}</div></div>`;
 }
-function aiLogHTML(evs){
+function aiLogHTML(evs, it){
   const rows = newestFirst(evs.filter(e => isAiAuthor(e.author) || e.kind === 'request_review'));
   if (!rows.length) return '';
   return `<details class="dsec aifold">
       <summary class="dsum">AI の記録<span class="n">（${rows.length}件・審査・機械測定・提出）</span></summary>
       <div class="ailog">${rows.map(e => `<div class="ailine">
         <span class="d">${esc(fmtMD(e.created_at))}</span>
-        <span class="t">${esc(aiSummaryLine(e))}</span></div>`).join('')}</div>
+        <span class="t">${esc(aiSummaryLine(e, it))}</span></div>`).join('')}</div>
     </details>`;
 }
 /* ⚠️ この2つは detailHTML が別々に置く——「あなたの指摘」は右列にそのまま、
@@ -9192,7 +9360,7 @@ async function replayApproveOutbox(){
     const { data, error } = await sb.rpc('approve_gate',
       { p_video_id: e.vid, p_gate: e.gate, p_note: e.note || null, p_expected_revision: e.rev });
     outboxDrop(e.vid, e.gate);
-    const who = e.seq || `#${e.vid}`, gname = GATE_LABEL[e.gate] || e.gate;
+    const who = e.seq || `#${e.vid}`, gname = gateName(e.gate, { seq: e.seq, channel: e.ch });
     if (error) msgs.push(`前回押した ${who} の${gname}は記録できませんでした: ${rpcErrText(error, 'approve')}`);
     else if (!(data && data.already_approved)) msgs.push(`前回押した ${who} の${gname}の承認を記録しました`);
   }
