@@ -1109,7 +1109,10 @@ tr.dropped td{color:var(--muted)}
 .lsthead{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.07em;
   background:var(--surface-2); border-bottom:1px solid var(--border)}
 /* 列の幅は px で書く（見出しの行は字が小さいので、em だと列の位置がずれる） */
-.rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px 136px minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
+/* 番組の列は番組の数（--chn・JS が入れる）× 1欄の幅（--chw） */
+.lst{--chn:5; --chw:44px}
+.rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px calc(var(--chn) * var(--chw)) minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
+.lsthead.rl{align-items:end}
 .alrow,.lsthead.al{grid-template-columns:64px minmax(0,1fr) 84px 84px 14px; align-items:center}
 .lst details{border-bottom:1px solid var(--border-2)}
 .lst details:last-child{border-bottom:none}
@@ -1122,7 +1125,19 @@ tr.dropped td{color:var(--muted)}
 .rlrow .no{font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink-2)}
 .rlrow .sb,.alrow .nm{font-weight:650; font-size:var(--fs-sm); overflow-wrap:anywhere}
 .rlrow .bd{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere}
-/* 番組の列。番組の名前の途中では折り返さず、「・」のあとで折り返す */
+/* 番組の列（#572・オーナー 2026-09-30 17:09）。900px 以上は見出しが2段（上に「番組」、下に番組の短い呼び名）で、
+   行は当てはまる番組の欄に ✓（.chm）。899px 以下は短い呼び名を「・」でつなぐ（.chs）。
+   .chs は 900px 以上でも読み上げ用に残す（見た目は消す）。5欄は見出しと行で同じ幅の格子なので左端がそろう */
+.lsthead.rl .hchg{display:block; text-align:center; padding-bottom:3px; margin-bottom:5px; border-bottom:1px solid var(--border)}
+.lsthead.rl .hchm,.rlrow .chm{display:grid; grid-template-columns:repeat(var(--chn),var(--chw)); justify-items:center}
+.lsthead.rl .hchm{letter-spacing:0}
+.lsthead.rl .hch1{display:none}
+.rlrow .chm{font-size:var(--fs-sm); font-weight:700; color:var(--ink-2); line-height:var(--lh-tight)}
+.rlrow .chm>span:empty::before{content:"\a0"}
+@media (min-width:900px){
+  .rlrow .chs{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
+}
+/* 番組の名前の途中では折り返さず、「・」のあとで折り返す */
 .rlrow .chs{font-size:var(--fs-xs); color:var(--ink-2); line-height:var(--lh-tight)}
 .rlrow .chs span{white-space:nowrap}
 /* 種類ごとの色（#572）。行（summary）だけを塗り、開いた中身は塗らない。値は :root の --rk-* */
@@ -1156,10 +1171,11 @@ tr.dropped td{color:var(--muted)}
 .athumb img{display:block; width:100%; height:100%; object-fit:cover}
 .athumb.none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2);
   font-size:var(--fs-2xs); cursor:inherit; text-align:center}
-/* 中くらいの幅では、番組の列を足したぶん本文が細くなりすぎるので、本文を2行目へ降ろす（見出しの行は残す） */
+/* 中くらいの幅では、番組の列を短い呼び名に戻し（見出しは「番組」1つ）、本文を2行目へ降ろす（見出しの行は残す） */
 @media (max-width:899px){
   .rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px 136px minmax(0,1fr) 14px}
-  .lsthead.rl .hbd{display:none}
+  .lsthead.rl .hbd,.lsthead.rl .hch,.rlrow .chm{display:none}
+  .lsthead.rl .hch1{display:block}
   .rlrow .bd{grid-column:1 / -1; grid-row:2}
 }
 @media (max-width:640px){
@@ -2264,7 +2280,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/30 16:19';
+const BUILT_AT = '9/30 17:18';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -8151,28 +8167,37 @@ function ruleBasis(b){
   const vids = ((b || {}).videos || []).length ? `<div class="exn">由来の動画 ${esc(b.videos.join('・'))}</div>` : '';
   return (qs ? `<ul class="exl">${qs}</ul>` : '<span class="none">オーナーの発言なし</span>') + vids;
 }
-/* 番組の列。全番組の行（channels が空）は「全部」、ほかは短い呼び名を登録簿の順に「・」でつなぐ
+/* 行の番組を登録簿の順で。全番組の行（channels が空）は null */
+function ruleChList(r){
+  const chs = r.channels || [];
+  return (r.all_channels || !chs.length) ? null : [...chs].sort(byChRank);
+}
+/* 番組の列（899px 以下）と開いた中身。全番組は「全部」、ほかは短い呼び名を「・」でつなぐ
    （絞り込みの選択肢と同じ言葉。名前の途中では折り返さない） */
 function ruleChHTML(r){
-  const chs = r.channels || [];
-  if (r.all_channels || !chs.length) return '全部';
-  return [...chs].sort(byChRank).map(s => `<span>${esc(chShort(s))}</span>`).join('・<wbr>');
+  const l = ruleChList(r);
+  return l ? l.map(s => `<span>${esc(chShort(s))}</span>`).join('・<wbr>') : '全部';
+}
+/* 番組の列（900px 以上）。見出しの下の段と同じ順の欄に、当てはまる番組だけ ✓（全番組の行は全部の欄） */
+function ruleChMarks(r){
+  const l = ruleChList(r);
+  return CH_RANK.map(s => `<span>${!l || l.includes(s) ? '✓' : ''}</span>`).join('');
 }
 function ruleRowHTML(r){
   const no = String(r.rule_no);
   const judge = [kvText(r.check_method), r.judged_by ? '見る係: ' + esc(r.judged_by) : ''].filter(Boolean).join('\n');
   const ver = `第${esc(r.version)}版 ${esc(fmtDate(r.created_at) || '')}`
     + (r.change_reason ? `\n変更の理由: ${esc(r.change_reason)}` : '');
-  const kc = RULE_KIND_CLS[r.kind];
+  const kc = RULE_KIND_CLS[r.kind], chl = ruleChList(r);
   return `<details class="rl${kc ? ' ' + kc : ''}" data-rno="${esc(no)}"${rulesOpen.has(no) ? ' open' : ''}>
     <summary class="rlrow"><span class="no">${esc(no)}</span>
       <span class="tagk kd">${esc(r.kind)}</span>
       <span class="tagk${r.strength === '必須' ? ' must' : ''}">${esc(r.strength)}</span>
-      <span class="chs">${ruleChHTML(r)}</span>
+      <span class="chs">${ruleChHTML(r)}</span><span class="chm" aria-hidden="true">${ruleChMarks(r)}</span>
       <span class="sb">${esc(r.subject)}</span><span class="bd">${esc(r.body)}</span>
       <span class="caret" aria-hidden="true">▸</span></summary>
     <div class="lstbody">${kvHTML([
-      ['番組', r.all_channels ? '全番組' : esc((r.channels || []).map(chName).join('・'))],
+      ['番組', chl ? esc(chl.map(chShort).join('・')) : '全部'],
       ['工程', esc((r.stages || []).join('・'))],
       ['当てはまる条件', kvText(r.applies_when)],
       ['例外', kvText(r.exceptions)],
@@ -8217,7 +8242,11 @@ function paintRules(){
   const hits = ruleHits();
   $('#ruleshits').textContent = hits.length + '件';
   $('#rulesreset').hidden = !rulesFiltered();
-  box.innerHTML = `<div class="lsthead rl" aria-hidden="true"><span>番号</span><span>種類</span><span>強さ</span><span>番組</span><span>対象</span><span class="hbd">本文</span><span></span></div>`
+  /* 番組の見出しは2段（900px 以上）と1つ（899px 以下）の両方を置き、幅で片方だけ出す */
+  box.style.setProperty('--chn', CH_RANK.length);
+  box.innerHTML = `<div class="lsthead rl" aria-hidden="true"><span>番号</span><span>種類</span><span>強さ</span>`
+    + `<span class="hch"><span class="hchg">番組</span><span class="hchm">${CH_RANK.map(s => `<span>${esc(chShort(s))}</span>`).join('')}</span></span>`
+    + `<span class="hch1">番組</span><span>対象</span><span class="hbd">本文</span><span></span></div>`
     + (hits.length ? hits.map(ruleRowHTML).join('')
        : `<div class="lstnone">${(store.rules || []).length ? '当てはまるルールはありません' : 'ルールなし'}</div>`);
 }
