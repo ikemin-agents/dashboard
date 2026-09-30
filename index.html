@@ -71,6 +71,13 @@
   --danger:#865A58; --danger-ink:#ffffff; --danger-tint:#F2E9E8;
   --mark:#C4574E; --mark-fill:rgba(196,87,78,.22);
 
+  /* ── ルールの一覧の種類の色（#572・オーナー 2026-09-30）。行の地・押したときの地・種類のチップの地・その文字。
+     行の地は地の色から ΔE 6〜7 の淡さ（本文の文字の読みやすさは変えない）。チップの文字はチップの地で 4.5 以上 */
+  --rk-pol-row:#fbf0f4; --rk-pol-hov:#f6e4eb; --rk-pol-chip:#f2d9e3; --rk-pol-ink:#8a2d52;   /* 方針 */
+  --rk-rul-row:#eef4fd; --rk-rul-hov:#e2ecfa; --rk-rul-chip:#d6e5f8; --rk-rul-ink:#1d5698;   /* 規則 */
+  --rk-ins-row:#eff8ef; --rk-ins-hov:#e3f2e4; --rk-ins-chip:#d6ecd8; --rk-ins-ink:#1f6428;   /* 知見 */
+  --rk-hyp-row:#fcf7e9; --rk-hyp-hov:#f8efd8; --rk-hyp-chip:#f3e5c1; --rk-hyp-ink:#6e5311;   /* 仮説 */
+
   --fs-2xs:.6875rem; --fs-xs:.75rem; --fs-sm:.8125rem; --fs-md:.875rem;
   --fs-lg:1rem; --fs-xl:1.1875rem; --fs-hero:clamp(2rem,3.4vw,2.6rem);
   --lh-tight:1.35; --lh:1.6;
@@ -102,6 +109,10 @@
     --attn:#33291B; --attn-ink:#D9C49B;
     --danger:#8B605E; --danger-ink:#ffffff; --danger-tint:#2B1F1E;
     --mark:#D0685E; --mark-fill:rgba(208,104,94,.24);
+    --rk-pol-row:#281c21; --rk-pol-hov:#32232a; --rk-pol-chip:#442c37; --rk-pol-ink:#f0b3cb;
+    --rk-rul-row:#18202b; --rk-rul-hov:#1e2836; --rk-rul-chip:#223349; --rk-rul-ink:#a2c6f2;
+    --rk-ins-row:#19231a; --rk-ins-hov:#1f2c21; --rk-ins-chip:#263b29; --rk-ins-ink:#a4d5aa;
+    --rk-hyp-row:#262117; --rk-hyp-hov:#2f291c; --rk-hyp-chip:#3e3421; --rk-hyp-ink:#e2c68a;
   }
 }
 :root[data-theme="dark"]{
@@ -127,6 +138,10 @@
   --attn:#33291B; --attn-ink:#D9C49B;
   --danger:#8B605E; --danger-ink:#ffffff; --danger-tint:#2B1F1E;
   --mark:#D0685E; --mark-fill:rgba(208,104,94,.24);
+  --rk-pol-row:#281c21; --rk-pol-hov:#32232a; --rk-pol-chip:#442c37; --rk-pol-ink:#f0b3cb;
+  --rk-rul-row:#18202b; --rk-rul-hov:#1e2836; --rk-rul-chip:#223349; --rk-rul-ink:#a2c6f2;
+  --rk-ins-row:#19231a; --rk-ins-hov:#1f2c21; --rk-ins-chip:#263b29; --rk-ins-ink:#a4d5aa;
+  --rk-hyp-row:#262117; --rk-hyp-hov:#2f291c; --rk-hyp-chip:#3e3421; --rk-hyp-ink:#e2c68a;
 }
 
 *{box-sizing:border-box}
@@ -1094,7 +1109,7 @@ tr.dropped td{color:var(--muted)}
 .lsthead{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.07em;
   background:var(--surface-2); border-bottom:1px solid var(--border)}
 /* 列の幅は px で書く（見出しの行は字が小さいので、em だと列の位置がずれる） */
-.rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
+.rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px 136px minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
 .alrow,.lsthead.al{grid-template-columns:64px minmax(0,1fr) 84px 84px 14px; align-items:center}
 .lst details{border-bottom:1px solid var(--border-2)}
 .lst details:last-child{border-bottom:none}
@@ -1107,6 +1122,17 @@ tr.dropped td{color:var(--muted)}
 .rlrow .no{font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink-2)}
 .rlrow .sb,.alrow .nm{font-weight:650; font-size:var(--fs-sm); overflow-wrap:anywhere}
 .rlrow .bd{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere}
+/* 番組の列。番組の名前の途中では折り返さず、「・」のあとで折り返す */
+.rlrow .chs{font-size:var(--fs-xs); color:var(--ink-2); line-height:var(--lh-tight)}
+.rlrow .chs span{white-space:nowrap}
+/* 種類ごとの色（#572）。行（summary）だけを塗り、開いた中身は塗らない。値は :root の --rk-* */
+.rl.k-policy {--rkrow:var(--rk-pol-row); --rkhov:var(--rk-pol-hov); --rkchip:var(--rk-pol-chip); --rkink:var(--rk-pol-ink)}
+.rl.k-rule   {--rkrow:var(--rk-rul-row); --rkhov:var(--rk-rul-hov); --rkchip:var(--rk-rul-chip); --rkink:var(--rk-rul-ink)}
+.rl.k-insight{--rkrow:var(--rk-ins-row); --rkhov:var(--rk-ins-hov); --rkchip:var(--rk-ins-chip); --rkink:var(--rk-ins-ink)}
+.rl.k-hypo   {--rkrow:var(--rk-hyp-row); --rkhov:var(--rk-hyp-hov); --rkchip:var(--rk-hyp-chip); --rkink:var(--rk-hyp-ink)}
+.lst details.rl>summary{background:var(--rkrow, transparent)}
+.lst details.rl>summary:hover,.lst details.rl[open]>summary{background:var(--rkhov, var(--surface-2))}
+.rlrow .tagk.kd{background:var(--rkchip, var(--surface-2)); color:var(--rkink, var(--ink-2)); border-color:transparent; font-weight:650}
 .alrow .cnt{font-size:var(--fs-sm); font-variant-numeric:tabular-nums; color:var(--ink-2)}
 .tagk{justify-self:start; font-size:var(--fs-2xs); white-space:nowrap; color:var(--ink-2);
   border:1px solid var(--border-2); border-radius:var(--r-sm); padding:1px 6px; background:var(--surface-2)}
@@ -1130,9 +1156,17 @@ tr.dropped td{color:var(--muted)}
 .athumb img{display:block; width:100%; height:100%; object-fit:cover}
 .athumb.none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2);
   font-size:var(--fs-2xs); cursor:inherit; text-align:center}
+/* 中くらいの幅では、番組の列を足したぶん本文が細くなりすぎるので、本文を2行目へ降ろす（見出しの行は残す） */
+@media (max-width:899px){
+  .rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px 136px minmax(0,1fr) 14px}
+  .lsthead.rl .hbd{display:none}
+  .rlrow .bd{grid-column:1 / -1; grid-row:2}
+}
 @media (max-width:640px){
   .lsthead{display:none}
-  .rlrow{grid-template-columns:auto auto auto minmax(0,1fr) 14px}
+  /* 番組の列は幅の上限まで（超えたら「・」のあとで折り返す） */
+  .rlrow{grid-template-columns:auto auto auto fit-content(80px) minmax(0,1fr) 14px; column-gap:var(--sp-2)}
+  .rlrow .chs{font-size:var(--fs-2xs)}
   .rlrow .bd{grid-column:1 / -1; grid-row:2}
   .alrow{grid-template-columns:56px minmax(0,1fr) auto auto 14px}
   .athumb{width:56px; height:56px}
@@ -2144,6 +2178,9 @@ const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 
 /* ══ 定義 ═══════════════════════════════════════════════════════ */
 const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'experiment':'🔬', 'karakuri':'⚙️'};
+/* 番組の短い呼び名（番組の登録簿の display_label と同じ言葉・同じ順・#572）。ルールの一覧の番組の列と、
+   その上の番組の絞り込みに使う。ここに無い番組は DB の名前で出す（test_channel_registry.py が登録簿と突き合わせる） */
+const CH_SHORT = {'buzz-zatsugaku':'雑学', 'dental':'歯科', 'rikiwaza':'力わざ', 'experiment':'検証', 'karakuri':'からくり'};
 /* 検証だけを持つ番組（#551・05-experiment）。動画は 9000番台だけなので、自分のタブは常に空になる。
    **タブには出さず、検証タブの集め先にだけ入れる**（store.pilotChannels）。登録簿にある番組だけを書く */
 const PILOT_ONLY_CH = new Set(['experiment']);
@@ -2227,7 +2264,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/30 09:30';
+const BUILT_AT = '9/30 16:19';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -8053,6 +8090,8 @@ function drawSpark(){
      素材   … v_production_assets。ビューが無い・読めないときは「素材なし」を出して止まらない
    行は <details> で、押すと中身が開く。開いている行は絞り込みを変えても開いたまま（下の rulesOpen / assetsOpen） */
 const RULE_KINDS = ['規則', '方針', '知見', '仮説'];
+/* 種類ごとの行の色（CSS の .rl.k-*）。ここに無い種類は色を付けない */
+const RULE_KIND_CLS = {'規則':'k-rule', '方針':'k-policy', '知見':'k-insight', '仮説':'k-hypo'};
 const RULE_STRENGTHS = ['必須', '推奨', '参考'];
 const ASSET_KINDS = ['材質', '部品', '景色', '動きの型', '強調', '検査'];
 const rulesOpen = new Set(), assetsOpen = new Set();
@@ -8063,6 +8102,11 @@ document.addEventListener('toggle', e => {
   else if (d.dataset.akey) (d.open ? assetsOpen.add(d.dataset.akey) : assetsOpen.delete(d.dataset.akey));
 }, true);
 const chName = slug => store.chNames[slug] || slug;
+/* 番組の短い呼び名と並び順（登録簿の順。無い番組は後ろ） */
+const chShort = slug => CH_SHORT[slug] || chName(slug);
+const CH_RANK = Object.keys(CH_SHORT);
+const chRank = slug => { const i = CH_RANK.indexOf(slug); return i < 0 ? CH_RANK.length : i; };
+const byChRank = (a, b) => chRank(a) - chRank(b) || String(a).localeCompare(String(b));
 const KV_NONE = '<span class="none">なし</span>';
 /* 見出しと中身の並び（中身は HTML。空は「なし」） */
 const kvHTML = rows => `<dl class="kv">${rows.map(([k, v]) =>
@@ -8107,15 +8151,24 @@ function ruleBasis(b){
   const vids = ((b || {}).videos || []).length ? `<div class="exn">由来の動画 ${esc(b.videos.join('・'))}</div>` : '';
   return (qs ? `<ul class="exl">${qs}</ul>` : '<span class="none">オーナーの発言なし</span>') + vids;
 }
+/* 番組の列。全番組の行（channels が空）は「全部」、ほかは短い呼び名を登録簿の順に「・」でつなぐ
+   （絞り込みの選択肢と同じ言葉。名前の途中では折り返さない） */
+function ruleChHTML(r){
+  const chs = r.channels || [];
+  if (r.all_channels || !chs.length) return '全部';
+  return [...chs].sort(byChRank).map(s => `<span>${esc(chShort(s))}</span>`).join('・<wbr>');
+}
 function ruleRowHTML(r){
   const no = String(r.rule_no);
   const judge = [kvText(r.check_method), r.judged_by ? '見る係: ' + esc(r.judged_by) : ''].filter(Boolean).join('\n');
   const ver = `第${esc(r.version)}版 ${esc(fmtDate(r.created_at) || '')}`
     + (r.change_reason ? `\n変更の理由: ${esc(r.change_reason)}` : '');
-  return `<details class="rl" data-rno="${esc(no)}"${rulesOpen.has(no) ? ' open' : ''}>
+  const kc = RULE_KIND_CLS[r.kind];
+  return `<details class="rl${kc ? ' ' + kc : ''}" data-rno="${esc(no)}"${rulesOpen.has(no) ? ' open' : ''}>
     <summary class="rlrow"><span class="no">${esc(no)}</span>
-      <span class="tagk">${esc(r.kind)}</span>
+      <span class="tagk kd">${esc(r.kind)}</span>
       <span class="tagk${r.strength === '必須' ? ' must' : ''}">${esc(r.strength)}</span>
+      <span class="chs">${ruleChHTML(r)}</span>
       <span class="sb">${esc(r.subject)}</span><span class="bd">${esc(r.body)}</span>
       <span class="caret" aria-hidden="true">▸</span></summary>
     <div class="lstbody">${kvHTML([
@@ -8139,8 +8192,10 @@ async function renderRules(){
   const stages = seen(r => r.stages), kinds = seen(r => r.kind),
         strs = seen(r => r.strength), subs = [...seen(r => r.subject)];
   const opt = v => ({ v, t: v });
-  /* 番組の選択肢は番組の登録簿（動画の番組の一覧）から作る。行に出てこない番組も選べる（全番組の行が出る） */
-  const chOpts = (store.pilotChannels || store.channels || []).map(c => ({ v: c.slug, t: c.name || c.slug }));
+  /* 番組の選択肢は番組の登録簿（動画の番組の一覧）から作る。行に出てこない番組も選べる（全番組の行が出る）。
+     言葉と並びは番組の列と同じ（短い呼び名・登録簿の順） */
+  const chOpts = [...(store.pilotChannels || store.channels || [])].sort((a, b) => byChRank(a.slug, b.slug))
+    .map(c => ({ v: c.slug, t: chShort(c.slug) }));
   el.innerHTML = `
     <div class="pagehead"><div class="eyebrow">ルール</div><h1>📏 動画制作ルールDB</h1></div>
     <div class="toolbar">
@@ -8162,7 +8217,7 @@ function paintRules(){
   const hits = ruleHits();
   $('#ruleshits').textContent = hits.length + '件';
   $('#rulesreset').hidden = !rulesFiltered();
-  box.innerHTML = `<div class="lsthead rl" aria-hidden="true"><span>番号</span><span>種類</span><span>強さ</span><span>対象</span><span>本文</span><span></span></div>`
+  box.innerHTML = `<div class="lsthead rl" aria-hidden="true"><span>番号</span><span>種類</span><span>強さ</span><span>番組</span><span>対象</span><span class="hbd">本文</span><span></span></div>`
     + (hits.length ? hits.map(ruleRowHTML).join('')
        : `<div class="lstnone">${(store.rules || []).length ? '当てはまるルールはありません' : 'ルールなし'}</div>`);
 }
