@@ -77,6 +77,9 @@
   --rk-rul-row:#eef4fd; --rk-rul-hov:#e2ecfa; --rk-rul-chip:#d6e5f8; --rk-rul-ink:#1d5698;   /* 規則 */
   --rk-ins-row:#eff8ef; --rk-ins-hov:#e3f2e4; --rk-ins-chip:#d6ecd8; --rk-ins-ink:#1f6428;   /* 知見 */
   --rk-hyp-row:#fcf7e9; --rk-hyp-hov:#f8efd8; --rk-hyp-chip:#f3e5c1; --rk-hyp-ink:#6e5311;   /* 仮説 */
+  /* ルールの一覧の番組の5欄の罫線（#572・オーナー 2026-09-30 17:24）。明るいテーマは --axis と同じ。
+     暗いテーマの --axis（#383835）は行の地の上で見えにくいので、暗いテーマだけ濃くする */
+  --rl-line:var(--axis);
 
   --fs-2xs:.6875rem; --fs-xs:.75rem; --fs-sm:.8125rem; --fs-md:.875rem;
   --fs-lg:1rem; --fs-xl:1.1875rem; --fs-hero:clamp(2rem,3.4vw,2.6rem);
@@ -113,6 +116,7 @@
     --rk-rul-row:#18202b; --rk-rul-hov:#1e2836; --rk-rul-chip:#223349; --rk-rul-ink:#a2c6f2;
     --rk-ins-row:#19231a; --rk-ins-hov:#1f2c21; --rk-ins-chip:#263b29; --rk-ins-ink:#a4d5aa;
     --rk-hyp-row:#262117; --rk-hyp-hov:#2f291c; --rk-hyp-chip:#3e3421; --rk-hyp-ink:#e2c68a;
+    --rl-line:#4d4c47;
   }
 }
 :root[data-theme="dark"]{
@@ -142,6 +146,7 @@
   --rk-rul-row:#18202b; --rk-rul-hov:#1e2836; --rk-rul-chip:#223349; --rk-rul-ink:#a2c6f2;
   --rk-ins-row:#19231a; --rk-ins-hov:#1f2c21; --rk-ins-chip:#263b29; --rk-ins-ink:#a4d5aa;
   --rk-hyp-row:#262117; --rk-hyp-hov:#2f291c; --rk-hyp-chip:#3e3421; --rk-hyp-ink:#e2c68a;
+  --rl-line:#4d4c47;
 }
 
 *{box-sizing:border-box}
@@ -1110,7 +1115,7 @@ tr.dropped td{color:var(--muted)}
   background:var(--surface-2); border-bottom:1px solid var(--border)}
 /* 列の幅は px で書く（見出しの行は字が小さいので、em だと列の位置がずれる） */
 /* 番組の列は番組の数（--chn・JS が入れる）× 1欄の幅（--chw） */
-.lst{--chn:5; --chw:44px}
+.lst{--chn:5; --chw:48px}
 .rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px calc(var(--chn) * var(--chw)) minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
 .lsthead.rl{align-items:end}
 .alrow,.lsthead.al{grid-template-columns:64px minmax(0,1fr) 84px 84px 14px; align-items:center}
@@ -1125,15 +1130,26 @@ tr.dropped td{color:var(--muted)}
 .rlrow .no{font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink-2)}
 .rlrow .sb,.alrow .nm{font-weight:650; font-size:var(--fs-sm); overflow-wrap:anywhere}
 .rlrow .bd{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere}
-/* 番組の列（#572・オーナー 2026-09-30 17:09）。900px 以上は見出しが2段（上に「番組」、下に番組の短い呼び名）で、
+/* 番組の列（#572・オーナー 2026-09-30 17:09）。900px 以上は見出しが2段（上に「番組」、下に番組の絵文字と短い呼び名）で、
    行は当てはまる番組の欄に ✓（.chm）。899px 以下は短い呼び名を「・」でつなぐ（.chs）。
    .chs は 900px 以上でも読み上げ用に残す（見た目は消す）。5欄は見出しと行で同じ幅の格子なので左端がそろう */
-.lsthead.rl .hchg{display:block; text-align:center; padding-bottom:3px; margin-bottom:5px; border-bottom:1px solid var(--border)}
-.lsthead.rl .hchm,.rlrow .chm{display:grid; grid-template-columns:repeat(var(--chn),var(--chw)); justify-items:center}
-.lsthead.rl .hchm{letter-spacing:0}
+.lsthead.rl .hchg{display:block; text-align:center; padding-bottom:3px; border-bottom:1px solid var(--rl-line)}
+.lsthead.rl .hchm,.rlrow .chm{display:grid; grid-template-columns:repeat(var(--chn),var(--chw))}
+/* 5欄の罫線（オーナー 2026-09-30 17:24「罫線をしっかり」）。縦の線は欄と欄の間と5欄の外側に、見出しの下の段と
+   各行で同じ位置に通す（開いた中身には通さない）。横の線は各行の上端（前の行の区切りの線に重ねる）と、
+   開いた行・最後の行の下端。「番組」の下線が格子の上端 */
+.lsthead.rl .hchm>span,.rlrow .chm>span{border-left:1px solid var(--rl-line); text-align:center; min-width:0}
+.lsthead.rl .hchm>span:last-child,.rlrow .chm>span:last-child{border-right:1px solid var(--rl-line)}
+/* 見出しの下の段は絵文字（タブと同じ CH_ICON）の下に短い呼び名。縦の線は見出しの行の下端まで伸ばす（下の余白 9px ぶん） */
+.lsthead.rl .hchm{letter-spacing:0; margin-bottom:-9px}
+.lsthead.rl .hchm>span{display:flex; flex-direction:column; align-items:center; padding:4px 0 9px}
+.lsthead.rl .hchm .ic{font-size:var(--fs-md); line-height:1.25}
 .lsthead.rl .hch1{display:none}
-.rlrow .chm{font-size:var(--fs-sm); font-weight:700; color:var(--ink-2); line-height:var(--lh-tight)}
-.rlrow .chm>span:empty::before{content:"\a0"}
+/* 行の欄は行の上下いっぱい（余白の 9px ぶん）と、上へ 1px（前の行の区切りの線の上）まで伸ばす。
+   ✓ は番号と同じ字の大きさと行の高さなので、番号と下端がそろう。色は本文の文字と同じ */
+.rlrow .chm{align-self:stretch; margin:-10px 0 -9px; font-weight:700; color:var(--ink)}
+.rlrow .chm>span{border-top:1px solid var(--rl-line); padding-top:9px}
+.lst details.rl[open]>.rlrow .chm>span,.lst details.rl:last-child>.rlrow .chm>span{border-bottom:1px solid var(--rl-line)}
 @media (min-width:900px){
   .rlrow .chs{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
 }
@@ -2280,7 +2296,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/30 17:30';
+const BUILT_AT = '9/30 17:35';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -8273,10 +8289,12 @@ function paintRules(){
   const hits = ruleHits();
   $('#ruleshits').textContent = hits.length + '件';
   $('#rulesreset').hidden = !rulesFiltered();
-  /* 番組の見出しは2段（900px 以上）と1つ（899px 以下）の両方を置き、幅で片方だけ出す */
+  /* 番組の見出しは2段（900px 以上）と1つ（899px 以下）の両方を置き、幅で片方だけ出す。
+     2段の下の段は、タブと同じ番組の絵文字の下に短い呼び名 */
   box.style.setProperty('--chn', CH_RANK.length);
   box.innerHTML = `<div class="lsthead rl" aria-hidden="true"><span>番号</span><span>種類</span><span>強さ</span>`
-    + `<span class="hch"><span class="hchg">番組</span><span class="hchm">${CH_RANK.map(s => `<span>${esc(chShort(s))}</span>`).join('')}</span></span>`
+    + `<span class="hch"><span class="hchg">番組</span><span class="hchm">${CH_RANK.map(s =>
+        `<span><span class="ic">${esc(CH_ICON[s] || '')}</span><span class="nm">${esc(chShort(s))}</span></span>`).join('')}</span></span>`
     + `<span class="hch1">番組</span><span>対象</span><span class="hbd">本文</span><span></span></div>`
     + (hits.length ? hits.map(ruleRowHTML).join('')
        : `<div class="lstnone">${(store.rules || []).length ? '当てはまるルールはありません' : 'ルールなし'}</div>`);
