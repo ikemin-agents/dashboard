@@ -1116,7 +1116,8 @@ tr.dropped td{color:var(--muted)}
 /* 列の幅は px で書く（見出しの行は字が小さいので、em だと列の位置がずれる） */
 /* 番組の列は番組の数（--chn・JS が入れる）× 1欄の幅（--chw） */
 .lst{--chn:5; --chw:48px}
-.rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px calc(var(--chn) * var(--chw)) minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
+/* 番組の列の幅は5欄から隙間1つぶんを引く（5欄は左右の隙間の真ん中まで広げるので、5欄の外側の線が列の間の線と重なる・下の「表の罫線」） */
+.rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px calc(var(--chn) * var(--chw) - var(--sp-3)) minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
 .lsthead.rl{align-items:end}
 .alrow,.lsthead.al{grid-template-columns:64px minmax(0,1fr) 84px 84px 14px; align-items:center}
 .lst details{border-bottom:1px solid var(--border-2)}
@@ -1135,11 +1136,16 @@ tr.dropped td{color:var(--muted)}
    .chs は 900px 以上でも読み上げ用に残す（見た目は消す）。5欄は見出しと行で同じ幅の格子なので左端がそろう */
 .lsthead.rl .hchg{display:block; text-align:center; padding-bottom:3px; border-bottom:1px solid var(--rl-line)}
 .lsthead.rl .hchm,.rlrow .chm{display:grid; grid-template-columns:repeat(var(--chn),var(--chw))}
-/* 5欄の罫線（オーナー 2026-09-30 17:24「罫線をしっかり」）。縦の線は欄と欄の間と5欄の外側に、見出しの下の段と
-   各行で同じ位置に通す（開いた中身には通さない）。横の線は各行の上端（前の行の区切りの線に重ねる）と、
-   開いた行・最後の行の下端。「番組」の下線が格子の上端 */
+/* 表の罫線（900px 以上だけ・#572。オーナー 2026-09-30 17:24「罫線をしっかり」→ 19:45「罫線の位置がここだけなのは変」）。
+   縦の線は全部の列の間（番号｜種類｜強さ｜雑学｜歯科｜力わざ｜検証｜からくり｜対象｜本文。本文と ▸ の間には引かない）に、
+   見出しの行（2段とも）と各行で同じ位置に通す。列の間の線は見出しの行と各行に置いた .vl（列の間の隙間の真ん中・
+   行の上下いっぱい・下の @media）。番組の欄と欄の間の線は5欄の各欄の左の線で、見出しは「番組」の下線から下だけ
+   （上の段の「番組」は5欄をまたぐ）。5欄は左右へ隙間の半分ずつ広げてあるので、いちばん左の欄の左の線は .vl と重なり、
+   いちばん右の欄の右は .vl がそのまま線になる。どの欄も線から線まで 48px（--chw）。
+   横の線は見出しの行の下・各行の下・開いた行の中身の上（下の @media）。開いた中身には縦の線を通さない（.vl は行の中だけ）。
+   色は --rl-line（明るいテーマは --axis、暗いテーマは --axis だと行の地の上で見えにくいので #4d4c47）。一覧の外枠も同じ色 */
 .lsthead.rl .hchm>span,.rlrow .chm>span{border-left:1px solid var(--rl-line); text-align:center; min-width:0}
-.lsthead.rl .hchm>span:last-child,.rlrow .chm>span:last-child{border-right:1px solid var(--rl-line)}
+.lsthead.rl .hch{margin:0 calc(var(--sp-3) / -2)}
 /* 見出しの下の段は絵文字（タブと同じ CH_ICON）の下に短い呼び名。縦の線は見出しの行の下端まで伸ばす（下の余白 9px ぶん） */
 .lsthead.rl .hchm{letter-spacing:0; margin-bottom:-9px}
 .lsthead.rl .hchm>span{display:flex; flex-direction:column; align-items:center; padding:4px 0 9px}
@@ -1172,13 +1178,28 @@ tr.dropped td{color:var(--muted)}
   cursor:pointer; line-height:1.35; overflow-wrap:anywhere}
 .rfpop label:hover{background:var(--surface-2)}
 .rfpop input{flex:0 0 auto; width:15px; height:15px; margin:1px 0 0; accent-color:var(--s1); cursor:pointer}
-/* 行の欄は行の上下いっぱい（余白の 9px ぶん）と、上へ 1px（前の行の区切りの線の上）まで伸ばす。
+/* 行の5欄は行の上下いっぱい（余白の 9px ぶん）と、左右の隙間の真ん中まで伸ばす。
    ✓ は番号と同じ字の大きさと行の高さなので、番号と下端がそろう。色は本文の文字と同じ */
-.rlrow .chm{align-self:stretch; margin:-10px 0 -9px; font-weight:700; color:var(--ink)}
-.rlrow .chm>span{border-top:1px solid var(--rl-line); padding-top:9px}
-.lst details.rl[open]>.rlrow .chm>span,.lst details.rl:last-child>.rlrow .chm>span{border-bottom:1px solid var(--rl-line)}
+.rlrow .chm{align-self:stretch; margin:-9px calc(var(--sp-3) / -2); font-weight:700; color:var(--ink)}
+.rlrow .chm>span{padding-top:9px}
+.rl .vl{display:none}
 @media (min-width:900px){
   .rlrow .chs{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
+  /* 横の線（外枠・見出しの行の下・各行の下・開いた行の中身の上）を全幅で --rl-line に */
+  #rulelist{border-color:var(--rl-line)}
+  .lsthead.rl{border-bottom-color:var(--rl-line)}
+  .lst details.rl{border-bottom-color:var(--rl-line)}
+  .lst details.rl[open]>summary{border-bottom:1px solid var(--rl-line)}
+  /* 列の間の縦の線。見出しの行と各行に5本ずつ置き、2〜6列目の左端から隙間の半分だけ左（隙間の真ん中）に、
+     行の上下いっぱい（余白を含む）に引く。行の中に置くので、開いた中身には通らない */
+  .lsthead.rl,.rlrow{position:relative}
+  :is(.lsthead.rl,.rlrow)>.vl{display:block; position:absolute; top:0; bottom:0; left:0; width:1px;
+    margin-left:calc(var(--sp-3) / -2); background:var(--rl-line); pointer-events:none}
+  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(1){grid-column-start:2}
+  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(2){grid-column-start:3}
+  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(3){grid-column-start:4}
+  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(4){grid-column-start:5}
+  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(5){grid-column-start:6}
 }
 /* 番組の名前の途中では折り返さず、「・」のあとで折り返す */
 .rlrow .chs{font-size:var(--fs-xs); color:var(--ink-2); line-height:var(--lh-tight)}
@@ -2332,7 +2353,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/30 17:55';
+const BUILT_AT = '9/30 19:58';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -8273,6 +8294,9 @@ function ruleChMarks(r){
   const l = ruleChList(r);
   return CH_RANK.map(s => `<span>${!l || l.includes(s) ? '✓' : ''}</span>`).join('');
 }
+/* 列の間の縦の線（900px 以上・#572）。見出しの行と各行の末尾に5本置き、CSS が2〜6列目の左に並べる（:nth-of-type で
+   数えるので、見出しの行と行の中には、ほかに <i> を置かない）。899px 以下は隠す */
+const RL_VL = '<i class="vl" aria-hidden="true"></i>'.repeat(5);
 function ruleRowHTML(r){
   const no = String(r.rule_no);
   const judge = [kvText(r.check_method), r.judged_by ? '見る係: ' + esc(r.judged_by) : ''].filter(Boolean).join('\n');
@@ -8285,7 +8309,7 @@ function ruleRowHTML(r){
       <span class="tagk${r.strength === '必須' ? ' must' : ''}">${esc(r.strength)}</span>
       <span class="chs">${ruleChHTML(r)}</span><span class="chm" aria-hidden="true">${ruleChMarks(r)}</span>
       <span class="sb">${esc(r.subject)}</span><span class="bd">${esc(r.body)}</span>
-      <span class="caret" aria-hidden="true">▸</span></summary>
+      <span class="caret" aria-hidden="true">▸</span>${RL_VL}</summary>
     <div class="lstbody">${kvHTML([
       ['番組', chl ? esc(chl.map(chShort).join('・')) : '全部'],
       ['工程', esc((r.stages || []).join('・'))],
@@ -8345,7 +8369,7 @@ function paintRules(){
         `<span${f.ch && !f.ch.includes(s) ? ' class="off"' : ''}><span class="ic">${esc(CH_ICON[s] || '')}</span>`
         + `<span class="nm">${esc(chShort(s))}</span></span>`).join('')}</span></span>`
     + `<span class="hch1">${hf('ch')}</span><span>${hf('subject')}</span>`
-    + `<span class="hbd"><span class="hbdt">本文</span>${hf('stage')}</span><span class="hend"></span></div>`
+    + `<span class="hbd"><span class="hbdt">本文</span>${hf('stage')}</span><span class="hend"></span>${RL_VL}</div>`
     + (hits.length ? hits.map(ruleRowHTML).join('')
        : `<div class="lstnone">${(store.rules || []).length ? '当てはまるルールはありません' : 'ルールなし'}</div>`);
 }
