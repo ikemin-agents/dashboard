@@ -1145,6 +1145,33 @@ tr.dropped td{color:var(--muted)}
 .lsthead.rl .hchm>span{display:flex; flex-direction:column; align-items:center; padding:4px 0 9px}
 .lsthead.rl .hchm .ic{font-size:var(--fs-md); line-height:1.25}
 .lsthead.rl .hch1{display:none}
+/* 見出しを押して絞り込む（#572・オーナー 2026-09-30 17:25「エクセルみたいにヘッダー部分を押すとフィルター」）。
+   押せる見出しは種類・強さ・番組・対象・工程（工程は列が無いので本文の見出しの行の右端）。▾ は押せる印、絞っている列は ●。
+   番組の下の段（絵文字と呼び名）を押しても同じ窓が開き、絞っているときは外した番組の呼び名を薄くする */
+.lsthead .hf{font:inherit; letter-spacing:inherit; color:inherit; background:transparent; border:0; border-radius:var(--r-sm);
+  padding:2px 4px; margin:-2px -4px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; white-space:nowrap}
+.lsthead .hf .fm{font-size:10px; line-height:1}
+.lsthead .hf:hover{background:var(--surface-3); color:var(--ink)}
+.lsthead .hf.on{color:var(--ink)}
+.lsthead .hf.on .fm{color:var(--s1)}
+.lsthead .hf[aria-expanded="true"],.lsthead .hf[aria-expanded="true"] .fm{background:var(--ink); color:var(--page)}
+.lsthead .hf:focus-visible{outline:2px solid var(--s1); outline-offset:1px}
+.lsthead.rl .hchm{cursor:pointer}
+.lsthead.rl .hchm>span.off>span{opacity:.35}
+.lsthead.rl .hbd{display:flex; justify-content:space-between; align-items:flex-end; gap:var(--sp-2); min-width:0}
+/* 窓は一覧の外（#view-rules の直下）に置く。一覧は角丸のため中身を切り取るので、中に置くと窓が切れる */
+#view-rules{position:relative}
+.rfpop{position:absolute; z-index:40; width:max-content; min-width:160px; max-width:min(320px, calc(100vw - 32px));
+  background:var(--surface-1); border:1px solid var(--rl-line); border-radius:var(--r-md); box-shadow:var(--shadow-2);
+  padding:6px; font-size:var(--fs-sm); color:var(--ink)}
+.rfpop .rfall{font-family:inherit; font-size:var(--fs-2xs); color:var(--ink-2); background:var(--surface-2);
+  border:1px solid var(--border); border-radius:var(--r-pill); padding:3px 11px; margin:2px 2px 6px; cursor:pointer}
+.rfpop .rfall:hover{background:var(--surface-3); color:var(--ink)}
+.rfpop .rflist{display:flex; flex-direction:column; max-height:min(340px, 55vh); overflow:auto; overscroll-behavior:contain}
+.rfpop label{display:flex; align-items:flex-start; gap:8px; padding:6px 8px; border-radius:var(--r-sm);
+  cursor:pointer; line-height:1.35; overflow-wrap:anywhere}
+.rfpop label:hover{background:var(--surface-2)}
+.rfpop input{flex:0 0 auto; width:15px; height:15px; margin:1px 0 0; accent-color:var(--s1); cursor:pointer}
 /* 行の欄は行の上下いっぱい（余白の 9px ぶん）と、上へ 1px（前の行の区切りの線の上）まで伸ばす。
    ✓ は番号と同じ字の大きさと行の高さなので、番号と下端がそろう。色は本文の文字と同じ */
 .rlrow .chm{align-self:stretch; margin:-10px 0 -9px; font-weight:700; color:var(--ink)}
@@ -1187,15 +1214,24 @@ tr.dropped td{color:var(--muted)}
 .athumb img{display:block; width:100%; height:100%; object-fit:cover}
 .athumb.none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2);
   font-size:var(--fs-2xs); cursor:inherit; text-align:center}
-/* 中くらいの幅では、番組の列を短い呼び名に戻し（見出しは「番組」1つ）、本文を2行目へ降ろす（見出しの行は残す） */
+/* 中くらいの幅では、番組の列を短い呼び名に戻し（見出しは「番組」1つ）、本文を2行目へ降ろす（見出しの行は残す）。
+   見出しの「本文」の字は消し、工程の絞り込みだけを見出しの行の右端に残す（列の左端は行と同じ位置のまま） */
 @media (max-width:899px){
-  .rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px 136px minmax(0,1fr) 14px}
-  .lsthead.rl .hbd,.lsthead.rl .hch,.rlrow .chm{display:none}
+  .rlrow{grid-template-columns:36px 48px 48px 136px minmax(0,1fr) 14px}
+  .lsthead.rl{grid-template-columns:36px 48px 48px 136px minmax(0,1fr) auto}
+  .lsthead.rl .hbdt,.lsthead.rl .hend,.lsthead.rl .hch,.rlrow .chm{display:none}
   .lsthead.rl .hch1{display:block}
   .rlrow .bd{grid-column:1 / -1; grid-row:2}
 }
 @media (max-width:640px){
   .lsthead{display:none}
+  /* ルールの見出しは列にそろえず、絞り込める見出しだけを横に並べる（押しやすい大きさの札にする） */
+  .lsthead.rl{display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px}
+  .lsthead.rl .hno{display:none}
+  .lsthead.rl .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
+    background:var(--surface-1); color:var(--ink-2); font-size:var(--fs-xs); letter-spacing:.02em}
+  .lsthead.rl .hf.on{color:var(--ink); font-weight:750}
+  .lsthead.rl .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
   /* 番組の列は幅の上限まで（超えたら「・」のあとで折り返す） */
   .rlrow{grid-template-columns:auto auto auto fit-content(80px) minmax(0,1fr) 14px; column-gap:var(--sp-2)}
   .rlrow .chs{font-size:var(--fs-2xs)}
@@ -2296,7 +2332,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/30 17:35';
+const BUILT_AT = '9/30 17:55';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2384,8 +2420,9 @@ const state = {
   filtersOpen:false, busy:false, lastSync:null,
   /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
   secOpen:{},
-  /* 決まりの一覧・素材の一覧の絞り込み（#574）。空文字＝絞らない */
-  rulesF:{q:'', ch:'', stage:'', kind:'', strength:'', subject:''},
+  /* 決まりの一覧・素材の一覧の絞り込み（#574）。空文字＝絞らない。
+     決まりの列（q 以外）は見出しの窓のチェック（#572）で、null＝絞らない・配列＝チェックの付いた値だけ残す */
+  rulesF:{q:'', ch:null, stage:null, kind:null, strength:null, subject:null},
   assetsF:{kind:'', seq:''}
 };
 
@@ -8175,7 +8212,7 @@ const KV_NONE = '<span class="none">なし</span>';
 const kvHTML = rows => `<dl class="kv">${rows.map(([k, v]) =>
   `<dt>${esc(k)}</dt><dd>${v == null || v === '' ? KV_NONE : v}</dd>`).join('')}</dl>`;
 const kvText = s => (s == null || String(s).trim() === '') ? '' : esc(s);
-/* 絞り込みの選び箱。attr は data-rf（決まり）か data-af（素材） */
+/* 絞り込みの選び箱（素材。attr は data-af）。決まりの絞り込みは見出しの窓（下の RF_COLS） */
 const pickHTML = (attr, key, all, opts, cur) => `<select data-${attr}="${key}" aria-label="${esc(all)}">
   <option value="">${esc(all)}</option>${opts.map(o =>
     `<option value="${esc(o.v)}"${o.v === cur ? ' selected' : ''}>${esc(o.t)}</option>`).join('')}</select>`;
@@ -8187,18 +8224,24 @@ async function loadRules(){
     .order('rule_no', { ascending: true }));
   return store.rules;
 }
-const rulesFiltered = () => Object.values(state.rulesF).some(v => v);
+/* 見出しを押して絞り込む列（#572・オーナー 2026-09-30 17:25「エクセルみたいにヘッダー部分を押すとフィルター」）。
+   キーは state.rulesF のキー、値は見出しの言葉。押すとその列の値の一覧がチェックつきの窓で出る（全部チェック＝絞らない） */
+const RF_COLS = {kind:'種類', strength:'強さ', ch:'番組', subject:'対象', stage:'工程'};
+let rulesOpts = {};   /* 列ごとの値の一覧 {v, t}（renderRules が行と番組の登録簿から作る） */
+let rfPop = null;     /* 窓を開いている列のキー。閉じているときは null */
 function ruleHits(){
   const f = state.rulesF, w = f.q.trim().toLowerCase();
   const text = r => [r.rule_no, r.subject, r.body, r.applies_when, r.exceptions, r.pass_criteria, r.check_method,
     ...(((r.basis || {}).owner_quotes) || []).map(x => x && x.text)].filter(v => v != null).join('\n').toLowerCase();
-  /* 番組を選んだときは「その番組を含む行」と「全番組の行（channels が空）」の両方を出す */
+  const has = (sel, v) => !sel || sel.includes(v);
+  /* 番組を選んだときは「選んだ番組のどれかを含む行」と「全番組の行（channels が空）」の両方を出す。
+     チェックを全部外した列は1行も残さない */
   return (store.rules || []).filter(r =>
-    (!f.ch || r.all_channels || !(r.channels || []).length || r.channels.includes(f.ch))
-    && (!f.stage || (r.stages || []).includes(f.stage))
-    && (!f.kind || r.kind === f.kind)
-    && (!f.strength || r.strength === f.strength)
-    && (!f.subject || r.subject === f.subject)
+    (!f.ch || (f.ch.length > 0 && (r.all_channels || !(r.channels || []).length || r.channels.some(c => f.ch.includes(c)))))
+    && (!f.stage || (r.stages || []).some(s => f.stage.includes(s)))
+    && has(f.kind, r.kind)
+    && has(f.strength, r.strength)
+    && has(f.subject, r.subject)
     && (!w || text(r).includes(w)));
 }
 function ruleExamples(ex){
@@ -8256,6 +8299,7 @@ function ruleRowHTML(r){
 }
 async function renderRules(){
   const el = $('#view-rules');
+  rfPop = null;   /* 画面を作り直すと窓も消える */
   if (!store.rules) el.innerHTML = loading();
   let rows;
   try { rows = await loadRules(); } catch (e) { el.innerHTML = errBox(e.message); return; }
@@ -8264,20 +8308,22 @@ async function renderRules(){
   const stages = seen(r => r.stages), kinds = seen(r => r.kind),
         strs = seen(r => r.strength), subs = [...seen(r => r.subject)];
   const opt = v => ({ v, t: v });
-  /* 番組の選択肢は番組の登録簿（動画の番組の一覧）から作る。行に出てこない番組も選べる（全番組の行が出る）。
+  /* 決まった並び（known）のうち行にある値を先に、並びに無い値は後ろに */
+  const ordered = (known, s) => [...known.filter(v => s.has(v)), ...[...s].filter(v => !known.includes(v))];
+  /* 番組の値は番組の登録簿（動画の番組の一覧）から作る。行に出てこない番組も選べる（全番組の行が出る）。
      言葉と並びは番組の列と同じ（短い呼び名・登録簿の順） */
-  const chOpts = [...(store.pilotChannels || store.channels || [])].sort((a, b) => byChRank(a.slug, b.slug))
-    .map(c => ({ v: c.slug, t: chShort(c.slug) }));
+  rulesOpts = {
+    ch: [...(store.pilotChannels || store.channels || [])].sort((a, b) => byChRank(a.slug, b.slug))
+      .map(c => ({ v: c.slug, t: chShort(c.slug) })),
+    stage: ordered(SV_STEPS.map(s => s.name), stages).map(opt),
+    kind: ordered(RULE_KINDS, kinds).map(opt),
+    strength: ordered(RULE_STRENGTHS, strs).map(opt),
+    subject: subs.map(opt)
+  };
   el.innerHTML = `
     <div class="pagehead"><div class="eyebrow">ルール</div><h1>📏 動画制作ルールDB</h1></div>
     <div class="toolbar">
       <input type="search" id="rulesq" placeholder="文字で探す" aria-label="文字で探す" value="${esc(f.q)}">
-      ${pickHTML('rf', 'ch', 'すべての番組', chOpts, f.ch)}
-      ${pickHTML('rf', 'stage', 'すべての工程', SV_STEPS.map(s => s.name).filter(n => stages.has(n)).map(opt), f.stage)}
-      ${pickHTML('rf', 'kind', 'すべての種類', RULE_KINDS.filter(k => kinds.has(k)).map(opt), f.kind)}
-      ${pickHTML('rf', 'strength', 'すべての強さ', RULE_STRENGTHS.filter(k => strs.has(k)).map(opt), f.strength)}
-      ${pickHTML('rf', 'subject', 'すべての対象', subs.map(opt), f.subject)}
-      <button type="button" class="btn" id="rulesreset" hidden>条件を外す</button>
       <span class="hits" id="ruleshits"></span>
     </div>
     <div class="lst" id="rulelist"></div>`;
@@ -8286,19 +8332,112 @@ async function renderRules(){
 function paintRules(){
   const box = $('#rulelist');
   if (!box) return;
-  const hits = ruleHits();
+  const hits = ruleHits(), f = state.rulesF;
   $('#ruleshits').textContent = hits.length + '件';
-  $('#rulesreset').hidden = !rulesFiltered();
+  /* 絞り込める見出しのボタン。▾ は押せる印、絞っている列は ●。窓を開いている列は押した形（aria-expanded） */
+  const hf = col => `<button type="button" class="hf${f[col] ? ' on' : ''}" data-rfcol="${col}" aria-haspopup="dialog"`
+    + ` aria-expanded="${rfPop === col}">${esc(RF_COLS[col])}<span class="fm" aria-hidden="true">${f[col] ? '●' : '▾'}</span></button>`;
   /* 番組の見出しは2段（900px 以上）と1つ（899px 以下）の両方を置き、幅で片方だけ出す。
-     2段の下の段は、タブと同じ番組の絵文字の下に短い呼び名 */
+     2段の下の段は、タブと同じ番組の絵文字の下に短い呼び名（番組で絞っているときは、外した番組を薄く） */
   box.style.setProperty('--chn', CH_RANK.length);
-  box.innerHTML = `<div class="lsthead rl" aria-hidden="true"><span>番号</span><span>種類</span><span>強さ</span>`
-    + `<span class="hch"><span class="hchg">番組</span><span class="hchm">${CH_RANK.map(s =>
-        `<span><span class="ic">${esc(CH_ICON[s] || '')}</span><span class="nm">${esc(chShort(s))}</span></span>`).join('')}</span></span>`
-    + `<span class="hch1">番組</span><span>対象</span><span class="hbd">本文</span><span></span></div>`
+  box.innerHTML = `<div class="lsthead rl"><span class="hno">番号</span><span>${hf('kind')}</span><span>${hf('strength')}</span>`
+    + `<span class="hch"><span class="hchg">${hf('ch')}</span><span class="hchm" data-rfcol="ch" aria-hidden="true">${CH_RANK.map(s =>
+        `<span${f.ch && !f.ch.includes(s) ? ' class="off"' : ''}><span class="ic">${esc(CH_ICON[s] || '')}</span>`
+        + `<span class="nm">${esc(chShort(s))}</span></span>`).join('')}</span></span>`
+    + `<span class="hch1">${hf('ch')}</span><span>${hf('subject')}</span>`
+    + `<span class="hbd"><span class="hbdt">本文</span>${hf('stage')}</span><span class="hend"></span></div>`
     + (hits.length ? hits.map(ruleRowHTML).join('')
        : `<div class="lstnone">${(store.rules || []).length ? '当てはまるルールはありません' : 'ルールなし'}</div>`);
 }
+/* ── 見出しの絞り込みの窓 ──────────────────────────────────────
+   窓は一覧の外（#view-rules の直下）に置き、見出しの行のすぐ下に出す。チェックを変えるとその場で絞る。
+   外を押すか Esc で閉じる。一覧の中（行など）を押したときは閉じるだけで、その行は開かない */
+/* いま見えている、その列の見出しのボタン（番組は 900px 以上と 899px 以下で別のボタン） */
+const rfBtn = col => [...document.querySelectorAll(`#rulelist .lsthead button[data-rfcol="${col}"]`)]
+  .find(b => b.getClientRects().length);
+function rfPopHTML(col){
+  const sel = state.rulesF[col];
+  return `<button type="button" class="rfall" data-rfall>${sel ? 'すべて選ぶ' : 'すべて外す'}</button>`
+    + `<div class="rflist">${(rulesOpts[col] || []).map(o => `<label><input type="checkbox" value="${esc(o.v)}"${
+      !sel || sel.includes(o.v) ? ' checked' : ''}><span>${esc(o.t)}</span></label>`).join('')}</div>`;
+}
+function placeRfPop(){
+  const pop = $('#rfpop'), view = $('#view-rules'), head = $('#rulelist .lsthead'), b = rfPop && rfBtn(rfPop);
+  if (!pop || !view || !head || !b) return;
+  const v = view.getBoundingClientRect(), h = head.getBoundingClientRect(), a = (b.closest('.hch') || b).getBoundingClientRect();
+  pop.style.top = Math.round(h.bottom - v.top + 4) + 'px';
+  pop.style.left = Math.round(Math.max(0, Math.min(a.left - v.left, v.width - pop.offsetWidth))) + 'px';
+}
+function openRfPop(col){
+  closeRfPop();
+  const view = $('#view-rules');
+  if (!view || !RF_COLS[col] || !rfBtn(col)) return;
+  rfPop = col;
+  const pop = document.createElement('div');
+  pop.id = 'rfpop'; pop.className = 'rfpop';
+  pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', RF_COLS[col]);
+  pop.innerHTML = rfPopHTML(col);
+  view.appendChild(pop);
+  document.querySelectorAll(`#rulelist .lsthead button[data-rfcol="${col}"]`).forEach(b => b.setAttribute('aria-expanded', 'true'));
+  placeRfPop();
+  pop.querySelector('input')?.focus({ preventScroll: true });
+}
+function closeRfPop(refocus){
+  const col = rfPop;
+  rfPop = null;
+  $('#rfpop')?.remove();
+  document.querySelectorAll('#rulelist .lsthead button[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+  if (refocus && col) rfBtn(col)?.focus();
+}
+/* 列の絞り込みを入れて一覧を描き直す。sel は残す値の配列（null＝絞らない）。全部の値が入っていたら絞らない扱い */
+function setRulesF(col, sel){
+  const all = (rulesOpts[col] || []).map(o => o.v);
+  state.rulesF[col] = (sel && !all.every(v => sel.includes(v))) ? all.filter(v => sel.includes(v)) : null;
+  paintRules();
+  const pop = $('#rfpop');
+  if (!pop) return;
+  const cur = state.rulesF[col];
+  pop.querySelector('[data-rfall]').textContent = cur ? 'すべて選ぶ' : 'すべて外す';
+  pop.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = !cur || cur.includes(i.value); });
+}
+/* 外を押したら閉じるのは pointerdown で拾う（iPhone は押せない所を押しても click を送らないため）。
+   一覧の中を押して閉じたときは、そのあとに続く click（行を開く）を1回だけ食べる */
+let rfEatUntil = 0;
+document.addEventListener('pointerdown', e => {
+  rfEatUntil = 0;
+  const t = e.target;
+  if (!rfPop || !t || !t.closest || t.closest('#rfpop') || t.closest('#rulelist .lsthead [data-rfcol]')) return;
+  closeRfPop();
+  if (t.closest('#view-rules')) rfEatUntil = Date.now() + 1000;
+}, true);
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (!t || !t.closest) return;
+  if (rfEatUntil) {
+    const eat = Date.now() < rfEatUntil && t.closest('#view-rules');
+    rfEatUntil = 0;
+    if (eat) { e.preventDefault(); e.stopPropagation(); return; }
+  }
+  const hb = t.closest('#rulelist .lsthead [data-rfcol]');
+  if (hb) { const col = hb.dataset.rfcol; if (rfPop === col) closeRfPop(); else openRfPop(col); return; }
+  if (!rfPop) return;
+  if (t.closest('#rfpop')) {
+    if (t.closest('[data-rfall]')) setRulesF(rfPop, state.rulesF[rfPop] ? null : []);
+    return;
+  }
+  /* pointerdown を伴わない押し方（キーボードで行を開く等）も、外なら同じように閉じる */
+  const inView = !!t.closest('#view-rules');
+  closeRfPop();
+  if (inView) { e.preventDefault(); e.stopPropagation(); }
+}, true);
+document.addEventListener('change', e => {
+  if (!rfPop || !e.target.closest || !e.target.closest('#rfpop')) return;
+  setRulesF(rfPop, [...document.querySelectorAll('#rfpop .rflist input:checked')].map(i => i.value));
+});
+document.addEventListener('keydown', e => {
+  if (rfPop && e.key === 'Escape') { e.preventDefault(); closeRfPop(true); }
+});
+window.addEventListener('resize', () => { if (rfPop) placeRfPop(); });
 
 async function loadProdAssets(){
   if (store.prodAssets && Date.now() - store.prodAssets.at < ASSET_CACHE) return store.prodAssets;
@@ -8599,10 +8738,7 @@ document.addEventListener('click', e => {
   const plb = e.target.closest('[data-plbox]');
   if (plb) { e.preventDefault(); openPlbox(plb.dataset.plbox, plb.dataset.plcap); return; }
   if (e.target.closest('[data-plbox-close]') || e.target.id === 'plbox') { closePlbox(); return; }
-  /* 決まり・素材の「条件を外す」 */
-  if (e.target.closest('#rulesreset')) {
-    Object.keys(state.rulesF).forEach(k => { state.rulesF[k] = ''; }); renderRules(); return;
-  }
+  /* 素材の「条件を外す」（決まりの絞り込みは見出しの窓・上の RF_COLS の近く） */
   if (e.target.closest('#assetsreset')) {
     Object.keys(state.assetsF).forEach(k => { state.assetsF[k] = ''; }); renderAssets(); return;
   }
@@ -8751,10 +8887,9 @@ document.addEventListener('change', e => {
   if (e.target.id === 'stockgenre') {
     state.stockGenre = e.target.value; state.stockPage = 0; refreshStockTable();
   }
-  /* 決まり・素材の絞り込み（選び箱） */
-  const rf = e.target.dataset && e.target.dataset.rf, af = e.target.dataset && e.target.dataset.af;
-  if (rf) { state.rulesF[rf] = e.target.value; paintRules(); }
-  else if (af) { state.assetsF[af] = e.target.value; paintAssets(); }
+  /* 素材の絞り込み（選び箱） */
+  const af = e.target.dataset && e.target.dataset.af;
+  if (af) { state.assetsF[af] = e.target.value; paintAssets(); }
 });
 document.addEventListener('keydown', e => {
   /* 素材の見本を大きく見ているあいだは Esc で閉じる（ほかの操作より先に受ける） */
