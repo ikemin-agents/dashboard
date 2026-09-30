@@ -1119,7 +1119,8 @@ tr.dropped td{color:var(--muted)}
 /* 番組の列の幅は5欄から隙間1つぶんを引く（5欄は左右の隙間の真ん中まで広げるので、5欄の外側の線が列の間の線と重なる・下の「表の罫線」） */
 .rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px calc(var(--chn) * var(--chw) - var(--sp-3)) minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
 .lsthead.rl{align-items:end}
-.alrow,.lsthead.al{grid-template-columns:64px minmax(0,1fr) 84px 84px 14px; align-items:center}
+/* 素材: 見本｜名前と説明｜種類｜番組｜使った動画（本数と番号）｜▸ */
+.alrow,.lsthead.al{grid-template-columns:64px minmax(0,1fr) 84px 84px 96px 14px; align-items:center}
 .lst details{border-bottom:1px solid var(--border-2)}
 .lst details:last-child{border-bottom:none}
 .lst summary{list-style:none; cursor:pointer}
@@ -1131,6 +1132,15 @@ tr.dropped td{color:var(--muted)}
 .rlrow .no{font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink-2)}
 .rlrow .sb,.alrow .nm{font-weight:650; font-size:var(--fs-sm); overflow-wrap:anywhere}
 .rlrow .bd{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere}
+/* 素材の行の説明（#572・オーナー 2026-09-30 20:30「どういう内容なのかもう少し一覧側で」）。名前の下に、
+   開いたときに「呼び方」の下に出る説明文の1行目を2行まで（超えたら「…」）。
+   種類・番組・使った動画は .meta でまとめ、641px 以上は表の列に並べ（display:contents）、640px 以下は名前の下の1行にする */
+.alrow .nmc{display:flex; flex-direction:column; gap:2px; min-width:0}
+.alrow .ds{font-size:var(--fs-xs); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden}
+.alrow .meta{display:contents}
+.alrow .ach{font-size:var(--fs-xs); color:var(--ink-2); line-height:var(--lh-tight); min-width:0}
+.alrow .ach span,.alrow .sq span{white-space:nowrap}
 /* 番組の列（#572・オーナー 2026-09-30 17:09）。900px 以上は見出しが2段（上に「番組」、下に番組の絵文字と短い呼び名）で、
    行は当てはまる番組の欄に ✓（.chm）。899px 以下は短い呼び名を「・」でつなぐ（.chs）。
    .chs は 900px 以上でも読み上げ用に残す（見た目は消す）。5欄は見出しと行で同じ幅の格子なので左端がそろう */
@@ -1165,8 +1175,8 @@ tr.dropped td{color:var(--muted)}
 .lsthead.rl .hchm{cursor:pointer}
 .lsthead.rl .hchm>span.off>span{opacity:.35}
 .lsthead.rl .hbd{display:flex; justify-content:space-between; align-items:flex-end; gap:var(--sp-2); min-width:0}
-/* 窓は一覧の外（#view-rules の直下）に置く。一覧は角丸のため中身を切り取るので、中に置くと窓が切れる */
-#view-rules{position:relative}
+/* 窓は一覧の外（#view-rules・#view-assets の直下）に置く。一覧は角丸のため中身を切り取るので、中に置くと窓が切れる */
+#view-rules,#view-assets{position:relative}
 .rfpop{position:absolute; z-index:40; width:max-content; min-width:160px; max-width:min(320px, calc(100vw - 32px));
   background:var(--surface-1); border:1px solid var(--rl-line); border-radius:var(--r-md); box-shadow:var(--shadow-2);
   padding:6px; font-size:var(--fs-sm); color:var(--ink)}
@@ -1182,23 +1192,25 @@ tr.dropped td{color:var(--muted)}
    ✓ は番号と同じ字の大きさと行の高さなので、番号と下端がそろう。色は本文の文字と同じ */
 .rlrow .chm{align-self:stretch; margin:-9px calc(var(--sp-3) / -2); font-weight:700; color:var(--ink)}
 .rlrow .chm>span{padding-top:9px}
-.rl .vl{display:none}
+.rl .vl,.al .vl{display:none}
+/* 素材の一覧の罫線も同じ通し方（#572・オーナー 2026-09-30 20:30）。縦の線は 見本｜名前｜種類｜番組｜使った動画 の間の4本
+   （使った動画と ▸ の間には引かない）で、行の中の .vl（AL_VL）。横の線と色はルールと同じ */
 @media (min-width:900px){
   .rlrow .chs{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
   /* 横の線（外枠・見出しの行の下・各行の下・開いた行の中身の上）を全幅で --rl-line に */
-  #rulelist{border-color:var(--rl-line)}
-  .lsthead.rl{border-bottom-color:var(--rl-line)}
-  .lst details.rl{border-bottom-color:var(--rl-line)}
-  .lst details.rl[open]>summary{border-bottom:1px solid var(--rl-line)}
-  /* 列の間の縦の線。見出しの行と各行に5本ずつ置き、2〜6列目の左端から隙間の半分だけ左（隙間の真ん中）に、
+  #rulelist,#assetlist{border-color:var(--rl-line)}
+  .lsthead.rl,.lsthead.al{border-bottom-color:var(--rl-line)}
+  .lst details.rl,.lst details.al{border-bottom-color:var(--rl-line)}
+  .lst details.rl[open]>summary,.lst details.al[open]>summary{border-bottom:1px solid var(--rl-line)}
+  /* 列の間の縦の線。見出しの行と各行に5本ずつ（素材は4本）置き、2列目から先の左端から隙間の半分だけ左（隙間の真ん中）に、
      行の上下いっぱい（余白を含む）に引く。行の中に置くので、開いた中身には通らない */
-  .lsthead.rl,.rlrow{position:relative}
-  :is(.lsthead.rl,.rlrow)>.vl{display:block; position:absolute; top:0; bottom:0; left:0; width:1px;
+  .lsthead.rl,.rlrow,.lsthead.al,.alrow{position:relative}
+  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl{display:block; position:absolute; top:0; bottom:0; left:0; width:1px;
     margin-left:calc(var(--sp-3) / -2); background:var(--rl-line); pointer-events:none}
-  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(1){grid-column-start:2}
-  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(2){grid-column-start:3}
-  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(3){grid-column-start:4}
-  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(4){grid-column-start:5}
+  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl:nth-of-type(1){grid-column-start:2}
+  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl:nth-of-type(2){grid-column-start:3}
+  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl:nth-of-type(3){grid-column-start:4}
+  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl:nth-of-type(4){grid-column-start:5}
   :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(5){grid-column-start:6}
 }
 /* 番組の名前の途中では折り返さず、「・」のあとで折り返す */
@@ -1212,7 +1224,10 @@ tr.dropped td{color:var(--muted)}
 .lst details.rl>summary{background:var(--rkrow, transparent)}
 .lst details.rl>summary:hover,.lst details.rl[open]>summary{background:var(--rkhov, var(--surface-2))}
 .rlrow .tagk.kd{background:var(--rkchip, var(--surface-2)); color:var(--rkink, var(--ink-2)); border-color:transparent; font-weight:650}
-.alrow .cnt{font-size:var(--fs-sm); font-variant-numeric:tabular-nums; color:var(--ink-2)}
+.alrow .cnt{font-size:var(--fs-sm); font-variant-numeric:tabular-nums; color:var(--ink-2);
+  display:flex; flex-direction:column; gap:1px; min-width:0}
+/* 使った動画の番号（KR0002 など）は本数の下に小さく。2本以上は「・」のあとで折り返す */
+.alrow .sq{font-size:var(--fs-2xs); line-height:var(--lh-tight); letter-spacing:.02em}
 .tagk{justify-self:start; font-size:var(--fs-2xs); white-space:nowrap; color:var(--ink-2);
   border:1px solid var(--border-2); border-radius:var(--r-sm); padding:1px 6px; background:var(--surface-2)}
 .tagk.must{color:var(--ink); font-weight:700}
@@ -1246,18 +1261,25 @@ tr.dropped td{color:var(--muted)}
 }
 @media (max-width:640px){
   .lsthead{display:none}
-  /* ルールの見出しは列にそろえず、絞り込める見出しだけを横に並べる（押しやすい大きさの札にする） */
-  .lsthead.rl{display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px}
-  .lsthead.rl .hno{display:none}
-  .lsthead.rl .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
+  /* ルール・素材の見出しは列にそろえず、絞り込める見出しだけを横に並べる（押しやすい大きさの札にする） */
+  :is(.lsthead.rl,.lsthead.al){display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px}
+  .lsthead.rl .hno,.lsthead.al .hnf,.lsthead.al .hend{display:none}
+  :is(.lsthead.rl,.lsthead.al) .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
     background:var(--surface-1); color:var(--ink-2); font-size:var(--fs-xs); letter-spacing:.02em}
-  .lsthead.rl .hf.on{color:var(--ink); font-weight:750}
-  .lsthead.rl .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
+  :is(.lsthead.rl,.lsthead.al) .hf.on{color:var(--ink); font-weight:750}
+  :is(.lsthead.rl,.lsthead.al) .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
   /* 番組の列は幅の上限まで（超えたら「・」のあとで折り返す） */
   .rlrow{grid-template-columns:auto auto auto fit-content(80px) minmax(0,1fr) 14px; column-gap:var(--sp-2)}
   .rlrow .chs{font-size:var(--fs-2xs)}
   .rlrow .bd{grid-column:1 / -1; grid-row:2}
-  .alrow{grid-template-columns:56px minmax(0,1fr) auto auto 14px}
+  /* 素材の行は 見本｜名前と説明（その下に 種類・番組・使った動画 を1行）｜▸ */
+  .alrow{grid-template-columns:56px minmax(0,1fr) 14px; grid-template-rows:auto 1fr; row-gap:6px}
+  .alrow .athumb{grid-row:1 / span 2; align-self:start}
+  .alrow .nmc{grid-column:2; grid-row:1}
+  .alrow .meta{display:flex; grid-column:2; grid-row:2; align-self:start; flex-wrap:wrap; align-items:center;
+    gap:4px 10px; min-width:0}
+  .alrow .caret{grid-column:3; grid-row:1 / span 2}
+  .alrow .cnt{flex-direction:row; align-items:baseline; gap:6px; font-size:var(--fs-xs)}
   .athumb{width:56px; height:56px}
   .kv{grid-template-columns:1fr; gap:2px}
   .kv dd{margin-bottom:6px}
@@ -2268,8 +2290,11 @@ const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 /* ══ 定義 ═══════════════════════════════════════════════════════ */
 const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'experiment':'🔬', 'karakuri':'⚙️'};
 /* 番組の短い呼び名（番組の登録簿の display_label と同じ言葉・同じ順・#572）。ルールの一覧の番組の列と、
-   その上の番組の絞り込みに使う。ここに無い番組は DB の名前で出す（test_channel_registry.py が登録簿と突き合わせる） */
+   その上の番組の絞り込み、素材の一覧の番組の列と絞り込みに使う。ここに無い番組は DB の名前で出す（test_channel_registry.py が登録簿と突き合わせる） */
 const CH_SHORT = {'buzz-zatsugaku':'雑学', 'dental':'歯科', 'rikiwaza':'力わざ', 'experiment':'検証', 'karakuri':'からくり'};
+/* 動画の番号の頭2文字 → 番組（各番組の config.json の episode_prefix の写し・#572）。素材の一覧の番組の列と絞り込みに使う。
+   ここに無い頭は、頭の2文字をそのまま番組の値と呼び名にする（黙って消さない） */
+const SEQ_CH = {'BZ':'buzz-zatsugaku', 'DT':'dental', 'RW':'rikiwaza', 'XP':'experiment', 'KR':'karakuri'};
 /* 検証だけを持つ番組（#551・05-experiment）。動画は 9000番台だけなので、自分のタブは常に空になる。
    **タブには出さず、検証タブの集め先にだけ入れる**（store.pilotChannels）。登録簿にある番組だけを書く */
 const PILOT_ONLY_CH = new Set(['experiment']);
@@ -2353,7 +2378,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/30 19:58';
+const BUILT_AT = '9/30 22:37';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2444,7 +2469,8 @@ const state = {
   /* 決まりの一覧・素材の一覧の絞り込み（#574）。空文字＝絞らない。
      決まりの列（q 以外）は見出しの窓のチェック（#572）で、null＝絞らない・配列＝チェックの付いた値だけ残す */
   rulesF:{q:'', ch:null, stage:null, kind:null, strength:null, subject:null},
-  assetsF:{kind:'', seq:''}
+  /* 素材の列も見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す） */
+  assetsF:{kind:null, ch:null, seq:null}
 };
 
 /* ── 開いていたタブ・チャンネルを覚える ──────────────────────────────
@@ -8233,10 +8259,6 @@ const KV_NONE = '<span class="none">なし</span>';
 const kvHTML = rows => `<dl class="kv">${rows.map(([k, v]) =>
   `<dt>${esc(k)}</dt><dd>${v == null || v === '' ? KV_NONE : v}</dd>`).join('')}</dl>`;
 const kvText = s => (s == null || String(s).trim() === '') ? '' : esc(s);
-/* 絞り込みの選び箱（素材。attr は data-af）。決まりの絞り込みは見出しの窓（下の RF_COLS） */
-const pickHTML = (attr, key, all, opts, cur) => `<select data-${attr}="${key}" aria-label="${esc(all)}">
-  <option value="">${esc(all)}</option>${opts.map(o =>
-    `<option value="${esc(o.v)}"${o.v === cur ? ' selected' : ''}>${esc(o.t)}</option>`).join('')}</select>`;
 
 async function loadRules(){
   if (store.rules) return store.rules;
@@ -8248,8 +8270,17 @@ async function loadRules(){
 /* 見出しを押して絞り込む列（#572・オーナー 2026-09-30 17:25「エクセルみたいにヘッダー部分を押すとフィルター」）。
    キーは state.rulesF のキー、値は見出しの言葉。押すとその列の値の一覧がチェックつきの窓で出る（全部チェック＝絞らない） */
 const RF_COLS = {kind:'種類', strength:'強さ', ch:'番組', subject:'対象', stage:'工程'};
+/* 素材の一覧も同じ形で絞る（#572・オーナー 2026-09-30 20:30「こっちも同じフィルターにしてほしい」）。キーは state.assetsF のキー */
+const AF_COLS = {kind:'種類', ch:'番組', seq:'使った動画'};
 let rulesOpts = {};   /* 列ごとの値の一覧 {v, t}（renderRules が行と番組の登録簿から作る） */
-let rfPop = null;     /* 窓を開いている列のキー。閉じているときは null */
+let assetsOpts = {};  /* 同じく素材の列ごとの値の一覧（renderAssets が行から作る） */
+/* 見出しを押して絞る表（ルールと素材で窓・印・閉じ方を共用）。view＝窓を置く画面（一覧の外）、list＝一覧、
+   cols＝押せる列、f＝絞り込みの状態、opts＝列ごとの値の一覧、paint＝一覧の描き直し。見出しの行に data-hf＝表の名前を付ける */
+const HF_TABLES = {
+  rules:  { view: '#view-rules',  list: '#rulelist',  cols: RF_COLS, f: () => state.rulesF,  opts: () => rulesOpts,  paint: () => paintRules() },
+  assets: { view: '#view-assets', list: '#assetlist', cols: AF_COLS, f: () => state.assetsF, opts: () => assetsOpts, paint: () => paintAssets() }
+};
+let rfPop = null;     /* 窓を開いている表と列 {tb, col}。閉じているときは null */
 function ruleHits(){
   const f = state.rulesF, w = f.q.trim().toLowerCase();
   const text = r => [r.rule_no, r.subject, r.body, r.applies_when, r.exceptions, r.pass_criteria, r.check_method,
@@ -8323,7 +8354,7 @@ function ruleRowHTML(r){
 }
 async function renderRules(){
   const el = $('#view-rules');
-  rfPop = null;   /* 画面を作り直すと窓も消える */
+  if (rfPop && rfPop.tb === 'rules') closeRfPop();   /* 画面を作り直すと窓も消える */
   if (!store.rules) el.innerHTML = loading();
   let rows;
   try { rows = await loadRules(); } catch (e) { el.innerHTML = errBox(e.message); return; }
@@ -8358,13 +8389,11 @@ function paintRules(){
   if (!box) return;
   const hits = ruleHits(), f = state.rulesF;
   $('#ruleshits').textContent = hits.length + '件';
-  /* 絞り込める見出しのボタン。▾ は押せる印、絞っている列は ●。窓を開いている列は押した形（aria-expanded） */
-  const hf = col => `<button type="button" class="hf${f[col] ? ' on' : ''}" data-rfcol="${col}" aria-haspopup="dialog"`
-    + ` aria-expanded="${rfPop === col}">${esc(RF_COLS[col])}<span class="fm" aria-hidden="true">${f[col] ? '●' : '▾'}</span></button>`;
+  const hf = col => hfBtn('rules', col);
   /* 番組の見出しは2段（900px 以上）と1つ（899px 以下）の両方を置き、幅で片方だけ出す。
      2段の下の段は、タブと同じ番組の絵文字の下に短い呼び名（番組で絞っているときは、外した番組を薄く） */
   box.style.setProperty('--chn', CH_RANK.length);
-  box.innerHTML = `<div class="lsthead rl"><span class="hno">番号</span><span>${hf('kind')}</span><span>${hf('strength')}</span>`
+  box.innerHTML = `<div class="lsthead rl" data-hf="rules"><span class="hno">番号</span><span>${hf('kind')}</span><span>${hf('strength')}</span>`
     + `<span class="hch"><span class="hchg">${hf('ch')}</span><span class="hchm" data-rfcol="ch" aria-hidden="true">${CH_RANK.map(s =>
         `<span${f.ch && !f.ch.includes(s) ? ' class="off"' : ''}><span class="ic">${esc(CH_ICON[s] || '')}</span>`
         + `<span class="nm">${esc(chShort(s))}</span></span>`).join('')}</span></span>`
@@ -8373,90 +8402,104 @@ function paintRules(){
     + (hits.length ? hits.map(ruleRowHTML).join('')
        : `<div class="lstnone">${(store.rules || []).length ? '当てはまるルールはありません' : 'ルールなし'}</div>`);
 }
-/* ── 見出しの絞り込みの窓 ──────────────────────────────────────
-   窓は一覧の外（#view-rules の直下）に置き、見出しの行のすぐ下に出す。チェックを変えるとその場で絞る。
+/* ── 見出しの絞り込みの窓（ルール・素材で共用・#572）─────────────────────────
+   窓は一覧の外（表の画面 view の直下）に置き、見出しの行のすぐ下に出す。チェックを変えるとその場で絞る。
    外を押すか Esc で閉じる。一覧の中（行など）を押したときは閉じるだけで、その行は開かない */
-/* いま見えている、その列の見出しのボタン（番組は 900px 以上と 899px 以下で別のボタン） */
-const rfBtn = col => [...document.querySelectorAll(`#rulelist .lsthead button[data-rfcol="${col}"]`)]
+/* 絞り込める見出しのボタン。▾ は押せる印、絞っている列は ●。窓を開いている列は押した形（aria-expanded） */
+function hfBtn(tb, col){
+  const T = HF_TABLES[tb], on = !!T.f()[col];
+  return `<button type="button" class="hf${on ? ' on' : ''}" data-rfcol="${col}" aria-haspopup="dialog"`
+    + ` aria-expanded="${!!rfPop && rfPop.tb === tb && rfPop.col === col}">${esc(T.cols[col])}`
+    + `<span class="fm" aria-hidden="true">${on ? '●' : '▾'}</span></button>`;
+}
+/* いま見えている、その列の見出しのボタン（ルールの番組は 900px 以上と 899px 以下で別のボタン） */
+const rfBtn = (tb, col) => [...document.querySelectorAll(`${HF_TABLES[tb].list} .lsthead button[data-rfcol="${col}"]`)]
   .find(b => b.getClientRects().length);
-function rfPopHTML(col){
-  const sel = state.rulesF[col];
+function rfPopHTML(tb, col){
+  const T = HF_TABLES[tb], sel = T.f()[col];
   return `<button type="button" class="rfall" data-rfall>${sel ? 'すべて選ぶ' : 'すべて外す'}</button>`
-    + `<div class="rflist">${(rulesOpts[col] || []).map(o => `<label><input type="checkbox" value="${esc(o.v)}"${
+    + `<div class="rflist">${(T.opts()[col] || []).map(o => `<label><input type="checkbox" value="${esc(o.v)}"${
       !sel || sel.includes(o.v) ? ' checked' : ''}><span>${esc(o.t)}</span></label>`).join('')}</div>`;
 }
 function placeRfPop(){
-  const pop = $('#rfpop'), view = $('#view-rules'), head = $('#rulelist .lsthead'), b = rfPop && rfBtn(rfPop);
-  if (!pop || !view || !head || !b) return;
+  const T = rfPop && HF_TABLES[rfPop.tb], pop = $('#rfpop');
+  if (!T || !pop) return;
+  const view = $(T.view), head = $(`${T.list} .lsthead`), b = rfBtn(rfPop.tb, rfPop.col);
+  if (!view || !head || !b) return;
   const v = view.getBoundingClientRect(), h = head.getBoundingClientRect(), a = (b.closest('.hch') || b).getBoundingClientRect();
   pop.style.top = Math.round(h.bottom - v.top + 4) + 'px';
   pop.style.left = Math.round(Math.max(0, Math.min(a.left - v.left, v.width - pop.offsetWidth))) + 'px';
 }
-function openRfPop(col){
+function openRfPop(tb, col){
   closeRfPop();
-  const view = $('#view-rules');
-  if (!view || !RF_COLS[col] || !rfBtn(col)) return;
-  rfPop = col;
+  const T = HF_TABLES[tb], view = T && $(T.view);
+  if (!view || !T.cols[col] || !rfBtn(tb, col)) return;
+  rfPop = { tb, col };
   const pop = document.createElement('div');
   pop.id = 'rfpop'; pop.className = 'rfpop';
-  pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', RF_COLS[col]);
-  pop.innerHTML = rfPopHTML(col);
+  pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', T.cols[col]);
+  pop.innerHTML = rfPopHTML(tb, col);
   view.appendChild(pop);
-  document.querySelectorAll(`#rulelist .lsthead button[data-rfcol="${col}"]`).forEach(b => b.setAttribute('aria-expanded', 'true'));
+  document.querySelectorAll(`${T.list} .lsthead button[data-rfcol="${col}"]`).forEach(b => b.setAttribute('aria-expanded', 'true'));
   placeRfPop();
   pop.querySelector('input')?.focus({ preventScroll: true });
 }
 function closeRfPop(refocus){
-  const col = rfPop;
+  const cur = rfPop;
   rfPop = null;
   $('#rfpop')?.remove();
-  document.querySelectorAll('#rulelist .lsthead button[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
-  if (refocus && col) rfBtn(col)?.focus();
+  document.querySelectorAll('.lsthead[data-hf] button[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+  if (refocus && cur) rfBtn(cur.tb, cur.col)?.focus();
 }
 /* 列の絞り込みを入れて一覧を描き直す。sel は残す値の配列（null＝絞らない）。全部の値が入っていたら絞らない扱い */
-function setRulesF(col, sel){
-  const all = (rulesOpts[col] || []).map(o => o.v);
-  state.rulesF[col] = (sel && !all.every(v => sel.includes(v))) ? all.filter(v => sel.includes(v)) : null;
-  paintRules();
+function setHF(tb, col, sel){
+  const T = HF_TABLES[tb], f = T.f(), all = (T.opts()[col] || []).map(o => o.v);
+  f[col] = (sel && !all.every(v => sel.includes(v))) ? all.filter(v => sel.includes(v)) : null;
+  T.paint();
   const pop = $('#rfpop');
   if (!pop) return;
-  const cur = state.rulesF[col];
+  const cur = f[col];
   pop.querySelector('[data-rfall]').textContent = cur ? 'すべて選ぶ' : 'すべて外す';
   pop.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = !cur || cur.includes(i.value); });
 }
 /* 外を押したら閉じるのは pointerdown で拾う（iPhone は押せない所を押しても click を送らないため）。
-   一覧の中を押して閉じたときは、そのあとに続く click（行を開く）を1回だけ食べる */
-let rfEatUntil = 0;
+   一覧の中（表の画面の中）を押して閉じたときは、そのあとに続く click（行を開く・見本を大きく見る）を1回だけ食べる */
+let rfEatUntil = 0, rfEatView = '';
 document.addEventListener('pointerdown', e => {
   rfEatUntil = 0;
   const t = e.target;
-  if (!rfPop || !t || !t.closest || t.closest('#rfpop') || t.closest('#rulelist .lsthead [data-rfcol]')) return;
+  if (!rfPop || !t || !t.closest || t.closest('#rfpop') || t.closest('.lsthead[data-hf] [data-rfcol]')) return;
+  const view = HF_TABLES[rfPop.tb].view;
   closeRfPop();
-  if (t.closest('#view-rules')) rfEatUntil = Date.now() + 1000;
+  if (t.closest(view)) { rfEatUntil = Date.now() + 1000; rfEatView = view; }
 }, true);
 document.addEventListener('click', e => {
   const t = e.target;
   if (!t || !t.closest) return;
   if (rfEatUntil) {
-    const eat = Date.now() < rfEatUntil && t.closest('#view-rules');
+    const eat = Date.now() < rfEatUntil && t.closest(rfEatView);
     rfEatUntil = 0;
     if (eat) { e.preventDefault(); e.stopPropagation(); return; }
   }
-  const hb = t.closest('#rulelist .lsthead [data-rfcol]');
-  if (hb) { const col = hb.dataset.rfcol; if (rfPop === col) closeRfPop(); else openRfPop(col); return; }
+  const hb = t.closest('.lsthead[data-hf] [data-rfcol]');
+  if (hb) {
+    const tb = hb.closest('[data-hf]').dataset.hf, col = hb.dataset.rfcol;
+    if (rfPop && rfPop.tb === tb && rfPop.col === col) closeRfPop(); else openRfPop(tb, col);
+    return;
+  }
   if (!rfPop) return;
   if (t.closest('#rfpop')) {
-    if (t.closest('[data-rfall]')) setRulesF(rfPop, state.rulesF[rfPop] ? null : []);
+    if (t.closest('[data-rfall]')) setHF(rfPop.tb, rfPop.col, HF_TABLES[rfPop.tb].f()[rfPop.col] ? null : []);
     return;
   }
   /* pointerdown を伴わない押し方（キーボードで行を開く等）も、外なら同じように閉じる */
-  const inView = !!t.closest('#view-rules');
+  const inView = !!t.closest(HF_TABLES[rfPop.tb].view);
   closeRfPop();
   if (inView) { e.preventDefault(); e.stopPropagation(); }
 }, true);
 document.addEventListener('change', e => {
   if (!rfPop || !e.target.closest || !e.target.closest('#rfpop')) return;
-  setRulesF(rfPop, [...document.querySelectorAll('#rfpop .rflist input:checked')].map(i => i.value));
+  setHF(rfPop.tb, rfPop.col, [...document.querySelectorAll('#rfpop .rflist input:checked')].map(i => i.value));
 });
 document.addEventListener('keydown', e => {
   if (rfPop && e.key === 'Escape') { e.preventDefault(); closeRfPop(true); }
@@ -8486,11 +8529,21 @@ async function loadProdAssets(){
   return store.prodAssets;
 }
 const usedOf = r => (Array.isArray(r.used_in) ? r.used_in : []).filter(u => u && u.seq);
-const assetsFiltered = () => Object.values(state.assetsF).some(v => v);
+/* 使った動画の番号（重なりなし・番号の順）と、その番組（番号の頭2文字から・登録簿の順） */
+const usedSeqs = r => [...new Set(usedOf(r).map(u => String(u.seq)))].sort((a, b) => a.localeCompare(b));
+const seqCh = seq => { const p = String(seq || '').slice(0, 2).toUpperCase(); return SEQ_CH[p] || p; };
+const usedChs = r => [...new Set(usedSeqs(r).map(seqCh))].sort(byChRank);
+/* 絞り込みの列ごとの行の値。使った動画が無い素材は、番組・使った動画とも ''（窓では「なし」） */
+function assetVals(r, col){
+  if (col === 'kind') return [r.kind || ''];
+  const v = col === 'ch' ? usedChs(r) : usedSeqs(r);
+  return v.length ? v : [''];
+}
+/* チェックの付いた値のどれかに当てはまる行だけ（列の間は「かつ」）。チェックを全部外した列は1行も残さない */
 function assetHits(){
   const f = state.assetsF;
   return ((store.prodAssets || {}).rows || []).filter(r =>
-    (!f.kind || r.kind === f.kind) && (!f.seq || usedOf(r).some(u => u.seq === f.seq)));
+    Object.keys(AF_COLS).every(col => !f[col] || assetVals(r, col).some(v => f[col].includes(v))));
 }
 /* 出典とライセンス（081 の source）。{made_from:{type, from, license}（切り出した元）,
    external:[{name, page, license, authors[]}]（外から取ってきた物）, photos:[{title, url, license, author}]（見比べた写真）}
@@ -8531,16 +8584,39 @@ function assetCall(c){
     ? `<pre class="code">${esc(x.signature || x.function)}</pre>${x.doc ? `<div class="exn pre">${esc(x.doc)}</div>` : ''}`
     : `<pre class="code">${esc(typeof x === 'string' ? x : JSON.stringify(x, null, 1))}</pre>`).join('');
 }
+/* 一覧の行に出す説明（#572・オーナー 2026-09-30 20:30「名前だけでなく、どういう内容なのかもう少し一覧側で」）。
+   開いたときに「呼び方」の下に出る説明文のうち、最初の関数（主な呼び口）の説明の1行目。最初の関数に説明が無ければ、
+   説明のある次の関数の1行目。説明が次の行へ続くのに1行目が文の途中（「・」「、」など）で終わるときは「…」を付ける。
+   長さは CSS で2行に切る（超えたら「…」） */
+function assetDesc(c){
+  if (c && typeof c === 'object' && !Array.isArray(c) && Array.isArray(c.functions)) c = c.functions;
+  for (const x of (Array.isArray(c) ? c : [])) {
+    const lines = String((x && typeof x === 'object' && x.doc) || '').split('\n').map(s => s.trim()).filter(Boolean);
+    if (!lines.length) continue;
+    const l = lines[0];
+    return lines.length > 1 && !/[。．.）)」』]$/.test(l) ? l.replace(/[・、,，:：\s]+$/, '') + '…' : l;
+  }
+  return '';
+}
+/* 列の間の縦の線（900px 以上・#572）。見出しの行と各行の末尾に4本（見本｜名前｜種類｜番組｜使った動画 の間）。
+   :nth-of-type で数えるので、見出しの行と行の中には、ほかに <i> を置かない */
+const AL_VL = '<i class="vl" aria-hidden="true"></i>'.repeat(4);
 function assetRowHTML(r, urls){
   const key = String(r.asset_key || ''), name = r.name_ja || key, used = usedOf(r);
+  const seqs = usedSeqs(r), chs = usedChs(r), desc = assetDesc(r.call);
   const u = r.sample_image ? urls[r.sample_image] : null;
   const thumb = u
     ? `<button type="button" class="athumb" data-plbox="${esc(u)}" data-plcap="${esc(name)}" aria-label="${esc(name)}の見本を大きく見る"><img src="${esc(u)}" alt="" loading="lazy"></button>`
     : `<span class="athumb none">素材なし</span>`;
+  /* 番組と動画の番号は名前の途中で折り返さず、「・」のあとで折り返す */
+  const joinNw = list => list.map(s => `<span>${esc(s)}</span>`).join('・<wbr>');
   return `<details class="al" data-akey="${esc(key)}"${assetsOpen.has(key) ? ' open' : ''}>
-    <summary class="alrow">${thumb}<span class="nm">${esc(name)}</span>
-      <span class="tagk">${esc(r.kind || '—')}</span><span class="cnt">${used.length}本</span>
-      <span class="caret" aria-hidden="true">▸</span></summary>
+    <summary class="alrow">${thumb}<span class="nmc"><span class="nm">${esc(name)}</span>${
+        desc ? `<span class="ds">${esc(desc)}</span>` : ''}</span>
+      <span class="meta"><span class="tagk">${esc(r.kind || '—')}</span>
+        <span class="ach">${chs.length ? joinNw(chs.map(chShort)) : '—'}</span>
+        <span class="cnt"><span>${used.length}本</span>${seqs.length ? `<span class="sq">${joinNw(seqs)}</span>` : ''}</span></span>
+      <span class="caret" aria-hidden="true">▸</span>${AL_VL}</summary>
     <div class="lstbody">${kvHTML([
       ['出典とライセンス', assetSource(r.source)],
       ['使った動画', assetUsed(used)],
@@ -8549,22 +8625,25 @@ function assetRowHTML(r, urls){
 }
 async function renderAssets(){
   const el = $('#view-assets');
+  if (rfPop && rfPop.tb === 'assets') closeRfPop();   /* 画面を作り直すと窓も消える */
   if (!store.prodAssets) el.innerHTML = loading();
   const { rows } = await loadProdAssets();
-  const f = state.assetsF;
-  const kinds = new Set(rows.map(r => r.kind)), seqs = new Map();
-  rows.forEach(r => usedOf(r).forEach(u => { if (!seqs.has(u.seq)) seqs.set(u.seq, u.title || ''); }));
+  /* 窓に並べるのは行に実際にある値だけ。種類は決まった並び→並びに無い値、番組は登録簿の順、使った動画は番号の順
+     （呼び名は番号と題）。使った動画が無い素材があるときだけ、番組と使った動画の窓の最後に「なし」 */
+  const seen = col => { const s = new Set(); rows.forEach(r => assetVals(r, col).forEach(v => s.add(v))); return s; };
+  const kinds = seen('kind'), chs = seen('ch'), seqs = seen('seq'), titles = new Map();
+  rows.forEach(r => usedOf(r).forEach(u => { if (!titles.has(String(u.seq))) titles.set(String(u.seq), u.title || ''); }));
+  const withNone = (s, list) => s.has('') ? [...list, { v: '', t: 'なし' }] : list;
+  assetsOpts = {
+    kind: [...ASSET_KINDS.filter(k => kinds.has(k)), ...[...kinds].filter(k => !ASSET_KINDS.includes(k))]
+      .map(v => ({ v, t: v || '—' })),
+    ch: withNone(chs, [...chs].filter(Boolean).sort(byChRank).map(v => ({ v, t: chShort(v) }))),
+    seq: withNone(seqs, [...seqs].filter(Boolean).sort((a, b) => a.localeCompare(b))
+      .map(v => ({ v, t: titles.get(v) ? `${v} ${titles.get(v)}` : v })))
+  };
   el.innerHTML = `
     <div class="pagehead"><div class="eyebrow">素材</div><h1>🧱 素材の一覧</h1></div>
-    <div class="toolbar">
-      ${pickHTML('af', 'kind', 'すべての種類',
-         [...ASSET_KINDS.filter(k => kinds.has(k)), ...[...kinds].filter(k => k && !ASSET_KINDS.includes(k))]
-           .map(v => ({ v, t: v })), f.kind)}
-      ${pickHTML('af', 'seq', 'すべての動画',
-         [...seqs].sort((a, b) => a[0].localeCompare(b[0])).map(([v, t]) => ({ v, t: t ? `${v} ${t}` : v })), f.seq)}
-      <button type="button" class="btn" id="assetsreset" hidden>条件を外す</button>
-      <span class="hits" id="assetshits"></span>
-    </div>
+    <div class="toolbar"><span class="hits" id="assetshits"></span></div>
     <div class="lst" id="assetlist"></div>`;
   paintAssets();
 }
@@ -8573,8 +8652,9 @@ function paintAssets(){
   if (!box) return;
   const hits = assetHits(), urls = (store.prodAssets || {}).urls || {};
   $('#assetshits').textContent = hits.length + '件';
-  $('#assetsreset').hidden = !assetsFiltered();
-  box.innerHTML = `<div class="lsthead al" aria-hidden="true"><span>見本</span><span>名前</span><span>種類</span><span>使った動画</span><span></span></div>`
+  const hf = col => hfBtn('assets', col);
+  box.innerHTML = `<div class="lsthead al" data-hf="assets"><span class="hnf">見本</span><span class="hnf">名前</span>`
+    + `<span>${hf('kind')}</span><span>${hf('ch')}</span><span>${hf('seq')}</span><span class="hend"></span>${AL_VL}</div>`
     + (hits.length ? hits.map(r => assetRowHTML(r, urls)).join('')
        : `<div class="lstnone">${((store.prodAssets || {}).rows || []).length ? '当てはまる素材はありません' : '素材なし'}</div>`);
 }
@@ -8762,10 +8842,7 @@ document.addEventListener('click', e => {
   const plb = e.target.closest('[data-plbox]');
   if (plb) { e.preventDefault(); openPlbox(plb.dataset.plbox, plb.dataset.plcap); return; }
   if (e.target.closest('[data-plbox-close]') || e.target.id === 'plbox') { closePlbox(); return; }
-  /* 素材の「条件を外す」（決まりの絞り込みは見出しの窓・上の RF_COLS の近く） */
-  if (e.target.closest('#assetsreset')) {
-    Object.keys(state.assetsF).forEach(k => { state.assetsF[k] = ''; }); renderAssets(); return;
-  }
+  /* ルール・素材の絞り込みは見出しの窓（上の HF_TABLES の近く） */
 
   /* チャンネル名そのものを押したときは、開閉ではなく切り替えとして扱う（2026-08-20） */
   const goBtn = e.target.closest('.chgo[data-ch]');
@@ -8911,9 +8988,6 @@ document.addEventListener('change', e => {
   if (e.target.id === 'stockgenre') {
     state.stockGenre = e.target.value; state.stockPage = 0; refreshStockTable();
   }
-  /* 素材の絞り込み（選び箱） */
-  const af = e.target.dataset && e.target.dataset.af;
-  if (af) { state.assetsF[af] = e.target.value; paintAssets(); }
 });
 document.addEventListener('keydown', e => {
   /* 素材の見本を大きく見ているあいだは Esc で閉じる（ほかの操作より先に受ける） */
