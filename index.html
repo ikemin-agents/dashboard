@@ -2227,7 +2227,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/29 23:35';
+const BUILT_AT = '9/30 09:30';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2369,8 +2369,10 @@ const VIEWS = [
   {key:'analytics', icon:'📈', label:'分析', chIndep:true},
   /* 決まりの一覧と素材の一覧（#574・オーナー決定 2026-09-29）。読むだけ。旧「運営」タブの代わり
      （運営で見ていた AI の残量・請求・gen-farm・制作の詰まりは PC のステータス画面で見る）。
-     決まりは番組で閲覧を分けない表なので、全チャンネル可の人にだけ出す（共同運営者は制作と分析のまま） */
-  {key:'rules',     icon:'📏', label:'決まり', chIndep:true, fullOnly:true},
+     決まりは番組で閲覧を分けない表なので、全チャンネル可の人にだけ出す（共同運営者は制作と分析のまま）。
+     画面の呼び名は「動画制作ルールDB」（オーナー指示 2026-09-30 09:02・#572）。タブは短く「ルール」——
+     正式名のままだとスマホの幅（390px）でタブの並びが画面をはみ出すため。見出しは正式名 */
+  {key:'rules',     icon:'📏', label:'ルール', chIndep:true, fullOnly:true},
   {key:'assets',    icon:'🧱', label:'素材',   chIndep:true, fullOnly:true}
 ];
 /* ── 権限（#208）─────────────────────────────────────────────────
@@ -2567,9 +2569,10 @@ async function loadFacets(ch){
    channels.human_gates が正本・画面の他の場所と同じ）。廃止した承認ポイントの
    状態が古い行に残っており、素通しで展開すると見出しとバッジの件数が表の本数より
    多くなる（歯科で「承認待ち 70件」・表は26本／#536 中3）。検証のタブは番組を
-   またぐので、その動画が属する番組の承認ポイントで絞る。 */
-async function loadPending(ch){
-  if (store.pending[ch]) return store.pending[ch];
+   またぐので、その動画が属する番組の承認ポイントで絞る。
+   force … 手元に控えがあっても DB から取り直す（承認のあと・#572。下の loadPendingAll） */
+async function loadPending(ch, force){
+  if (!force && store.pending[ch]) return store.pending[ch];
   const items = (await q(scopeCh(sb.from('v_dashboard_list').select('*'), ch)
     .eq('has_gate_state', true))).filter(r => inScope(ch, r.seq)).map(mapRow);
   const rv = [], rc = [], sbCheck = [];
@@ -2622,11 +2625,13 @@ const pendingCount = ch => new Set(pendingList(ch).map(r => r.item && r.item.id)
 /* 全チャンネルタブのバッジ用（オーナー要望 2026-09-23）。いま見ている番組の表を描き終えた
    あとに裏で呼ぶ——他の番組ぶんは表を待たせない。番組ごとに2本（状態を持つ行＋仕分けの
    件数）なので、番組4つで最大8本。取り終えたらタブだけ描き直す。失敗しても表には
-   影響しないので握りつぶす（バッジが出ないだけ）。 */
-async function loadPendingAll(){
-  const todo = chTabList().map(c => c.slug).filter(slug => !store.pending[slug]);
+   影響しないので握りつぶす（バッジが出ないだけ）。
+   force … 控えのある番組も含めて全部を DB から取り直す（承認のあと・#572）。取り直すあいだは
+   前の数字を出したままにし、届いた番組から置き換える（先に消すとバッジが一瞬消えるため） */
+async function loadPendingAll(force){
+  const todo = chTabList().map(c => c.slug).filter(slug => force || !store.pending[slug]);
   if (!todo.length) return;
-  await Promise.all(todo.map(slug => loadPending(slug).catch(() => null)));
+  await Promise.all(todo.map(slug => loadPending(slug, force).catch(() => null)));
   renderShell();
 }
 
@@ -6847,13 +6852,19 @@ async function approveNow(vid, gate, note, rev){
   store.core = {}; store.facets = {}; store.byId = new Map();
   store.assets = {}; store.analytics = {};
   delete store.threads[Number(vid)];
-  /* 承認待ちバッジだけは今すぐ正しくする（この1件を減らす。一覧は触らない） */
+  /* 承認待ちバッジだけは今すぐ正しくする（この1件を減らす。一覧は触らない）。
+     ⚠️ **記録されなかった承認では減らさない**（#572）。同じ版に人の承認が既にあると、受け口は何も
+     記録せず already_approved を返す。そのあと同じ版で出し直された動画は、一覧のビューでは
+     承認待ちのまま残る——手元だけ減らすと DB と食い違い、タブの数字が消えた（KR0001・KR0002 で
+     「身近なからくり」の数字が消えた・2026-09-30 09:02）。どちらの場合も、最後に全番組の件数を
+     DB から取り直してタブを描き直す（一覧は触らない＝スクロールは戻らない） */
   const p = store.pending[state.ch];
-  if (p && Array.isArray(p.rv)) {
+  if (!(data && data.already_approved) && p && Array.isArray(p.rv)) {
     p.rv = p.rv.filter(r => !(r.item && r.item.id === Number(vid) && r.gate === gate));
   }
   markApproved(vid, gate, true);
   renderShell();
+  loadPendingAll(true);
   const revTxt = data && data.target_revision ? `第${data.target_revision}版の` : '';
   toast((data && data.already_approved) ? `${revTxt}${gname}は既に承認済みです` : `${revTxt}${gname}を承認しました`);
 }
@@ -8131,7 +8142,7 @@ async function renderRules(){
   /* 番組の選択肢は番組の登録簿（動画の番組の一覧）から作る。行に出てこない番組も選べる（全番組の行が出る） */
   const chOpts = (store.pilotChannels || store.channels || []).map(c => ({ v: c.slug, t: c.name || c.slug }));
   el.innerHTML = `
-    <div class="pagehead"><div class="eyebrow">決まり</div><h1>📏 決まりの一覧</h1></div>
+    <div class="pagehead"><div class="eyebrow">ルール</div><h1>📏 動画制作ルールDB</h1></div>
     <div class="toolbar">
       <input type="search" id="rulesq" placeholder="文字で探す" aria-label="文字で探す" value="${esc(f.q)}">
       ${pickHTML('rf', 'ch', 'すべての番組', chOpts, f.ch)}
@@ -8153,7 +8164,7 @@ function paintRules(){
   $('#rulesreset').hidden = !rulesFiltered();
   box.innerHTML = `<div class="lsthead rl" aria-hidden="true"><span>番号</span><span>種類</span><span>強さ</span><span>対象</span><span>本文</span><span></span></div>`
     + (hits.length ? hits.map(ruleRowHTML).join('')
-       : `<div class="lstnone">${(store.rules || []).length ? '当てはまる決まりはありません' : '決まりなし'}</div>`);
+       : `<div class="lstnone">${(store.rules || []).length ? '当てはまるルールはありません' : 'ルールなし'}</div>`);
 }
 
 async function loadProdAssets(){
