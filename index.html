@@ -2280,7 +2280,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/30 17:18';
+const BUILT_AT = '9/30 17:30';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3349,11 +3349,15 @@ function filterChips(facets){
       DB へ渡している（listOrder / SORT_DB）。 */
 
 /* ── 一覧のセクション（在庫とレビューの統合・オーナー要望 2026-08-19）────────────
-   「あなたの番 →【AI】作業中 → 完了 → ネタ案 → 没」の順に見出しを立てて並べる。
+   「あなたの番 →【AI】作業中 → 承認済み・投稿まで → 完了 → ネタ案 → 没」の順に見出しを立てて並べる。
    承認した動画が一覧から消えず【AI】作業中に残り続けるのが主目的（承認＝レビュー一覧から
-   消える、だとどこへ行ったのか分からない）。下3つは既定で畳み、件数だけ見せる。
-   並びは DB 側の sort_rank（承認待ち→修正中→進行中→投稿済み→ネタ案）そのままなので、
-   ここでは見出しを差し込むだけで並べ替えはしない。
+   消える、だとどこへ行ったのか分からない）。完了・ネタ案・没は既定で畳み、件数だけ見せる。
+   「承認済み・投稿まで」は投稿待ち（承認は済み・予約はまだ）と予約済み（YouTube に登録済み・公開
+   時刻待ち）。以前は「完了」に投稿済みと混ざっていた（オーナー要望 2026-09-30「予約済みと投稿待ちは
+   違うので、投稿されるまでは完了ではなく別のまとまりに」）。進行係が予約する番組（雑学・歯科）も、
+   人が公開を決める番組（力わざ・からくり・検証）も同じここに入る。
+   並びは DB 側の sort_rank（承認待ち→修正中→進行中→投稿済み→ネタ案）のまま見出しを差し込む。
+   手元で並べ直すのは、承認待ちの中（直した版を先頭へ）と「承認済み・投稿まで」の中だけ（groupSections）。
    絞り込み・並べ替え中は順番の意味が変わるのでセクションを外し、素直な一覧にする。 */
 const SECTIONS = [
   /* 検証のタブも本編と同じ言葉（2026-09-29 オーナー決定・ACT_WORDS と同じ） */
@@ -3363,19 +3367,35 @@ const SECTIONS = [
   {key:'triage', label:'あなたの番 — ネタの仕分け',
    hint:'台本の型に乗らなかったネタです。切り口を変える／このまま作る／没 を選んでください'},
   {key:'ai',   label:AI_TAG + '作業中',            hint:'AIが自動で進めています（差し戻した分の直しもここ）'},
-  {key:'done', label:'完了（予約済み・投稿済み）',  fold:true},
+  /* 公開を人が決める番組（力わざ・からくり）と検証のタブでは、予約を待っているわけではないので
+     言葉を替える（hintManual・secHeadInner）。どこが自動かは書かない（静的な HTML は誰でも読めるため） */
+  {key:'wait', label:'承認済み・投稿まで',          hint:'予約か公開を待っています。あなたの操作は要りません',
+   hintManual:'承認は済んでいます。公開の時期はまだ決まっていません'},
+  {key:'done', label:'完了（投稿済み）',            fold:true},
   {key:'idea', label:'ネタ案（未着手）',            fold:true},
   {key:'drop', label:'没',                         fold:true}
 ];
+/* 予約済み＝YouTube に登録済みで公開時刻を待っている。DB の工程は「投稿済」に入るが、まだ公開されていない */
+const isResv = it => it.stage === 'posted' && it.pub_status === '予約済';
 function sectionOf(it){
   if (it.stage === 'dropped') return 'drop';
   if (it.stage === 'triage')  return 'triage';  /* ネタの仕分け待ち（#314）。ゲートは持たない */
   if (it._rv) return 'rv';                    /* あなたの番。工程より優先する */
   if (it._rc) return 'ai';                    /* 差し戻しの直し中も AI の番 */
-  if (it.stage === 'posted' || it.stage === 'queue') return 'done';
+  if (it.stage === 'queue' || isResv(it)) return 'wait';
+  if (it.stage === 'posted') return 'done';
   if (it.stage === 'idea') return 'idea';
   return 'ai';
 }
+/* 「承認済み・投稿まで」の並び（オーナー要望 2026-09-30）: 予約済みを公開の予定時刻の早い順、
+   そのあとに投稿待ちを承認の古い順。承認の時刻が無い行（記録の無い古い動画）は工程が変わった時刻で代える。
+   時刻が読めない行は後ろへ。同じ値どうしは DB が付けた並びのまま（Array#sort は安定） */
+const tsOf = iso => { const t = Date.parse(iso || ''); return isNaN(t) ? Infinity : t; };
+const waitKey = it => isResv(it)
+  ? [0, tsOf(it.scheduled_at)]
+  : [1, tsOf(it[GATE_COLUMN_FIELD.final] || it.status_changed_at)];
+const waitCmp = (a, b) => { const x = waitKey(a), y = waitKey(b);
+  return x[0] - y[0] || (x[1] === y[1] ? 0 : (x[1] < y[1] ? -1 : 1)); };
 const sectionsOff = () => !!(state.stockSort || state.stockFilter
   || state.stockQ.trim() || state.stockGenre);
 const secOpen = s => !s.fold || !!state.secOpen[s.key];
@@ -3385,11 +3405,15 @@ function groupSections(rows){
   /* 承認待ちの中だけ「あなたの指摘を直した版」を先頭へ寄せる（オーナー要望 2026-09-02）。
      Array#sort は安定なので、札が同じもの同士は DB が付けた並び（滞留の長い順）のまま。 */
   if (g.rv) g.rv.sort((a, b) => (reworkOf(b) === 'human') - (reworkOf(a) === 'human'));
+  if (g.wait) g.wait.sort(waitCmp);
   return SECTIONS.map(s => Object.assign({}, s, {rows: g[s.key] || []})).filter(s => s.rows.length);
 }
+/* 公開を人が決めるタブ（進行係を通らない番組と、検証のタブ）。offDispatcherItem と同じ見分け方 */
+const manualPubTab = () => state.ch === PILOT_CH || STORAGE_ONLY_CH.has(state.ch);
 /* 見出しの共通部分（表の行とスマホのカード見出しで同じ文言・同じ開閉状態を使う） */
 function secHeadInner(s){
-  const hint = (state.ch === PILOT_CH && s.hintPilot) ? s.hintPilot : s.hint;
+  const hint = (state.ch === PILOT_CH && s.hintPilot) ? s.hintPilot
+    : (s.hintManual && manualPubTab()) ? s.hintManual : s.hint;
   return `<span class="sn">${s.fold ? `<span class="tri">${secOpen(s) ? '▾' : '▸'}</span>` : ''}${esc(s.label)}</span>
     <span class="n">${s.rows.length}件</span>${hint ? `<span class="hint">${esc(hint)}</span>` : ''}`;
 }
@@ -3410,7 +3434,9 @@ const secAttrs = s => s.fold
 const shortDT = s => String(s || '').replace(/^\d{4}-/, '').replace(/\([日月火水木金土]\)/, '');
 const MCOL = {
   seq:   {sort:1, w:'78px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
-  title: {sort:1,                  td: it => `<td class="ttl">${esc(it.title)}</td>`},
+  /* 予約済みだけ、公開の予定時刻をタイトルの後ろに出す（投稿日時の列は 2026-09-19 に外したため） */
+  title: {sort:1,                  td: it => `<td class="ttl">${esc(it.title)}${it.resv
+          ? ` <span class="resv" title="${esc(it.resv)} に公開予定">🗓 ${esc(shortDT(it.resv))}</span>` : ''}</td>`},
   state: {label:'状態', w:'112px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
   rev:   {label:'版',   w:'52px',  td: it => `<td class="num">${revNumHTML(it)}</td>`},
   src:   {label:'直した指摘', w:'128px', td: it => `<td class="bcol">${srcBadgeHTML(it)}</td>`},
@@ -3488,6 +3514,10 @@ function stageBadge(it){
   if (it.stage === 'dropped') return {cls:'idea', gl:'○', text:'没'};
   /* ネタの仕分け待ち（#314）＝あなたが動く番なので承認待ちと同じ色（rv） */
   if (it.stage === 'triage')  return {cls:'rv',   gl:'●', text:'仕分け待ち'};
+  /* 予約済みは「投稿済」と分ける（オーナー要望 2026-09-30）。言葉は工程の帯の状態の欄と同じ。
+     予定時刻は列幅に収まらないので、ツールチップと表のタイトルの後ろ（MCOL.title）・カードの下段に出す */
+  if (isResv(it))             return {cls:'work', gl:'●', text:'予約済み',
+                                      tip: it.resv ? `${it.resv} に公開予定` : '公開時刻を待っています'};
   if (it.stage === 'posted')  return {cls:'done', gl:'✓', text:'投稿済'};
   const st = stateBadgeOf(it);
   if (st) return st;
@@ -3513,10 +3543,11 @@ function progressDots(it){
 function stockCards(rows){
   const card = it => {
     const b = stageBadge(it);
-    const extra = it.stage === 'posted'
+    /* 予約済みも DB の工程は「投稿済」なので、予約の判定を先にする（再生数はまだ無い） */
+    const extra = it.resv ? `<span class="sx">🗓 ${esc(it.resv)} に公開予定</span>`
+      : it.stage === 'posted'
       ? (it.plays != null ? `<span class="sx">▶ ${nf(it.plays)} 回再生</span>` : '')
-      : (it.resv ? `<span class="sx">🗓 ${esc(it.resv)}</span>`
-        : (it.pub ? `<span class="sx">📅 ${esc(it.pub)}</span>` : ''));
+      : (it.pub ? `<span class="sx">📅 ${esc(it.pub)}</span>` : '');
     return `<article class="scard${it.stage === 'dropped' ? ' dropped' : ''} ${stateCls(it)}" data-vid="${it.id}" tabindex="0">
       <div class="scard-top">
         <span class="scard-seq">${esc(it.seq)}</span>
@@ -3590,12 +3621,12 @@ async function renderStock(){
       <div class="eyebrow">制作</div>
       <h1>${m.icon} ${esc(m.name)}${rvN ? `<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${rvN}件</span>` : ''}${
         triageN ? `<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">仕分け待ち ${triageN}件</span>` : ''}</h1>
-      <p>仕掛かり ${active}本・没 ${droppedN}本。上から「あなたの番（承認待ち → ネタの仕分け）→${AI_TAG}作業中 → 完了」の順に並びます。行（スマホはカード）をクリックすると素材とレビュー履歴が開き、その場でコメント・承認ができます。表は ${PAGE_SIZE} 件ずつ表示します。</p>
+      <p>仕掛かり ${active}本・没 ${droppedN}本。上から「あなたの番（承認待ち → ネタの仕分け）→${AI_TAG}作業中 → 承認済み・投稿まで → 完了」の順に並びます。行（スマホはカード）をクリックすると素材とレビュー履歴が開き、その場でコメント・承認ができます。表は ${PAGE_SIZE} 件ずつ表示します。</p>
     </div>
     <div class="sectionhead" style="margin-top:0">
       <h2>進捗マトリクス</h2>
       <span class="hint">${sectionsOff() ? '絞り込み・並べ替え中はセクションを外して一覧で出しています'
-        : '承認したものは【AI】作業中に残ります'}</span>
+        : '完成を承認したものは「承認済み・投稿まで」に移ります'}</span>
     </div>
       <div class="filterbar">
         <button class="filtoggle" id="filtoggle" aria-expanded="${state.filtersOpen}" aria-controls="filterbox">絞り込み <span class="fcaret">▾</span></button>
