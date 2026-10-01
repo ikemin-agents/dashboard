@@ -84,7 +84,7 @@
   --fs-2xs:.6875rem; --fs-xs:.75rem; --fs-sm:.8125rem; --fs-md:.875rem;
   --fs-lg:1rem; --fs-xl:1.1875rem; --fs-hero:clamp(2rem,3.4vw,2.6rem);
   --lh-tight:1.35; --lh:1.6;
-  --okcol-w:122px;                 /* 進捗マトリクス右端の承認ボタンの列幅（#536 中4） */
+  --okcol-w:100px;                 /* 進捗マトリクス右端の承認ボタンの列幅（#536 中4）。押したあとの「承認済み」74px＋セルの余白 20px（#604 中2 で実測） */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
   --r-sm:7px; --r-md:10px; --r-lg:14px; --r-pill:999px;
 }
@@ -493,8 +493,8 @@ td.dim{color:var(--muted)}
 .okbtn:hover{filter:brightness(1.07)}
 .okbtn:disabled{background:var(--done-tint); color:var(--done); cursor:default}
 /* 表では右端の専用列に、カードではバッジ行の右端に置く（オーナー指定 2026-08-20） */
-/* 幅は検証用の動画の「この方向でOK」（ACT_WORDS.pilot）が折り返さずに収まる実測値。
-   76px のときはボタンが列からはみ出し、右端が押せなかった（#536 中4）。
+/* 幅は「承認」と押したあとの「承認済み」が折り返さずに収まる値（#604 中2 で測り直し）。
+   ボタンの字が列の幅を超えると列からはみ出し、右端が押せない（#536 中4・#604 中2）。
    ⚠️ 幅の正本は --okcol-w 1つ（colgroup の inline style も同じ変数を見る） */
 .mtx td.okcol,.mtx th.okcol{width:var(--okcol-w); white-space:nowrap; text-align:center}
 /* 表が横スクロールになる幅でも承認ボタンが切れないよう、右端に貼り付ける（オーナー指摘 2026-09-19）。
@@ -1336,6 +1336,9 @@ tr.dropped td{color:var(--muted)}
 .nowblk td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:2px; white-space:normal; line-height:1.35}
 @media (max-width:640px){
   .nowgrid{grid-template-columns:1fr}
+  /* 番組が4つ並ぶと 390px で右端の番組の列が枠に切られていた（表 343px／枠 322px・#604 E5）。
+     セルの左右の余白を詰めて枠に収める */
+  .nowblk th, .nowblk td{padding:7px 5px}
   .nowblk td .sub{white-space:normal}
   .nowblk td .sub.subw{display:none}   /* 「登録者 433/500・再生 74万/300万」は幅が足りないので畳む */
 }
@@ -1565,17 +1568,28 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-steps{display:flex; align-items:center; gap:0; min-width:0; overflow-x:auto;
   scrollbar-width:none; flex:0 1 auto}
 .sview .sv-steps::-webkit-scrollbar{display:none}
+/* 帯が入りきらず横に送れるときの印（#604 E1）。送れる側の端を薄くする（スクロールバーは出さない作りのため） */
+.sview .sv-steps.more-r{-webkit-mask-image:linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  mask-image:linear-gradient(to right, #000 calc(100% - 32px), transparent)}
+.sview .sv-steps.more-l{-webkit-mask-image:linear-gradient(to left, #000 calc(100% - 32px), transparent);
+  mask-image:linear-gradient(to left, #000 calc(100% - 32px), transparent)}
+.sview .sv-steps.more-l.more-r{
+  -webkit-mask-image:linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+  mask-image:linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent)}
 /* 矢羽根（シェブロン）の帯（#570）。右が尖り、左が同じ形に欠ける。各工程は2行
-   （名前／作るもの・道具。知らせることがある工程だけ2行目が状態の言葉）。済みは色と ✓ で示す */
+   （名前／作るもの・道具。知らせることがある工程だけ2行目が状態の言葉）。済みは色と ✓ で示す。
+   左右の余白は矢羽根の欠けと尖りに文字が掛からない分だけ（#604 E1 で詰めた。1400px で 12 個を1行に
+   収めるため。足りない分は svFitFlow が長い2行目から縮める） */
 .sview .sv-step{--ar:10px; position:relative; display:flex; flex-direction:column; justify-content:center;
-  flex:0 0 auto; min-width:72px; height:38px; padding:0 calc(var(--ar) + 7px) 0 calc(var(--ar) + 11px);
+  flex:0 0 auto; min-width:72px; height:38px; padding:0 calc(var(--ar) + 3px) 0 calc(var(--ar) + 6px);
   margin-left:calc(2px - var(--ar)); font-size:var(--fs-2xs); line-height:1.35; white-space:nowrap;
   color:var(--muted); background:var(--surface-3);
   clip-path:polygon(0 0, calc(100% - var(--ar)) 0, 100% 50%, calc(100% - var(--ar)) 100%, 0 100%, var(--ar) 50%)}
 .sview .sv-step:first-child{margin-left:0; padding-left:12px; border-radius:var(--r-sm) 0 0 var(--r-sm);
   clip-path:polygon(0 0, calc(100% - var(--ar)) 0, 100% 50%, calc(100% - var(--ar)) 100%, 0 100%)}
-.sview .sv-step .nm{font-size:var(--fs-xs); font-weight:650; color:var(--ink-2)}
-.sview .sv-step .st{font-variant-numeric:tabular-nums}
+/* 名前は文字の幅のまま（svFitFlow が名前の幅を縮める下限に使う）。2行目は縮めたら「…」で終える */
+.sview .sv-step .nm{font-size:var(--fs-xs); font-weight:650; color:var(--ink-2); align-self:flex-start}
+.sview .sv-step .st{font-variant-numeric:tabular-nums; min-width:0; overflow:hidden; text-overflow:ellipsis}
 .sview .sv-step.done{background:var(--act-soft); color:var(--sub-ink)}
 /* いまの工程（承認待ちもこの色） */
 .sview .sv-step.cur{background:var(--act); color:var(--act-ink)}
@@ -2020,7 +2034,8 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .abox .dcg,.sview .abox .afold,.sview .svrefnote,.sview .addrow,
   .sview .dbar .sv-barfacts,.sview .dbar .btn.kill,.sview .sheet .tagrow,
   .sview .sheet .atnudge .pickbtn,.sview .sv-now .nar,
-  .sview .sv-ctrls-slot .ctime,.sview .sv-ctrls-slot [data-cbtn="mute"]{display:none}
+  .sview .sv-ctrls-slot .ctime,.sview .sv-ctrls-slot [data-cbtn="mute"],
+  .sview .sv-ctrls-slot .cvol{display:none}   /* 音量のつまみも 🔊 と一緒に畳む（再生の棒と2本に見えた・#604 E4） */
 
   /* ── 上の帯（← 一覧／番号と題名／案のタブ／版）── */
   .sview>.dtop{grid-area:top; position:static; margin:0; border-radius:0; border-width:0 0 1px;
@@ -2030,9 +2045,14 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .dtop .sv-mver{flex:0 0 auto; font-size:var(--fs-xs); color:var(--muted);
     font-variant-numeric:tabular-nums}
   /* 案のタブ（検証の動画だけ）。両方の案が見える幅を優先し、題名のほうを「…」で縮める。
-     見た目は広い画面と同じ下線型。帯は 48px 以上あるので、タブ帯を引き伸ばさず縦の真ん中に置く */
-  .sview .dtop .sv-vtabs{flex:0 0 auto; align-self:center; max-width:58%; gap:3px}
+     見た目は広い画面と同じ下線型。帯は 48px 以上あるので、タブ帯を引き伸ばさず縦の真ん中に置く。
+     タブの名前は括弧の前（「案A」）だけにする（括弧の中は .vx・#604 E6）。案が多くて入りきらない
+     ときはタブ帯の側が縮んで横に送れる（帯そのものを画面からはみ出させない） */
+  .sview .dtop .sv-vtabs{flex:0 1 auto; align-self:center; max-width:58%; min-width:0; gap:3px}
+  .sview .dtop .ttl{flex:1 1 0}       /* 題名は残りの幅だけを取る（長い題名がタブ帯を押し縮めない） */
   .sview .dtop .sv-vtabs .vtab{height:32px; padding:0 7px; font-size:11px}
+  .sview .dtop .sv-vtabs .vtab .vx{display:none}
+  .sview .dtop .sv-vtabs .vtab::after{content:attr(data-short)}
 
   /* ── 動画（切らずに・入るだけ大きく）── */
   .sview .sv-screen.final{grid-area:video; display:flex; flex-direction:column; min-height:0; min-width:0;
@@ -2081,7 +2101,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-script.closed>.sv-scriptlist{display:block}
   /* 指摘: 今回の指摘（直す・消す）→ 全体へのメモ → 前回までの指摘 */
   .sview .tapbox{gap:10px}
-  .sview .tapbox .nhd{display:flex; font-size:var(--fs-sm)}
+  /* 「今回の」は前に足した別の箱なので、間の gap が効いて「今回の　指摘」と空いていた（#604 E7）。
+     件数は margin-left:auto で右へ寄るので、gap を外しても離れたまま */
+  .sview .tapbox .nhd{display:flex; gap:0; font-size:var(--fs-sm)}
   .sview .tapbox .nhd::before{content:'今回の'}
   .sview .nlistwrap{flex:0 0 auto; min-height:auto; overflow:visible}
   .sview .tapbox>.sv-macau{order:0; margin:0}
@@ -2305,10 +2327,15 @@ const STORAGE_ONLY_CH = new Set(['rikiwaza', 'experiment', 'karakuri']);
 /* ── 検証用の動画（試作・検証）の見分け方 ──────────────────────────────
    番号の数字部が 9000 以上なら本編ではない。**見分け方はこの1か所だけ**（チャンネルの
    振り分けもここを通す）。検証用は各番組のタブ・在庫の数・
-   進捗の表からは外し、チャンネルの並びの最後の「検証」タブへまとめる。 */
+   進捗の表からは外し、チャンネルの並びの最後の「検証」タブへまとめる。
+   判定の正本は 制作パイプライン/自動化スクリプト/pilot_seq.py の is_pilot_seq（進行係・提出の入口・投稿が使う）。
+   ここはその写しで、同じ規則にそろえてある（#604 E8）: 「英字2文字＋4桁」だけを番号と認め、数字部が
+   PILOT_MIN 以上なら検証用。旧番号（071・D007）や形の違う文字列は本編扱い。一覧の問い合わせの PILOT_LIKE
+   （3文字目が 9 の6文字）も同じ範囲。試験が両方を同じ例で突き合わせる */
+const PILOT_MIN = 9000;
 const isPilotSeq = seq => {
-  const m = /(\d{3,4})$/.exec(String(seq == null ? '' : seq));
-  return !!(m && Number(m[1]) >= 9000);
+  const m = /^[A-Za-z]{2}(\d{4})$/.exec(String(seq == null ? '' : seq).trim());
+  return !!(m && Number(m[1]) >= PILOT_MIN);
 };
 /* ── 進行係を通らない動画（検証用と storage_only の番組・#569）─────────────────
    手元の提出の入口（submit_for_review.py）から出す動画。**02・03 の本編はここに入らない**。
@@ -2372,13 +2399,16 @@ const PSTAGES = [
 /* AI が作業している状態は【AI】を付け、人間（オーナー）の番には付けない（#205 オーナー指定）。
    接頭辞の有無だけで「誰のボールか」が分かるようにする。色（オレンジ=AI / 青=あなた）と二重化 */
 const AI_TAG = '【AI】';
+/* 進行中の工程の言葉。投稿待ちは誰も作業していない（予約か公開を待っているだけ）ので【AI】を付けない
+   ——一覧の札（stageBadge）と同じ（#604 E2。進捗の表と工程の履歴だけ「【AI】投稿待ち」と出ていた） */
+const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI_TAG + stageWork(s, it);
 /* デプロイ時刻。公開のスクリプトが PUT 直前に置換する（手元では未置換のまま）。
    フッター表示・ヘッダの隅・新版検知（checkForUpdate）がこの値を見る。
    ⚠️ **置換の印を書いてよいのは次の1行だけ**（#523）。公開のスクリプトは送るバイト列の中の
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/1 12:36';
+const BUILT_AT = '10/1 21:50';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3386,11 +3416,13 @@ function flagsHTML(it){
 }
 /* 承認待ちの行には、その場で通せるボタンを出す（オーナー要望 2026-08-20）。
    コメント無しの承認が普通なので、1タップで承認まで行く（数秒だけ取り消せる）。
-   言葉は詳細画面と同じ actWords を通す——検証用の動画は「この方向でOK」（#523）。 */
+   ボタンの字は全番組・検証用とも「承認」（2026-09-29 オーナー決定で検証用の言葉も本編にそろえた）。
+   承認ポイントの名前つき（「完成を承認」）はツールチップに出す。以前は検証用だけ actWords の
+   approve を承認ポイントの名前なしで呼んでいて、「undefinedを承認」と出ていた（#604 中2） */
 const quickOkHTML = it => {
   if (!it._rv) return '';
   const w = actWords(it), gname = gateName(it._rv, it);
-  const lb = isPilotItem(it) ? w.approve() : '承認';
+  const lb = '承認';
   return `<button class="okbtn" data-act="approve-quick" data-key="${it.id}|${esc(it._rv)}"
       data-label="${esc(lb)}" data-donelabel="${esc(w.approved)}"
       title="${esc(w.approve(gname))}">${esc(lb)}</button>`;
@@ -3406,7 +3438,7 @@ function progressCells(it){
     else if (j === cur) {
       if (it._rv)      { cls = 'rv'; gl = '●'; tt = `${gateName(it._rv, it)}承認待ち（あなたの番）`; }
       else if (it._rc) { cls = rcCls(it); gl = '↺'; tt = rcText(it); }
-      else             { cls = 'work'; gl = '●'; tt = `${AI_TAG}${stageWork(s, it)}`; }
+      else             { cls = 'work'; gl = '●'; tt = stageWorkTip(s, it); }
     }
     return `<td class="st${pos}"><span class="mark ${cls}" title="${esc(tt)}">${gl}</span></td>`;
   }).join('');
@@ -3624,7 +3656,7 @@ function stageBadge(it){
   if (it.stage === 'idea')    return {cls:'idea', gl:'○', text:'ネタ案'};
   /* 投稿待ちは誰も作業していない（公開時刻待ち）ので【AI】は付けない */
   if (it.stage === 'queue')   return {cls:'work', gl:'●', text:'投稿待ち'};
-  return {cls:'work', gl:'●', text:'AI作業中', tip:`${AI_TAG}${stageWork(PSTAGES[displayIdx(it)], it)}`};
+  return {cls:'work', gl:'●', text:'AI作業中', tip:stageWorkTip(PSTAGES[displayIdx(it)], it)};
 }
 function progressDots(it){
   const cur = displayIdx(it), done = it.stage === 'posted';
@@ -3810,7 +3842,7 @@ function timelineRows(it){
     } else if (j === cur) {
       mk = it._rv ? 'rv' : (it._rc ? rcCls(it) : 'work'); cls = '';
       const since = fmtDate(it.status_changed_at);
-      dt = (it._rv ? '承認待ち' : it._rc ? rcShort(it) : `${AI_TAG}${stageWork(s, it)}`) + (since ? `（${since}〜）` : '');
+      dt = (it._rv ? '承認待ち' : it._rc ? rcShort(it) : stageWorkTip(s, it)) + (since ? `（${since}〜）` : '');
     }
     return `<div class="row${cls}"><span class="mark ${mk}">${
       mk === 'done' ? '✓' : (mk === 'todo' ? '·' : (mk.startsWith('rc') ? '↺' : '●'))}</span>
@@ -5259,9 +5291,11 @@ const RE_MATERIALS = /^materials_v(\d+)\.json$/i;
 /* 工程の帯（#570・オーナー決定 2026-09-29）。**全番組で同じ12個**を同じ順に並べ、使わない工程は
    斜線の地＋取り消し線で残す（並びは崩さない）。見本は dashboard/flow-mockup.html。
      name    … 1行目（工程の名前・用語集の正式名）
-     what    … 2行目（作るもの・道具）。whatOff は進行係を通らない動画（offDispatcherItem）のとき
+     what    … 2行目（作るもの・道具）。whatOff は進行係を通らない動画（offDispatcherItem）のとき、
+               whatBlender は Blender だけで作った動画（svBlenderOnly）のとき
      gate    … 承認ポイント（◆ を付け、承認済みは緑＋承認の日時）
      offOnly … 進行係を通らない動画だけが使う（02・03 の本編では「この番組では なし」）
+     still   … Blender だけで作った動画は使わない（「この動画では なし」・#604 中1）
      post    … 公開の側（検証用の動画では「検証は投稿しない」）
      pubTime … 2行目は番組の既定の公開時刻（svPubTime）。ここには書かない */
 const SV_STEPS = [
@@ -5270,9 +5304,11 @@ const SV_STEPS = [
   {name:'ナレーション',          what:'音声（ElevenLabs）'},
   {name:'シーン割り',            what:'設計図（json）'},
   {name:'Blender の仮組み',      what:'動きとカメラの確認用の動画', offOnly:true},
-  {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）'},
+  {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）', still:true},
   {name:'仮組み＋静止画の承認',   what:'オーナーが見る', gate:'storyboard', offOnly:true},
-  {name:'映像',                 what:'テイク（H3）'},
+  /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「描画」。
+     作り込みも帯では「映像」に入る）。2行目は短く道具まで（帯を1行に収めるため） */
+  {name:'映像',                 what:'テイク（H3）', whatBlender:'描画（Blender）'},
   {name:'完成動画の書き出し',     what:'映像・音声・字幕を1本に（Remotion）', whatOff:'映像・注釈・字幕・音を1本に'},
   {name:'完成の承認',            what:'オーナーが見る', gate:'final'},
   {name:'予約投稿',              what:'YouTube に登録', post:true},
@@ -5383,13 +5419,46 @@ async function svSign(ch, seq, dir, rels, sub){
 }
 
 /* ── 工程の帯（#570）──────────────────────────────────────────────── */
+/* Blender だけで作った動画か（#604 中1）。**承認画面が読む素材の目録で決める**——Blender だけで作る動画の
+   目録を作る道具（build_blender_materials.py）だけが目録に refs_label（「使った素材」）を書き、静止画＋H3 の
+   目録の道具（build_shot_materials.py）と 02・03 の目録の道具は書かない。番号の範囲や番組では決めない
+   （力わざにも静止画＋H3 で作った古い動画があり、からくりの KR0001 も元は静止画＋H3 の動画）。
+   目録が無い・この目印の無い目録の動画（静止画＋H3 で作った RW0001〜RW0003・KR0001 と、道具ができる前に
+   出した RW0005・XP9001）は決めない＝帯は今までどおり。本来の正本は版ごとの必要素材の一覧（静止画・映像のテイクがあるか）だが、
+   画面のロールからは読めない。
+   判定は「動画・案・版」ごとに控える（SV_MADE・svMadeKey）。案や版が変われば作り方も変わりうるので、
+   **同じ案・同じ版の目録の取り直しが落ちたときだけ**前の判定を使い、別の案・別の版には持ち越さない
+   （#604 検収。動画だけを鍵にしていたので、目録を読めなかった別の案・別の版に前の判定が残った）。
+   帯は目録より先に描くので、詳細を開いた直後は決めない（今までどおりの帯）で描き、目録が届いた時点で描き直す */
+const SV_MADE = new Map();               /* 「動画|案|版」→ true（Blender だけ）／false（目印の無い目録） */
+/* いま見ている目録の鍵。版は、案があれば索引の版（案の目録はこの版だけを読む）、無ければ主画面の動画の版
+   （目録は動画と同じ版だけを読む）。主画面の動画が無く通しの仮組みを借りている回は置き場のいちばん新しい目録の版 */
+function svMadeKey(){
+  if (!sv || !sv.it) return null;
+  const ver = sv.variant ? sv.variantsVer
+    : (sv.mainLabel ? svNewestMaterialsVer(sv.files || []) : verOfName(sv.videoName));
+  return `${sv.it.id}|${sv.variant || ''}|${ver == null ? '' : ver}`;
+}
+const svNoteMade = (key, mat) => {
+  if (key && mat) SV_MADE.set(key, !!mat.refs_label);   /* 目録が無い・読めない回は書かない（同じ鍵の前の判定のまま） */
+};
+const svBlenderOnly = it => !!it && offDispatcherItem(it) && !!sv && !!sv.it && sv.it.id === it.id
+  && SV_MADE.get(sv.madeKey) === true;
 /* その動画で使わない工程と、状態の欄に出す言葉（12個ぶん。null＝使う）。
    Blender の仮組みとその承認は進行係を通らない動画（力わざ・からくり・検証用）だけ、公開の側は検証用では使わない。
-   承認ポイントは番組の human_gates（chMeta の gates）に無ければ使わない（#572・力わざとからくりは完成だけ） */
-const SV_SKIP = it => SV_STEPS.map(s =>
-    (s.offOnly && !offDispatcherItem(it)) ? 'この番組では なし'
-  : (s.gate && !chMeta(it.channel).gates.includes(s.gate)) ? 'この番組では なし'
-  : (s.post && isPilotSeq(it.seq))        ? '検証は投稿しない' : null);
+   承認ポイントは番組の human_gates（chMeta の gates）に無ければ使わない（#572・力わざとからくりは完成だけ）。
+   静止画は Blender だけで作った動画では使わない（#604 中1・blender-produce の手順書と同じ） */
+const SV_SKIP_TIP = {'この番組では なし':'この番組ではこの工程を使いません',
+  'この動画では なし':'この動画は Blender だけで作るので、この工程を使いません',
+  '検証は投稿しない':'検証用の動画は投稿しません'};
+const SV_SKIP = it => {
+  const bl = svBlenderOnly(it);
+  return SV_STEPS.map(s =>
+      (s.offOnly && !offDispatcherItem(it)) ? 'この番組では なし'
+    : (s.gate && !chMeta(it.channel).gates.includes(s.gate)) ? 'この番組では なし'
+    : (s.still && bl)                       ? 'この動画では なし'
+    : (s.post && isPilotSeq(it.seq))        ? '検証は投稿しない' : null);
+};
 /* 番組の既定の公開時刻（画面が持っている番組の設定）。無ければ空 */
 function svPubTime(it){
   const row = (store.pilotChannels || store.channels || []).find(c => c.slug === it.channel);
@@ -5408,19 +5477,32 @@ function svFlowAt(it){
     const d = displayIdx(it);
     i = (d < 0 || SV_FROM_PSTAGE[d] == null) ? 0 : SV_FROM_PSTAGE[d];
   }
-  /* 承認待ちの承認ポイントをこの動画が使わない（02・03 の古い絵コンテの承認）ときは手前の静止画に置く */
-  if (rv && SV_SKIP(it)[i]) i -= 1;
+  /* 承認待ちの承認ポイントをこの動画が使わない（02・03 の古い絵コンテの承認）ときは手前の使う工程に置く
+     （Blender だけで作った動画は静止画も使わないので、さらに手前の仮組みへ） */
+  const skip = rv ? SV_SKIP(it) : null;
+  while (skip && i > 0 && skip[i]) i -= 1;
   return i;
 }
 /* 承認ポイントが承認済みか＝承認の記録があり、いま承認待ちでも修正中でもない */
 const svGateOk = (it, g) => !!it[GATE_COLUMN_FIELD[g]] && it._rv !== g && it._rc !== g;
+/* 帯に出す承認の時刻（#604 E3）。一覧の行の approved_*_at は**最初の**承認の時刻のまま動かないので、
+   承認のあとに出し直して承認し直した動画（KR0001 の第2版など）では前の版の時刻が出ていた。
+   レビュー記録にある人の承認のうち、いちばん新しいものの時刻を出す。記録が無ければ行の時刻 */
+function svGateApprovedAt(it, g){
+  let last = null;
+  for (const e of threadOf(it.id) || []) {
+    if (e.gate !== g || e.kind !== 'approve' || isAiAuthor(e.author)) continue;
+    if (!last || evNewer(e, last)) last = e;
+  }
+  return (last && last.created_at) || it[GATE_COLUMN_FIELD[g]];
+}
 /* 1つの工程の見た目（クラスと状態の欄）。言葉は一覧の札と同じもの（承認待ち・rcShort・投稿待ち） */
 function svStepState(it, i, cur, skipNote){
   const s = SV_STEPS[i];
   if (skipNote) return { cls:'skip', st:'なし' };
   if (i < cur) {
     if (s.gate && svGateOk(it, s.gate)) {
-      const at = it[GATE_COLUMN_FIELD[s.gate]];
+      const at = svGateApprovedAt(it, s.gate);
       return { cls:'ok', st:`✓ 承認済み ${fmtMD(at)} ${fmtTime(at)}` };
     }
     /* 承認ポイントを承認の記録なしで通り過ぎた（その承認ポイントへは出していない）。済みの色に
@@ -5437,21 +5519,34 @@ function svStepState(it, i, cur, skipNote){
 }
 function svFlowHTML(it){
   const cur = svFlowAt(it);
-  const skip = SV_SKIP(it), off = offDispatcherItem(it);
+  const skip = SV_SKIP(it), off = offDispatcherItem(it), bl = svBlenderOnly(it);
   return `<div class="sv-flow"><div class="sv-steps" role="list" aria-label="工程">${SV_STEPS.map((s, i) => {
     const { cls, st } = svStepState(it, i, cur, skip[i]);
-    const what = s.pubTime ? (skip[i] ? '—' : svPubTime(it)) : ((off && s.whatOff) || s.what);
-    const tip = skip[i] ? (s.post ? '検証用の動画は投稿しません' : 'この番組ではこの工程を使いません') : '';
+    const what = s.pubTime ? (skip[i] ? '—' : svPubTime(it))
+      : ((bl && s.whatBlender) || (off && s.whatOff) || s.what);
+    const tip = skip[i] ? (SV_SKIP_TIP[skip[i]] || '') : '';
     /* 2行だけ（オーナー指摘 2026-09-29 16:24「ごちゃごちゃ・文字を減らして」）。済みは色と ✓ だけで
        示し、2行目は「作るもの・道具」。知らせることがある工程（いまの工程・承認済み・使わない）
        だけ、2行目を状態の言葉に替える */
     const line2 = (cls === 'cur' || cls === 'ok' || cls === 'skip' || cls === 'nogate') ? st : what;
     const mark = s.gate ? '◆ ' : (cls === 'done' ? '✓ ' : '');
+    /* 2行目は帯が狭いと「…」で切れる（svFitFlow）ので、全文をツールチップにも持たせる */
     return `<span class="sv-step${s.gate ? ' gate' : ''}${cls ? ' ' + cls : ''}" role="listitem"${
       tip ? ` title="${tip}"` : ''}${cls === 'cur' ? ' aria-current="step"' : ''}>` +
       `<span class="nm">${mark}${esc(s.name)}</span>` +
-      `<span class="st">${line2 ? esc(line2) : '&nbsp;'}</span></span>`;
+      `<span class="st"${line2 && !tip ? ` title="${esc(line2)}"` : ''}>${line2 ? esc(line2) : '&nbsp;'}</span></span>`;
   }).join('')}</div></div>`;
+}
+/* 目録が届いたら（詳細を組み立てたとき・案を切り替えたとき）、いま見ている「動画・案・版」の鍵で
+   Blender だけで作った動画かを控え、帯を描き直す（#604 中1・検収）。帯は目録より先に描くので、ここで直る */
+function svPaintFlow(){
+  if (!sv || !sv.root.isConnected) return;
+  sv.madeKey = svMadeKey();
+  svNoteMade(sv.madeKey, sv.matRaw);
+  const old = sv.root.querySelector('.sv-flow');
+  if (old) old.outerHTML = svFlowHTML(sv.it);
+  svFitFlow(sv.root);
+  svPaintBar();
 }
 
 /* ── ③ 前回までの私の指摘（2026-09-21 に作り替え・オーナー指摘）────────────────
@@ -5636,10 +5731,56 @@ function svRelayout(){
     + h(root.querySelector('.sv-flow')) + h(root.querySelector('.dbar')) + 40;
   root.style.setProperty('--sv-chrome', chrome + 'px');
   document.body.classList.toggle('sv-lock', window.innerWidth >= 1400);
-  /* 狭い画面では工程の帯が横に流れるので、いまの工程を画面の中へ入れておく */
-  const cur = root.querySelector('.sv-step.cur');
-  if (cur && !tapMobile()) { try { cur.scrollIntoView({ block:'nearest', inline:'center' }); } catch (_) {} }
+  svFitFlow(root);
+  /* 狭い画面では工程の帯が横に流れるので、いまの工程を画面の中へ入れておく。入りきっているときは
+     送らない（送ると頭の工程が隠れる・#604 E1） */
+  const cur = root.querySelector('.sv-step.cur'), box = root.querySelector('.sv-steps');
+  if (cur && !tapMobile() && box && box.scrollWidth > box.clientWidth + 1) {
+    try { cur.scrollIntoView({ block:'nearest', inline:'center' }); } catch (_) {}
+  }
   if (sv) { svPaintNow(); svPaintRefFace(); }
+}
+/* 工程の帯を1行の幅に収める（#604 E1。1400px でも 12 個で 1500px 前後になり、横に送られて頭の
+   「ネタ案」「台本」が隠れ、端の文字が切れていた）。縮めるのは2行目（作るもの・道具／状態）だけで、
+   名前（1行目）は切らない。いちばん長い2行目から順に同じ幅までそろえて縮め（足りない分だけ）、
+   切れた2行目は「…」で終わる（全文はツールチップ）。名前だけでも入らない幅（狭い画面）では今までどおり
+   横に送り、送れる側の端を薄くして続きがあると分かるようにする */
+function svFitFlow(root){
+  const box = root && root.querySelector('.sv-steps');
+  if (!box) return;
+  const steps = [...box.querySelectorAll('.sv-step')];
+  for (const s of steps) s.style.maxWidth = '';
+  const avail = box.clientWidth;
+  if (avail && steps.length) {
+    /* 隣どうしは矢羽根の分だけ重ねてある（margin-left が負）。重なりの分だけ並べられる幅が増える */
+    const lap = steps.length > 1 ? (parseFloat(getComputedStyle(steps[1]).marginLeft) || 0) : 0;
+    const room = avail - lap * (steps.length - 1);
+    const nat = steps.map(s => s.getBoundingClientRect().width);
+    const sum = a => a.reduce((x, y) => x + y, 0);
+    if (sum(nat) > room + 0.5) {
+      const min = steps.map((s, i) => {
+        /* 2行目が状態の言葉（いまの工程・承認の日時・承認の記録なし）の工程は縮めない＝知らせることを切らない */
+        if (s.matches('.cur,.ok,.nogate')) return nat[i];
+        const cs = getComputedStyle(s), nm = s.querySelector('.nm');
+        const w = (nm ? nm.getBoundingClientRect().width : 0) + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+        return Math.min(nat[i], Math.max(parseFloat(cs.minWidth) || 0, Math.ceil(w)));
+      });
+      /* 名前だけでも入らない幅や、ほとんどの2行目を数文字まで切らないと入らない幅（1工程 110px＝2行目が
+         8文字前後を下回る）では縮めない。今までどおりの幅で横に送る（1200px 前後の画面。測った値） */
+      if (sum(min) <= room) {
+        const used = c => sum(nat.map((w, i) => Math.max(min[i], Math.min(w, c))));
+        let lo = 0, hi = Math.max(...nat);
+        for (let k = 0; k < 24; k++) { const mid = (lo + hi) / 2; if (used(mid) > room) hi = mid; else lo = mid; }
+        if (lo >= 110) steps.forEach((s, i) => { if (nat[i] > lo) s.style.maxWidth = Math.max(min[i], Math.floor(lo)) + 'px'; });
+      }
+    }
+  }
+  const edge = () => {
+    box.classList.toggle('more-l', box.scrollLeft > 1);
+    box.classList.toggle('more-r', box.scrollLeft + box.clientWidth < box.scrollWidth - 1);
+  };
+  edge();
+  if (!box.dataset.edge) { box.dataset.edge = '1'; box.addEventListener('scroll', edge, { passive: true }); }
 }
 
 /* ── スマホの1画面（#552・オーナー確定 2026-09-25）─────────────────────────────
@@ -6412,8 +6553,20 @@ function svBuildVariantTabs(){
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'vtab' + (bad ? ' none' : ''); b.setAttribute('role', 'tab');
     /* 読めない案は押せない見た目にして「素材なし」と分かるようにする（#523 のレビュー指摘5） */
-    b.textContent = v.label + (bad ? '（素材なし）' : '');
-    b.dataset.label = b.textContent;   /* 太字の幅を先に取る（CSS の .vtab::after）。選んでもタブが横にずれない */
+    const full = v.label + (bad ? '（素材なし）' : '');
+    /* スマホの上の帯は狭いので、括弧の前（「案A」）だけを出す（#604 E6。XP9001 では2つの案の名前で
+       題名が幅0になり、2つ目のタブが切れて帯が画面からはみ出していた）。括弧の中の説明は広い画面と
+       ツールチップで読める。文字は1つのまとまり（.vt）に入れる——タブは縦並びの箱なので、
+       2つに分けたままだと上下に積まれる */
+    const cut = full.indexOf('（');
+    const short = cut > 0 ? full.slice(0, cut) : full;
+    const vt = document.createElement('span'); vt.className = 'vt';
+    const vs = document.createElement('span'); vs.textContent = short;
+    const vx = document.createElement('span'); vx.className = 'vx'; vx.textContent = full.slice(short.length);
+    vt.append(vs, vx); b.appendChild(vt);
+    b.dataset.label = full;            /* 太字の幅を先に取る（CSS の .vtab::after）。選んでもタブが横にずれない */
+    b.dataset.short = short;           /* スマホで出す短い名前の太字の幅 */
+    if (short !== full) b.title = full;
     b.dataset.vkey = v.key;
     b.disabled = bad;
     b.setAttribute('aria-selected', String(v.key === sv.variant));
@@ -6463,6 +6616,7 @@ async function svSwitchVariant(key){
   sv.manual = false; sv.manualN = null; sv.curN = null;
   sv.seekAfterLoad = keep;         /* 同じ秒を保つ。尺が短くてはみ出すときは同じ番号の頭へ */
   svPaintMainHead();
+  svPaintFlow();                   /* 案ごとに作り方が違いうる（Blender だけか）ので帯も描き直す */
   sv.ctl.video.src = src.videoUrl;
   sv.ctl.video.load();             /* メタデータが届いた時点で apply() がもう一度走る */
 }
@@ -6533,6 +6687,7 @@ async function armScene(node, files){
   svBuildPrev();
   svPaintMainHead();
   svBuildVariantTabs();
+  svPaintFlow();
 
   /* 尺の突き合わせ（1.0 秒を超えて違えば素材表も時刻表も使わない）はメタデータが届いてから */
   const prevMeta = ctl.onmeta;
@@ -6860,6 +7015,17 @@ async function submitTriage(box, key, action){
 }
 
 /* RPC の例外はそのまま出さず、SQLSTATE から日本語の案内に置き換える */
+/* 自由記述の修正依頼が版のずれで断られたとき（P0003）の言葉（#604 検収）。この経路は画面を自動では
+   描き直さず、書いた文を欄に残す——rpcErrText の「この画面は自動で新しくなります」は言わず、
+   文を写してから読み込み直すよう案内する（読み込み直すと欄は空になる） */
+function staleCommentText(error){
+  const raw = String((error && error.message) || '');
+  const cur = raw.match(/いまの版は第(\d+)版/);
+  const why = cur ? `いま第${cur[1]}版を作り直しています`
+    : /より新しい版/.test(raw) ? '見ていたものより新しい版が出ています'
+    : 'どの版への指摘かを確かめられませんでした';
+  return `${why}。送れなかった文はこの欄に残してあります。文を写してから画面を読み込み直してください（読み込み直すと欄は空になります）`;
+}
 function rpcErrText(error, act){
   const code = error && error.code;
   const raw  = String((error && error.message) || '');
@@ -7015,9 +7181,25 @@ async function submitComment(box, key){
   }
   wboxMsg(box, '', false, 'comment');
   wboxBusy(box, true, 'comment');
-  const { error } = await sb.rpc('request_changes',
-    { p_video_id: Number(vid), p_gate: gate, p_body: body });
-  if (error) { wboxBusy(box, false, 'comment'); wboxMsg(box, rpcErrText(error, 'comment'), true, 'comment'); return; }
+  /* 見ていた提出物の版（画面を開いた時点の値）を添える。裏で新しい版が提出されていたら DB が P0003 で
+     断る——渡さないと照合されず、見ていない新しい版に修正依頼が付いた（#604 E9。タップ入力の
+     送信 submitTapChanges と承認 approveNow は前から渡している） */
+  let error = null;
+  try {
+    ({ error } = await sb.rpc('request_changes',
+      { p_video_id: Number(vid), p_gate: gate, p_body: body,
+        p_expected_revision: submittedRevOf(vid, gate) }));
+  } catch (e) {
+    error = { code: null, message: String((e && e.message) || e) };
+  }
+  if (error) {
+    wboxBusy(box, false, 'comment');
+    /* **どんな失敗でも、入力欄と書いた文はそのまま残す**（#604 検収）。古い版だと断られたときも
+       自動では描き直さない——描き直しが通信で落ちると入力欄ごと消え、新しい版で入力の方式が
+       タップ入力に変わると、戻した文は隠れた欄に入って送り直せなかった。案内だけ出す */
+    wboxMsg(box, error.code === 'P0003' ? staleCommentText(error) : rpcErrText(error, 'comment'), true, 'comment');
+    return;
+  }
   ta.value = '';
   const pilot = isPilotItem(store.byId.get(Number(vid)));
   await refreshAfterWrite(false);
