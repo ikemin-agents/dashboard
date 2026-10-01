@@ -2310,7 +2310,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 });
 
 /* ══ 定義 ═══════════════════════════════════════════════════════ */
-const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'experiment':'🔬', 'karakuri':'⚙️'};
+/* 検証だけの番組（experiment）の絵は検証タブ（PILOT_META）と同じにする（#604 A10） */
+const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'experiment':'🧪', 'karakuri':'⚙️'};
 /* 番組の短い呼び名（番組の登録簿の display_label と同じ言葉・同じ順・#572）。ルールの一覧の番組の列と、
    その上の番組の絞り込み、素材の一覧の番組の列と絞り込みに使う。ここに無い番組は DB の名前で出す（test_channel_registry.py が登録簿と突き合わせる） */
 const CH_SHORT = {'buzz-zatsugaku':'雑学', 'dental':'歯科', 'rikiwaza':'力わざ', 'experiment':'検証', 'karakuri':'からくり'};
@@ -2353,8 +2354,10 @@ const assetDirsOf = (it, gate) => gate === 'script' ? ['script'] : [ONE_DIR, 'st
 /* 検証のタブは実在のチャンネルではないので、擬似のチャンネル名を1つ決めて同じ器に乗せる */
 const PILOT_CH = '__pilot__';
 const PILOT_META = {icon:'🧪', name:'検証'};
-const ACCENTS = ['var(--s1)','var(--s2)','var(--stg5)','var(--warn)','var(--good)'];
-const TINTS   = ['var(--s1-tint)','var(--s2-tint)','var(--stage-bg)','var(--warn-tint)','var(--good-tint)'];
+/* 番組の色はタブの並び（slug の順）で決まる。3色目を青系（--stg5）にすると、からくり（3番目）が雑学（--s1）と
+   見分けられなかったので、青系は並びの最後へ回した（#604 A10） */
+const ACCENTS = ['var(--s1)','var(--s2)','var(--good)','var(--warn)','var(--stg5)'];
+const TINTS   = ['var(--s1-tint)','var(--s2-tint)','var(--good-tint)','var(--warn-tint)','var(--stage-bg)'];
 /* チャンネル別の承認ゲート（DB に列が無いため UI 側の定義。既定は3ゲート） */
 const CH_GATES = {'buzz-zatsugaku':['final'], 'dental':['final']};
 const GATE_LABEL = {script:'台本', storyboard:'絵コンテ', final:'完成'};
@@ -2408,7 +2411,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/1 21:50';
+const BUILT_AT = '10/1 22:34';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3756,7 +3759,7 @@ async function renderStock(){
       <p>仕掛かり ${active}本・没 ${droppedN}本。上から「あなたの番（承認待ち → ネタの仕分け）→${AI_TAG}作業中 → 承認済み・投稿まで → 完了」の順に並びます。行（スマホはカード）をクリックすると素材とレビュー履歴が開き、その場でコメント・承認ができます。表は ${PAGE_SIZE} 件ずつ表示します。</p>
     </div>
     <div class="sectionhead" style="margin-top:0">
-      <h2>進捗マトリクス</h2>
+      <h2>動画の一覧</h2>
       <span class="hint">${sectionsOff() ? '絞り込み・並べ替え中はセクションを外して一覧で出しています'
         : '完成を承認したものは「承認済み・投稿まで」に移ります'}</span>
     </div>
@@ -8082,8 +8085,10 @@ async function renderAnalytics(){
     return `記録のある期間（${lo === hi ? lo : `${lo}〜${hi}`}日）`;
   };
   const delta = (v, unit) => v == null ? '—' : `${v >= 0 ? '+' : ''}${nf(v)} ${unit}`;
+  /* 登録者の記録が1つも無い番組（投稿先が未定の番組など）は、0% ではなく「—」にする（現在地の「いま」と同じ・#604 A10） */
   const mnOf = (st, t) => {
-    const p1 = Math.min(1, (st.latestSubs || 0) / t.subs), p2 = Math.min(1, st.totalViews / t.plays);
+    if (st.latestSubs == null) return '—';
+    const p1 =Math.min(1, (st.latestSubs || 0) / t.subs), p2 = Math.min(1, st.totalViews / t.plays);
     const pct = Math.min(p1, p2) * 100;
     return `${pct.toFixed(pct < 1 ? 2 : 1)}%<span class="sub subw">登録者 ${nf(st.latestSubs || 0)}/${nf(t.subs)}・再生 ${axNum(st.totalViews)}/${axNum(t.plays)}</span>`;
   };
@@ -8284,6 +8289,11 @@ async function renderAnalytics(){
     <p class="axnote">2つの条件（登録者・再生数）の両方を満たすと収益化。達成率は低い方の条件で出しています</p>
     ${sers.map(s => {
       const st = ST[s.ch], subsNow = st.latestSubs || 0;
+      /* 登録者の記録が無い番組はメーターを出さない（0/500 と並ぶと、始まっているのに伸びていないように見える） */
+      if (st.latestSubs == null) {
+        return `<div class="monetch"><div class="monethd">${chSw(s.color)}${s.icon} ${esc(s.name)}</div>
+          <div class="noitem">まだ数字がありません<span class="s">登録者の記録が始まると出ます</span></div></div>`;
+      }
       return `<div class="monetch"><div class="monethd">${chSw(s.color)}${s.icon} ${esc(s.name)}</div>
         ${MONETIZE.map(t => {
           const p1 = Math.min(1, subsNow / t.subs), p2 = Math.min(1, st.totalViews / t.plays), p = Math.min(p1, p2);
