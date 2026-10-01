@@ -2378,7 +2378,7 @@ const AI_TAG = '【AI】';
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '9/30 22:37';
+const BUILT_AT = '10/1 12:36';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3997,6 +3997,10 @@ async function useSceneView(it){
       const a = await loadAssets(it.channel, it.seq, dir);
       const files = a.files || [];
       if (!files.length) continue;
+      /* 公開して保管庫へ移した動画は、置き場の動画（完成・案・通しの仮組み）を片付けてある（#602）。
+         主画面に出す動画が無ければこの画面は使わず、従来の画面で YouTube を案内する（目録だけ残っていても
+         通しの仮組みを借りない——借りる先も片付けてあり、壊れた枠になる） */
+      if (ytUrlOf(it) && !svMainFile(files, dir, one)) return null;
       if (svVariants(files, one, dir).list.length) return { gate, dir, kind:'variant' };
       if (svMainFile(files, dir, one))  return { gate, dir, kind:'video' };
       const mat = sceneMaterials(files, '');
@@ -4088,6 +4092,13 @@ window.addEventListener('popstate', e => {
 /* ── 素材の描画 ─────────────────────────────────────────────── */
 const NO_ASSET = `<div class="noitem">まだ素材がありません
   <span class="s">制作が進むとここに入ります</span></div>`;
+/* 公開済みの動画の YouTube の URL（無ければ null）。公開して保管庫へ移した動画は、この画面の置き場から
+   動画のファイルを片付けてある（#602・画像と目録は残る）。置き場に動画が無いときは「まだ素材がありません」
+   ではなく YouTube を案内する */
+const ytUrlOf = it => (it && it.pub_status === '投稿済' && typeof it.youtube_url === 'string'
+  && /^https:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//.test(it.youtube_url)) ? it.youtube_url : null;
+const ytGoneHTML = url => `<div class="noitem">公開済み・YouTube で見られます
+  <span class="s"><a class="ytlink" href="${esc(url)}" target="_blank" rel="noopener noreferrer">YouTube で開く</a></span></div>`;
 
 function assetHead(f){
   return `<div class="ahead"><span class="anm">${esc(f.name)}</span>
@@ -4259,6 +4270,12 @@ async function mountAssets(node){
        案のフォルダ（variants/…）は Storage の一覧がフォルダとして返すので、もともと載らない */
     const shown = a.files.filter(f => !RE_TIMELINE.test(f.name) && !RE_MATERIALS.test(f.name)
                                    && !RE_VARIANTS.test(f.name));
+    /* 公開済みで置き場に動画が無い（公開のあと片付けた・#602）なら YouTube を案内する。残っている
+       画像などはその下にそのまま出す */
+    if (node.dataset.yt && !shown.some(f => f.kind === 'video')) {
+      node.innerHTML = ytGoneHTML(node.dataset.yt) + (shown.length ? assetsHTML(shown, null) : '');
+      return;
+    }
     const tapMode = tapModeFor(node, shown);
     node.innerHTML = assetsHTML(shown, tapMode);
     if (tapMode) armTap(node, a.files, tapMode);
@@ -4293,10 +4310,13 @@ function materialsHTML(it, rvGate){
     .filter(g => g.gate !== rvGate && cur >= GATE_COL[g.gate])
     .map(g => {
       const key = it.id + '|view|' + g.gate;
+      /* 公開済みなら YouTube の URL を持たせる（置き場に動画が無いときの案内・#602） */
+      const yt = g.gate === 'final' ? ytUrlOf(it) : null;
       return `<details class="dsec dsec-history dsec-mat" data-lazyassets="1">
         <summary class="dsum">${esc(g.label)}</summary>
         <div class="dsum-body assets" data-assets="${esc(key)}" data-lazy="1"
-             data-ch="${esc(it.channel)}" data-seq="${esc(it.seq)}" data-gate="${esc(g.gate)}">
+             data-ch="${esc(it.channel)}" data-seq="${esc(it.seq)}" data-gate="${esc(g.gate)}"${
+             yt ? ` data-yt="${esc(yt)}"` : ''}>
           <div class="loadbox">素材を読み込み中…</div></div></details>`;
     }).join('');
 }
