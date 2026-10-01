@@ -1106,7 +1106,7 @@ tr.dropped td{color:var(--muted)}
   body.sheetopen .dview.hasbar{padding-bottom:calc(var(--dbar-h) + 46dvh + env(safe-area-inset-bottom))}
 }
 
-/* ═══ 決まりの一覧・素材の一覧（#574）═══════════════════════════════
+/* ═══ 決まりの一覧・Blender素材の一覧（#574）═══════════════════════════════
    1行＝1つ。見出しの行と同じ列の幅で並べる（位置を揃える）。行を押すと下に中身が開く */
 .lst{border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-1);
   box-shadow:var(--shadow-1); overflow:hidden; min-width:0}
@@ -1193,7 +1193,7 @@ tr.dropped td{color:var(--muted)}
 .rlrow .chm{align-self:stretch; margin:-9px calc(var(--sp-3) / -2); font-weight:700; color:var(--ink)}
 .rlrow .chm>span{padding-top:9px}
 .rl .vl,.al .vl{display:none}
-/* 素材の一覧の罫線も同じ通し方（#572・オーナー 2026-09-30 20:30）。縦の線は 見本｜名前｜種類｜番組｜使った動画 の間の4本
+/* Blender素材の一覧の罫線も同じ通し方（#572・オーナー 2026-09-30 20:30）。縦の線は 見本｜名前｜種類｜番組｜使った動画 の間の4本
    （使った動画と ▸ の間には引かない）で、行の中の .vl（AL_VL）。横の線と色はルールと同じ */
 @media (min-width:900px){
   .rlrow .chs{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
@@ -2280,7 +2280,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   <section class="view" id="view-analytics"></section>
   <section class="view" id="view-rules"></section>
   <section class="view" id="view-assets"></section>
-  <!-- 素材の一覧の見本の絵を大きく見る（見た目は承認画面の拡大表示と同じ） -->
+  <!-- Blender素材の一覧の見本の絵を大きく見る（見た目は承認画面の拡大表示と同じ） -->
   <div class="sv-lbox" id="plbox" hidden>
     <img id="plboximg" alt="">
     <div class="lcap" id="plboxcap"></div>
@@ -2313,9 +2313,9 @@ const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 /* 検証だけの番組（experiment）の絵は検証タブ（PILOT_META）と同じにする（#604 A10） */
 const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'experiment':'🧪', 'karakuri':'⚙️'};
 /* 番組の短い呼び名（番組の登録簿の display_label と同じ言葉・同じ順・#572）。ルールの一覧の番組の列と、
-   その上の番組の絞り込み、素材の一覧の番組の列と絞り込みに使う。ここに無い番組は DB の名前で出す（test_channel_registry.py が登録簿と突き合わせる） */
+   その上の番組の絞り込み、Blender素材の一覧の番組の列と絞り込みに使う。ここに無い番組は DB の名前で出す（test_channel_registry.py が登録簿と突き合わせる） */
 const CH_SHORT = {'buzz-zatsugaku':'雑学', 'dental':'歯科', 'rikiwaza':'力わざ', 'experiment':'検証', 'karakuri':'からくり'};
-/* 動画の番号の頭2文字 → 番組（各番組の config.json の episode_prefix の写し・#572）。素材の一覧の番組の列と絞り込みに使う。
+/* 動画の番号の頭2文字 → 番組（各番組の config.json の episode_prefix の写し・#572）。Blender素材の一覧の番組の列と絞り込みに使う。
    ここに無い頭は、頭の2文字をそのまま番組の値と呼び名にする（黙って消さない） */
 const SEQ_CH = {'BZ':'buzz-zatsugaku', 'DT':'dental', 'RW':'rikiwaza', 'XP':'experiment', 'KR':'karakuri'};
 /* 検証だけを持つ番組（#551・05-experiment）。動画は 9000番台だけなので、自分のタブは常に空になる。
@@ -2411,7 +2411,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/1 22:34';
+const BUILT_AT = '10/2 02:47';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2499,7 +2499,7 @@ const state = {
   filtersOpen:false, busy:false, lastSync:null,
   /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
   secOpen:{},
-  /* 決まりの一覧・素材の一覧の絞り込み（#574）。空文字＝絞らない。
+  /* 決まりの一覧・Blender素材の一覧の絞り込み（#574）。空文字＝絞らない。
      決まりの列（q 以外）は見出しの窓のチェック（#572）で、null＝絞らない・配列＝チェックの付いた値だけ残す */
   rulesF:{q:'', ch:null, stage:null, kind:null, strength:null, subject:null},
   /* 素材の列も見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す） */
@@ -2531,7 +2531,7 @@ function loadUI(){
              追い越された提出の時刻（ms）。レビュー記録で確かめた結果を一覧の行にも効かせる */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
                 threads:{}, rework:{}, looks:{}, rvRev:{}, sbGone:{}, analytics:{}, assets:{},
-                /* 決まりの一覧・素材の一覧（#574）。開いたときに取る（⟳ で取り直す）。chNames は番組の名前 */
+                /* 決まりの一覧・Blender素材の一覧（#574）。開いたときに取る（⟳ で取り直す）。chNames は番組の名前 */
                 rules:null, prodAssets:null, chNames:{},
                 /* 検証用の動画が1本でもあるか（#523）。loadPilotFlag が入れる */
                 pilot:{has:false} };
@@ -2553,7 +2553,7 @@ const VIEWS = [
   /* 分析はチャンネル横断の1画面（2026-09-04）。見えるチャンネルを色で重ねて出すので、
      チャンネルタブの右の共通タブに置く。 */
   {key:'analytics', icon:'📈', label:'分析', chIndep:true},
-  /* 決まりの一覧と素材の一覧（#574・オーナー決定 2026-09-29）。読むだけ。旧「運営」タブの代わり
+  /* 決まりの一覧とBlender素材の一覧（#574・オーナー決定 2026-09-29）。読むだけ。旧「運営」タブの代わり
      （運営で見ていた AI の残量・請求・gen-farm・制作の詰まりは PC のステータス画面で見る）。
      決まりは番組で閲覧を分けない表なので、全チャンネル可の人にだけ出す（共同運営者は制作と分析のまま）。
      画面の呼び名は「動画制作ルールDB」（オーナー指示 2026-09-30 09:02・#572）。タブは短く「ルール」——
@@ -2956,7 +2956,7 @@ function sbSupersededEvents(events){
    `author IN ('koike','kohnosuke')` で数えているのと同じ集合になる。 */
 const isAiAuthor = a => String(a || '').startsWith('ai:');
 
-/* 画面に出す AI の呼び名（用語集の「Claude係」の名前）。記録に残る英字の名前をそのまま
+/* 画面に出す AI の呼び名。記録に残る英字の名前をそのまま
    見せると何をした相手か分からないので、対応表を1か所に置く。表に無い相手は名前を出さない。 */
 const AI_ROLE_JA = {
   'video-script-write':'台本係', 'video-script-clarity':'台本チェック係',
@@ -5293,7 +5293,7 @@ async function submitTapChanges(box, key){
 const RE_MATERIALS = /^materials_v(\d+)\.json$/i;
 /* 工程の帯（#570・オーナー決定 2026-09-29）。**全番組で同じ12個**を同じ順に並べ、使わない工程は
    斜線の地＋取り消し線で残す（並びは崩さない）。見本は dashboard/flow-mockup.html。
-     name    … 1行目（工程の名前・用語集の正式名）
+     name    … 1行目（工程の名前。用語集にある言葉は正式名で書く）
      what    … 2行目（作るもの・道具）。whatOff は進行係を通らない動画（offDispatcherItem）のとき、
                whatBlender は Blender だけで作った動画（svBlenderOnly）のとき
      gate    … 承認ポイント（◆ を付け、承認済みは緑＋承認の日時）
@@ -5309,9 +5309,9 @@ const SV_STEPS = [
   {name:'Blender の仮組み',      what:'動きとカメラの確認用の動画', offOnly:true},
   {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）', still:true},
   {name:'仮組み＋静止画の承認',   what:'オーナーが見る', gate:'storyboard', offOnly:true},
-  /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「描画」。
+  /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「Blender のコマ計算」。
      作り込みも帯では「映像」に入る）。2行目は短く道具まで（帯を1行に収めるため） */
-  {name:'映像',                 what:'テイク（H3）', whatBlender:'描画（Blender）'},
+  {name:'映像',                 what:'テイク（H3）', whatBlender:'コマ計算（Blender）'},
   {name:'完成動画の書き出し',     what:'映像・音声・字幕を1本に（Remotion）', whatOff:'映像・注釈・字幕・音を1本に'},
   {name:'完成の承認',            what:'オーナーが見る', gate:'final'},
   {name:'予約投稿',              what:'YouTube に登録', post:true},
@@ -7556,7 +7556,7 @@ const ANA_GOAL = {
   end:  {thr:0.85, step:0.1, dir:1,  unit:'',  fmt:v => v.toFixed(2)}
 };
 /* 目安の線を持たない指標の、表示だけの設定（区分の幅と書式）。
-   冒頭の離脱は 2026-09-22（#505）に単独の目安 25% を廃止した——63本で通過31.7%・的中60%で、
+   序盤の離脱は 2026-09-22（#505）に単独の目安 25% を廃止した——63本で通過31.7%・的中60%で、
    勝ち群18本のうち6本を「フックが弱い」と誤診断していた。良し悪しは
    「序盤29%以下 かつ 中盤減衰38%以下」の組み合わせで見る（正本 scene-taxonomy.md §2-1b）。
    ここに残すのは分布のグラフを描くための幅と書式だけで、線も到達／未達の色分けも出さない。 */
@@ -7855,7 +7855,7 @@ function scatterChart(items, W, opt){
    棒の色＝チャンネル。目安に到達した区分は塗りつぶし、未達は白抜き（輪郭だけ）。
    ⚠️ 目安を当てないチャンネル（groups[].goal が false）は棒を全部塗りつぶしにし、
       対象が1つも無いときは破線も描かず、横軸の範囲にも閾値を混ぜない。
-      **そもそも目安を持たない指標（冒頭の離脱・ANA_SCALE 側）も同じ経路で全部塗りつぶしになる**
+      **そもそも目安を持たない指標（序盤の離脱・ANA_SCALE 側）も同じ経路で全部塗りつぶしになる**
       ので、凡例の「塗りつぶし＝到達」は目安のある指標だけに出すこと（#505・2026-09-22）。
    groups = [{ch, name, color, values, goal}]（values は欠測を除いてある） */
 function histogram(groups, cfg, W, H){
@@ -7960,7 +7960,7 @@ const PERF_COLS = [
   {k:'avg_view_rate_pct', lb:'平均視聴率', cls:'num', tip:ANA_DEF.rate},
   {k:'hook_awr', lb:'冒頭の維持', cls:'num', tip:ANA_DEF.hook},
   {k:'end_awr', lb:'末尾の維持', cls:'num', tip:ANA_DEF.end},
-  {k:'early_loss_pct', lb:'冒頭の離脱', cls:'num', tip:ANA_DEF.loss},
+  {k:'early_loss_pct', lb:'序盤の離脱', cls:'num', tip:ANA_DEF.loss},
   {k:'engaged_rate_pct', lb:'エンゲージ率', cls:'num', tip:ANA_DEF.eng},
   {k:'subscribers_gained', lb:'登録者増', cls:'num', tip:'この動画から増えた登録者の数'},
   {k:'spk', lb:'千再生あたり登録', cls:'num', tip:ANA_DEF.spk}
@@ -8243,7 +8243,7 @@ async function renderAnalytics(){
 
   /* ── ④ 視聴の質（4つの分布・チャンネルごとに同じ区分で横並び）───── */
   const qBlock = (id, title, key, pick, gpick, big) => {
-    /* 目安を持たない指標（冒頭の離脱）は ANA_SCALE の表示設定だけで描く */
+    /* 目安を持たない指標（序盤の離脱）は ANA_SCALE の表示設定だけで描く */
     const hasGoal = !!ANA_GOAL[key];
     const cfg = ANA_GOAL[key] || ANA_SCALE[key];
     /* values＝棒に積む全部の値 / gvalues＝目安に照らして数える値（02 の通常雑学だけ） */
@@ -8280,7 +8280,7 @@ async function renderAnalytics(){
         ${qBlock('c-h-rate', '平均視聴率', 'rate', st => st.rates, st => st.gRates, true)}
         ${qBlock('c-h-hook', '冒頭の維持', 'hook', st => st.hooks, st => st.gHooks, true)}
         ${qBlock('c-h-end', '末尾の維持', 'end', st => st.ends, st => st.gEnds, false)}
-        ${qBlock('c-h-loss', '冒頭の離脱', 'loss', st => st.losses, st => st.gLosses, false)}
+        ${qBlock('c-h-loss', '序盤の離脱', 'loss', st => st.losses, st => st.gLosses, false)}
       </div>
     </div>`;
 
@@ -8350,7 +8350,7 @@ async function renderAnalytics(){
     if (typeof a1 === 'string') return sk.dir * a1.localeCompare(b1, 'ja');
     return sk.dir * (a1 - b1);
   });
-  /* 赤字（目安を割った値）は 02 の通常雑学だけに付ける。冒頭の離脱は単独では良し悪しを
+  /* 赤字（目安を割った値）は 02 の通常雑学だけに付ける。序盤の離脱は単独では良し悪しを
      言えない指標なので、どのチャンネルでも色を付けない（正本 scene-taxonomy.md §2-1b） */
   const bad = (v, k, p) => v != null && goalVid(p) && v < ANA_GOAL[k].thr;
   const cell = (v, k, fmt, p) => `<td class="num${bad(v, k, p) ? ' under' : ''}">${v == null ? '—' : fmt(v)}</td>`;
@@ -8376,7 +8376,7 @@ async function renderAnalytics(){
   }).join('');
   const perfCard = `<div class="card span2">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>動画別の成績</h2></div>
-      <p class="axnote">上の凡例でチャンネルを絞り込めます。列の名前を押すと並べ替わります。赤い字は目安を割った値（平均視聴率 ${goalTxt('rate')}未満・冒頭の維持 ${goalTxt('hook')}未満・末尾の維持 ${goalTxt('end')}未満）で、${esc(ANA_GOAL_SCOPE)}のため<b>世界のバズ雑学の通常の雑学にだけ</b>付けています。冒頭の離脱は単独では良し悪しを言えないので色を付けません。値がないものは —</p>
+      <p class="axnote">上の凡例でチャンネルを絞り込めます。列の名前を押すと並べ替わります。赤い字は目安を割った値（平均視聴率 ${goalTxt('rate')}未満・冒頭の維持 ${goalTxt('hook')}未満・末尾の維持 ${goalTxt('end')}未満）で、${esc(ANA_GOAL_SCOPE)}のため<b>世界のバズ雑学の通常の雑学にだけ</b>付けています。序盤の離脱は単独では良し悪しを言えないので色を付けません。値がないものは —</p>
       <div class="tblwrap perftbl xscroll"><table>
         <thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
@@ -8389,13 +8389,13 @@ async function renderAnalytics(){
         <tr><td>平均視聴率</td><td class="wrap">${esc(ANA_DEF.rate)}</td><td>${goalTxt('rate')}以上</td></tr>
         <tr><td>冒頭の維持</td><td class="wrap">${esc(ANA_DEF.hook)}</td><td>${goalTxt('hook')}以上</td></tr>
         <tr><td>末尾の維持</td><td class="wrap">${esc(ANA_DEF.end)}</td><td>${goalTxt('end')}以上</td></tr>
-        <tr><td>冒頭の離脱</td><td class="wrap">${esc(ANA_DEF.loss)}</td><td>—（単独の目安は置かない・診断用）</td></tr>
+        <tr><td>序盤の離脱</td><td class="wrap">${esc(ANA_DEF.loss)}</td><td>—（単独の目安は置かない・診断用）</td></tr>
         <tr><td>エンゲージ率</td><td class="wrap">${esc(ANA_DEF.eng)}</td><td>高いほど良い</td></tr>
         <tr><td>千再生あたり登録</td><td class="wrap">${esc(ANA_DEF.spk)}</td><td>高いほど良い</td></tr>
         <tr><td>登録者数</td><td class="wrap">チャンネル登録者の実数</td><td>—</td></tr>
         <tr><td>再生数</td><td class="wrap">動画が再生された回数。累計はそれまでの合計</td><td>—</td></tr>
         </tbody></table></div>
-      <p class="axnote">数字はすべて毎朝6時に更新しています。計測できた動画だけを集計に入れています。色はチャンネルを表し、<b>目安のある指標では</b>塗りつぶし／白抜きが目安に到達したかどうかを表します（目安を置いていない冒頭の離脱は全部塗りつぶし）</p>
+      <p class="axnote">数字はすべて毎朝6時に更新しています。計測できた動画だけを集計に入れています。色はチャンネルを表し、<b>目安のある指標では</b>塗りつぶし／白抜きが目安に到達したかどうかを表します（目安を置いていない序盤の離脱は全部塗りつぶし）</p>
       <p class="axnote">目安は世界のバズ雑学の50本から出した値で、歯科医番長には当てていない（計測が増えたらチャンネル別にする）</p>
     </details>`;
 
@@ -8442,7 +8442,7 @@ function drawSpark(){
     bindHover(wrap, r.pts, r.mode);
   });
 }
-/* ══ ④ 決まりの一覧・素材の一覧（#574・オーナー決定 2026-09-29）═══════════════
+/* ══ ④ 決まりの一覧・Blender素材の一覧（#574・オーナー決定 2026-09-29）═══════════════
    読むだけの2画面（旧「運営」タブの代わり）。本文は DB のビューから**ログイン後にだけ**読む
    （公開ページには書かない）。絞り込みは画面の中でする（行は百件ほどで、全部取ってから絞る）。
      決まり … v_production_rules_current（080）。いま有効な版だけ
@@ -8482,7 +8482,7 @@ async function loadRules(){
 /* 見出しを押して絞り込む列（#572・オーナー 2026-09-30 17:25「エクセルみたいにヘッダー部分を押すとフィルター」）。
    キーは state.rulesF のキー、値は見出しの言葉。押すとその列の値の一覧がチェックつきの窓で出る（全部チェック＝絞らない） */
 const RF_COLS = {kind:'種類', strength:'強さ', ch:'番組', subject:'対象', stage:'工程'};
-/* 素材の一覧も同じ形で絞る（#572・オーナー 2026-09-30 20:30「こっちも同じフィルターにしてほしい」）。キーは state.assetsF のキー */
+/* Blender素材の一覧も同じ形で絞る（#572・オーナー 2026-09-30 20:30「こっちも同じフィルターにしてほしい」）。キーは state.assetsF のキー */
 const AF_COLS = {kind:'種類', ch:'番組', seq:'使った動画'};
 let rulesOpts = {};   /* 列ごとの値の一覧 {v, t}（renderRules が行と番組の登録簿から作る） */
 let assetsOpts = {};  /* 同じく素材の列ごとの値の一覧（renderAssets が行から作る） */
@@ -8725,7 +8725,7 @@ async function loadProdAssets(){
     rows = await q(sb.from('v_production_assets')
       .select('asset_key,name_ja,kind,call,sample_image,source,note,updated_at,used_in'));
   } catch (e) {
-    console.warn('[dashboard] 素材の一覧を読めませんでした:', e.message);   /* 画面は「素材なし」 */
+    console.warn('[dashboard] Blender素材の一覧を読めませんでした:', e.message);   /* 画面は「素材なし」 */
   }
   const ki = k => { const i = ASSET_KINDS.indexOf(k); return i < 0 ? 99 : i; };
   rows.sort((a, b) => ki(a.kind) - ki(b.kind) || String(a.name_ja || '').localeCompare(String(b.name_ja || ''), 'ja'));
@@ -8854,7 +8854,7 @@ async function renderAssets(){
       .map(v => ({ v, t: titles.get(v) ? `${v} ${titles.get(v)}` : v })))
   };
   el.innerHTML = `
-    <div class="pagehead"><div class="eyebrow">素材</div><h1>🧱 素材の一覧</h1></div>
+    <div class="pagehead"><div class="eyebrow">素材</div><h1>🧱 Blender素材の一覧</h1></div>
     <div class="toolbar"><span class="hits" id="assetshits"></span></div>
     <div class="lst" id="assetlist"></div>`;
   paintAssets();
@@ -9050,7 +9050,7 @@ document.addEventListener('click', e => {
   /* 詳細内の「戻る／閉じる」は履歴を戻す（popstate で一覧へ復帰・経路を一本化） */
   if (e.target.closest('[data-close]')) { history.back(); return; }
 
-  /* 素材の一覧: 見本の絵を押したら大きく見る（行の中にあるので、行の開閉は止める） */
+  /* Blender素材の一覧: 見本の絵を押したら大きく見る（行の中にあるので、行の開閉は止める） */
   const plb = e.target.closest('[data-plbox]');
   if (plb) { e.preventDefault(); openPlbox(plb.dataset.plbox, plb.dataset.plcap); return; }
   if (e.target.closest('[data-plbox-close]') || e.target.id === 'plbox') { closePlbox(); return; }
