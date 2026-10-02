@@ -2444,7 +2444,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 02:04';
+const BUILT_AT = '10/3 02:50';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3472,6 +3472,7 @@ const quickOkHTML = it => {
 };
 /* ── 一覧の行の工程（#637）: 詳細画面の工程の帯と同じ12個を、名前なしの細い区切りで出す ──────
    位置（svFlowAt）・使わない工程（SV_SKIP）・各工程の状態（svStepState）は帯と同じ関数で決める。
+   使わない工程は帯と同じく動画の制作方法で決める（listRow・#637。一覧は目録を読まないので、制作方法が NULL なら足さない）。
    違うのは見た目だけ: 済み（承認済みも）は薄い色、使わない工程は斜線、いまの工程は状態の色
    （AI の作業中＝橙・あなたの番＝青・AI修正中＝橙の縁・作り直し中＝灰の縁・投稿待ちと予約済み＝くすんだ青・着手前＝縁だけ）。
    名前と状態は区切りのツールチップに持たせる。没は位置を出さない */
@@ -3482,7 +3483,7 @@ const segTone = it => it._work ? 'work'
   : it.stage === 'idea' ? 'idle' : 'work';
 function flowSegsHTML(it){
   const dead = it.stage === 'dropped';
-  const cur = dead ? -1 : svFlowAt(it), skip = SV_SKIP(it), tone = segTone(it);
+  const cur = dead ? -1 : svFlowAt(it, true), skip = SV_SKIP(it, true), tone = segTone(it);
   let curName = dead ? '没' : '済み';
   const segs = SV_STEPS.map((s, i) => {
     const { cls, st } = dead ? { cls: skip[i] ? 'skip' : '', st: '' } : svStepState(it, i, cur, skip[i]);
@@ -3891,6 +3892,8 @@ async function pollWorkDetail(){
   const rows = await q(sb.from('v_dashboard_list').select('*').eq('id', id).limit(1));
   if (state.detail !== id || curItem !== it || !rows.length) return;
   it._work = workOf(rows[0]);
+  /* 制作方法（#637）は作業の途中で入ることがあるので、帯の描き直しに一緒に持ち込む */
+  for (const k of ['production_method', 'production_method_name', 'production_method_skip']) it[k] = rows[0][k];
   paintWorkNow();
 }
 /* 開いている詳細の帯と「いまの工程」の1行だけを描き直す */
@@ -5416,7 +5419,7 @@ const SV_STEPS = [
   {name:'ナレーション',          what:'音声（ElevenLabs）'},
   {name:'シーン割り',            what:'設計図（json）'},
   {name:'Blender の仮組み',      what:'動きとカメラの確認用の動画', offOnly:true},
-  {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）', still:true},
+  {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）'},
   {name:'仮組み＋静止画の承認',   what:'オーナーが見る', gate:'storyboard', offOnly:true},
   /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「Blender のコマ計算」。
      作り込みも帯では「映像」に入る）。2行目は短く道具まで（帯を1行に収めるため） */
@@ -5603,17 +5606,20 @@ async function svSign(ch, seq, dir, rels, sub){
 }
 
 /* ── 工程の帯（#570）──────────────────────────────────────────────── */
-/* Blender だけで作った動画か（#604 中1）。**承認画面が読む素材の目録で決める**——Blender だけで作る動画の
-   目録を作る道具（build_blender_materials.py）だけが目録に refs_label（「使った素材」）を書き、静止画＋H3 の
-   目録の道具（build_shot_materials.py）と 02・03 の目録の道具は書かない。番号の範囲や番組では決めない
-   （力わざにも静止画＋H3 で作った古い動画があり、からくりの KR0001 も元は静止画＋H3 の動画）。
-   目録が無い・この目印の無い目録の動画（静止画＋H3 で作った RW0001〜RW0003・KR0001 と、道具ができる前に
-   出した RW0005・XP9001）は決めない＝帯は今までどおり。本来の正本は版ごとの必要素材の一覧（静止画・映像のテイクがあるか）だが、
-   画面のロールからは読めない。
-   判定は「動画・案・版」ごとに控える（SV_MADE・svMadeKey）。案や版が変われば作り方も変わりうるので、
+/* その動画で使わない工程は、**動画の制作方法**（一覧のビューの production_method / production_method_name /
+   production_method_skip・#637）で決める。方法ごとの「使わない工程」は DB の制作方法の一覧が持ち、ここには写さない
+   （作り方が増えても画面は直さなくてよい）。一覧の行も詳細画面も同じ列を読むので、同じ答えになる。
+   番組で決まる「この番組では なし」（02・03 の Blender の仮組みと使わない承認ポイント）が先で、制作方法の分はその上に
+   「この動画では なし」として足す（02・03 の「静止画＋H3」は仮組みを使わないが、そこは番組の判定が先に立つので
+   今の表示のまま）。
+   制作方法が NULL（分からない）の動画だけ、詳細画面は**承認画面が読む素材の目録**で予備の判定をする（#604 中1）——
+   Blender だけで作る動画の目録を作る道具（build_blender_materials.py）だけが目録に refs_label（「使った素材」）を書き、
+   静止画＋H3 の目録の道具（build_shot_materials.py）と 02・03 の目録の道具は書かないので、目印があれば静止画を使わない。
+   予備の判定は進行係を通らない動画だけ。一覧の行は目録を読まないので、制作方法が NULL なら使わない工程を足さない。
+   目録の判定は「動画・案・版」ごとに控える（SV_MADE・svMadeKey）。案や版が変われば作り方も変わりうるので、
    **同じ案・同じ版の目録の取り直しが落ちたときだけ**前の判定を使い、別の案・別の版には持ち越さない
    （#604 検収。動画だけを鍵にしていたので、目録を読めなかった別の案・別の版に前の判定が残った）。
-   帯は目録より先に描くので、詳細を開いた直後は決めない（今までどおりの帯）で描き、目録が届いた時点で描き直す */
+   帯は目録より先に描くので、目録が届いた時点で描き直す（svPaintFlow） */
 const SV_MADE = new Map();               /* 「動画|案|版」→ true（Blender だけ）／false（目印の無い目録） */
 /* いま見ている目録の鍵。版は、案があれば索引の版（案の目録はこの版だけを読む）、無ければ主画面の動画の版
    （目録は動画と同じ版だけを読む）。主画面の動画が無く通しの仮組みを借りている回は置き場のいちばん新しい目録の版 */
@@ -5626,21 +5632,38 @@ function svMadeKey(){
 const svNoteMade = (key, mat) => {
   if (key && mat) SV_MADE.set(key, !!mat.refs_label);   /* 目録が無い・読めない回は書かない（同じ鍵の前の判定のまま） */
 };
-const svBlenderOnly = it => !!it && offDispatcherItem(it) && !!sv && !!sv.it && sv.it.id === it.id
-  && SV_MADE.get(sv.madeKey) === true;
+/* その動画の制作方法の「使わない工程」（帯の工程のキーの並び。位置へは WORK_STEP で写す）と方法の名前。
+   listRow＝一覧の行（制作方法だけで決め、目録の予備の判定をしない） */
+const svMethod = (it, listRow) => {
+  if (!it) return { skip: [], name: '' };
+  if (it.production_method) {
+    return { skip: Array.isArray(it.production_method_skip) ? it.production_method_skip : [],
+             name: String(it.production_method_name || '') };
+  }
+  if (!listRow && offDispatcherItem(it) && sv && sv.it && sv.it.id === it.id && SV_MADE.get(sv.madeKey) === true) {
+    return { skip: ['still'], name: 'Blender だけ' };
+  }
+  return { skip: [], name: '' };
+};
+/* 静止画を使わない作り方（映像を Blender で描く）か。映像の2行目を「コマ計算（Blender）」にするのに使う */
+const svBlenderOnly = (it, listRow) => svMethod(it, listRow).skip.includes('still');
 /* その動画で使わない工程と、状態の欄に出す言葉（12個ぶん。null＝使う）。
    Blender の仮組みとその承認は進行係を通らない動画（力わざ・からくり・検証用）だけ、公開の側は検証用では使わない。
    承認ポイントは番組の human_gates（chMeta の gates）に無ければ使わない（#572・力わざとからくりは完成だけ）。
-   静止画は Blender だけで作った動画では使わない（#604 中1・blender-produce の手順書と同じ） */
+   その上に、制作方法の使わない工程（静止画＋H3 の仮組み・Blender だけの静止画など）を「この動画では なし」で足す */
 const SV_SKIP_TIP = {'この番組では なし':'この番組ではこの工程を使いません',
-  'この動画では なし':'この動画は Blender だけで作るので、この工程を使いません',
   '検証は投稿しない':'検証用の動画は投稿しません'};
-const SV_SKIP = it => {
-  const bl = svBlenderOnly(it);
-  return SV_STEPS.map(s =>
+/* 「この動画では なし」のツールチップ（制作方法の名前つき） */
+const svMethodTip = (it, listRow) => {
+  const n = svMethod(it, listRow).name;
+  return n ? `この動画は「${n}」で作るので、この工程を使いません` : 'この動画の作り方では、この工程を使いません';
+};
+const SV_SKIP = (it, listRow) => {
+  const skip = svMethod(it, listRow).skip;
+  return SV_STEPS.map((s, i) =>
       (s.offOnly && !offDispatcherItem(it)) ? 'この番組では なし'
     : (s.gate && !chMeta(it.channel).gates.includes(s.gate)) ? 'この番組では なし'
-    : (s.still && bl)                       ? 'この動画では なし'
+    : skip.some(k => WORK_STEP[k] === i)    ? 'この動画では なし'
     : (s.post && isPilotSeq(it.seq))        ? '検証は投稿しない' : null);
 };
 /* 番組の既定の公開時刻（画面が持っている番組の設定）。無ければ空 */
@@ -5650,8 +5673,8 @@ function svPubTime(it){
   return m ? `${m[1].padStart(2, '0')}:${m[2]} に公開` : '';
 }
 /* いまの位置。作業中の記録があればその工程（#637・承認の記録より優先）、承認待ち・修正中の承認ポイントが
-   あればその位置、無ければ本体の工程から写す */
-function svFlowAt(it){
+   あればその位置、無ければ本体の工程から写す。listRow は SV_SKIP と同じ（一覧の行） */
+function svFlowAt(it, listRow){
   if (it._work) return it._work.step;
   const rv = it._rv || it._rc;
   let i;
@@ -5665,7 +5688,7 @@ function svFlowAt(it){
   }
   /* 承認待ちの承認ポイントをこの動画が使わない（02・03 の古い絵コンテの承認）ときは手前の使う工程に置く
      （Blender だけで作った動画は静止画も使わないので、さらに手前の仮組みへ） */
-  const skip = rv ? SV_SKIP(it) : null;
+  const skip = rv ? SV_SKIP(it, listRow) : null;
   while (skip && i > 0 && skip[i]) i -= 1;
   return i;
 }
@@ -5712,7 +5735,7 @@ function svFlowHTML(it){
     const { cls, st } = svStepState(it, i, cur, skip[i]);
     const what = s.pubTime ? (skip[i] ? '—' : svPubTime(it))
       : ((bl && s.whatBlender) || (off && s.whatOff) || s.what);
-    const tip = skip[i] ? (SV_SKIP_TIP[skip[i]] || '') : '';
+    const tip = skip[i] === 'この動画では なし' ? svMethodTip(it) : (skip[i] ? (SV_SKIP_TIP[skip[i]] || '') : '');
     /* 2行だけ（オーナー指摘 2026-09-29 16:24「ごちゃごちゃ・文字を減らして」）。済みは色と ✓ だけで
        示し、2行目は「作るもの・道具」。知らせることがある工程（いまの工程・承認済み・使わない）
        だけ、2行目を状態の言葉に替える */
@@ -5724,7 +5747,7 @@ function svFlowHTML(it){
       workPct(w).toFixed(1)}%"></i></span>` : '';
     /* 2行目は帯が狭いと「…」で切れる（svFitFlow）ので、全文をツールチップにも持たせる */
     return `<span class="sv-step${s.gate ? ' gate' : ''}${cls ? ' ' + cls : ''}${pb ? ' haspb' : ''}" role="listitem"${
-      tip ? ` title="${tip}"` : ''}${cls === 'cur' ? ' aria-current="step"' : ''}>` +
+      tip ? ` title="${esc(tip)}"` : ''}${cls === 'cur' ? ' aria-current="step"' : ''}>` +
       `<span class="nm">${mark}${esc(s.name)}</span>` +
       `<span class="st"${line2 && !tip ? ` title="${esc(line2)}"` : ''}>${line2 ? esc(line2) : '&nbsp;'}</span>${pb}</span>`;
   }).join('')}</div></div>`;
