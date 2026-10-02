@@ -1231,6 +1231,9 @@ tr.dropped td{color:var(--muted)}
 .tagk{justify-self:start; font-size:var(--fs-2xs); white-space:nowrap; color:var(--ink-2);
   border:1px solid var(--border-2); border-radius:var(--r-sm); padding:1px 6px; background:var(--surface-2)}
 .tagk.must{color:var(--ink); font-weight:700}
+/* 棚から外した素材（#594）: 名前の横の言葉の札と、薄めた名前（札が言葉なので色だけで分けていない） */
+.tagk.tagret{font-weight:650; vertical-align:1px}
+.al.retired>summary .nm{color:var(--ink-2)}
 .lstbody{padding:6px 14px 14px}
 .lstnone{padding:var(--sp-6); text-align:center; color:var(--ink-2); font-size:var(--fs-sm)}
 .kv{display:grid; grid-template-columns:8em minmax(0,1fr); gap:7px var(--sp-3); margin:0; font-size:var(--fs-sm)}
@@ -2411,7 +2414,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/2 09:37';
+const BUILT_AT = '10/2 16:18';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -8718,17 +8721,22 @@ document.addEventListener('keydown', e => {
 });
 window.addEventListener('resize', () => { if (rfPop) placeRfPop(); });
 
+/* 素材の並び: 棚にある物 → 棚から外した物（下の方へ・#594）。その中で種類の並び → 名前 */
+function assetCmp(a, b){
+  const ki = k => { const i = ASSET_KINDS.indexOf(k); return i < 0 ? 99 : i; };
+  return (a.retired_at ? 1 : 0) - (b.retired_at ? 1 : 0) || ki(a.kind) - ki(b.kind)
+    || String(a.name_ja || '').localeCompare(String(b.name_ja || ''), 'ja');
+}
 async function loadProdAssets(){
   if (store.prodAssets && Date.now() - store.prodAssets.at < ASSET_CACHE) return store.prodAssets;
   let rows = [];
   try {
     rows = await q(sb.from('v_production_assets')
-      .select('asset_key,name_ja,kind,call,sample_image,source,note,updated_at,used_in'));
+      .select('asset_key,name_ja,kind,call,sample_image,source,note,updated_at,used_in,retired_at,retired_reason'));
   } catch (e) {
     console.warn('[dashboard] Blender素材の一覧を読めませんでした:', e.message);   /* 画面は「素材なし」 */
   }
-  const ki = k => { const i = ASSET_KINDS.indexOf(k); return i < 0 ? 99 : i; };
-  rows.sort((a, b) => ki(a.kind) - ki(b.kind) || String(a.name_ja || '').localeCompare(String(b.name_ja || ''), 'ja'));
+  rows.sort(assetCmp);
   /* 見本の絵は非公開の置き場にあるので、まとめて署名URLにする（1時間で切れるのは他の素材と同じ） */
   const urls = {}, paths = [...new Set(rows.map(r => r.sample_image).filter(Boolean))];
   if (paths.length) {
@@ -8822,14 +8830,18 @@ function assetRowHTML(r, urls){
     : `<span class="athumb none">素材なし</span>`;
   /* 番組と動画の番号は名前の途中で折り返さず、「・」のあとで折り返す */
   const joinNw = list => list.map(s => `<span>${esc(s)}</span>`).join('・<wbr>');
-  return `<details class="al" data-akey="${esc(key)}"${assetsOpen.has(key) ? ' open' : ''}>
-    <summary class="alrow">${thumb}<span class="nmc"><span class="nm">${esc(name)}</span>${
+  /* 棚から外した素材（#594）は名前の横に言葉の札（色だけで分けない）。開くと外した日と理由 */
+  const retired = !!r.retired_at;
+  return `<details class="al${retired ? ' retired' : ''}" data-akey="${esc(key)}"${assetsOpen.has(key) ? ' open' : ''}>
+    <summary class="alrow">${thumb}<span class="nmc"><span class="nm">${esc(name)}${
+        retired ? ' <span class="tagk tagret">棚から外した</span>' : ''}</span>${
         desc ? `<span class="ds">${esc(desc)}</span>` : ''}</span>
       <span class="meta"><span class="tagk">${esc(r.kind || '—')}</span>
         <span class="ach">${chs.length ? joinNw(chs.map(chShort)) : '—'}</span>
         <span class="cnt"><span>${used.length}本</span>${seqs.length ? `<span class="sq">${joinNw(seqs)}</span>` : ''}</span></span>
       <span class="caret" aria-hidden="true">▸</span>${AL_VL}</summary>
     <div class="lstbody">${kvHTML([
+      ...(retired ? [['棚から外した日と理由', kvText([fmtDate(r.retired_at), r.retired_reason].filter(Boolean).join(' ・ '))]] : []),
       ['出典とライセンス', assetSource(r.source)],
       ['使った動画', assetUsed(used)],
       ['呼び方', assetCall(r.call)],
