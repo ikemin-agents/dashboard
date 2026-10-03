@@ -61,6 +61,10 @@
   --stg1:#86b6ef; --stg2:#5598e7; --stg3:#2a78d6;
   --stg4:#256abf; --stg5:#1c5cab; --stg6:#8a8880;
   --stage-bg:#f3f7fd; --stage-bg-h:#e8f0fb; --stage-line:#d3e1f4;
+  /* 工程の印の「まだ」（·）と「なし」（斜線の2色）。一覧の表・スマホ・凡例は --mk-*、詳細画面の帯は --sv-skip-*（#637）。
+     明るい表示は今までの色のまま。暗い表示は地の色に近くて見分けにくかったので、暗い表示だけ濃くする */
+  --mk-todo:var(--axis); --mk-skip-a:var(--surface-2); --mk-skip-b:var(--axis);
+  --sv-skip-a:var(--surface-2); --sv-skip-b:var(--surface-3);
 
   /* ── 完成の承認画面（.sview）で使うくすんだ配色（オーナー確定の見本より・#519）──
      鮮やかな --s1 / --crit は大きな面に使わない。この画面の外では、工程の帯と同じ色で出す
@@ -107,6 +111,7 @@
     --stg1:#b7d3f6; --stg2:#86b6ef; --stg3:#5598e7;
     --stg4:#2a78d6; --stg5:#256abf; --stg6:#8f8d86;
     --stage-bg:#141a23; --stage-bg-h:#1c2531; --stage-line:#26313f;
+    --mk-todo:#77756e; --mk-skip-a:#232322; --mk-skip-b:#4f4e49; --sv-skip-a:#1e1e1d; --sv-skip-b:#333331;
     --act:#7E96A2; --act-ink:#0d1114; --act-soft:#26333A; --act-line:#8FA7B2;
     --sub-ink:#C2CDD4;
     --attn:#33291B; --attn-ink:#D9C49B;
@@ -147,6 +152,7 @@
   --rk-ins-row:#19231a; --rk-ins-hov:#1f2c21; --rk-ins-chip:#263b29; --rk-ins-ink:#a4d5aa;
   --rk-hyp-row:#262117; --rk-hyp-hov:#2f291c; --rk-hyp-chip:#3e3421; --rk-hyp-ink:#e2c68a;
   --rl-line:#4d4c47;
+  --mk-todo:#77756e; --mk-skip-a:#232322; --mk-skip-b:#4f4e49; --sv-skip-a:#1e1e1d; --sv-skip-b:#333331;
 }
 
 *{box-sizing:border-box}
@@ -405,13 +411,14 @@ td.dim{color:var(--muted)}
    幅の出どころは ①各列の col の style（JS 側 MCOL の w。タイトルは幅を書かず、残りを全部取る）
    ②.mtx th.okcol（承認）の2つだけ。工程の12列は 1列 46px に決める（#637）。
    列の合計が広いので、左右パディングを 14px → 10px に詰めて収める。 */
-/* 固定列（番号〜指摘・滞留・承認）の合計は 614px、工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げ、
-   余りはタイトルの列が全部取る（工程の列は広げない・オーナー指摘）。最小幅は 614＋214＋552＝1380px（タイトルが 214px を切る画面では表を横に送る） */
+/* 固定列（番号・状態・ユーザー確認・滞留・承認）の合計は 422px、工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げ、
+   余りはタイトルの列が全部取る（工程の列は広げない・オーナー指摘）。最小幅は 422＋214＋552＝1188px（タイトルが 214px を切る画面では表を横に送る）。
+   版・直した指摘・指摘の3列は外した（#637）ので、その幅はタイトルに回る */
 .mtx{--st-w:46px}
-.mtx table{table-layout:fixed; min-width:1380px}
+.mtx table{table-layout:fixed; min-width:1188px}
 .mtx col.stcol{width:var(--st-w)}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
-/* 中身の短い列（版・確認・指摘・滞留）は左右の余白を 6px に詰める（「10回目」「💬 12」「120日」が入る幅で、表の最小幅を抑える・#637） */
+/* 中身の短い列（ユーザー確認・滞留）は左右の余白を 6px に詰める（「10回目」「120日」が入る幅で、表の最小幅を抑える・#637） */
 .mtx td.nar,.mtx th.nar{padding-left:6px; padding-right:6px}
 /* 番号の列も同じく詰める（10px のままだと字の幅の広い番号が「RW00…」と切れた・#637） */
 .mtx td.seq{padding-left:6px; padding-right:6px}
@@ -458,13 +465,13 @@ td.dim{color:var(--muted)}
   box-shadow:inset 0 0 0 1.5px var(--fix)}
 .mark.rcai{color:var(--ink-2); background:var(--surface-3); font-weight:700;
   box-shadow:inset 0 0 0 1.5px var(--axis)}
-.mark.todo{color:var(--axis)}
+.mark.todo{color:var(--mk-todo)}
 /* 一覧の行の工程の印（#637）。いまの工程の色は curTone の決まり（詳細画面の帯も同じ）:
    投稿待ち・予約済み＝濃い灰色／ネタ案（着手前）＝縁だけ／使わない工程＝斜線 */
 .mark.pubwait{background:var(--act); color:var(--act-ink); font-weight:700}
 .mark.idle{box-shadow:inset 0 0 0 1.5px var(--axis); vertical-align:middle}
 .mark.skip{width:26px; border-radius:4px; vertical-align:middle;
-  background:repeating-linear-gradient(135deg, var(--surface-2) 0 3px, var(--axis) 3px 4px)}
+  background:repeating-linear-gradient(135deg, var(--mk-skip-a) 0 3px, var(--mk-skip-b) 3px 4px)}
 .legend2 .mark{width:16px; height:16px; line-height:16px; font-size:9.5px}
 .legend2 .mark.skip{width:20px}
 .mtx tr.dropped td{color:var(--muted)}
@@ -548,6 +555,8 @@ td.dim{color:var(--muted)}
    列幅（残り幅）の中で折り返す */
 .mtx td.ttl{min-width:0; max-width:none}
 .sbadges .okbtn{margin-left:auto}
+/* スマホのカードの「ユーザー確認 N回目」（承認待ちだけ・#637）。札ではなく添え書きの字 */
+.sbadges .looks{font-size:var(--fs-xs); font-weight:650; color:var(--ink-2); white-space:nowrap}
 .sbadges,.flags{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
 .flags{display:inline-flex; vertical-align:middle}
 td.ttl .flags{margin-left:8px}
@@ -579,9 +588,9 @@ td.ttl .flags{margin-left:8px}
    --stickytop を足したままだと列見出しが容器の中で下がって先頭行を覆い、1本目が押せなくなる。
    容器になる幅では top を 0 起点に戻す。画面を横いっぱいに使うようにしたので（同日）、
    表（min 1186px）が収まらなくなる幅は 1246 未満だけになった。
-   工程を12列にして（#637）表の最小幅が 1380px になったので、収まらなくなる幅は 1437 未満
-   （1380＋main の左右の余白 40＋縦のスクロールバー 17） */
-@media (max-width:1436.98px){
+   工程を12列にし、版・直した指摘・指摘の3列を外して（#637）表の最小幅が 1188px になったので、収まらなくなる幅は 1247 未満
+   （1188＋main の左右の余白 40＋縦のスクロールバー 17＋表の容器の左右の枠線 2） */
+@media (max-width:1246.98px){
   .tblwrap.mtx{overflow-x:auto}
   .mtx thead tr:first-child th{top:0}
   .mtx thead tr:nth-child(2) th{top:var(--mtxrow1, 24px)}
@@ -615,7 +624,11 @@ td.ttl .flags{margin-left:8px}
   overscroll-behavior-x:contain}
 .prow::-webkit-scrollbar{display:none}
 .prow .ps{flex:0 0 52px; display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0}
-.prow .pl{font-size:9px; line-height:1.15; color:var(--muted); text-align:center; word-break:keep-all; overflow-wrap:anywhere}
+/* 名前は凡例と同じ 11px（9px では読めなかった）。字の幅は印の幅 52px より 6px 狭く止め、隣の名前と離す
+   （「ナレーション」は1行だと隣の「シーン割り」とつながって読めたので、表の見出しと同じく「ナレー／ション」で折り返す）。
+   折り返しの1段の最長（「◆仮組み」「予約投稿」の4字・約44px）は収まる */
+.prow .pl{max-width:calc(100% - 6px); font-size:var(--fs-2xs); line-height:1.2; color:var(--muted); text-align:center;
+  word-break:keep-all; overflow-wrap:anywhere}
 .prow .pl.cur{color:var(--ink); font-weight:700}
 .prow .pl.skip{text-decoration:line-through}
 .prow.dead{opacity:.5}
@@ -1670,7 +1683,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 :is(.sview,.dflow) .sv-step.done .nm,:is(.sview,.dflow) .sv-step.cur .nm,:is(.sview,.dflow) .sv-step.ok .nm{color:inherit}
 /* この動画では使わない工程。並びは全番組で同じにして、使わない所だけ斜線の地＋取り消し線 */
 :is(.sview,.dflow) .sv-step.skip{color:var(--muted);
-  background:repeating-linear-gradient(135deg, var(--surface-2) 0 5px, var(--surface-3) 5px 10px)}
+  background:repeating-linear-gradient(135deg, var(--sv-skip-a) 0 5px, var(--sv-skip-b) 5px 10px)}
 :is(.sview,.dflow) .sv-step.skip .nm{color:var(--muted); font-weight:400;
   text-decoration:line-through; text-decoration-color:var(--muted)}
 /* 数えられる作業（#637）のいまの工程の下端の細い進みの棒。文字に掛からないよう中身を少し上げる */
@@ -2501,7 +2514,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 13:13';
+const BUILT_AT = '10/3 13:47';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3491,8 +3504,9 @@ const REWORK_BADGE = {
    番号が取れない古い記録は由来だけを出す。 */
 const FIRST_BADGE = {cls:'idea', gl:'', text:'初回', tip:'差し戻しのない最初の提出'};
 const reworkBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)]) : '';
-/* 承認待ちの行に出す3つ（オーナー要望 2026-09-19）。直すのは毎回 AI なので「AIが修正」では何も
-   伝わらない。要るのは ①版の番号 ②今回**誰の指摘**を直した版か ③**あなたが見るのは何回目**か */
+/* 承認待ちの行の3つ（オーナー要望 2026-09-19）。直すのは毎回 AI なので「AIが修正」では何も
+   伝わらない。①版の番号 ②今回**誰の指摘**を直した版か ③**あなたが見るのは何回目**か。
+   一覧に出すのは ③ だけ（ユーザー確認の列・#637）。①② の列の定義（MCOL の rev・src）は残してある */
 const revNumHTML = it => {
   const n = it._rv ? submittedRevOf(it.id, it._rv) : null;
   if (!it._rv) return '';
@@ -3500,9 +3514,11 @@ const revNumHTML = it => {
     : '<span title="版の番号が記録に無い（古い提出）">—</span>';
 };
 const srcBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)] || FIRST_BADGE) : '';
-const looksHTML = it => {
+/* 一覧の「ユーザー確認」（承認待ちの行だけ）。lbl＝スマホのカードは列の見出しが無いので、見出しと同じ言葉を頭に添える */
+const looksHTML = (it, lbl) => {
   const n = it._rv ? store.looks[it.id] : null;
-  return n ? `<span title="あなたがこの動画を見るのは${n}回目（これまでに承認か修正依頼をした回数＋今回）">${n}回目</span>` : '';
+  return n ? `<span class="looks" title="あなたがこの動画を見るのは${n}回目（これまでに承認か修正依頼をした回数＋今回）">${
+    lbl ? 'ユーザー確認 ' : ''}${n}回目</span>` : '';
 };
 /* 承認画面の上の帯に出す札。状態（承認待ち・修正中）は工程の帯に出ているので除く */
 function svTopFlagsHTML(it){
@@ -3721,10 +3737,11 @@ const MCOL = {
   title: {sort:1, td: it => `<td class="ttl">${esc(it.title)}${it.resv
           ? ` <span class="resv" title="${esc(it.resv)} に公開予定">🗓 ${esc(shortDT(it.resv))}</span>` : ''}${nowLineHTML(it)}</td>`},
   state: {label:'状態', w:'108px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
-  /* 版・直した指摘・確認は承認待ちの行だけ。作業中の記録がある行（#637）は AI の番なので出さない */
+  /* 版・直した指摘・ユーザー確認は承認待ちの行だけ。作業中の記録がある行（#637）は AI の番なので出さない */
   rev:   {label:'版',   w:'44px', thx:' nar', td: it => `<td class="num nar">${it._work ? '' : revNumHTML(it)}</td>`},
   src:   {label:'直した指摘', w:'120px', td: it => `<td class="bcol">${it._work ? '' : srcBadgeHTML(it)}</td>`},
-  looks: {label:'確認', w:'60px', thx:' nar', td: it => `<td class="num nar">${it._work ? '' : looksHTML(it)}</td>`},
+  /* あなたがこの動画を見るのは何回目か（1回目・2回目…）。幅は見出し「ユーザー確認」（約 71px）が余白 6px ずつと少しの余裕を持って入る幅 */
+  looks: {label:'ユーザー確認', w:'88px', thx:' num nar', td: it => `<td class="num nar">${it._work ? '' : looksHTML(it)}</td>`},
   open:  {label:'指摘', w:'56px', thx:' nar', td: it => `<td class="bcol nar">${openBadgeHTML(it)}</td>`},
   flow:  {label:'工程'},
   genre: {sort:1, w:'136px',        td: it => `<td><span class="genre">${esc(it.genreLabel)}</span></td>`},
@@ -3744,7 +3761,9 @@ const MCOL = {
    値が無いマスは「—」を並べず空欄にする（読むものが減るほうが速い）。 */
 /* ジャンルの列は外した（オーナー指示 2026-09-19・承認の判断に使わない。絞り込みのジャンル選択は残す） */
 /* 投稿日時・再生数・登録者増も外した（同日・数字は分析タブで見る） */
-const MCOLS    = ['seq','title','state','rev','src','looks','open','flow','days','ok'];
+/* 版・直した指摘・指摘も外した（#637・オーナー指摘「4列がごちゃごちゃして分かりにくい」）。承認待ちの行に残すのは
+   「あなたが何回目に見るか」のユーザー確認の1列だけ。外した3列の幅はタイトルの列に回る。詳細画面の札はそのまま */
+const MCOLS    = ['seq','title','state','looks','flow','days','ok'];
 /* 表の列の数（flow は工程の12列） */
 const colCount = cols => cols.reduce((n, k) => n + (k === 'flow' ? SV_STEPS.length : 1), 0);
 
@@ -3835,9 +3854,9 @@ function stockCards(rows){
   const card = it => {
     const b = stageBadge(it);
     /* 作業中の記録がある行（#637）は札の代わりに「いまの工程」の1行を出す（承認ボタンも出さない）。
-       未対応の指摘の札だけは残す */
-    const badges = it._work ? openBadgeHTML(it)
-      : `${badgeHTML(b)}${reworkBadgeHTML(it)}${openBadgeHTML(it)}${quickOkHTML(it)}`;
+       広い画面の表と同じく、版・直した指摘・指摘の札は出さず、承認待ちだけ「ユーザー確認 N回目」を添える（#637） */
+    const badges = it._work ? ''
+      : `${badgeHTML(b)}${looksHTML(it, true)}${quickOkHTML(it)}`;
     /* 予約済みも DB の工程は「投稿済」なので、予約の判定を先にする（再生数はまだ無い） */
     const extra = it.resv ? `<span class="sx">🗓 ${esc(it.resv)} に公開予定</span>`
       : it.stage === 'posted'
