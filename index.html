@@ -64,7 +64,7 @@
 
   /* ── 完成の承認画面（.sview）で使うくすんだ配色（オーナー確定の見本より・#519）──
      鮮やかな --s1 / --crit は大きな面に使わない。この画面の外では、工程の帯と同じ色で出す
-     一覧の行の12区切り（.segs の済み・投稿待ち・#637）と、素材つきでない詳細画面の帯（.dflow）だけが使う */
+     一覧の行の工程の印（.mark.pubwait＝投稿待ち・#637）と、素材つきでない詳細画面の帯（.dflow）だけが使う */
   --act:#485E69; --act-ink:#ffffff; --act-soft:#E6ECEF; --act-line:#485E69;
   --sub-ink:#38454D;
   --attn:#F3EBDD; --attn-ink:#7A6240;
@@ -402,18 +402,37 @@ td.dim{color:var(--muted)}
 /* ── 列幅は中身に左右させない（オーナー差し戻し 2026-09-03）────────────────
    区画（あなたの番／AI作業中／完了…）が変わっても列の縦位置がずれないよう、
    表は必ず1つ・列見出しも1つにし、幅は table-layout:fixed で先に決める。
-   幅の出どころは ①各列の th の style（JS 側 MCOL の w。工程の列もここ）
-   ②.mtx th.okcol（承認）の2つだけ。幅を書いていないタイトル列が残り幅を取る。
+   幅の出どころは ①各列の col の style（JS 側 MCOL の w。タイトルは --ttl-w）
+   ②.mtx th.okcol（承認）の2つだけ。幅を書いていない工程の12列が残りを等分する（#637）。
    列の合計が広いので、左右パディングを 14px → 10px に詰めて収める。 */
-/* 固定列の合計は 876px（工程の12区切りの列は 196px・#637）。最小幅は 1232px で、残りはタイトルの列が取る
-   （作業中の行はタイトルの下に「いまの工程」の1行が入るので、タイトルの列に 356px 以上を残す）。
-   幅 1292px 以上の画面なら横スクロールなしで収まる */
-.mtx table{table-layout:fixed; min-width:1232px}
+/* 固定列（番号〜指摘・滞留・承認）の合計は 614px。タイトルは広い画面で 380px、狭い画面では 214px まで縮め、
+   工程の12列は 1列 46px 以上（552px）を残す（#637）。最小幅は 614＋214＋552＝1380px。
+   --ttl-w の 1223px は 固定列 614＋工程 552＋main の左右の余白 40＋縦のスクロールバー 17 */
+.mtx{--ttl-w:clamp(214px, calc(100vw - 1223px), 380px)}
+.mtx table{table-layout:fixed; min-width:1380px}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
-/* 工程の列（12区切り）。見出しは他の列と同じ書体 */
-.mtx td.flow{padding-left:8px; padding-right:12px}
+/* 中身の短い列（版・確認・指摘・滞留）は左右の余白を 6px に詰める（「10回目」「💬 12」「120日」が入る幅で、表の最小幅を抑える・#637） */
+.mtx td.nar,.mtx th.nar{padding-left:6px; padding-right:6px}
+/* 番号の列も同じく詰める（10px のままだと字の幅の広い番号が「RW00…」と切れた・#637） */
+.mtx td.seq{padding-left:6px; padding-right:6px}
+/* 工程の12列（#637）。見出しの上の段に「工程」の欄（colspan）を設け、その下に1列ずつ。名前は帯の名前で、
+   長い2つは用語集の略（stepLabelHTML）。承認ポイントは ◆。入りきらない名前は <wbr> の所で折り返す */
+.mtx th.st,.mtx td.st{text-align:center; padding-left:2px; padding-right:2px}
+.mtx thead th.st{font-size:10.5px; line-height:1.25; letter-spacing:0; text-transform:none; color:var(--ink-2);
+  font-weight:650; white-space:normal; word-break:keep-all; overflow-wrap:anywhere; vertical-align:bottom;
+  padding-top:5px; padding-bottom:5px}
+.mtx thead th.grp{text-align:center; color:var(--ink); font-size:11px; letter-spacing:.14em; padding:4px 0;
+  border-bottom:1px solid var(--border-2)}
+.mtx thead th.pad{padding:4px 0; border-bottom:none}
 /* タイトルの下の「いまの工程」の1行（作業中の記録がある行だけ・#637） */
-.mtx td.ttl .wknow{margin-top:6px; max-width:560px; line-height:1.4}
+.mtx td.ttl .wknow{margin-top:6px; max-width:560px; line-height:1.4; container-type:inline-size}
+/* タイトルの列が狭い（中身が 280px 以下＝おおむね幅 1520px より狭い画面）ときは、札・残り（経過）・進みの棒・機械と時刻を1段ずつ縦に積む
+   （2段のままだと札が「…」で切れ、棒の数と残りが重なる） */
+@container (max-width:280px){
+  .mtx td.ttl .wknow>*{grid-column:1 / -1; justify-self:start}
+  .mtx td.ttl .wknow>.wk-l2{justify-self:stretch}
+}
+.mtx thead tr:nth-child(2) th{vertical-align:bottom}
 .mark{display:inline-block; width:19px; height:19px; line-height:19px; border-radius:var(--r-pill);
   font-size:11px; text-align:center; font-variant-numeric:normal}
 /* 完了は沈める（グレー）／AIが動いている工程は Claude のオレンジ（塗り＝作業中・
@@ -429,7 +448,16 @@ td.dim{color:var(--muted)}
 .mark.rcai{color:var(--ink-2); background:var(--surface-3); font-weight:700;
   box-shadow:inset 0 0 0 1.5px var(--axis)}
 .mark.todo{color:var(--axis)}
+/* 一覧の行の工程の印（#637）。いまの工程の色は curTone の決まり（詳細画面の帯も同じ）:
+   投稿待ち・予約済み＝濃い灰色／ネタ案（着手前）＝縁だけ／使わない工程＝斜線 */
+.mark.pubwait{background:var(--act); color:var(--act-ink); font-weight:700}
+.mark.idle{box-shadow:inset 0 0 0 1.5px var(--axis); vertical-align:middle}
+.mark.skip{width:26px; border-radius:4px; vertical-align:middle;
+  background:repeating-linear-gradient(135deg, var(--surface-2) 0 3px, var(--axis) 3px 4px)}
+.legend2 .mark{width:16px; height:16px; line-height:16px; font-size:9.5px}
+.legend2 .mark.skip{width:20px}
 .mtx tr.dropped td{color:var(--muted)}
+.mtx tr.dropped td.st .mark{opacity:.5}
 .mtx tbody tr{cursor:pointer}
 /* ── 一覧のセクション見出し（在庫・レビュー統合）────────────────────────
    表の中では colspan で1行まるごと使う帯、スマホでは同じ体裁の見出しブロック。
@@ -459,9 +487,9 @@ td.dim{color:var(--muted)}
 .mtx th.sortable{cursor:pointer; user-select:none}
 .mtx th.sortable:hover{color:var(--ink)}
 .mtx th .ar{font-size:9px; margin-left:3px; color:var(--ink)}
-.mtx thead th:first-child,.mtx tbody td:first-child{position:sticky; left:0; z-index:1;
+.mtx thead tr:nth-child(2) th:first-child,.mtx tbody td:first-child{position:sticky; left:0; z-index:1;
   background:var(--surface-1); box-shadow:1px 0 0 var(--border-2)}
-.mtx thead th:first-child{background:var(--surface-2); z-index:3}
+.mtx thead tr:nth-child(2) th:first-child{background:var(--surface-2); z-index:3}
 .mtx tbody tr:hover td:first-child{background:var(--surface-2)}
 /* 行の左端に状態の色帯（#205）。一覧に戻ったとき「どれが自分の番／どれがコメント済みか」を
    スクロールしながら色だけで拾えるようにする。sticky 1列目の区切り影と重ねて出す */
@@ -517,21 +545,26 @@ td.ttl .flags{margin-left:8px}
 .sbadge.done{background:var(--done-tint); color:var(--done)}
 .sbadge.idea{background:var(--surface-2); color:var(--ink-2)}
 /* 進捗マトリクスはページ全体でスクロール（内部縦スクロール廃止・#204）。max-height/overflow を外して
-   全高表示し、列見出し（1段・#637）を position:sticky でサイトヘッダー（.topbar＝トップバー＋ナビ）直下に固定。
+   全高表示し、列見出し（2段。上の段は「工程」の欄・#637）を position:sticky でサイトヘッダー（.topbar＝トップバー＋ナビ）
+   直下に固定。2段目の top は1段目の高さ（--mtxrow1・syncStickyOffsets が実測）だけ下げる。
    横は PC幅(≥1100px)なら表(min 1060px)が収まるので overflow:visible。収まらない中間幅のみ横コンテナ
    スクロールを許容（ページ横スクロールは出さない）。--stickytop は JS が実測して設定。 */
 .tblwrap.mtx{overflow:visible; max-height:none}
 .mtx thead tr:first-child th{top:var(--stickytop, 0px)}
+.mtx thead tr:nth-child(2) th{top:calc(var(--stickytop, 0px) + var(--mtxrow1, 24px))}
 /* 列が12本になって表の最小幅が 1060px → 1280px に上がったので、横スクロールへ切り替える
    幅もそこへ合わせる（sticky の列見出しはスクロール容器の中では効かないので、
    表が収まらない幅でだけ譲る）。 */
 /* 2026-09-19（#506 中5）: 横スクロール容器の中では sticky の基準が容器になるので、ページ用の
    --stickytop を足したままだと列見出しが容器の中で下がって先頭行を覆い、1本目が押せなくなる。
    容器になる幅では top を 0 起点に戻す。画面を横いっぱいに使うようにしたので（同日）、
-   表（min 1186px）が収まらなくなる幅は 1246 未満だけになった */
-@media (max-width:1245.98px){
+   表（min 1186px）が収まらなくなる幅は 1246 未満だけになった。
+   工程を12列にして（#637）表の最小幅が 1380px になったので、収まらなくなる幅は 1437 未満
+   （1380＋main の左右の余白 40＋縦のスクロールバー 17） */
+@media (max-width:1436.98px){
   .tblwrap.mtx{overflow-x:auto}
   .mtx thead tr:first-child th{top:0}
+  .mtx thead tr:nth-child(2) th{top:var(--mtxrow1, 24px)}
 }
 .emptyrow td{text-align:center; color:var(--muted); padding:26px; cursor:default}
 .emptyrow:hover td{background:transparent!important}
@@ -556,21 +589,16 @@ td.ttl .flags{margin-left:8px}
   font-variant-numeric:tabular-nums; white-space:nowrap}
 .scard-days.slow{color:var(--warn); font-weight:680}
 .scard-ttl{flex:1 1 auto; min-width:0; font-size:var(--fs-md); line-height:1.45; font-weight:600}
-/* ── 一覧の行の工程（#637）: 詳細画面の帯と同じ12個を名前なしの細い区切りで（flowSegsHTML）──────
-   済み＝くすんだ青の薄い色・いまの工程＝状態の色（AI＝橙・あなたの番＝青・投稿待ちと予約済み＝くすんだ青）・
-   使わない工程＝斜線・これから＝灰。凡例の見本（.lgseg）も同じ色 */
-.segs{display:grid; grid-template-columns:repeat(12, minmax(0, 1fr)); gap:3px; padding-block:2px}
-.segs>i,.lgseg{display:block; height:8px; border-radius:2px; background:var(--surface-3)}
-.lgseg{display:inline-block; width:16px}
-.segs>i.done,.lgseg.done{background:color-mix(in srgb, var(--act) 45%, transparent)}
-.segs>i.work,.lgseg.work{background:var(--fix)}
-.segs>i.rv,.lgseg.rv{background:var(--s1)}
-.segs>i.rc,.lgseg.rc{background:var(--fix-tint); box-shadow:inset 0 0 0 1.5px var(--fix)}
-.segs>i.rcai,.lgseg.rcai{background:var(--surface-3); box-shadow:inset 0 0 0 1.5px var(--muted)}
-.segs>i.wait{background:var(--act)}
-.segs>i.idle{background:transparent; box-shadow:inset 0 0 0 1.5px var(--axis)}
-.segs>i.skip,.lgseg.skip{background:repeating-linear-gradient(135deg, var(--surface-2) 0 3px, var(--axis) 3px 4px)}
-.segs.dead{opacity:.5}
+/* ── スマホのカードの工程（#637・flowRowHTML）: 広い画面の表と同じ12個の印に、見出しと同じ名前を添えて横に並べる ──
+   幅に入らない分は横に動かして見る（スクロールバーは出さない）。開いたときにいまの工程を真ん中へ送る（centerFlowRows） */
+.prow{position:relative; display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px;
+  overscroll-behavior-x:contain}
+.prow::-webkit-scrollbar{display:none}
+.prow .ps{flex:0 0 52px; display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0}
+.prow .pl{font-size:9px; line-height:1.15; color:var(--muted); text-align:center; word-break:keep-all; overflow-wrap:anywhere}
+.prow .pl.cur{color:var(--ink); font-weight:700}
+.prow .pl.skip{text-decoration:line-through}
+.prow.dead{opacity:.5}
 
 /* ── 「いまの工程」の1行（#637・一覧の行と詳細画面の帯の下で同じ部品＝nowLineHTML）──────
    1段目＝札（工程・作業）と 残り／経過／更新なし、2段目＝進みの棒と数 または ひとこと と 機械・始めた時刻。
@@ -1604,8 +1632,14 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 :is(.sview,.dflow) .sv-step .nm{font-size:var(--fs-xs); font-weight:650; color:var(--ink-2); align-self:flex-start}
 :is(.sview,.dflow) .sv-step .st{font-variant-numeric:tabular-nums; min-width:0; overflow:hidden; text-overflow:ellipsis}
 :is(.sview,.dflow) .sv-step.done{background:var(--act-soft); color:var(--sub-ink)}
-/* いまの工程（承認待ちもこの色） */
+/* いまの工程。色は一覧の印と同じ決まり（curTone・#637）: AI の作業中＝橙・あなたの番（承認待ち・仕分け待ち）＝青・
+   AI修正中＝橙の薄い地・作り直し中＝灰・投稿待ちと予約済み＝濃い灰色（下の既定）・ネタ案＝縁だけ */
 :is(.sview,.dflow) .sv-step.cur{background:var(--act); color:var(--act-ink)}
+:is(.sview,.dflow) .sv-step.cur.work{background:var(--fix); color:#fff}
+:is(.sview,.dflow) .sv-step.cur.rv{background:var(--s1); color:#fff}
+:is(.sview,.dflow) .sv-step.cur.rc{background:var(--fix-tint); color:var(--fix-ink)}
+:is(.sview,.dflow) .sv-step.cur.rcai{background:var(--axis); color:var(--ink)}
+:is(.sview,.dflow) .sv-step.cur.idle{background:var(--surface-1); color:var(--ink-2); box-shadow:inset 0 0 0 1.5px var(--axis)}
 :is(.sview,.dflow) .sv-step.cur .st{font-weight:700}
 /* 承認ポイントの承認済み＝緑＋承認の日時 */
 :is(.sview,.dflow) .sv-step.ok{background:var(--good-tint); color:var(--up)}
@@ -1625,7 +1659,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   height:3px; border-radius:2px; overflow:hidden; background:color-mix(in srgb, var(--act-ink) 28%, transparent)}
 :is(.sview,.dflow) .sv-step:first-child .pb{left:12px}
 :is(.sview,.dflow) .sv-step .pb>i{display:block; height:100%; background:var(--fix)}
-:is(.sview,.dflow) .sv-step .pb.warn>i{background:var(--warn)}
+/* 橙の地（AI の作業中）の上では、棒を白にする（橙の上の橙は見えない） */
+:is(.sview,.dflow) .sv-step.cur.work .pb{background:rgba(255,255,255,.35)}
+:is(.sview,.dflow) .sv-step.cur.work .pb>i{background:#fff}
+:is(.sview,.dflow) .sv-step .pb.warn>i,:is(.sview,.dflow) .sv-step.cur.work .pb.warn>i{background:var(--warn)}
 /* 帯のすぐ下の「いまの工程」の1行（#637）。記録が無いときは枠ごと消す */
 .sv-worknow:empty{display:none}
 .sview .sv-worknow{margin:calc(var(--sp-3) * -1 + 6px) 0 var(--sp-3)}
@@ -2444,7 +2481,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 02:51';
+const BUILT_AT = '10/3 10:52';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3470,29 +3507,63 @@ const quickOkHTML = it => {
       data-label="${esc(lb)}" data-donelabel="${esc(w.approved)}"
       title="${esc(w.approve(gname))}">${esc(lb)}</button>`;
 };
-/* ── 一覧の行の工程（#637）: 詳細画面の工程の帯と同じ12個を、名前なしの細い区切りで出す ──────
+/* ── 一覧の行の工程（#637）: 詳細画面の工程の帯と同じ12個に印を付ける ──────────────────────
+   広い画面の表は「工程」の欄の下に1列ずつ（flowCellsHTML）、スマホのカードは印の下に名前を添えて横に並べる（flowRowHTML）。
    位置（svFlowAt）・使わない工程（SV_SKIP）・各工程の状態（svStepState）は帯と同じ関数で決める。
    使わない工程は帯と同じく動画の制作方法で決める（listRow・#637。一覧は目録を読まないので、制作方法が NULL なら足さない）。
-   違うのは見た目だけ: 済み（承認済みも）は薄い色、使わない工程は斜線、いまの工程は状態の色
-   （AI の作業中＝橙・あなたの番＝青・AI修正中＝橙の縁・作り直し中＝灰の縁・投稿待ちと予約済み＝くすんだ青・着手前＝縁だけ）。
-   名前と状態は区切りのツールチップに持たせる。没は位置を出さない */
-const segTone = it => it._work ? 'work'
+   印: 済み（承認済みも）＝✓・いまの工程＝●（色は curTone。AI修正中・作り直し中は ↺、ネタ案は縁だけ）・
+   使わない工程＝斜線・まだ＝·。名前と状態は印のツールチップに持たせる。没は位置を出さない */
+/* いまの工程の色。一覧の表・スマホの印・詳細画面の帯（svFlowHTML）で同じ決まり（#637）:
+   AI の作業中＝work（橙）・あなたの番（承認待ち・仕分け待ち）＝rv（青）・AI修正中＝rc（橙の縁）・作り直し中＝rcai（灰の縁）・
+   投稿待ちと予約済み＝pubwait（濃い灰色）・ネタ案＝idle（縁だけ） */
+const curTone = it => it._work ? 'work'
   : (it._rv || it.stage === 'triage') ? 'rv'
   : it._rc ? rcCls(it)
-  : (it.stage === 'queue' || isResv(it)) ? 'wait'
+  : (it.stage === 'queue' || isResv(it)) ? 'pubwait'
   : it.stage === 'idea' ? 'idle' : 'work';
-function flowSegsHTML(it){
+/* 列の見出しとスマホの印の下の名前（帯の名前。長い2つは用語集の略・承認ポイントは ◆）。正式名はツールチップ。
+   狭い列で折り返してよい所（SV_STEPS の brk の |）に <wbr> を入れる（「ナレーショ／ン」のように切れないように） */
+const stepLabelHTML = s => (s.gate ? '◆' : '') + (s.brk || s.short || s.name).split('|').map(esc).join('<wbr>');
+/* 12個の印 {cls, gl（字）, tip（ツールチップ）, skip, cur（いまの工程）, focus（スマホで真ん中に送る印）} と、
+   読み上げ用のいまの工程の名前 */
+function stepMarks(it){
   const dead = it.stage === 'dropped';
-  const cur = dead ? -1 : svFlowAt(it, true), skip = SV_SKIP(it, true), tone = segTone(it);
+  const cur = dead ? -1 : svFlowAt(it, true), skip = SV_SKIP(it, true), tone = curTone(it);
   let curName = dead ? '没' : '済み';
-  const segs = SV_STEPS.map((s, i) => {
-    const { cls, st } = dead ? { cls: skip[i] ? 'skip' : '', st: '' } : svStepState(it, i, cur, skip[i]);
-    const c = cls === 'cur' ? tone : (cls === 'ok' ? 'done' : (cls === 'nogate' ? '' : cls));
-    const say = cls === 'skip' ? skip[i] : (cls === 'cur' && it.stage === 'triage') ? '仕分け待ち' : st;
-    if (cls === 'cur') curName = s.name + (say ? `（${say}）` : '');
-    return `<i${c ? ` class="${c}"` : ''} title="${esc(s.name + (say ? `（${say}）` : (cls === 'done' || cls === 'ok' ? '（済み）' : '')))}"></i>`;
-  }).join('');
-  return `<div class="segs${dead ? ' dead' : ''}" role="img" aria-label="工程 ${esc(curName)}">${segs}</div>`;
+  const marks = SV_STEPS.map((s, i) => {
+    if (skip[i]) return { cls:'skip', gl:'', tip:`${s.name}（${skip[i]}）`, skip:true };
+    if (dead) return { cls:'todo', gl:'·', tip:`${s.name}（没）` };
+    const { cls, st } = svStepState(it, i, cur, null);
+    if (cls === 'done' || cls === 'ok') return { cls:'done', gl:'✓', tip:`${s.name}（${st || '済み'}）` };
+    if (cls === 'nogate') return { cls:'todo', gl:'·', tip:`${s.name}（${st}）` };
+    if (cls !== 'cur') return { cls:'todo', gl:'·', tip:`${s.name}（まだ）` };
+    const say = it.stage === 'triage' ? '仕分け待ち' : st;
+    curName = s.name + (say ? `（${say}）` : '');
+    return { cls:tone, gl: tone.startsWith('rc') ? '↺' : (tone === 'idle' ? '' : '●'),
+             tip: s.name + (say ? `（${say}）` : ''), cur:true, focus:true };
+  });
+  /* 投稿済み（全部済み）は最後の工程を真ん中へ送る（スマホ） */
+  if (!dead && cur >= SV_STEPS.length) marks[marks.length - 1].focus = true;
+  return { marks, curName, dead };
+}
+const markHTML = m => `<span class="mark ${m.cls}" title="${esc(m.tip)}">${m.gl}</span>`;
+/* 広い画面の表の12列のマス */
+const flowCellsHTML = it => stepMarks(it).marks.map(m => `<td class="st">${markHTML(m)}</td>`).join('');
+/* スマホのカードの1行（印の下に名前）。横に動かせる。いまの工程は centerFlowRows が真ん中へ送る */
+function flowRowHTML(it){
+  const { marks, curName, dead } = stepMarks(it);
+  return `<div class="prow${dead ? ' dead' : ''}" role="group" aria-label="工程 ${esc(curName)}">${marks.map((m, i) =>
+    `<span class="ps"${m.focus ? ' data-focus="1"' : ''}>${markHTML(m)}<span class="pl${m.cur ? ' cur' : ''}${
+      m.skip ? ' skip' : ''}">${stepLabelHTML(SV_STEPS[i])}</span></span>`).join('')}</div>`;
+}
+/* スマホのカードの工程の行を、いまの工程が真ん中に来るように送る（一覧を描いたとき・画面の幅が変わったとき）。
+   表示されていない（広い画面で隠れている）行は幅が 0 なので何もしない */
+function centerFlowRows(root){
+  (root || document).querySelectorAll('.prow').forEach(r => {
+    const c = r.querySelector('[data-focus]');
+    if (!c || !r.clientWidth) return;
+    r.scrollLeft = Math.max(0, c.offsetLeft - (r.clientWidth - c.offsetWidth) / 2);
+  });
 }
 
 /* 工程チップの件数は「チャンネル全体（検索・ジャンル絞り込みを反映）」で数える。
@@ -3615,7 +3686,9 @@ const secAttrs = s => s.fold
    w＝その列の固定幅。table-layout:fixed なので、ここに書いた幅がそのまま列幅になる
    （幅を書いていないタイトル列だけが残り幅を取る）。列幅が中身に左右されない＝
    区画がどれでもワッペンの左端と縦位置が揃う。
-   flow は工程の列（詳細画面の帯と同じ12区切り・#637）。作業中の記録がある動画は、タイトルの下に
+   flow は工程の12列の位置の目印（詳細画面の帯と同じ12個・#637）。見出しは2段で、上の段に「工程」の欄、
+   その下に1列ずつ（mtxHead・mtxRow・mtxCols が flow を12列に開く）。幅を書かない工程の12列が残りを等分し、
+   タイトルは --ttl-w（広い画面で 380px）。作業中の記録がある動画は、タイトルの下に
    「いまの工程」の1行（nowLineHTML。スマホのカード・詳細画面と同じ部品）を出す。
    td を丸ごと返すのは、投稿日時が値の有無で中身もツールチップも変わるため。
    sort:1 の列だけ見出しを押して並べ替えできる（キー名は SORT_DB と揃える）。 */
@@ -3623,20 +3696,20 @@ const secAttrs = s => s.fold
    例: 2026-08-30(土) 18:00 → 08-30 18:00 */
 const shortDT = s => String(s || '').replace(/^\d{4}-/, '').replace(/\([日月火水木金土]\)/, '');
 const MCOL = {
-  seq:   {sort:1, w:'78px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
+  seq:   {sort:1, w:'74px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
   /* 予約済みだけ、公開の予定時刻をタイトルの後ろに出す（投稿日時の列は 2026-09-19 に外したため） */
-  title: {sort:1,                  td: it => `<td class="ttl">${esc(it.title)}${it.resv
+  title: {sort:1, w:'var(--ttl-w)', td: it => `<td class="ttl">${esc(it.title)}${it.resv
           ? ` <span class="resv" title="${esc(it.resv)} に公開予定">🗓 ${esc(shortDT(it.resv))}</span>` : ''}${nowLineHTML(it)}</td>`},
-  state: {label:'状態', w:'112px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
+  state: {label:'状態', w:'108px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
   /* 版・直した指摘・確認は承認待ちの行だけ。作業中の記録がある行（#637）は AI の番なので出さない */
-  rev:   {label:'版',   w:'52px',  td: it => `<td class="num">${it._work ? '' : revNumHTML(it)}</td>`},
-  src:   {label:'直した指摘', w:'128px', td: it => `<td class="bcol">${it._work ? '' : srcBadgeHTML(it)}</td>`},
-  looks: {label:'確認', w:'70px', td: it => `<td class="num">${it._work ? '' : looksHTML(it)}</td>`},
-  open:  {label:'指摘', w:'62px',  td: it => `<td class="bcol">${openBadgeHTML(it)}</td>`},
-  flow:  {label:'工程', w:'196px', td: it => `<td class="flow">${flowSegsHTML(it)}</td>`},
+  rev:   {label:'版',   w:'44px', thx:' nar', td: it => `<td class="num nar">${it._work ? '' : revNumHTML(it)}</td>`},
+  src:   {label:'直した指摘', w:'120px', td: it => `<td class="bcol">${it._work ? '' : srcBadgeHTML(it)}</td>`},
+  looks: {label:'確認', w:'60px', thx:' nar', td: it => `<td class="num nar">${it._work ? '' : looksHTML(it)}</td>`},
+  open:  {label:'指摘', w:'56px', thx:' nar', td: it => `<td class="bcol nar">${openBadgeHTML(it)}</td>`},
+  flow:  {label:'工程'},
   genre: {sort:1, w:'136px',        td: it => `<td><span class="genre">${esc(it.genreLabel)}</span></td>`},
-  days:  {sort:1, w:'56px', thx:' num',
-          td: it => `<td class="num">${it.days == null ? '' : it.days + '日'}</td>`},
+  days:  {sort:1, w:'52px', thx:' num nar',
+          td: it => `<td class="num nar">${it.days == null ? '' : it.days + '日'}</td>`},
   pub:   {label:'投稿日時', w:'120px',
           td: it => it.resv ? `<td title="${esc(it.resv)}"><span class="resv">🗓 ${esc(shortDT(it.resv))}</span></td>`
                   : it.pub  ? `<td title="${esc(it.pub)}">${esc(shortDT(it.pub))}</td>` : '<td></td>'},
@@ -3652,7 +3725,8 @@ const MCOL = {
 /* ジャンルの列は外した（オーナー指示 2026-09-19・承認の判断に使わない。絞り込みのジャンル選択は残す） */
 /* 投稿日時・再生数・登録者増も外した（同日・数字は分析タブで見る） */
 const MCOLS    = ['seq','title','state','rev','src','looks','open','flow','days','ok'];
-const colCount = cols => cols.length;
+/* 表の列の数（flow は工程の12列） */
+const colCount = cols => cols.reduce((n, k) => n + (k === 'flow' ? SV_STEPS.length : 1), 0);
 
 function colTH(k){
   const c = MCOL[k], w = c.w ? ` style="width:${c.w}"` : '';
@@ -3661,15 +3735,25 @@ function colTH(k){
   return `<th class="sortable${c.thx || ''}" data-sort="${k}"${w}>${SORT_LABEL[k]}${
     on ? `<span class="ar">${s.dir === 'asc' ? '▲' : '▼'}</span>` : ''}</th>`;
 }
-/* 列見出しは1段（工程は12区切りの1列・#637） */
-const mtxHead = cols => `<tr>${cols.map(colTH).join('')}</tr>`;
+/* 列見出しは2段（#637）。上の段は工程の12列の上に「工程」の欄、下の段に列の名前（工程は帯の名前・長い2つは略・
+   承認ポイントは ◆。マウスを載せると正式名） */
+function mtxHead(cols){
+  const gi = cols.indexOf('flow'), right = cols.length - gi - 1;
+  return `<tr>${gi ? `<th class="pad" colspan="${gi}"></th>` : ''}<th class="grp" colspan="${SV_STEPS.length}">工程</th>${
+      right ? `<th class="pad" colspan="${right}"></th>` : ''}</tr>
+    <tr>${cols.map(k => k === 'flow'
+      ? SV_STEPS.map(s => `<th class="st" title="${esc(s.name)}">${stepLabelHTML(s)}</th>`).join('')
+      : colTH(k)).join('')}</tr>`;
+}
 const mtxRow = (it, cols) => `<tr data-vid="${it.id}" tabindex="0" class="${
     (it.stage === 'dropped' ? 'dropped ' : '') + stateCls(it)}">${
-    cols.map(k => MCOL[k].td(it)).join('')}</tr>`;
-/* 列幅は <colgroup> で決める。table-layout:fixed は「最初の行のセル」の幅しか見ないので、
-   col に幅を書いておけば行の中身に関係なく効く。幅を書かないタイトル列が残りを取る。 */
-const mtxCols = cols => `<colgroup>${cols.map(k =>
-    `<col${MCOL[k].w ? ` style="width:${MCOL[k].w}"` : (k === 'ok' ? ' style="width:var(--okcol-w)"' : '')}>`).join('')}</colgroup>`;
+    cols.map(k => k === 'flow' ? flowCellsHTML(it) : MCOL[k].td(it)).join('')}</tr>`;
+/* 列幅は <colgroup> で決める。table-layout:fixed は「最初の行のセル」の幅しか見ないが、最初の行は「工程」の欄
+   （colspan）なので、2段目の th に書いた幅は無視されて全列が均等割りになる。col に書けば行の中身に関係なく効く。
+   幅を書かない工程の12列が残りを等分する（表の最小幅で 1列 46px 以上を残す） */
+const mtxCols = cols => `<colgroup>${cols.map(k => k === 'flow'
+    ? SV_STEPS.map(() => '<col class="stcol">').join('')
+    : `<col${MCOL[k].w ? ` style="width:${MCOL[k].w}"` : (k === 'ok' ? ' style="width:var(--okcol-w)"' : '')}>`).join('')}</colgroup>`;
 const mtxTable = (cols, body) => `<table>${mtxCols(cols)}<thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
 
 function matrixTable(core){
@@ -3730,7 +3814,7 @@ function stockCards(rows){
       </div>
       ${badges ? `<div class="sbadges">${badges}</div>` : ''}
       ${nowLineHTML(it)}
-      ${flowSegsHTML(it)}
+      ${flowRowHTML(it)}
       ${extra ? `<div class="scard-extra">${extra}</div>` : ''}
     </article>`;
   };
@@ -3745,15 +3829,16 @@ function stockCards(rows){
 
 /* 説明は2本持つ: .ex＝PC の全文 / .exs＝スマホ用の10字以内。スマホで説明を全部消すと
    記号の意味が分からなくなるため、短い方だけ残す（#440 低14）。
-   見本は一覧の行の12区切り（flowSegsHTML）と同じ色の小さな区切り（#637） */
+   見本は一覧の行の工程の印（stepMarks）と同じ印（#637）。いまの工程の色は詳細画面の帯も同じ（curTone） */
 const MARK_LEGEND = `<div class="legend2">
   <b>工程</b>
-  <span class="lg"><i class="lgseg done"></i>済み</span>
-  <span class="lg"><i class="lgseg work"></i>AI作業中<span class="ex">（AIが自動で進めています）</span><span class="exs">（AIが進行中）</span></span>
-  <span class="lg"><i class="lgseg rc"></i>AI修正中<span class="ex">（あなたが出した指摘をAIが直しています）</span><span class="exs">（指摘を直し中）</span></span>
-  <span class="lg"><i class="lgseg rcai"></i>作り直し中<span class="ex">（AIの審査で指摘が出たので直しています。あなたの操作は要りません）</span><span class="exs">（AIの指摘で直し中）</span></span>
-  <span class="lg"><i class="lgseg rv"></i>承認待ち<span class="ex">（あなたの番）</span><span class="exs">（あなたの番）</span></span>
-  <span class="lg"><i class="lgseg skip"></i>なし</span></div>`;
+  <span class="lg"><span class="mark done">✓</span>済み</span>
+  <span class="lg"><span class="mark work">●</span>AI作業中<span class="ex">（AIが自動で進めています）</span><span class="exs">（AIが進行中）</span></span>
+  <span class="lg"><span class="mark rc">↺</span>AI修正中<span class="ex">（あなたが出した指摘をAIが直しています）</span><span class="exs">（指摘を直し中）</span></span>
+  <span class="lg"><span class="mark rcai">↺</span>作り直し中<span class="ex">（AIの審査で指摘が出たので直しています。あなたの操作は要りません）</span><span class="exs">（AIの指摘で直し中）</span></span>
+  <span class="lg"><span class="mark rv">●</span>承認待ち<span class="ex">（あなたの番）</span><span class="exs">（あなたの番）</span></span>
+  <span class="lg"><span class="mark pubwait">●</span>投稿待ち</span>
+  <span class="lg"><span class="mark skip"></span>なし</span></div>`;
 
 /* ゲートが「いまの版で」承認済みか。approved_*_at は初回承認の時刻で版を知らない（差し戻しで
    版が進んでも残る）ので、そのゲートが承認待ち（*_state === 'review'）なら承認済みとは見せない
@@ -3839,6 +3924,7 @@ async function refreshStockTable(){
 
   $('#stockchips').innerHTML = filterChips(store.facets[state.ch]);
   $('#stocktable').innerHTML = matrixTable(core) + pagerHTML(core);
+  centerFlowRows($('#stocktable'));                  /* スマホのカードの工程の行を、いまの工程が真ん中に来るように */
 
   const conds = [];
   if (state.stockFilter) {
@@ -5412,21 +5498,23 @@ const RE_MATERIALS = /^materials_v(\d+)\.json$/i;
      offOnly … 進行係を通らない動画だけが使う（02・03 の本編では「この番組では なし」）
      still   … Blender だけで作った動画は使わない（「この動画では なし」・#604 中1）
      post    … 公開の側（検証用の動画では「検証は投稿しない」）
-     pubTime … 2行目は番組の既定の公開時刻（svPubTime）。ここには書かない */
+     pubTime … 2行目は番組の既定の公開時刻（svPubTime）。ここには書かない
+     short   … 一覧の列の見出しとスマホの印の下の名前（用語集の略・#637）。無ければ name
+     brk     … その名前を狭い列で折り返してよい所（| の位置・stepLabelHTML）。帯には使わない */
 const SV_STEPS = [
   {name:'ネタ案',               what:'候補の登録'},
   {name:'台本',                 what:'文章（md）'},
-  {name:'ナレーション',          what:'音声（ElevenLabs）'},
-  {name:'シーン割り',            what:'設計図（json）'},
-  {name:'Blender の仮組み',      what:'動きとカメラの確認用の動画', offOnly:true},
+  {name:'ナレーション',          brk:'ナレー|ション', what:'音声（ElevenLabs）'},
+  {name:'シーン割り',            brk:'シーン|割り', what:'設計図（json）'},
+  {name:'Blender の仮組み',      short:'仮組み', what:'動きとカメラの確認用の動画', offOnly:true},
   {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）'},
-  {name:'仮組み＋静止画の承認',   what:'オーナーが見る', gate:'storyboard', offOnly:true},
+  {name:'仮組み＋静止画の承認',   brk:'仮組み|＋静止画|の承認', what:'オーナーが見る', gate:'storyboard', offOnly:true},
   /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「Blender のコマ計算」。
      作り込みも帯では「映像」に入る）。2行目は短く道具まで（帯を1行に収めるため） */
   {name:'映像',                 what:'テイク（H3）', whatBlender:'コマ計算（Blender）'},
-  {name:'完成動画の書き出し',     what:'映像・音声・字幕を1本に（Remotion）', whatOff:'映像・注釈・字幕・音を1本に'},
-  {name:'完成の承認',            what:'オーナーが見る', gate:'final'},
-  {name:'予約投稿',              what:'YouTube に登録', post:true},
+  {name:'完成動画の書き出し',     short:'書き出し', what:'映像・音声・字幕を1本に（Remotion）', whatOff:'映像・注釈・字幕・音を1本に'},
+  {name:'完成の承認',            brk:'完成の|承認', what:'オーナーが見る', gate:'final'},
+  {name:'予約投稿',              brk:'予約|投稿', what:'YouTube に登録', post:true},
   {name:'公開',                 what:'', post:true, pubTime:true}
 ];
 /* 承認ポイント → 帯の位置 */
@@ -5471,10 +5559,11 @@ const fmtHMW = (t, now) => {
   return `${(now - t) > 6 * DAY ? fmtMD(iso) + ' ' : ''}${fmtTime(iso)}(${jstWD(d)})`;
 };
 const actWord = w => !w.activity ? '作業中' : (w.activity.endsWith('中') ? w.activity : w.activity + '中');
-/* 札の言葉「映像・コマ計算中」（工程の名前は帯の名前） */
-const workTitle = w => `${SV_STEPS[w.step].name}・${actWord(w)}`;
-/* 帯の2行目（「コマ計算 812/1852」か「作り込み中」） */
-const workLine2 = w => w.counted ? `${w.activity || '作業'} ${w.done}/${w.total}` : actWord(w);
+/* 札の言葉「映像・コマ計算中」（工程の名前は帯の名前）。作業の中身が空の記録（コマ計算を途中で止めたあとの
+   「映像」だけの記録など・#637）は工程の名前だけ（「映像」） */
+const workTitle = w => w.activity ? `${SV_STEPS[w.step].name}・${actWord(w)}` : SV_STEPS[w.step].name;
+/* 帯の2行目（「コマ計算 812/1852」か「作り込み中」。作業の中身が空なら記録の無いときと同じ「AI作業中」） */
+const workLine2 = w => w.counted ? `${w.activity || '作業'} ${w.done}/${w.total}` : (w.activity ? actWord(w) : 'AI作業中');
 /* 止まっているかも: 数えられる作業で最後の書き込みから WORK_STALL_MS 以上。たった長さ（ミリ秒）か null */
 const workStall = (w, now) => (w && w.counted && w.updated != null && now - w.updated >= WORK_STALL_MS)
   ? now - w.updated : null;
@@ -5731,6 +5820,8 @@ function svStepState(it, i, cur, skipNote){
 function svFlowHTML(it){
   const cur = svFlowAt(it);
   const skip = SV_SKIP(it), off = offDispatcherItem(it), bl = svBlenderOnly(it);
+  /* いまの工程の色は一覧の印と同じ決まり（curTone・#637）。状態の言葉（2行目）は今までどおり */
+  const tone = curTone(it);
   return `<div class="sv-flow"><div class="sv-steps" role="list" aria-label="工程">${SV_STEPS.map((s, i) => {
     const { cls, st } = svStepState(it, i, cur, skip[i]);
     const what = s.pubTime ? (skip[i] ? '—' : svPubTime(it))
@@ -5746,7 +5837,7 @@ function svFlowHTML(it){
     const pb = w ? `<span class="pb${workStall(w, Date.now()) != null ? ' warn' : ''}"><i style="width:${
       workPct(w).toFixed(1)}%"></i></span>` : '';
     /* 2行目は帯が狭いと「…」で切れる（svFitFlow）ので、全文をツールチップにも持たせる */
-    return `<span class="sv-step${s.gate ? ' gate' : ''}${cls ? ' ' + cls : ''}${pb ? ' haspb' : ''}" role="listitem"${
+    return `<span class="sv-step${s.gate ? ' gate' : ''}${cls ? ' ' + cls : ''}${cls === 'cur' ? ' ' + tone : ''}${pb ? ' haspb' : ''}" role="listitem"${
       tip ? ` title="${esc(tip)}"` : ''}${cls === 'cur' ? ' aria-current="step"' : ''}>` +
       `<span class="nm">${mark}${esc(s.name)}</span>` +
       `<span class="st"${line2 && !tip ? ` title="${esc(line2)}"` : ''}>${line2 ? esc(line2) : '&nbsp;'}</span>${pb}</span>`;
@@ -9475,6 +9566,10 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener('scroll', () => svSyncVV());
 }
 let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { drawSpark(); syncStickyOffsets(); tapRelayout(); svRelayout(); fitDflow(); }, 120); });
+/* 広い画面からスマホの幅に変わってカードが出たときだけ、工程の行をいまの工程へ送り直す（#637）。
+   ふつうの resize では送らない（スマホはページを縦に送るだけで resize が起き、横に動かした位置が戻ってしまう） */
+try { window.matchMedia('(max-width:640px)').addEventListener('change', e => { if (e.matches) centerFlowRows($('#stocktable')); }); }
+catch (_) { /* 古いブラウザ。開き直せば真ん中に来る */ }
 /* 幅が変わるとシートの出し方（せり上がり／その場）とピンの置き場所が変わる（#509 段4） */
 function tapRelayout(){
   if (!tap || tap.mode !== 'edit' || !tap.panel) return;
