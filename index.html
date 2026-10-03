@@ -2481,7 +2481,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 10:52';
+const BUILT_AT = '10/3 11:21';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -7872,19 +7872,21 @@ const ANA_GOAL = {
 const ANA_SCALE = {
   loss: {step:5, dir:-1, unit:'%', fmt:v => String(Math.round(v))}
 };
-/* 目安を当てるチャンネル（オーナー決定 2026-09-06）。根拠は世界のバズ雑学の50本だけなので、
-   歯科医番長では線を描かず、到達／未達の色分けも赤字もしない（数値だけ出す）。
+/* 目安は**全チャンネルに当てる**。値は世界のバズ雑学のデータから出した仮の値で、番組ごとの分析で
+   線を決めたら置き換える。使うのは評価の表示（線・到達／未達の塗り分け・赤字）だけ。
+   当てるチャンネルを名指しで並べない（足すたびに直し忘れる・#506 中8）。
    正本: .claude/skills/youtube-produce/rules/scene-taxonomy.md §2-1b */
-const ANA_GOAL_CHANNELS = ['buzz-zatsugaku'];
-/* 同じ02でも E系（試作フォーマット）は根拠データの外なので、動画1本ごとの判定から外す */
+/* 世界のバズ雑学の E系（試作フォーマット）だけは、動画1本ごとの判定から外す（正本 §2-1b）。
+   名指しするのは外す側（02 の事情）だけなので、チャンネルを足してもここは直さなくてよい */
+const ANA_GOAL_NG_CHANNEL = 'buzz-zatsugaku';
 const ANA_GOAL_NG_GENRE = /E系/;
-const goalCh = ch => ANA_GOAL_CHANNELS.includes(ch);
-const goalVid = p => goalCh(p.channel) && !ANA_GOAL_NG_GENRE.test(p.genre || '');
+const goalVid = p => !(p.channel === ANA_GOAL_NG_CHANNEL && ANA_GOAL_NG_GENRE.test(p.genre || ''));
 /* 目安の値を文にするときの共通表記（例: 70% / 1.8 / 0.85） */
 const goalTxt = k => `${ANA_GOAL[k].fmt(ANA_GOAL[k].thr)}${ANA_GOAL[k].unit}`;
-/* グラフの下・表の下に添える1行（線の対象が02だけであることの説明） */
-/* チャンネルを名指ししない（足すたびに直し忘れる・#506 中8）。線を当てるのは ANA_GOAL_CHANNELS だけ */
-const ANA_GOAL_SCOPE = '目安の線は世界のバズ雑学だけに当てています（根拠のデータが世界のバズ雑学のみ）';
+/* グラフの下・表の下に添える1行（線が仮の値であることの説明）。ここでもチャンネルを名指しで並べない */
+const ANA_GOAL_SCOPE = '目安の線は世界のバズ雑学のデータから出した仮の値で、全チャンネルに当てています（チャンネルごとの分析で線を決めたら置き換えます）';
+/* 判定から外している回の説明（ANA_GOAL_NG_GENRE と対） */
+const ANA_GOAL_NG_TXT = '世界のバズ雑学の試作の形式の回は、目安の判定から外しています';
 
 /* いま凡例でオンにしているチャンネル（色と名前つき）。並びは常にチャンネルの並び順で固定
    ＝オフにしても残ったチャンネルの色は変わらない */
@@ -8119,8 +8121,8 @@ function playsChart(series, W, opt){
 
 /* ── 公開順に見る平均視聴率（横軸＝公開日の実日付・縦軸＝%）─────────
    点の色＝チャンネル、目安に到達＝塗りつぶし／未達＝白抜き。
-   ⚠️ 目安を当てないチャンネル（items[].goal が false）は点を全部塗りつぶしにし、
-      そのチャンネルしか映っていないときは破線も描かず、縦軸の範囲にも閾値を混ぜない。
+   ⚠️ 目安を当てない動画（items[].goal が false・02 の E系）は点を塗りつぶしにし、
+      その動画しか映っていないときは破線も描かず、縦軸の範囲にも閾値を混ぜない。
    items = [{d, at, v, seq, title, name, color, goal}] */
 function scatterChart(items, W, opt){
   const PL = 46, PR = 14, PT = 21;
@@ -8162,10 +8164,11 @@ function scatterChart(items, W, opt){
 
 /* ── ヒストグラム（チャンネルごとに同じ区分で横並び・積み上げない）─────
    棒の色＝チャンネル。目安に到達した区分は塗りつぶし、未達は白抜き（輪郭だけ）。
-   ⚠️ 目安を当てないチャンネル（groups[].goal が false）は棒を全部塗りつぶしにし、
-      対象が1つも無いときは破線も描かず、横軸の範囲にも閾値を混ぜない。
-      **そもそも目安を持たない指標（序盤の離脱・ANA_SCALE 側）も同じ経路で全部塗りつぶしになる**
-      ので、凡例の「塗りつぶし＝到達」は目安のある指標だけに出すこと（#505・2026-09-22）。
+   ⚠️ groups[].goal が false の系列は棒を全部塗りつぶしにし、全部が false なら破線も描かず、
+      横軸の範囲にも閾値を混ぜない。目安は全チャンネルに当てるので、false になるのは
+      **目安を持たない指標（序盤の離脱・ANA_SCALE 側）と、判定する値が1本も無い系列（02 の E系だけ）**。
+      凡例の「塗りつぶし＝到達」は目安のある指標だけに出すこと（#505）。
+      塗り分けは区分（棒）の位置で決まるので、判定する値と外す値が同じ系列に混ざると、外す値も入った区分の塗りになる。
    groups = [{ch, name, color, values, goal}]（values は欠測を除いてある） */
 function histogram(groups, cfg, W, H){
   const { thr, step, dir, fmt, unit } = cfg;
@@ -8304,7 +8307,7 @@ function anaStats(a){
   const posted = a.pubs.filter(p => p.status === '投稿済');
   const totalViews = posted.reduce((s, p) => s + (Number(p.views) || 0), 0);
   const vals = k => posted.map(p => numOrNull(p[k])).filter(v => v != null);
-  /* 目安の対象になる動画だけ（02 の通常雑学）。到達本数の分母・分子はこちらで数える */
+  /* 目安の対象になる動画だけ（02 の E系を除く）。到達本数の分母・分子はこちらで数える */
   const goalPosted = posted.filter(goalVid);
   const gvals = k => goalPosted.map(p => numOrNull(p[k])).filter(v => v != null);
   const rates = vals('avg_view_rate_pct');
@@ -8416,10 +8419,10 @@ async function renderAnalytics(){
         note: span(st => st.c30t, st => st.cumLatestT), cell: st => delta(st.viewsGain30, '回') }
     ]},
     { nm:'視聴の質', rows:[
-      { lb:'平均視聴率', note:`計測できた動画の平均・目安 ${goalTxt('rate')}（02 の基準）`, cell: st => st.avgRate == null ? '—' : `${st.avgRate.toFixed(1)}%<span class="sub">計測済 ${st.rates.length}/${st.posted.length} 本</span>` },
-      { lb:`${goalTxt('rate')}に到達`, note:'平均視聴率が目安を超えた本数（02 の基準）',
-        cell: (st, ch) => (goalCh(ch) && st.gRates.length) ? `${st.rateHit} 本<span class="sub">${Math.round(st.rateHit / st.gRates.length * 100)}%</span>` : '—' },
-      { lb:'冒頭の維持', note:`計測できた動画の平均・目安 ${goalTxt('hook')}（02 の基準）`, cell: st => st.hookAvg == null ? '—' : st.hookAvg.toFixed(2) }
+      { lb:'平均視聴率', note:`計測できた動画の平均・目安 ${goalTxt('rate')}（仮の値）`, cell: st => st.avgRate == null ? '—' : `${st.avgRate.toFixed(1)}%<span class="sub">計測済 ${st.rates.length}/${st.posted.length} 本</span>` },
+      { lb:`${goalTxt('rate')}に到達`, note:'平均視聴率が目安を超えた本数（仮の値）',
+        cell: st => st.gRates.length ? `${st.rateHit} 本<span class="sub">${Math.round(st.rateHit / st.gRates.length * 100)}%</span>` : '—' },
+      { lb:'冒頭の維持', note:`計測できた動画の平均・目安 ${goalTxt('hook')}（仮の値）`, cell: st => st.hookAvg == null ? '—' : st.hookAvg.toFixed(2) }
     ]},
     { nm:'投稿', rows:[
       { lb:'直近7日', note: st0 ? `${md(st0.wkFrom)} 〜 ${md(st0.wkTo)}（今日を含む7日間）` : '—', cell: st => `${st.weekPosts} 本` },
@@ -8539,10 +8542,10 @@ async function renderAnalytics(){
         <span class="axh">${esc(ANA_DEF.rate)}。横軸＝公開日・縦軸＝平均視聴率（%）。1つの点が動画1本。点にふれるとチャンネル名・番号・タイトルが出ます</span></div>
       <div class="chartwrap" id="c-scatter"></div>
       <div class="distlegend">${sers.map(s => `<span>${chSw(s.color)}${esc(s.name)}</span>`).join('')}
-        <span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝${goalTxt('rate')}に到達</span>
+        ${scat.some(i => i.goal) ? `<span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝${goalTxt('rate')}に到達</span>
         <span><i class="sw" style="background:transparent;box-shadow:inset 0 0 0 2px var(--ink-2)"></i>白抜き＝未達</span>
-        <span style="color:var(--crit)">┈ ${goalTxt('rate')}の線</span></div>
-      <p class="axnote">${esc(ANA_GOAL_SCOPE)}。線の対象外のチャンネルは点を全部塗りつぶしで出しています</p>
+        <span style="color:var(--crit)">┈ ${goalTxt('rate')}の線</span>` : ''}</div>
+      <p class="axnote">${esc(ANA_GOAL_SCOPE)}。${esc(ANA_GOAL_NG_TXT)}（点は塗りつぶしで出しています）</p>
     </div>`;
   } else {
     scatCard = `<div class="card span2">
@@ -8555,8 +8558,10 @@ async function renderAnalytics(){
     /* 目安を持たない指標（序盤の離脱）は ANA_SCALE の表示設定だけで描く */
     const hasGoal = !!ANA_GOAL[key];
     const cfg = ANA_GOAL[key] || ANA_SCALE[key];
-    /* values＝棒に積む全部の値 / gvalues＝目安に照らして数える値（02 の通常雑学だけ） */
-    const groups = sers.map(s => ({ ...s, goal:hasGoal && goalCh(s.ch), values: pick(ST[s.ch]), gvalues: gpick(ST[s.ch]) }))
+    /* values＝棒に積む全部の値 / gvalues＝目安に照らして数える値（02 の E系を除く）。
+       判定する値が1本も無い系列（02 の E系だけ）は goal を立てない＝線も軸への閾値も白抜きも出さない */
+    const groups = sers.map(s => ({ ...s, values: pick(ST[s.ch]), gvalues: gpick(ST[s.ch]) }))
+      .map(g => ({ ...g, goal: hasGoal && g.gvalues.length > 0 }))
       .filter(g => g.values.length);
     const goalTxt = !hasGoal ? '' : (cfg.dir > 0 ? `${cfg.fmt(cfg.thr)}${cfg.unit}以上` : `${cfg.fmt(cfg.thr)}${cfg.unit}以下`);
     const head = `<h3>${esc(title)}${hasGoal ? `<span class="goal">目安 ${goalTxt}</span>` : ''}</h3>
@@ -8576,10 +8581,12 @@ async function renderAnalytics(){
       <p class="axnote">横軸＝${esc(title)}の区分（幅${cfg.fmt(cfg.step)}${cfg.unit}）・縦軸＝その区分に入る動画の本数</p>
       ${tbl}
       <div class="chartwrap" id="${id}"></div>
-      ${hasGoal ? `<div class="distlegend"><span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝目安に到達</span>
+      ${groups.some(g => g.goal) ? `<div class="distlegend"><span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝目安に到達</span>
         <span><i class="sw" style="background:transparent;box-shadow:inset 0 0 0 2px var(--ink-2)"></i>白抜き＝未達</span>
         <span style="color:var(--crit)">┊ 目安の線</span></div>
-      <p class="axnote">${esc(ANA_GOAL_SCOPE)}</p>` : `<p class="axnote">この指標には目安の線を置いていません（単独では良し悪しを言えないため）</p>`}
+      <p class="axnote">${esc(ANA_GOAL_SCOPE)}</p>`
+      : hasGoal ? `<p class="axnote">${esc(ANA_GOAL_SCOPE)}。${esc(ANA_GOAL_NG_TXT)}（映っているのがその回だけなので、線を引かず塗りつぶしで出しています）</p>`
+      : `<p class="axnote">この指標には目安の線を置いていません（単独では良し悪しを言えないため）</p>`}
     </div>`;
   };
   const qualCard = `<div class="card span2">
@@ -8659,7 +8666,7 @@ async function renderAnalytics(){
     if (typeof a1 === 'string') return sk.dir * a1.localeCompare(b1, 'ja');
     return sk.dir * (a1 - b1);
   });
-  /* 赤字（目安を割った値）は 02 の通常雑学だけに付ける。序盤の離脱は単独では良し悪しを
+  /* 赤字（目安を割った値）は全チャンネルに付ける（02 の E系を除く）。序盤の離脱は単独では良し悪しを
      言えない指標なので、どのチャンネルでも色を付けない（正本 scene-taxonomy.md §2-1b） */
   const bad = (v, k, p) => v != null && goalVid(p) && v < ANA_GOAL[k].thr;
   const cell = (v, k, fmt, p) => `<td class="num${bad(v, k, p) ? ' under' : ''}">${v == null ? '—' : fmt(v)}</td>`;
@@ -8685,7 +8692,7 @@ async function renderAnalytics(){
   }).join('');
   const perfCard = `<div class="card span2">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>動画別の成績</h2></div>
-      <p class="axnote">上の凡例でチャンネルを絞り込めます。列の名前を押すと並べ替わります。赤い字は目安を割った値（平均視聴率 ${goalTxt('rate')}未満・冒頭の維持 ${goalTxt('hook')}未満・末尾の維持 ${goalTxt('end')}未満）で、${esc(ANA_GOAL_SCOPE)}のため<b>世界のバズ雑学の通常の雑学にだけ</b>付けています。序盤の離脱は単独では良し悪しを言えないので色を付けません。値がないものは —</p>
+      <p class="axnote">上の凡例でチャンネルを絞り込めます。列の名前を押すと並べ替わります。赤い字は目安を割った値（平均視聴率 ${goalTxt('rate')}未満・冒頭の維持 ${goalTxt('hook')}未満・末尾の維持 ${goalTxt('end')}未満）です。${esc(ANA_GOAL_SCOPE)}。${esc(ANA_GOAL_NG_TXT)}（赤い字も付けません）。序盤の離脱は単独では良し悪しを言えないので色を付けません。値がないものは —</p>
       <div class="tblwrap perftbl xscroll"><table>
         <thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
@@ -8705,7 +8712,7 @@ async function renderAnalytics(){
         <tr><td>再生数</td><td class="wrap">動画が再生された回数。累計はそれまでの合計</td><td>—</td></tr>
         </tbody></table></div>
       <p class="axnote">数字はすべて毎朝6時に更新しています。計測できた動画だけを集計に入れています。色はチャンネルを表し、<b>目安のある指標では</b>塗りつぶし／白抜きが目安に到達したかどうかを表します（目安を置いていない序盤の離脱は全部塗りつぶし）</p>
-      <p class="axnote">目安は世界のバズ雑学の50本から出した値で、歯科医番長には当てていない（計測が増えたらチャンネル別にする）</p>
+      <p class="axnote">${esc(ANA_GOAL_SCOPE)}。${esc(ANA_GOAL_NG_TXT)}</p>
     </details>`;
 
   el.innerHTML = `
