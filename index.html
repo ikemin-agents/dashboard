@@ -409,9 +409,9 @@ td.dim{color:var(--muted)}
    工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げず、列の合計の幅にする
    （広げると余りが工程の列に回り、1列 90px ほどまで横に長くなった・オーナー差し戻し）。最小幅は 614＋214＋552＝1380px。
    --ttl-w の 1223px は 固定列 614＋工程 552＋main の左右の余白 40＋縦のスクロールバー 17 */
-.mtx{--ttl-w:clamp(214px, calc(100vw - 1223px), 380px)}
+.mtx{--ttl-w:clamp(214px, calc(100vw - 1223px), 380px); --st-w:46px}
 .mtx table{table-layout:fixed; min-width:1380px; width:calc(614px + var(--ttl-w) + 552px)}
-.mtx col.stcol{width:46px}
+.mtx col.stcol{width:var(--st-w)}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
 /* 中身の短い列（版・確認・指摘・滞留）は左右の余白を 6px に詰める（「10回目」「💬 12」「120日」が入る幅で、表の最小幅を抑える・#637） */
 .mtx td.nar,.mtx th.nar{padding-left:6px; padding-right:6px}
@@ -424,8 +424,19 @@ td.dim{color:var(--muted)}
   font-weight:650; white-space:normal; word-break:keep-all; overflow-wrap:anywhere; vertical-align:bottom;
   padding-top:5px; padding-bottom:5px}
 .mtx thead th.grp{text-align:center; color:var(--ink); font-size:11px; letter-spacing:.14em; padding:4px 0;
-  border-bottom:1px solid var(--border-2)}
+  border-bottom:1px solid var(--stage-line)}
 .mtx thead th.pad{padding:4px 0; border-bottom:none}
+/* 工程の12列をひとかたまりの欄に見せる（#637・オーナー指摘）。見出しの「工程」の段から表の最後の行まで、
+   薄い青の地（凡例の「工程」と同じ色）と左右の縦の罫線で囲む。見出しは一段濃い地、行と区画の帯の行は薄い地
+   （帯の行も行と同じ地にして、欄を上から下まで一続きに見せる。帯だけ濃くすると空の青い四角が目立った）。
+   罫線は box-shadow で描き、列の幅を変えない（右の罫線は欄のすぐ右のマスの左端に描く）。
+   区画の帯の行（全列 colspan の1マス）は .mtx tbody tr.secrow td が同じ位置に同じ地と罫線を背景の重ねで描く */
+.mtx thead th.grp,.mtx thead th.st{background:var(--stage-bg-h)}
+.mtx tbody td.st{background:var(--stage-bg)}
+.mtx tbody tr:hover td.st{background:var(--stage-bg-h)}
+.mtx thead th.grp,.mtx thead th.grp+th,
+.mtx th:not(.st)+th.st,.mtx td:not(.st)+td.st,
+.mtx th.st+th:not(.st),.mtx td.st+td:not(.st){box-shadow:inset 1px 0 0 var(--stage-line)}
 /* タイトルの下の「いまの工程」の1行（作業中の記録がある行だけ・#637） */
 .mtx td.ttl .wknow{margin-top:6px; max-width:560px; line-height:1.4; container-type:inline-size}
 /* タイトルの列が狭い（中身が 280px 以下＝おおむね幅 1520px より狭い画面）ときは、札・残り（経過）・進みの棒・機械と時刻を1段ずつ縦に積む
@@ -468,9 +479,18 @@ td.dim{color:var(--muted)}
       列幅が揃わず、状態・版・指摘の縦位置がずれる。 */
 .mtx tbody tr.secrow{cursor:default; background:var(--surface-2)}
 .mtx tbody tr.secrow.foldable{cursor:pointer}
-.mtx tbody tr.secrow:hover td{background:var(--surface-2)}
+/* 帯の中でも工程の欄（12列の位置）を同じ地と左右の罫線で続ける（#637）。位置 --flow-x と幅 --flow-w は
+   flowBoxStyle が列の幅から作って表に持たせる（無ければ左の外・幅 0＝描かない） */
+.mtx tbody tr.secrow td,.mtx tbody tr.secrow:hover td{background:
+  linear-gradient(var(--stage-line), var(--stage-line)) var(--flow-x, -9px) 0 / 1px 100% no-repeat,
+  linear-gradient(var(--stage-line), var(--stage-line)) calc(var(--flow-x, -9px) + var(--flow-w, 0px)) 0 / 1px 100% no-repeat,
+  linear-gradient(var(--stage-bg), var(--stage-bg)) var(--flow-x, -9px) 0 / var(--flow-w, 0px) 100% no-repeat,
+  var(--surface-2)}
 .mtx tbody tr.secrow td{position:static; padding:9px var(--sp-4); box-shadow:none; overflow:visible;
-  border-top:1px solid var(--border); border-bottom:1px solid var(--border-2); background:var(--surface-2)}
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border-2)}
+/* 帯の行の右端の承認の列のマス（空）は、行の承認の列と一緒に右に貼り付ける（#637・matrixTable の secTR）。
+   表が横に送れる幅で、工程の欄の地が承認の列の上に見えないようにする */
+.mtx tbody tr.secrow td.okcol{position:sticky; right:0; z-index:1; padding:0}
 .mtx tbody tr.secrow+tr td{border-top:none}
 .csechead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:10px var(--sp-4);
   background:var(--surface-2); border-top:1px solid var(--border); border-bottom:1px solid var(--border-2)}
@@ -482,8 +502,8 @@ td.dim{color:var(--muted)}
   background:var(--surface-1); border:1px solid var(--border-2); border-radius:var(--r-pill); padding:1px 9px}
 .secrow .hint,.csechead .hint{font-size:var(--fs-2xs); color:var(--muted)}
 /* 見出しの左端の色帯で「誰の番か」を段そのものに持たせる（行の色帯と同じ割り当て） */
-.mtx tbody tr.secrow.s-rv td,.mtx tbody tr.secrow.s-triage td{box-shadow:inset 4px 0 0 var(--s1)}
-.mtx tbody tr.secrow.s-ai td{box-shadow:inset 4px 0 0 var(--fix)}
+.mtx tbody tr.secrow.s-rv td:first-child,.mtx tbody tr.secrow.s-triage td:first-child{box-shadow:inset 4px 0 0 var(--s1)}
+.mtx tbody tr.secrow.s-ai td:first-child{box-shadow:inset 4px 0 0 var(--fix)}
 .csechead.s-rv,.csechead.s-triage{box-shadow:inset 4px 0 0 var(--s1)}
 .csechead.s-ai{box-shadow:inset 4px 0 0 var(--fix)}
 .mtx th.sortable{cursor:pointer; user-select:none}
@@ -2483,7 +2503,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 11:33';
+const BUILT_AT = '10/3 12:34';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2882,7 +2902,7 @@ const pendingList = ch => ((store.pending[ch] || {}).rv) || [];
 const triageCount = ch => ((store.pending[ch] || {}).triage) || 0;
 /* 承認待ちの「動画の本数」（#552 の続き・オーナー承認 2026-09-25）。rv は動画×承認ポイントで
    展開してあるので、1本の動画が2か所で承認待ちだと2行になる（RW9004 で検証タブが3・表は2行）。
-   件数（タブ・下ナビのバッジ・見出し）は動画の id の重複を除いて数える。表に出す行は rv のまま。 */
+   件数（タブ・下ナビのバッジ）は動画の id の重複を除いて数える。表に出す行は rv のまま。 */
 const pendingCount = ch => new Set(pendingList(ch).map(r => r.item && r.item.id)).size;
 /* 全チャンネルタブのバッジ用（オーナー要望 2026-09-23）。いま見ている番組の表を描き終えた
    あとに裏で呼ぶ——他の番組ぶんは表を待たせない。番組ごとに2本（状態を持つ行＋仕分けの
@@ -3738,11 +3758,15 @@ function colTH(k){
     on ? `<span class="ar">${s.dir === 'asc' ? '▲' : '▼'}</span>` : ''}</th>`;
 }
 /* 列見出しは2段（#637）。上の段は工程の12列の上に「工程」の欄、下の段に列の名前（工程は帯の名前・長い2つは略・
-   承認ポイントは ◆。マウスを載せると正式名） */
+   承認ポイントは ◆。マウスを載せると正式名）。
+   右端の承認の列は表が横に送れる幅で右に貼り付くので、上の段でも別のマス（.okcol）にして一緒に貼り付ける。
+   1つのマスにまとめると、送れる幅で工程の欄の薄い青の地が承認の列の上まで見え、下の行と右端がずれる（okLast） */
+const okLast = cols => cols[cols.length - 1] === 'ok';
 function mtxHead(cols){
-  const gi = cols.indexOf('flow'), right = cols.length - gi - 1;
+  const ok = okLast(cols) ? 1 : 0;
+  const gi = cols.indexOf('flow'), right = cols.length - gi - 1 - ok;
   return `<tr>${gi ? `<th class="pad" colspan="${gi}"></th>` : ''}<th class="grp" colspan="${SV_STEPS.length}">工程</th>${
-      right ? `<th class="pad" colspan="${right}"></th>` : ''}</tr>
+      right ? `<th class="pad" colspan="${right}"></th>` : ''}${ok ? '<th class="pad okcol"></th>' : ''}</tr>
     <tr>${cols.map(k => k === 'flow'
       ? SV_STEPS.map(s => `<th class="st" title="${esc(s.name)}">${stepLabelHTML(s)}</th>`).join('')
       : colTH(k)).join('')}</tr>`;
@@ -3756,15 +3780,26 @@ const mtxRow = (it, cols) => `<tr data-vid="${it.id}" tabindex="0" class="${
 const mtxCols = cols => `<colgroup>${cols.map(k => k === 'flow'
     ? SV_STEPS.map(() => '<col class="stcol">').join('')
     : `<col${MCOL[k].w ? ` style="width:${MCOL[k].w}"` : (k === 'ok' ? ' style="width:var(--okcol-w)"' : '')}>`).join('')}</colgroup>`;
-const mtxTable = (cols, body) => `<table>${mtxCols(cols)}<thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
+/* 工程の欄の左端の位置（表の左端から・工程より左の列の幅の合計）と欄の幅。区画の帯の行は全列 colspan の1マスなので、
+   この2つで同じ位置に工程の欄の地と罫線を描く（CSS の .mtx tbody tr.secrow td・#637） */
+const flowBoxStyle = cols => {
+  const gi = cols.indexOf('flow');
+  if (gi < 0) return '';
+  const left = cols.slice(0, gi).map(k => MCOL[k].w).filter(Boolean);
+  return ` style="--flow-x:calc(${left.length ? left.join(' + ') : '0px'}); --flow-w:calc(${SV_STEPS.length} * var(--st-w))"`;
+};
+const mtxTable = (cols, body) => `<table${flowBoxStyle(cols)}>${mtxCols(cols)}<thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
 
 function matrixTable(core){
   const rows = core.items;         /* 絞り込み・並べ替え・ページ切りは DB 側で済んでいる */
   const N = colCount(MCOLS);
   /* 区画の見出しは表の中の帯行（全列 colspan）。表も列見出しも必ず1つに保つ
-     ＝どの区画の行でも列の縦位置が揃う（オーナー差し戻し 2026-09-03）。 */
+     ＝どの区画の行でも列の縦位置が揃う（オーナー差し戻し 2026-09-03）。
+     右端の承認の列だけは別のマス（.okcol）にして、表が横に送れる幅で行と一緒に右に貼り付ける
+     （1つのマスだと、工程の欄の地が承認の列の上まで見えて行と右端がずれる・#637） */
+  const ok = okLast(MCOLS);
   const secTR = s => `<tr class="secrow s-${s.key}${s.fold ? ' foldable' : ''}"${secAttrs(s)}>
-      <td colspan="${N}">${secHeadInner(s)}</td></tr>`;
+      <td colspan="${ok ? N - 1 : N}">${secHeadInner(s)}</td>${ok ? '<td class="okcol"></td>' : ''}</tr>`;
   const body = !rows.length
     ? `<tr class="emptyrow"><td colspan="${N}">条件に一致する動画はありません</td></tr>`
     : sectionsOff() ? rows.map(it => mtxRow(it, MCOLS)).join('')
@@ -3864,28 +3899,19 @@ function pagerHTML(core){
 async function renderStock(){
   const el = $('#view-stock');
   if (!state.ch) { el.innerHTML = `<div class="noitem">動画チャンネルがありません</div>`; return; }
-  const m = chMeta(state.ch);
   if (!store.facets[state.ch]) { el.innerHTML = loading(); }
   let facets;
   try {
     facets = await loadFacets(state.ch);
-    await loadPending(state.ch);                       /* 左ナビの承認待ちバッジ用 */
+    await loadPending(state.ch);                       /* 左ナビ・チャンネルタブの承認待ちバッジ用 */
   } catch (e) { el.innerHTML = errBox(e.message); return; }
 
-  const droppedN = facets.filter(f => f.stage_key === 'dropped').length;
-  const triageN  = facets.filter(f => f.stage_key === 'triage').length;   /* ネタの仕分け待ち（#314） */
-  const active = facets.length - droppedN;
-  const rvN = pendingCount(state.ch);
   const genres = [...new Set(facets.filter(f => f.stage_key !== 'dropped').map(f => f.genre_label))]
     .sort((a, b) => a.localeCompare(b, 'ja'));
 
+  /* 番組名の見出し（「制作」の小見出し＋番組名＋承認待ち・仕分け待ちの件数）は出さない（#637・オーナー指摘）。
+     番組は上のタブで選んでいて、承認待ち・仕分け待ちの件数もタブの数字で分かるため。「動画の一覧」から始める */
   el.innerHTML = `
-    <div class="pagehead">
-      <div class="eyebrow">制作</div>
-      <h1>${m.icon} ${esc(m.name)}${rvN ? `<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">承認待ち ${rvN}件</span>` : ''}${
-        triageN ? `<span style="font-size:var(--fs-sm);font-weight:400;color:var(--muted)">仕分け待ち ${triageN}件</span>` : ''}</h1>
-      <p>仕掛かり ${active}本・没 ${droppedN}本。上から「あなたの番（承認待ち → ネタの仕分け）→${AI_TAG}作業中 → 承認済み・投稿まで → 完了」の順に並びます。行（スマホはカード）をクリックすると素材とレビュー履歴が開き、その場でコメント・承認ができます。表は ${PAGE_SIZE} 件ずつ表示します。</p>
-    </div>
     <div class="sectionhead" style="margin-top:0">
       <h2>動画の一覧</h2>
       <span class="hint">${sectionsOff() ? '絞り込み・並べ替え中はセクションを外して一覧で出しています'
