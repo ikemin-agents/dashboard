@@ -403,13 +403,15 @@ td.dim{color:var(--muted)}
    区画（あなたの番／AI作業中／完了…）が変わっても列の縦位置がずれないよう、
    表は必ず1つ・列見出しも1つにし、幅は table-layout:fixed で先に決める。
    幅の出どころは ①各列の col の style（JS 側 MCOL の w。タイトルは --ttl-w）
-   ②.mtx th.okcol（承認）の2つだけ。幅を書いていない工程の12列が残りを等分する（#637）。
+   ②.mtx th.okcol（承認）の2つだけ。工程の12列は 1列 46px に決める（#637）。
    列の合計が広いので、左右パディングを 14px → 10px に詰めて収める。 */
 /* 固定列（番号〜指摘・滞留・承認）の合計は 614px。タイトルは広い画面で 380px、狭い画面では 214px まで縮め、
-   工程の12列は 1列 46px 以上（552px）を残す（#637）。最小幅は 614＋214＋552＝1380px。
+   工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げず、列の合計の幅にする
+   （広げると余りが工程の列に回り、1列 90px ほどまで横に長くなった・オーナー差し戻し）。最小幅は 614＋214＋552＝1380px。
    --ttl-w の 1223px は 固定列 614＋工程 552＋main の左右の余白 40＋縦のスクロールバー 17 */
 .mtx{--ttl-w:clamp(214px, calc(100vw - 1223px), 380px)}
-.mtx table{table-layout:fixed; min-width:1380px}
+.mtx table{table-layout:fixed; min-width:1380px; width:calc(614px + var(--ttl-w) + 552px)}
+.mtx col.stcol{width:46px}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
 /* 中身の短い列（版・確認・指摘・滞留）は左右の余白を 6px に詰める（「10回目」「💬 12」「120日」が入る幅で、表の最小幅を抑える・#637） */
 .mtx td.nar,.mtx th.nar{padding-left:6px; padding-right:6px}
@@ -549,7 +551,7 @@ td.ttl .flags{margin-left:8px}
    直下に固定。2段目の top は1段目の高さ（--mtxrow1・syncStickyOffsets が実測）だけ下げる。
    横は PC幅(≥1100px)なら表(min 1060px)が収まるので overflow:visible。収まらない中間幅のみ横コンテナ
    スクロールを許容（ページ横スクロールは出さない）。--stickytop は JS が実測して設定。 */
-.tblwrap.mtx{overflow:visible; max-height:none}
+.tblwrap.mtx{overflow:visible; max-height:none; width:fit-content; max-width:100%}  /* 枠も表の幅に合わせる（表を画面いっぱいに広げないため・#637） */
 .mtx thead tr:first-child th{top:var(--stickytop, 0px)}
 .mtx thead tr:nth-child(2) th{top:calc(var(--stickytop, 0px) + var(--mtxrow1, 24px))}
 /* 列が12本になって表の最小幅が 1060px → 1280px に上がったので、横スクロールへ切り替える
@@ -2481,7 +2483,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 11:21';
+const BUILT_AT = '10/3 11:33';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
