@@ -402,15 +402,13 @@ td.dim{color:var(--muted)}
 /* ── 列幅は中身に左右させない（オーナー差し戻し 2026-09-03）────────────────
    区画（あなたの番／AI作業中／完了…）が変わっても列の縦位置がずれないよう、
    表は必ず1つ・列見出しも1つにし、幅は table-layout:fixed で先に決める。
-   幅の出どころは ①各列の col の style（JS 側 MCOL の w。タイトルは --ttl-w）
+   幅の出どころは ①各列の col の style（JS 側 MCOL の w。タイトルは幅を書かず、残りを全部取る）
    ②.mtx th.okcol（承認）の2つだけ。工程の12列は 1列 46px に決める（#637）。
    列の合計が広いので、左右パディングを 14px → 10px に詰めて収める。 */
-/* 固定列（番号〜指摘・滞留・承認）の合計は 614px。タイトルは広い画面で 380px、狭い画面では 214px まで縮め、
-   工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げず、列の合計の幅にする
-   （広げると余りが工程の列に回り、1列 90px ほどまで横に長くなった・オーナー差し戻し）。最小幅は 614＋214＋552＝1380px。
-   --ttl-w の 1223px は 固定列 614＋工程 552＋main の左右の余白 40＋縦のスクロールバー 17 */
-.mtx{--ttl-w:clamp(214px, calc(100vw - 1223px), 380px); --st-w:46px}
-.mtx table{table-layout:fixed; min-width:1380px; width:calc(614px + var(--ttl-w) + 552px)}
+/* 固定列（番号〜指摘・滞留・承認）の合計は 614px、工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げ、
+   余りはタイトルの列が全部取る（工程の列は広げない・オーナー指摘）。最小幅は 614＋214＋552＝1380px（タイトルが 214px を切る画面では表を横に送る） */
+.mtx{--st-w:46px}
+.mtx table{table-layout:fixed; min-width:1380px}
 .mtx col.stcol{width:var(--st-w)}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
 /* 中身の短い列（版・確認・指摘・滞留）は左右の余白を 6px に詰める（「10回目」「💬 12」「120日」が入る幅で、表の最小幅を抑える・#637） */
@@ -479,18 +477,18 @@ td.dim{color:var(--muted)}
       列幅が揃わず、状態・版・指摘の縦位置がずれる。 */
 .mtx tbody tr.secrow{cursor:default; background:var(--surface-2)}
 .mtx tbody tr.secrow.foldable{cursor:pointer}
-/* 帯の中でも工程の欄（12列の位置）を同じ地と左右の罫線で続ける（#637）。位置 --flow-x と幅 --flow-w は
+/* 帯の中でも工程の欄（12列の位置）を同じ地と左右の罫線で続ける（#637）。位置 --flow-r（右端から）と幅 --flow-w は
    flowBoxStyle が列の幅から作って表に持たせる（無ければ左の外・幅 0＝描かない） */
 .mtx tbody tr.secrow td,.mtx tbody tr.secrow:hover td{background:
-  linear-gradient(var(--stage-line), var(--stage-line)) var(--flow-x, -9px) 0 / 1px 100% no-repeat,
-  linear-gradient(var(--stage-line), var(--stage-line)) calc(var(--flow-x, -9px) + var(--flow-w, 0px)) 0 / 1px 100% no-repeat,
-  linear-gradient(var(--stage-bg), var(--stage-bg)) var(--flow-x, -9px) 0 / var(--flow-w, 0px) 100% no-repeat,
+  linear-gradient(var(--stage-line), var(--stage-line)) right calc(var(--flow-r, -9px) + var(--flow-w, 0px) - 1px) top 0 / 1px 100% no-repeat,
+  linear-gradient(var(--stage-line), var(--stage-line)) right calc(var(--flow-r, -9px) - 1px) top 0 / 1px 100% no-repeat,
+  linear-gradient(var(--stage-bg), var(--stage-bg)) right var(--flow-r, -9px) top 0 / var(--flow-w, 0px) 100% no-repeat,
   var(--surface-2)}
 .mtx tbody tr.secrow td{position:static; padding:9px var(--sp-4); box-shadow:none; overflow:visible;
   border-top:1px solid var(--border); border-bottom:1px solid var(--border-2)}
 /* 帯の行の右端の承認の列のマス（空）は、行の承認の列と一緒に右に貼り付ける（#637・matrixTable の secTR）。
    表が横に送れる幅で、工程の欄の地が承認の列の上に見えないようにする */
-.mtx tbody tr.secrow td.okcol{position:sticky; right:0; z-index:1; padding:0}
+.mtx tbody tr.secrow td.okcol,.mtx tbody tr.secrow:hover td.okcol{position:sticky; right:0; z-index:1; padding:0; background:var(--surface-2)}  /* 工程の欄の地は右端から測るので、このマスには描かない */
 .mtx tbody tr.secrow+tr td{border-top:none}
 .csechead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:10px var(--sp-4);
   background:var(--surface-2); border-top:1px solid var(--border); border-bottom:1px solid var(--border-2)}
@@ -571,7 +569,7 @@ td.ttl .flags{margin-left:8px}
    直下に固定。2段目の top は1段目の高さ（--mtxrow1・syncStickyOffsets が実測）だけ下げる。
    横は PC幅(≥1100px)なら表(min 1060px)が収まるので overflow:visible。収まらない中間幅のみ横コンテナ
    スクロールを許容（ページ横スクロールは出さない）。--stickytop は JS が実測して設定。 */
-.tblwrap.mtx{overflow:visible; max-height:none; width:fit-content; max-width:100%}  /* 枠も表の幅に合わせる（表を画面いっぱいに広げないため・#637） */
+.tblwrap.mtx{overflow:visible; max-height:none}
 .mtx thead tr:first-child th{top:var(--stickytop, 0px)}
 .mtx thead tr:nth-child(2) th{top:calc(var(--stickytop, 0px) + var(--mtxrow1, 24px))}
 /* 列が12本になって表の最小幅が 1060px → 1280px に上がったので、横スクロールへ切り替える
@@ -2503,7 +2501,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 12:35';
+const BUILT_AT = '10/3 13:13';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3710,7 +3708,7 @@ const secAttrs = s => s.fold
    区画がどれでもワッペンの左端と縦位置が揃う。
    flow は工程の12列の位置の目印（詳細画面の帯と同じ12個・#637）。見出しは2段で、上の段に「工程」の欄、
    その下に1列ずつ（mtxHead・mtxRow・mtxCols が flow を12列に開く）。幅を書かない工程の12列が残りを等分し、
-   タイトルは --ttl-w（広い画面で 380px）。作業中の記録がある動画は、タイトルの下に
+   タイトルは幅を書かず、画面の幅に合わせて残りを取る。作業中の記録がある動画は、タイトルの下に
    「いまの工程」の1行（nowLineHTML。スマホのカード・詳細画面と同じ部品）を出す。
    td を丸ごと返すのは、投稿日時が値の有無で中身もツールチップも変わるため。
    sort:1 の列だけ見出しを押して並べ替えできる（キー名は SORT_DB と揃える）。 */
@@ -3720,7 +3718,7 @@ const shortDT = s => String(s || '').replace(/^\d{4}-/, '').replace(/\([日月�
 const MCOL = {
   seq:   {sort:1, w:'74px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
   /* 予約済みだけ、公開の予定時刻をタイトルの後ろに出す（投稿日時の列は 2026-09-19 に外したため） */
-  title: {sort:1, w:'var(--ttl-w)', td: it => `<td class="ttl">${esc(it.title)}${it.resv
+  title: {sort:1, td: it => `<td class="ttl">${esc(it.title)}${it.resv
           ? ` <span class="resv" title="${esc(it.resv)} に公開予定">🗓 ${esc(shortDT(it.resv))}</span>` : ''}${nowLineHTML(it)}</td>`},
   state: {label:'状態', w:'108px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
   /* 版・直した指摘・確認は承認待ちの行だけ。作業中の記録がある行（#637）は AI の番なので出さない */
@@ -3785,8 +3783,10 @@ const mtxCols = cols => `<colgroup>${cols.map(k => k === 'flow'
 const flowBoxStyle = cols => {
   const gi = cols.indexOf('flow');
   if (gi < 0) return '';
-  const left = cols.slice(0, gi).map(k => MCOL[k].w).filter(Boolean);
-  return ` style="--flow-x:calc(${left.length ? left.join(' + ') : '0px'}); --flow-w:calc(${SV_STEPS.length} * var(--st-w))"`;
+  /* タイトルの列は画面の幅で変わるので、欄の位置は右端から測る（工程より右で、帯の行のマスに入る列の幅の合計）。
+     承認の列は帯の行では別のマスなので数えない（secTR） */
+  const right = cols.slice(gi + 1, okLast(cols) ? -1 : undefined).map(k => MCOL[k].w).filter(Boolean);
+  return ` style="--flow-r:calc(${right.length ? right.join(' + ') : '0px'}); --flow-w:calc(${SV_STEPS.length} * var(--st-w))"`;
 };
 const mtxTable = (cols, body) => `<table${flowBoxStyle(cols)}>${mtxCols(cols)}<thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
 
