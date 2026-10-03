@@ -422,6 +422,10 @@ td.dim{color:var(--muted)}
 .mtx td.nar,.mtx th.nar{padding-left:6px; padding-right:6px}
 /* 番号の列も同じく詰める（10px のままだと字の幅の広い番号が「RW00…」と切れた・#637） */
 .mtx td.seq{padding-left:6px; padding-right:6px}
+/* 見出しと中身のそろえ方を1つにする（オーナー指摘・右寄せと中央寄せが混ざって揺れて見えた）。
+   タイトルだけ文章なので左、ほかの列（番号・状態・ユーザー確認・工程・滞留・承認）は見出しも中身も中央。区画の帯の行は左 */
+.mtx thead th,.mtx tbody td{text-align:center}
+.mtx thead th[data-sort="title"],.mtx tbody td.ttl,.mtx tbody tr.secrow td,.mtx tbody tr.emptyrow td{text-align:left}
 /* 工程の12列（#637）。見出しの上の段に「工程」の欄（colspan）を設け、その下に1列ずつ。名前は帯の名前で、
    長い2つは用語集の略（stepLabelHTML）。承認ポイントは ◆。入りきらない名前は <wbr> の所で折り返す */
 .mtx th.st,.mtx td.st{text-align:center; padding-left:2px; padding-right:2px}
@@ -2516,7 +2520,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 15:42';
+const BUILT_AT = '10/3 15:44';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
