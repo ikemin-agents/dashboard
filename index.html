@@ -357,16 +357,11 @@ td.ttl{white-space:normal; min-width:250px; max-width:400px; line-height:1.45}
 td.dim{color:var(--muted)}
 
 .chips{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 var(--sp-3)}
-.chipf,.rgbtn{display:inline-flex; align-items:center; gap:7px; font-family:inherit; font-size:var(--fs-xs);
+.rgbtn{display:inline-flex; align-items:center; gap:7px; font-family:inherit; font-size:var(--fs-xs);
   border:1px solid var(--border); background:var(--surface-1); color:var(--ink-2);
   border-radius:var(--r-pill); padding:5px 13px; cursor:pointer; transition:background .12s, color .12s}
-.chipf:hover,.rgbtn:hover{background:var(--surface-2); color:var(--ink)}
-.chipf .sw{margin:0}
-.chipf .n{font-variant-numeric:tabular-nums; font-weight:700; color:var(--ink)}
-.chipf[aria-pressed="true"],.rgbtn[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--page); font-weight:650}
-.chipf[aria-pressed="true"] .n{color:var(--page)}
-.chipf[disabled]{opacity:.4; cursor:default}
-.chipf[disabled]:hover{background:var(--surface-1); color:var(--ink-2)}
+.rgbtn:hover{background:var(--surface-2); color:var(--ink)}
+.rgbtn[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--page); font-weight:650}
 
 .toolbar{display:flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; margin:0 0 var(--sp-2)}
 .toolbar input[type="search"],.toolbar select{font-family:inherit; font-size:var(--fs-xs);
@@ -379,17 +374,6 @@ td.dim{color:var(--muted)}
 .cond b{color:var(--ink); font-weight:680}
 .toolbar .btn{padding:7px 14px; font-size:var(--fs-xs)}
 .hits{font-size:var(--fs-2xs); color:var(--muted); font-variant-numeric:tabular-nums; margin-left:auto}
-
-/* 絞り込みの折りたたみ（PC・スマホ共通で既定は畳み・#202）＋常時見える要約バー */
-.filterbar{display:flex; align-items:center; gap:var(--sp-2); flex-wrap:wrap; margin:0 0 var(--sp-2)}
-.filterbox{display:none}
-.filterbox.open{display:block}
-.filtoggle{display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:var(--fs-xs);
-  border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
-  padding:6px 14px; cursor:pointer; transition:background .12s}
-.filtoggle:hover{background:var(--surface-3)}
-.filtoggle .fcaret{font-size:10px; transition:transform .15s}
-.filtoggle[aria-expanded="true"] .fcaret{transform:rotate(180deg)}
 
 /* ページ送り（#215 Phase 2）。100件を超えたときだけ出る */
 .pager{display:flex; align-items:center; justify-content:center; gap:var(--sp-3);
@@ -1241,19 +1225,24 @@ tr.dropped td{color:var(--muted)}
 /* 見出しを押して絞り込む（#572・オーナー 2026-09-30 17:25「エクセルみたいにヘッダー部分を押すとフィルター」）。
    押せる見出しは種類・強さ・番組・対象・工程（工程は列が無いので本文の見出しの行の右端）。▾ は押せる印、絞っている列は ●。
    番組の下の段（絵文字と呼び名）を押しても同じ窓が開き、絞っているときは外した番組の呼び名を薄くする */
-.lsthead .hf{font:inherit; letter-spacing:inherit; color:inherit; background:transparent; border:0; border-radius:var(--r-sm);
+/* 見出しの行は data-hf を持つ所（ルール・素材の .lsthead、動画の一覧の表の thead とスマホの一覧の先頭の札の行・#637） */
+[data-hf] .hf{font:inherit; letter-spacing:inherit; color:inherit; background:transparent; border:0; border-radius:var(--r-sm);
   padding:2px 4px; margin:-2px -4px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; white-space:nowrap}
-.lsthead .hf .fm{font-size:10px; line-height:1}
-.lsthead .hf:hover{background:var(--surface-3); color:var(--ink)}
-.lsthead .hf.on{color:var(--ink)}
-.lsthead .hf.on .fm{color:var(--s1)}
-.lsthead .hf[aria-expanded="true"],.lsthead .hf[aria-expanded="true"] .fm{background:var(--ink); color:var(--page)}
-.lsthead .hf:focus-visible{outline:2px solid var(--s1); outline-offset:1px}
+[data-hf] .hf .fm{font-size:10px; line-height:1}
+[data-hf] .hf:hover{background:var(--surface-3); color:var(--ink)}
+[data-hf] .hf.on{color:var(--ink)}
+[data-hf] .hf.on .fm{color:var(--s1)}
+[data-hf] .hf[aria-expanded="true"],[data-hf] .hf[aria-expanded="true"] .fm{background:var(--ink); color:var(--page)}
+[data-hf] .hf:focus-visible{outline:2px solid var(--s1); outline-offset:1px}
 .lsthead.rl .hchm{cursor:pointer}
 .lsthead.rl .hchm>span.off>span{opacity:.35}
 .lsthead.rl .hbd{display:flex; justify-content:space-between; align-items:flex-end; gap:var(--sp-2); min-width:0}
-/* 窓は一覧の外（#view-rules・#view-assets の直下）に置く。一覧は角丸のため中身を切り取るので、中に置くと窓が切れる */
-#view-rules,#view-assets{position:relative}
+/* 動画の一覧のタイトルの見出し（#637）: 左に「タイトル」（押すと並べ替え）、右端にジャンルの絞り込み（列が無いので）。
+   ルールの本文の見出しの右端に工程を置くのと同じ形 */
+.mtx th .thf{display:flex; justify-content:space-between; align-items:flex-end; gap:var(--sp-2); min-width:0}
+.mtx th .thf>span:first-child{min-width:0; overflow:hidden; text-overflow:ellipsis}
+/* 窓は一覧の外（#view-rules・#view-assets・#view-stock の直下）に置く。一覧は角丸のため中身を切り取るので、中に置くと窓が切れる */
+#view-rules,#view-assets,#view-stock{position:relative}
 .rfpop{position:absolute; z-index:40; width:max-content; min-width:160px; max-width:min(320px, calc(100vw - 32px));
   background:var(--surface-1); border:1px solid var(--rl-line); border-radius:var(--r-md); box-shadow:var(--shadow-2);
   padding:6px; font-size:var(--fs-sm); color:var(--ink)}
@@ -1265,6 +1254,9 @@ tr.dropped td{color:var(--muted)}
   cursor:pointer; line-height:1.35; overflow-wrap:anywhere}
 .rfpop label:hover{background:var(--surface-2)}
 .rfpop input{flex:0 0 auto; width:15px; height:15px; margin:1px 0 0; accent-color:var(--s1); cursor:pointer}
+/* 値の本数（動画の一覧の工程・ジャンル・#637）。右端にそろえ、字は小さく薄く */
+.rfpop .rfn{margin-left:auto; padding-left:var(--sp-3); font-size:var(--fs-2xs); color:var(--muted);
+  font-variant-numeric:tabular-nums; white-space:nowrap}
 /* 行の5欄は行の上下いっぱい（余白の 9px ぶん）と、左右の隙間の真ん中まで伸ばす。
    ✓ は番号と同じ字の大きさと行の高さなので、番号と下端がそろう。色は本文の文字と同じ */
 .rlrow .chm{align-self:stretch; margin:-9px calc(var(--sp-3) / -2); font-weight:700; color:var(--ink)}
@@ -1341,13 +1333,13 @@ tr.dropped td{color:var(--muted)}
 }
 @media (max-width:640px){
   .lsthead{display:none}
-  /* ルール・素材の見出しは列にそろえず、絞り込める見出しだけを横に並べる（押しやすい大きさの札にする） */
-  :is(.lsthead.rl,.lsthead.al){display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px}
+  /* ルール・素材・動画の一覧（.sk・#637）の見出しは列にそろえず、絞り込める見出しだけを横に並べる（押しやすい大きさの札にする） */
+  :is(.lsthead.rl,.lsthead.al,.lsthead.sk){display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px}
   .lsthead.rl .hno,.lsthead.al .hnf,.lsthead.al .hend{display:none}
-  :is(.lsthead.rl,.lsthead.al) .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
+  :is(.lsthead.rl,.lsthead.al,.lsthead.sk) .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
     background:var(--surface-1); color:var(--ink-2); font-size:var(--fs-xs); letter-spacing:.02em}
-  :is(.lsthead.rl,.lsthead.al) .hf.on{color:var(--ink); font-weight:750}
-  :is(.lsthead.rl,.lsthead.al) .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
+  :is(.lsthead.rl,.lsthead.al,.lsthead.sk) .hf.on{color:var(--ink); font-weight:750}
+  :is(.lsthead.rl,.lsthead.al,.lsthead.sk) .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
   /* 番組の列は幅の上限まで（超えたら「・」のあとで折り返す） */
   .rlrow{grid-template-columns:auto auto auto fit-content(80px) minmax(0,1fr) 14px; column-gap:var(--sp-2)}
   .rlrow .chs{font-size:var(--fs-2xs)}
@@ -2520,7 +2512,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 15:44';
+const BUILT_AT = '10/3 16:12';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2602,12 +2594,14 @@ async function q(builder){
 
 /* ══ 状態 ═══════════════════════════════════════════════════════ */
 const state = {
-  user:null, me:null, ch:null, view:'stock', stockFilter:null,
-  stockQ:'', stockGenre:'', stockSort:null, stockPage:0, detail:null, open:null,
+  user:null, me:null, ch:null, view:'stock',
+  /* 一覧の絞り込み（#637）。stockQ＝表の上の文字の検索。stockF＝見出しの窓のチェック（null＝絞らない・
+     配列＝チェックの付いた値だけ残す。工程の null は没を除く全部） */
+  stockQ:'', stockF:{stage:null, genre:null}, stockSort:null, stockPage:0, detail:null, open:null,
   /* 分析タブ: 推移グラフの期間（日数・0=全部）・動画別の成績の並べ替え・「表で見る」の開閉・
      凡例で消しているチャンネル（{slug:true} が非表示） */
   anaRange:30, anaAxis:null, anaSort:null, anaTbl:{}, anaOff:{},
-  filtersOpen:false, busy:false, lastSync:null,
+  busy:false, lastSync:null,
   /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
   secOpen:{},
   /* 決まりの一覧・Blender素材の一覧の絞り込み（#574）。空文字＝絞らない。
@@ -2632,7 +2626,7 @@ function loadUI(){
 /* ── キャッシュの持ち方（#215 Phase 2）──────────────────────────────
    core    = 表に出している1ページぶん（100件）。絞り込み・並べ替え・ページを
              変えるたびに DB から取り直す（キーが変わったら破棄）
-   facets  = 絞り込みUIの母数（工程チップの件数・ジャンル候補）。チャンネル全行の
+   facets  = 見出しの絞り込みの窓の母数（工程・ジャンルの値と件数）。チャンネル全行の
              短い3列だけ
    pending = 承認待ち／【AI】修正中の行（レビュータブと左ナビのバッジ）
    threads = 動画ごとのレビュー記録。詳細を開いた動画のぶんだけ貯める
@@ -2652,7 +2646,7 @@ const clearVideoCaches = () => {
   store.rework = {}; store.looks = {}; store.sbGone = {};
 };
 const resetStockFilters = () => {
-  state.stockFilter=null; state.stockQ=''; state.stockGenre=''; state.stockSort=null; state.stockPage=0;
+  state.stockQ=''; state.stockF={stage:null, genre:null}; state.stockSort=null; state.stockPage=0;
 };
 /* 在庫とレビューは1つのタブ（制作）に統合した（オーナー要望 2026-08-19）。
    承認した動画がレビュー一覧から消えて「どこへ行ったのか分からない」状態を無くすため、
@@ -2781,15 +2775,26 @@ const SORT_DB = {
 /* LIKE のワイルドカードを打ち消す（seq に _ を含んでいても素直に部分一致する） */
 const likeEsc = s => String(s).toLowerCase().replace(/[\\%_]/g, '\\$&');
 
+/* 一覧の見出しを押して絞り込む列（#637・オーナー指摘「ほかの画面と同じように、見出しを押したらエクセルのように」）。
+   キーは state.stockF のキー、値は見出しの言葉。窓・印・閉じ方はルール・素材と同じ部品（HF_TABLES の stock）。
+   工程＝DB の工程（stage_key。前の工程のチップと同じ）、ジャンル＝列が無いのでタイトルの見出しの右端に置く */
+const SF_COLS = {stage:'工程', genre:'ジャンル'};
+/* 工程の窓に並べる値（並びは前の工程のチップと同じ・言葉は帯の工程の名前）。没は既定では外れている（HF_TABLES の def） */
+const SF_STAGES = PSTAGES.map(s => ({ v: s.key, t: s.name }))
+  .concat([{ v: 'triage', t: '仕分け待ち' }, { v: 'dropped', t: '没' }]);
+let stockOpts = {};   /* 列ごとの値の一覧 {v, t, n（件数）}（refreshStockTable が番組の全行の短い3列から作る） */
+
 /* 絞り込み条件つきのクエリ。条件は全部 DB 側に渡す＝2ページ目以降の動画も
-   検索・絞り込みの対象になる（手元の100件だけを絞ると取りこぼす）。 */
+   検索・絞り込みの対象になる（手元の100件だけを絞ると取りこぼす）。
+   見出しの絞り込みは null＝絞らない（工程は没を除く全部）・配列＝チェックの付いた値のどれか。
+   空の配列（全部外した）は問い合わせずに0件にする（loadCore） */
 function listQuery(ch, opts){
   let qb = scopeCh(sb.from('v_dashboard_list').select('*', opts), ch);
-  const qs = state.stockQ.trim();
+  const qs = state.stockQ.trim(), f = state.stockF;
   if (qs) qb = qb.ilike('search_text', '%' + likeEsc(qs) + '%');
-  if (state.stockGenre) qb = qb.eq('genre_label', state.stockGenre);
-  if (state.stockFilter) qb = qb.eq('stage_key', state.stockFilter);
-  else                   qb = qb.neq('stage_key', 'dropped');   /* 既定では没を混ぜない */
+  if (f.genre) qb = qb.in('genre_label', f.genre);
+  if (f.stage) qb = qb.in('stage_key', f.stage);
+  else         qb = qb.neq('stage_key', 'dropped');   /* 既定では没を混ぜない */
   return qb;
 }
 /* 並べ替え。最後に必ず id を足すのはページ境界の重複・取りこぼし防止（全順序にする）。 */
@@ -2828,12 +2833,17 @@ function mapRow(r){
   return it;
 }
 
+const coreKey = ch => [ch, state.stockQ.trim(), JSON.stringify(state.stockF),
+  state.stockSort ? state.stockSort.key + ':' + state.stockSort.dir : '', state.stockPage].join('|');
 async function loadCore(ch, retried){
-  const key = [ch, state.stockQ.trim(), state.stockGenre, state.stockFilter || '',
-               state.stockSort ? state.stockSort.key + ':' + state.stockSort.dir : '',
-               state.stockPage].join('|');
+  const key = coreKey(ch);
   const hit = store.core[ch];
   if (hit && hit.key === key) return hit;
+  /* 見出しの窓でチェックを全部外した列があれば、問い合わせずに0件 */
+  if (Object.values(state.stockF).some(v => v && !v.length)) {
+    store.core[ch] = { items: [], byId: new Map(), key, page: state.stockPage, from: 0, total: 0 };
+    return store.core[ch];
+  }
   const from = state.stockPage * PAGE_SIZE;
   const { data, error, count } = await listOrder(listQuery(ch, { count:'exact' }))
     .range(from, from + PAGE_SIZE - 1);
@@ -2845,12 +2855,13 @@ async function loadCore(ch, retried){
     state.stockPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
     return loadCore(ch, true);
   }
-  store.core[ch] = { items, byId: new Map(items.map(i => [i.id, i])),
-                     key, page: state.stockPage, from, total };
-  return store.core[ch];
+  const res = { items, byId: new Map(items.map(i => [i.id, i])), key, page: state.stockPage, from, total };
+  /* 待っている間に条件が変わったら（窓のチェックを続けて押したとき）、古い結果で控えを上書きしない */
+  if (coreKey(ch) === key) store.core[ch] = res;
+  return res;
 }
 
-/* 絞り込みUIの母数（工程チップの件数・ジャンル候補）。1動画あたり短い3列だけを
+/* 見出しの絞り込みの窓の母数（工程・ジャンルの値と件数）。1動画あたり短い3列だけを
    チャンネル全行ぶん取る。ページを送っても数字が動かないようにするための問い合わせで、
    一覧本体（重い行）とは別経路。 */
 async function loadFacets(ch){
@@ -3748,30 +3759,24 @@ function centerFlowRows(root){
   });
 }
 
-/* 工程チップの件数は「チャンネル全体（検索・ジャンル絞り込みを反映）」で数える。
-   表示中の100件だけで数えると、ページを送るたびに数字が動いてしまう。
-   母数は facets（stage_key / genre_label / search_text の3列だけ）から作る。 */
-function filterChips(facets){
-  const qs = state.stockQ.trim().toLowerCase(), g = state.stockGenre;
-  const rows = (facets || []).filter(f =>
-    (!qs || String(f.search_text || '').includes(qs)) && (!g || f.genre_label === g));
-  const cnt = {};
-  let dropped = 0, triage = 0;
-  rows.forEach(f => {
-    if (f.stage_key === 'dropped') dropped++;
-    else if (f.stage_key === 'triage') triage++;   /* ネタの仕分け待ち（#314） */
-    else cnt[f.stage_key] = (cnt[f.stage_key] || 0) + 1;
-  });
-  /* 仕分け待ちは「すべて」に含める（没と違って生きているネタ）。工程チップは
-     PSTAGES の外なので、没と同じく末尾に別立てで出す */
-  const all = [{key:null, name:'すべて', n:rows.length - dropped}]
-    .concat(PSTAGES.map(s => ({key:s.key, name:s.name, n:cnt[s.key] || 0})))
-    .concat([{key:'triage', name:'仕分け', n:triage}, {key:'dropped', name:'没', n:dropped}]);
-  return `<div class="chips" role="group" aria-label="工程で絞り込み">${all.map(c => {
-    const on = state.stockFilter === c.key, dis = c.key && !c.n ? ' disabled' : '';
-    return `<button class="chipf" data-filter="${c.key === null ? '' : c.key}" aria-pressed="${on}"${dis}>${
-      c.name}<span class="n">${c.n}</span></button>`;
-  }).join('')}</div>`;
+/* 見出しの窓（工程・ジャンル）の値と件数（#637）。値は番組の全行にある物だけ（工程は SF_STAGES の並び、
+   ジャンルは五十音順）。件数は「番組全体で、自分の列以外の条件（文字の検索・もう一方の列）を当てた本数」で数える
+   ——表示中の100件だけで数えると、ページを送るたびに数字が動いてしまう（前の工程のチップと同じ数え方）。
+   母数は facets（stage_key / genre_label / search_text の3列だけ）から作る。
+   仕分け待ちは既定に含める（没と違って生きているネタ）。没は既定では外す（listQuery・HF_TABLES の def） */
+function stockFacetOpts(facets){
+  const qs = state.stockQ.trim().toLowerCase(), f = state.stockF, all = facets || [];
+  const rows = all.filter(r => !qs || String(r.search_text || '').includes(qs));
+  const stOk = r => f.stage ? f.stage.includes(r.stage_key) : r.stage_key !== 'dropped';
+  const gOk = r => !f.genre || f.genre.includes(r.genre_label);
+  const count = (list, k) => list.reduce((m, r) => { m[r[k]] = (m[r[k]] || 0) + 1; return m; }, {});
+  const sn = count(rows.filter(gOk), 'stage_key'), gn = count(rows.filter(stOk), 'genre_label');
+  const stages = new Set(all.map(r => r.stage_key));
+  const genres = [...new Set(all.map(r => r.genre_label))].sort((a, b) => String(a).localeCompare(String(b), 'ja'));
+  return {
+    stage: SF_STAGES.filter(o => stages.has(o.v)).map(o => ({ v: o.v, t: o.t, n: sn[o.v] || 0 })),
+    genre: genres.map(g => ({ v: g, t: g, n: gn[g] || 0 }))
+  };
 }
 
 /* 既定の並び順（#203・2026-08-11 オーナー指定 / #205 で【AI】修正中を追加）
@@ -3838,8 +3843,8 @@ const waitKey = it => isResv(it)
   : [1, tsOf(it[GATE_COLUMN_FIELD.final] || it.status_changed_at)];
 const waitCmp = (a, b) => { const x = waitKey(a), y = waitKey(b);
   return x[0] - y[0] || (x[1] === y[1] ? 0 : (x[1] < y[1] ? -1 : 1)); };
-const sectionsOff = () => !!(state.stockSort || state.stockFilter
-  || state.stockQ.trim() || state.stockGenre);
+const sectionsOff = () => !!(state.stockSort || state.stockF.stage
+  || state.stockF.genre || state.stockQ.trim());
 const secOpen = s => !s.fold || !!state.secOpen[s.key];
 function groupSections(rows){
   const g = {};
@@ -3880,7 +3885,8 @@ const shortDT = s => String(s || '').replace(/^\d{4}-/, '').replace(/\([日月�
 const MCOL = {
   seq:   {sort:1, w:'74px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
   /* 予約済みだけ、公開の予定時刻をタイトルの後ろに出す（投稿日時の列は 2026-09-19 に外したため） */
-  title: {sort:1, td: it => `<td class="ttl">${esc(it.title)}${it.resv
+  /* hf＝見出しの右端に置く、列の無い絞り込み（ジャンル・#637） */
+  title: {sort:1, hf:'genre', td: it => `<td class="ttl">${esc(it.title)}${it.resv
           ? ` <span class="resv" title="${esc(it.resv)} に公開予定">🗓 ${esc(shortDT(it.resv))}</span>` : ''}${nowLineHTML(it)}</td>`},
   state: {label:'状態', w:'108px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
   /* 版・直した指摘・ユーザー確認は承認待ちの行だけ。作業中の記録がある行（#637）は AI の番なので出さない */
@@ -3917,8 +3923,11 @@ function colTH(k){
   const c = MCOL[k], w = c.w ? ` style="width:${c.w}"` : '';
   if (!c.sort) return `<th class="${(c.thx || '').trim()}"${w}>${esc(c.label || '')}</th>`;
   const s = state.stockSort, on = s && s.key === k;
-  return `<th class="sortable${c.thx || ''}" data-sort="${k}"${w}>${SORT_LABEL[k]}${
-    on ? `<span class="ar">${s.dir === 'asc' ? '▲' : '▼'}</span>` : ''}</th>`;
+  const lb = SORT_LABEL[k] + (on ? `<span class="ar">${s.dir === 'asc' ? '▲' : '▼'}</span>` : '');
+  /* 列の無い絞り込み（ジャンル）は、その見出しの右端に置く（hf・#637。ルールの工程を本文の見出しの右端に置くのと同じ）。
+     見出しの字を押すと並べ替え、右端のボタンを押すと絞り込みの窓 */
+  return `<th class="sortable${c.thx || ''}" data-sort="${k}"${w}>${c.hf
+    ? `<span class="thf"><span>${lb}</span>${hfBtn('stock', c.hf)}</span>` : lb}</th>`;
 }
 /* 列見出しは2段（#637）。上の段は工程の12列の上に「工程」の欄、下の段に列の名前（工程は帯の名前・長い2つは略・
    承認ポイントは ◆。マウスを載せると正式名）。
@@ -3928,7 +3937,7 @@ const okLast = cols => cols[cols.length - 1] === 'ok';
 function mtxHead(cols){
   const ok = okLast(cols) ? 1 : 0;
   const gi = cols.indexOf('flow'), right = cols.length - gi - 1 - ok;
-  return `<tr>${gi ? `<th class="pad" colspan="${gi}"></th>` : ''}<th class="grp" colspan="${SV_STEPS.length}">工程</th>${
+  return `<tr>${gi ? `<th class="pad" colspan="${gi}"></th>` : ''}<th class="grp" colspan="${SV_STEPS.length}">${hfBtn('stock', 'stage')}</th>${
       right ? `<th class="pad" colspan="${right}"></th>` : ''}${ok ? '<th class="pad okcol"></th>' : ''}</tr>
     <tr>${cols.map(k => k === 'flow'
       ? SV_STEPS.map(s => `<th class="st" title="${esc(s.name)}">${stepLabelHTML(s)}</th>`).join('')
@@ -3953,10 +3962,12 @@ const flowBoxStyle = cols => {
   const right = cols.slice(gi + 1, okLast(cols) ? -1 : undefined).map(k => MCOL[k].w).filter(Boolean);
   return ` style="--flow-r:calc(${right.length ? right.join(' + ') : '0px'}); --flow-w:calc(${SV_STEPS.length} * var(--st-w))"`;
 };
-const mtxTable = (cols, body) => `<table${flowBoxStyle(cols)}>${mtxCols(cols)}<thead>${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
+/* 見出しの行に data-hf＝表の名前（見出しを押して絞り込む・ルール・素材と同じ部品＝HF_TABLES の stock） */
+const mtxTable = (cols, body) => `<table${flowBoxStyle(cols)}>${mtxCols(cols)}<thead data-hf="stock">${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
 
-function matrixTable(core){
-  const rows = core.items;         /* 絞り込み・並べ替え・ページ切りは DB 側で済んでいる */
+/* err＝取れなかったときの理由。見出し（スマホは札）は残し、行の所にエラーを出す（#637。見出しで条件を変えて取り直せるように） */
+function matrixTable(core, err){
+  const rows = err ? [] : core.items;   /* 絞り込み・並べ替え・ページ切りは DB 側で済んでいる */
   const N = colCount(MCOLS);
   /* 区画の見出しは表の中の帯行（全列 colspan）。表も列見出しも必ず1つに保つ
      ＝どの区画の行でも列の縦位置が揃う（オーナー差し戻し 2026-09-03）。
@@ -3965,14 +3976,15 @@ function matrixTable(core){
   const ok = okLast(MCOLS);
   const secTR = s => `<tr class="secrow s-${s.key}${s.fold ? ' foldable' : ''}"${secAttrs(s)}>
       <td colspan="${ok ? N - 1 : N}">${secHeadInner(s)}</td>${ok ? '<td class="okcol"></td>' : ''}</tr>`;
-  const body = !rows.length
+  const body = err ? `<tr class="emptyrow"><td colspan="${N}">${errBox(err)}</td></tr>`
+    : !rows.length
     ? `<tr class="emptyrow"><td colspan="${N}">条件に一致する動画はありません</td></tr>`
     : sectionsOff() ? rows.map(it => mtxRow(it, MCOLS)).join('')
     : groupSections(rows).map(s =>
         secTR(s) + (secOpen(s) ? s.rows.map(it => mtxRow(it, MCOLS)).join('') : '')).join('');
 
   return `<div class="tblwrap mtx xscroll${rows.length > 14 ? ' tall' : ''}">${
-    mtxTable(MCOLS, body)}</div>${stockCards(rows)}`;
+    mtxTable(MCOLS, body)}</div>${stockCards(rows, err)}`;
 }
 
 /* 狭幅（スマホ）用のカード表示。表と同じ rows から描画し CSS で出し分ける */
@@ -3996,7 +4008,7 @@ function stageBadge(it){
   if (it.stage === 'queue')   return {cls:'pubwait', gl:'●', text:'投稿待ち'};
   return {cls:'work', gl:'●', text:'AI作業中', tip:stageWorkTip(PSTAGES[displayIdx(it)], it)};
 }
-function stockCards(rows){
+function stockCards(rows, err){
   const card = it => {
     const b = stageBadge(it);
     /* 作業中の記録がある行（#637）は札の代わりに「いまの工程」の1行を出す（承認ボタンも出さない）。
@@ -4022,11 +4034,15 @@ function stockCards(rows){
   };
   const secHead = s => `<div class="csechead s-${s.key}${s.fold ? ' foldable' : ''}"${secAttrs(s)}>${
     secHeadInner(s)}</div>`;
-  const body = !rows.length
+  const body = err ? errBox(err)
+    : !rows.length
     ? `<div class="noitem">条件に一致する動画はありません</div>`
     : sectionsOff() ? rows.map(card).join('')
     : groupSections(rows).map(s => secHead(s) + (secOpen(s) ? s.rows.map(card).join('') : '')).join('');
-  return `<div class="stockcards">${body}</div>`;
+  /* スマホは表の見出しが無いので、絞り込める見出し（工程・ジャンル）だけを札の形で先頭に並べる
+     （ルール・素材の 640px 以下と同じ形・同じ窓・#637） */
+  const hf = `<div class="lsthead sk" data-hf="stock">${Object.keys(SF_COLS).map(c => hfBtn('stock', c)).join('')}</div>`;
+  return `<div class="stockcards">${hf}${body}</div>`;
 }
 
 /* 説明は2本持つ: .ex＝PC の全文 / .exs＝スマホ用の10字以内。スマホで説明を全部消すと
@@ -4065,38 +4081,20 @@ async function renderStock(){
   const el = $('#view-stock');
   if (!state.ch) { el.innerHTML = `<div class="noitem">動画チャンネルがありません</div>`; return; }
   if (!store.facets[state.ch]) { el.innerHTML = loading(); }
-  let facets;
   try {
-    facets = await loadFacets(state.ch);
+    await loadFacets(state.ch);                        /* 見出しの絞り込みの窓の値と件数 */
     await loadPending(state.ch);                       /* 左ナビ・チャンネルタブの承認待ちバッジ用 */
   } catch (e) { el.innerHTML = errBox(e.message); return; }
+  if (rfPop && rfPop.tb === 'stock') closeRfPop();   /* 画面を作り直すと窓も消える */
 
-  const genres = [...new Set(facets.filter(f => f.stage_key !== 'dropped').map(f => f.genre_label))]
-    .sort((a, b) => a.localeCompare(b, 'ja'));
-
-  /* 番組名の見出し（「制作」の小見出し＋番組名＋承認待ち・仕分け待ちの件数）は出さない（#637・オーナー指摘）。
-     番組は上のタブで選んでいて、承認待ち・仕分け待ちの件数もタブの数字で分かるため。「動画の一覧」から始める */
+  /* 見出し（「動画の一覧」・番組名と件数）は出さない（#637・オーナー指摘）。番組は上のタブで選んでいて、
+     承認待ち・仕分け待ちの件数もタブの数字で分かるため。その分を一覧に回す。
+     絞り込みはルール・素材と同じ形（#637）: 表の上は文字の検索と件数だけ、工程・ジャンルは見出しを押して出る窓のチェック
+     （スマホは一覧の先頭に札の形で並べる・stockCards）。並べ替えは今までどおり見出しを押す */
   el.innerHTML = `
-    <div class="sectionhead" style="margin-top:0">
-      <h2>動画の一覧</h2>
-      <span class="hint">${sectionsOff() ? '絞り込み・並べ替え中はセクションを外して一覧で出しています'
-        : '完成を承認したものは「承認済み・投稿まで」に移ります'}</span>
-    </div>
-      <div class="filterbar">
-        <button class="filtoggle" id="filtoggle" aria-expanded="${state.filtersOpen}" aria-controls="filterbox">絞り込み <span class="fcaret">▾</span></button>
-        <span class="cond" id="stockcond"></span>
+      <div class="toolbar">
+        <input type="search" id="stockq" placeholder="番号・タイトルで探す" aria-label="番号・タイトルで探す" value="${esc(state.stockQ)}">
         <span class="hits" id="stockhits"></span>
-      </div>
-      <div class="filterbox${state.filtersOpen ? ' open' : ''}" id="filterbox">
-        <div class="toolbar">
-          <input type="search" id="stockq" placeholder="SEQ・タイトルで検索" aria-label="SEQ・タイトルで検索" value="${esc(state.stockQ)}">
-          <select id="stockgenre" aria-label="ジャンルで絞り込み">
-            <option value="">ジャンル: すべて</option>
-            ${genres.map(g => `<option value="${esc(g)}" ${state.stockGenre === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
-          </select>
-          <button class="btn" id="stockreset">リセット</button>
-        </div>
-        <div id="stockchips"></div>
       </div>
       ${MARK_LEGEND}
       <div id="stocktable">${loading()}</div>`;
@@ -4104,38 +4102,38 @@ async function renderStock(){
   await refreshStockTable();
 }
 
+/* 続けて絞り込みを変えたとき（窓のチェックを続けて押すなど）、後から押した分の結果だけを描く */
+let stockSeq = 0;
 async function refreshStockTable(){
   if (!$('#stocktable')) return;
+  const my = ++stockSeq;
+  const stale = () => my !== stockSeq || !$('#stocktable');   /* 後の取り直しが始まった・画面が変わった */
+  /* 見出しの窓の値と本数は手元の母数から先に作る（DB の取り直しを待たない。開いている窓の本数もここで合わせる） */
+  stockOpts = stockFacetOpts(store.facets[state.ch]);
+  if (rfPop && rfPop.tb === 'stock') syncRfPopCounts();
   let core;
   try { core = await loadCore(state.ch); }
-  catch (e) { $('#stocktable').innerHTML = errBox(e.message); return; }
-  if (!$('#stocktable')) return;                     /* 待っている間に画面が変わった */
+  catch (e) {
+    /* 取れなかったときも見出し（スマホは札）は残し、行の所にエラーを出す（条件を変えて取り直せるように） */
+    if (stale()) return;
+    $('#stocktable').innerHTML = matrixTable(null, e.message);
+    $('#stockhits').textContent = '';
+    if (rfPop && rfPop.tb === 'stock') placeRfPop();
+    return;
+  }
+  if (stale()) return;
   /* 札（この版は何の作り直しか）に要る記録を、承認待ちのぶんだけ先に取る。
      取れなくても一覧は出す＝札が出ないだけで従来どおり読める */
   try { await loadRework(core.items); } catch (_) { /* 札なしで続行 */ }
-  if (!$('#stocktable')) return;
+  if (stale()) return;
 
-  $('#stockchips').innerHTML = filterChips(store.facets[state.ch]);
   $('#stocktable').innerHTML = matrixTable(core) + pagerHTML(core);
   centerFlowRows($('#stocktable'));                  /* スマホのカードの工程の行を、いまの工程が真ん中に来るように */
-
-  const conds = [];
-  if (state.stockFilter) {
-    /* PSTAGES の外にある特別扱い（没・ネタの仕分け待ち・#314）は find が空を返すので、
-       ここで名前を決めてから触る（s.name を直接読むと落ちる） */
-    const sName = state.stockFilter === 'dropped' ? '没'
-      : state.stockFilter === 'triage' ? '仕分け待ち'
-      : (PSTAGES.find(x => x.key === state.stockFilter) || {}).name;
-    conds.push(`工程=<b>${esc(sName || state.stockFilter)}</b>`);
-  }
-  if (state.stockGenre) conds.push(`ジャンル=<b>${esc(state.stockGenre)}</b>`);
-  if (state.stockQ.trim()) conds.push(`検索=<b>${esc(state.stockQ.trim())}</b>`);
-  if (state.stockSort) conds.push(`並び=<b>${SORT_LABEL[state.stockSort.key]} ${state.stockSort.dir === 'asc' ? '昇順' : '降順'}</b>`);
-  $('#stockcond').innerHTML = conds.length ? '絞り込み中: ' + conds.join(' ・ ') : '';
   $('#stockhits').textContent = core.total
     ? `全 ${core.total} 件中 ${core.from + 1}–${core.from + core.items.length} 件を表示`
     : '0 件';
   syncStickyOffsets();
+  if (rfPop && rfPop.tb === 'stock') placeRfPop();   /* 窓を開いたまま描き直したとき、見出しの下に置き直す */
 }
 
 /* ── 作業中の動画の取り直し（#637）───────────────────────────────────────
@@ -9245,11 +9243,17 @@ const RF_COLS = {kind:'種類', strength:'強さ', ch:'番組', subject:'対象'
 const AF_COLS = {kind:'種類', ch:'番組', seq:'使った動画'};
 let rulesOpts = {};   /* 列ごとの値の一覧 {v, t}（renderRules が行と番組の登録簿から作る） */
 let assetsOpts = {};  /* 同じく素材の列ごとの値の一覧（renderAssets が行から作る） */
-/* 見出しを押して絞る表（ルールと素材で窓・印・閉じ方を共用）。view＝窓を置く画面（一覧の外）、list＝一覧、
-   cols＝押せる列、f＝絞り込みの状態、opts＝列ごとの値の一覧、paint＝一覧の描き直し。見出しの行に data-hf＝表の名前を付ける */
+/* 見出しを押して絞る表（ルール・素材・動画の一覧で窓・印・閉じ方を共用）。view＝窓を置く画面（一覧の外）、list＝一覧、
+   cols＝押せる列、f＝絞り込みの状態、opts＝列ごとの値の一覧、paint＝一覧の描き直し。見出しの行に data-hf＝表の名前を付ける。
+   def＝列の既定の選び（null の状態でチェックが付く値）。無ければ全部の値（＝全部チェックで絞らない） */
 const HF_TABLES = {
   rules:  { view: '#view-rules',  list: '#rulelist',  cols: RF_COLS, f: () => state.rulesF,  opts: () => rulesOpts,  paint: () => paintRules() },
-  assets: { view: '#view-assets', list: '#assetlist', cols: AF_COLS, f: () => state.assetsF, opts: () => assetsOpts, paint: () => paintAssets() }
+  assets: { view: '#view-assets', list: '#assetlist', cols: AF_COLS, f: () => state.assetsF, opts: () => assetsOpts, paint: () => paintAssets() },
+  /* 動画の一覧（#637）。絞り込みは DB 側（listQuery）なので、描き直しは1ページ目から取り直す（件数とページ切りも DB の数）。
+     工程の既定は没を除く全部（今までどおり没は既定では出さない）。没にチェックを足すと没も出る */
+  stock:  { view: '#view-stock',  list: '#stocktable', cols: SF_COLS, f: () => state.stockF,  opts: () => stockOpts,
+            def: col => col === 'stage' ? (stockOpts.stage || []).filter(o => o.v !== 'dropped').map(o => o.v) : null,
+            paint: () => { state.stockPage = 0; refreshStockTable(); } }
 };
 let rfPop = null;     /* 窓を開いている表と列 {tb, col}。閉じているときは null */
 function ruleHits(){
@@ -9383,22 +9387,45 @@ function hfBtn(tb, col){
     + ` aria-expanded="${!!rfPop && rfPop.tb === tb && rfPop.col === col}">${esc(T.cols[col])}`
     + `<span class="fm" aria-hidden="true">${on ? '●' : '▾'}</span></button>`;
 }
-/* いま見えている、その列の見出しのボタン（ルールの番組は 900px 以上と 899px 以下で別のボタン） */
-const rfBtn = (tb, col) => [...document.querySelectorAll(`${HF_TABLES[tb].list} .lsthead button[data-rfcol="${col}"]`)]
+/* いま見えている、その列の見出しのボタン（ルールの番組は 900px 以上と 899px 以下で別のボタン。
+   動画の一覧は広い画面の表の見出しと、スマホの一覧の先頭の札で別のボタン） */
+const rfBtn = (tb, col) => [...document.querySelectorAll(`${HF_TABLES[tb].list} [data-hf="${tb}"] button[data-rfcol="${col}"]`)]
   .find(b => b.getClientRects().length);
+/* 列の全部の値と、既定の選び（null の状態でチェックが付く値）と、いまチェックが付いている値 */
+const hfAll = (tb, col) => (HF_TABLES[tb].opts()[col] || []).map(o => o.v);
+const hfDef = (tb, col) => (HF_TABLES[tb].def && HF_TABLES[tb].def(col)) || hfAll(tb, col);
+const hfOn = (tb, col) => HF_TABLES[tb].f()[col] || hfDef(tb, col);
+/* 窓の上のボタン: 既定の値（def が無ければ全部の値）に全部チェックが付いていれば「すべて外す」、1つでも外れていれば
+   「すべて選ぶ」。「すべて選ぶ」は既定に戻す（動画の一覧の工程は没を除く全部＝前のリセットと同じ。ルール・素材は全部の値で前と同じ） */
+const hfAllOn = (tb, col) => { const on = hfOn(tb, col); return hfDef(tb, col).every(v => on.includes(v)); };
+/* 開いている窓の本数を、いまの値の一覧に合わせて書き直す（動画の一覧の本数は、ほかの列と文字の検索の条件で変わる） */
+function syncRfPopCounts(){
+  const pop = $('#rfpop');
+  if (!pop || !rfPop) return;
+  const opts = HF_TABLES[rfPop.tb].opts()[rfPop.col] || [];
+  pop.querySelectorAll('.rflist label').forEach(l => {
+    const i = l.querySelector('input'), n = l.querySelector('.rfn'), o = i && opts.find(x => x.v === i.value);
+    if (n && o && o.n != null) setText(n, nf(o.n));
+  });
+}
 function rfPopHTML(tb, col){
-  const T = HF_TABLES[tb], sel = T.f()[col];
-  return `<button type="button" class="rfall" data-rfall>${sel ? 'すべて選ぶ' : 'すべて外す'}</button>`
+  const T = HF_TABLES[tb], on = hfOn(tb, col);
+  /* 件数（n）のある値は右端に件数を添える（動画の一覧の工程・ジャンル。前の工程のチップの件数と同じ数え方） */
+  return `<button type="button" class="rfall" data-rfall>${hfAllOn(tb, col) ? 'すべて外す' : 'すべて選ぶ'}</button>`
     + `<div class="rflist">${(T.opts()[col] || []).map(o => `<label><input type="checkbox" value="${esc(o.v)}"${
-      !sel || sel.includes(o.v) ? ' checked' : ''}><span>${esc(o.t)}</span></label>`).join('')}</div>`;
+      on.includes(o.v) ? ' checked' : ''}><span>${esc(o.t)}</span>${
+      o.n != null ? `<span class="rfn">${nf(o.n)}</span>` : ''}</label>`).join('')}</div>`;
 }
 function placeRfPop(){
   const T = rfPop && HF_TABLES[rfPop.tb], pop = $('#rfpop');
   if (!T || !pop) return;
-  const view = $(T.view), head = $(`${T.list} .lsthead`), b = rfBtn(rfPop.tb, rfPop.col);
+  const view = $(T.view), b = rfBtn(rfPop.tb, rfPop.col), head = b && b.closest('[data-hf]');
   if (!view || !head || !b) return;
-  const v = view.getBoundingClientRect(), h = head.getBoundingClientRect(), a = (b.closest('.hch') || b).getBoundingClientRect();
-  pop.style.top = Math.round(h.bottom - v.top + 4) + 'px';
+  const v = view.getBoundingClientRect(), a = (b.closest('.hch') || b).getBoundingClientRect();
+  /* 見出しの下端。動画の一覧の表の見出しは th が画面の上に貼り付く（thead の箱は元の位置のまま）ので、2段目の th の下端で測る */
+  const cells = head.tagName === 'THEAD' ? [...head.querySelectorAll('tr:last-child > th')] : [];
+  const bottom = cells.length ? Math.max(...cells.map(c => c.getBoundingClientRect().bottom)) : head.getBoundingClientRect().bottom;
+  pop.style.top = Math.round(bottom - v.top + 4) + 'px';
   pop.style.left = Math.round(Math.max(0, Math.min(a.left - v.left, v.width - pop.offsetWidth))) + 'px';
 }
 function openRfPop(tb, col){
@@ -9411,7 +9438,7 @@ function openRfPop(tb, col){
   pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', T.cols[col]);
   pop.innerHTML = rfPopHTML(tb, col);
   view.appendChild(pop);
-  document.querySelectorAll(`${T.list} .lsthead button[data-rfcol="${col}"]`).forEach(b => b.setAttribute('aria-expanded', 'true'));
+  document.querySelectorAll(`${T.list} [data-hf="${tb}"] button[data-rfcol="${col}"]`).forEach(b => b.setAttribute('aria-expanded', 'true'));
   placeRfPop();
   pop.querySelector('input')?.focus({ preventScroll: true });
 }
@@ -9419,19 +9446,21 @@ function closeRfPop(refocus){
   const cur = rfPop;
   rfPop = null;
   $('#rfpop')?.remove();
-  document.querySelectorAll('.lsthead[data-hf] button[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+  document.querySelectorAll('[data-hf] button[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
   if (refocus && cur) rfBtn(cur.tb, cur.col)?.focus();
 }
-/* 列の絞り込みを入れて一覧を描き直す。sel は残す値の配列（null＝絞らない）。全部の値が入っていたら絞らない扱い */
+/* 列の絞り込みを入れて一覧を描き直す。sel は残す値の配列（null＝既定に戻す）。既定の選び（def が無ければ全部の値）と
+   同じになったら絞らない扱い（null） */
 function setHF(tb, col, sel){
-  const T = HF_TABLES[tb], f = T.f(), all = (T.opts()[col] || []).map(o => o.v);
-  f[col] = (sel && !all.every(v => sel.includes(v))) ? all.filter(v => sel.includes(v)) : null;
+  const T = HF_TABLES[tb], f = T.f(), def = hfDef(tb, col);
+  const pick = sel ? hfAll(tb, col).filter(v => sel.includes(v)) : def;
+  f[col] = (pick.length === def.length && def.every(v => pick.includes(v))) ? null : pick;
   T.paint();
   const pop = $('#rfpop');
-  if (!pop) return;
-  const cur = f[col];
-  pop.querySelector('[data-rfall]').textContent = cur ? 'すべて選ぶ' : 'すべて外す';
-  pop.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = !cur || cur.includes(i.value); });
+  if (!pop || !rfPop || rfPop.tb !== tb || rfPop.col !== col) return;
+  const on = hfOn(tb, col);
+  pop.querySelector('[data-rfall]').textContent = hfAllOn(tb, col) ? 'すべて外す' : 'すべて選ぶ';
+  pop.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = on.includes(i.value); });
 }
 /* 外を押したら閉じるのは pointerdown で拾う（iPhone は押せない所を押しても click を送らないため）。
    一覧の中（表の画面の中）を押して閉じたときは、そのあとに続く click（行を開く・見本を大きく見る）を1回だけ食べる */
@@ -9439,7 +9468,7 @@ let rfEatUntil = 0, rfEatView = '';
 document.addEventListener('pointerdown', e => {
   rfEatUntil = 0;
   const t = e.target;
-  if (!rfPop || !t || !t.closest || t.closest('#rfpop') || t.closest('.lsthead[data-hf] [data-rfcol]')) return;
+  if (!rfPop || !t || !t.closest || t.closest('#rfpop') || t.closest('[data-hf] [data-rfcol]')) return;
   const view = HF_TABLES[rfPop.tb].view;
   closeRfPop();
   if (t.closest(view)) { rfEatUntil = Date.now() + 1000; rfEatView = view; }
@@ -9452,15 +9481,17 @@ document.addEventListener('click', e => {
     rfEatUntil = 0;
     if (eat) { e.preventDefault(); e.stopPropagation(); return; }
   }
-  const hb = t.closest('.lsthead[data-hf] [data-rfcol]');
+  const hb = t.closest('[data-hf] [data-rfcol]');
   if (hb) {
     const tb = hb.closest('[data-hf]').dataset.hf, col = hb.dataset.rfcol;
     if (rfPop && rfPop.tb === tb && rfPop.col === col) closeRfPop(); else openRfPop(tb, col);
+    /* 動画の一覧のジャンルはタイトルの見出し（押すと並べ替え）の中にあるので、ここで止めて並べ替えを走らせない */
+    e.stopPropagation();
     return;
   }
   if (!rfPop) return;
   if (t.closest('#rfpop')) {
-    if (t.closest('[data-rfall]')) setHF(rfPop.tb, rfPop.col, HF_TABLES[rfPop.tb].f()[rfPop.col] ? null : []);
+    if (t.closest('[data-rfall]')) setHF(rfPop.tb, rfPop.col, hfAllOn(rfPop.tb, rfPop.col) ? [] : null);
     return;
   }
   /* pointerdown を伴わない押し方（キーボードで行を開く等）も、外なら同じように閉じる */
@@ -9476,6 +9507,8 @@ document.addEventListener('keydown', e => {
   if (rfPop && e.key === 'Escape') { e.preventDefault(); closeRfPop(true); }
 });
 window.addEventListener('resize', () => { if (rfPop) placeRfPop(); });
+/* 動画の一覧の見出しは画面の上に貼り付く（表が横に送れる幅では表の容器が横に動く）ので、送ったら窓も見出しの下へ置き直す（#637） */
+document.addEventListener('scroll', () => { if (rfPop) placeRfPop(); }, { capture: true, passive: true });
 
 /* 素材の並び: 棚にある物 → 棚から外した物（下の方へ・#594）。その中で種類の並び → 名前 */
 function assetCmp(a, b){
@@ -9822,7 +9855,7 @@ document.addEventListener('click', e => {
   const plb = e.target.closest('[data-plbox]');
   if (plb) { e.preventDefault(); openPlbox(plb.dataset.plbox, plb.dataset.plcap); return; }
   if (e.target.closest('[data-plbox-close]') || e.target.id === 'plbox') { closePlbox(); return; }
-  /* ルール・素材の絞り込みは見出しの窓（上の HF_TABLES の近く） */
+  /* ルール・素材・動画の一覧の絞り込みは見出しの窓（上の HF_TABLES の近く） */
 
   /* チャンネル名そのものを押したときは、開閉ではなく切り替えとして扱う（2026-08-20） */
   const goBtn = e.target.closest('.chgo[data-ch]');
@@ -9848,26 +9881,6 @@ document.addEventListener('click', e => {
     state.secOpen[k] = !state.secOpen[k];
     refreshStockTable(); return;
   }
-
-
-
-
-  const filT = e.target.closest('#filtoggle');
-  if (filT) {
-    state.filtersOpen = !state.filtersOpen;
-    $('#filterbox').classList.toggle('open', state.filtersOpen);
-    filT.setAttribute('aria-expanded', String(state.filtersOpen));
-    return;
-  }
-
-  const chipBtn = e.target.closest('.chipf:not([disabled])');
-  if (chipBtn) {
-    const k = chipBtn.dataset.filter || null;
-    state.stockFilter = (state.stockFilter === k) ? null : k;
-    state.stockPage = 0;                 /* 条件を変えたら1ページ目から */
-    refreshStockTable(); return;
-  }
-  if (e.target.closest('#stockreset')) { resetStockFilters(); renderStock(); return; }
 
   const sortTh = e.target.closest('.mtx th.sortable');
   if (sortTh) {
@@ -9962,11 +9975,6 @@ document.addEventListener('input', e => {
   if (e.target.classList && e.target.classList.contains('wta')) {
     const g = e.target.closest('.decide');
     if (g) g.querySelector('.dbar [data-act="comment"]')?.classList.toggle('on', !!e.target.value.trim());
-  }
-});
-document.addEventListener('change', e => {
-  if (e.target.id === 'stockgenre') {
-    state.stockGenre = e.target.value; state.stockPage = 0; refreshStockTable();
   }
 });
 document.addEventListener('keydown', e => {
