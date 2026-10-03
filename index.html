@@ -571,6 +571,8 @@ td.ttl .flags{margin-left:8px}
 .sbadge.rwh{background:var(--fix-tint); color:var(--fix-ink)}
 .sbadge.rwai{background:var(--surface-3); color:var(--ink-2)}
 .sbadge.rv{background:var(--s1-tint); color:var(--s1-ink)}
+/* 投稿待ち・予約済みの札は、工程の印（.mark.pubwait）と同じ濃い灰色の系統にそろえる（#637・オーナー決定） */
+.sbadge.pubwait{background:var(--act-soft); color:var(--sub-ink)}
 .sbadge.done{background:var(--done-tint); color:var(--done)}
 .sbadge.idea{background:var(--surface-2); color:var(--ink-2)}
 /* 進捗マトリクスはページ全体でスクロール（内部縦スクロール廃止・#204）。max-height/overflow を外して
@@ -2514,7 +2516,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 14:40';
+const BUILT_AT = '10/3 15:42';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3978,7 +3980,7 @@ function stageBadge(it){
   if (it.stage === 'triage')  return {cls:'rv',   gl:'●', text:'仕分け待ち'};
   /* 予約済みは「投稿済」と分ける（オーナー要望 2026-09-30）。言葉は工程の帯の状態の欄と同じ。
      予定時刻は列幅に収まらないので、ツールチップと表のタイトルの後ろ（MCOL.title）・カードの下段に出す */
-  if (isResv(it))             return {cls:'work', gl:'●', text:'予約済み',
+  if (isResv(it))             return {cls:'pubwait', gl:'●', text:'予約済み',
                                       tip: it.resv ? `${it.resv} に公開予定` : '公開時刻を待っています'};
   if (it.stage === 'posted')  return {cls:'done', gl:'✓', text:'投稿済'};
   /* 作業中の記録がある動画（#637）は承認待ち・修正中の札より作業中を出す（sectionOf と同じ） */
@@ -3987,7 +3989,7 @@ function stageBadge(it){
   if (st) return st;
   if (it.stage === 'idea')    return {cls:'idea', gl:'○', text:'ネタ案'};
   /* 投稿待ちは誰も作業していない（公開時刻待ち）ので【AI】は付けない */
-  if (it.stage === 'queue')   return {cls:'work', gl:'●', text:'投稿待ち'};
+  if (it.stage === 'queue')   return {cls:'pubwait', gl:'●', text:'投稿待ち'};
   return {cls:'work', gl:'●', text:'AI作業中', tip:stageWorkTip(PSTAGES[displayIdx(it)], it)};
 }
 function stockCards(rows){
