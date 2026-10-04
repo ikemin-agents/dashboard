@@ -395,7 +395,7 @@ td.dim{color:var(--muted)}
    幅の出どころは ①各列の col の style（JS 側 MCOL の w。タイトルは幅を書かず、残りを全部取る）
    ②.mtx th.okcol（承認）の2つだけ。工程の12列は 1列 46px に決める（#637）。
    列の合計が広いので、左右パディングを 14px → 10px に詰めて収める。 */
-/* 固定列（番号・ステータス・投稿日・滞留・ユーザー確認・承認）の合計は 558px、工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げ、
+/* 固定列（番号・ステータス・ユーザー確認・投稿日・滞留・承認）の合計は 558px、工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げ、
    余りはタイトルの列が全部取る（工程の列は広げない・オーナー指摘）。最小幅は 558＋214＋552＝1324px（タイトルが 214px を切る画面では表を横に送る）。
    版・直した指摘・指摘の3列は外した（#637）ので、その幅はタイトルに回る */
 .mtx{--st-w:46px}
@@ -2512,7 +2512,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/4 16:51';
+const BUILT_AT = '10/4 16:55';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2777,8 +2777,9 @@ const likeEsc = s => String(s).toLowerCase().replace(/[\\%_]/g, '\\$&');
 
 /* 一覧の見出しを押して絞り込む列（#637・オーナー指摘「ほかの画面と同じように、見出しを押したらエクセルのように」）。
    キーは state.stockF のキー、値は見出しの言葉。窓・印・閉じ方はルール・素材と同じ部品（HF_TABLES の stock）。
-   工程＝DB の工程（stage_key。前の工程のチップと同じ）、ジャンル＝列が無いのでタイトルの見出しの右端に置く */
-const SF_COLS = {stage:'工程', genre:'ジャンル'};
+   工程＝DB の工程（stage_key。前の工程のチップと同じ）。ジャンルの絞り込みは全部の番組で外した
+   （オーナー決定。ジャンルを使う番組が一部だけで、番組で見出しが変わるため） */
+const SF_COLS = {stage:'工程'};
 /* 工程の窓に並べる値（並びは前の工程のチップと同じ・言葉は帯の工程の名前）。没は既定では外れている（HF_TABLES の def） */
 const SF_STAGES = PSTAGES.map(s => ({ v: s.key, t: s.name }))
   .concat([{ v: 'triage', t: '仕分け待ち' }, { v: 'dropped', t: '没' }]);
@@ -3889,8 +3890,8 @@ const stDateHTML = it => { const d = stDate(it);
   return d ? `<span class="stdt" title="${esc(d)} に${isResv(it) ? '公開予定' : '公開'}">${esc(d.replace(/^\d{4}-/, ''))}</span>` : ''; };
 const MCOL = {
   seq:   {sort:1, w:'74px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
-  /* hf＝見出しの右端に置く、列の無い絞り込み（ジャンル・#637） */
-  title: {sort:1, hf:'genre', td: it => `<td class="ttl">${esc(it.title)}${nowLineHTML(it)}</td>`},
+  /* hf＝見出しの右端に置く、列の無い絞り込み（いまは使う列なし） */
+  title: {sort:1, td: it => `<td class="ttl">${esc(it.title)}${nowLineHTML(it)}</td>`},
   state: {label:'ステータス', w:'108px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
   /* 投稿日＝予約済みは公開の予定時刻、投稿済みは公開した時刻（stDateHTML）。ほかは空欄。どの番組も同じ形 */
   when:  {label:'投稿日', w:'136px', td: it => `<td>${stDateHTML(it)}</td>`},
@@ -3920,8 +3921,8 @@ const MCOL = {
 /* 投稿日時・再生数・登録者増も外した（同日・数字は分析タブで見る） */
 /* 版・直した指摘・指摘も外した（#637・オーナー指摘「4列がごちゃごちゃして分かりにくい」）。承認待ちの行に残すのは
    「あなたが何回目に見るか」のユーザー確認の1列だけ。外した3列の幅はタイトルの列に回る。詳細画面の札はそのまま */
-/* 並びは左から「いまどうなっているか」（ステータス・投稿日・滞留）→ 工程 → 「あなたがすること」（ユーザー確認・承認） */
-const MCOLS    = ['seq','title','state','when','days','flow','looks','ok'];
+/* 並びは左から ステータス・ユーザー確認・投稿日・滞留 → 工程 → 承認（ユーザー確認は工程より左・オーナー指定） */
+const MCOLS    = ['seq','title','state','looks','when','days','flow','ok'];
 /* 表の列の数（flow は工程の12列） */
 const colCount = cols => cols.reduce((n, k) => n + (k === 'flow' ? SV_STEPS.length : 1), 0);
 
@@ -4044,7 +4045,7 @@ function stockCards(rows, err){
     ? `<div class="noitem">条件に一致する動画はありません</div>`
     : sectionsOff() ? rows.map(card).join('')
     : groupSections(rows).map(s => secHead(s) + (secOpen(s) ? s.rows.map(card).join('') : '')).join('');
-  /* スマホは表の見出しが無いので、絞り込める見出し（工程・ジャンル）だけを札の形で先頭に並べる
+  /* スマホは表の見出しが無いので、絞り込める見出し（工程）だけを札の形で先頭に並べる
      （ルール・素材の 640px 以下と同じ形・同じ窓・#637） */
   const hf = `<div class="lsthead sk" data-hf="stock">${Object.keys(SF_COLS).map(c => hfBtn('stock', c)).join('')}</div>`;
   return `<div class="stockcards">${hf}${body}</div>`;
