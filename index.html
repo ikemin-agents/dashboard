@@ -1785,11 +1785,8 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .pin{border-color:var(--mark); background:var(--mark-fill)}
 .sview .seek .tpfill,.sview .seek .knob{background:var(--act)}
 .sview .seek .tpmark{background:var(--mark)}
-.sview .bigplay{position:absolute; left:50%; top:50%; width:68px; height:68px; margin:-34px 0 0 -34px;
-  z-index:1; border-radius:var(--r-pill); background:rgba(0,0,0,.46);
-  border:1.5px solid rgba(255,255,255,.7); display:grid; place-items:center; pointer-events:none}
-.sview .bigplay::before{content:''; display:block; margin-left:5px; border-style:solid;
-  border-width:13px 0 13px 21px; border-color:transparent transparent transparent #fff}
+/* 止めている間も動画の上に大きな再生ボタンは出さない（絵が隠れて邪魔・オーナー指摘）。
+   再生中か止めているかは、下の操作バーの ▶／❚❚ で分かる */
 /* ── 「素材なし」の見た目は1種類だけ（オーナー指摘 2026-09-21）────────────────
    **枠は必ず作り、中に「素材なし」と書く**（欄そのものを消さない＝歯抜けにしない）。
    破線は「欠けている」ように見えるので使わず、薄い無彩色の面＋小さな文字に統一する。 */
@@ -2512,7 +2509,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/3 16:12';
+const BUILT_AT = '10/4 14:32';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -7012,9 +7009,6 @@ function svPaintWatch(){
 }
 function svPaintBar(){
   if (!sv || !sv.root.isConnected) return;
-  /* 大きな再生ボタンは「ふつうに止まっているとき」だけ（場所を指している間・入力中は出さない） */
-  const big = sv.root.querySelector('.bigplay');
-  if (big && sv.ctl) big.hidden = !(sv.ctl.video.paused && !(tap && (tap.picking || tap.draft)));
   const st = sv.q('[data-sv-state]'), cnt = sv.q('[data-sv-ncount]');
   const n = (tap && tap.mode === 'edit' && tap.vid === sv.it.id) ? tap.items.length : null;
   setText(cnt, n == null ? '見るだけ' : (n + '件'));
@@ -7382,9 +7376,6 @@ async function armScene(node, files, pre){
   ctrls.parentNode && q('[data-sv-ctrls]').appendChild(ctrls);
   ctl.el = q('[data-sv-stage]');
   if (tap) tap.ctl.el = ctl.el;
-  const big = document.createElement('div');
-  big.className = 'bigplay'; big.setAttribute('aria-hidden', 'true'); big.hidden = true;
-  vbox.appendChild(big);
 
   sv = { root, q, it: curItem, ctl, mode, ch, seq, gate, dir, latest, files,
          variants, variant, variantsVer: vx.ver, badVariants: bad, switchSeq: 0,
@@ -7490,8 +7481,6 @@ async function armScene(node, files, pre){
     if (!sv.watched[i]) { sv.watched[i] = true; svPaintWatch(); }
   });
   v.addEventListener('seeked', () => { sv.manual = false; svSyncScene(); });
-  v.addEventListener('play', () => { big.hidden = true; });
-  v.addEventListener('pause', () => { big.hidden = !!(tap && (tap.picking || tap.draft)); });
   sv.refvid.addEventListener('loadedmetadata', svLinkRef);
   sv.refvid.addEventListener('canplay', svLinkRef);
   sv.refvid.addEventListener('error', () => { if (sv.refSrc) { sv.refLoadOK = false; svPaintRefFace(); } });
