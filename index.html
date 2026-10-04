@@ -2512,7 +2512,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/4 16:55';
+const BUILT_AT = '10/4 17:44';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -9230,7 +9230,7 @@ const kvText = s => (s == null || String(s).trim() === '') ? '' : esc(s);
 async function loadRules(){
   if (store.rules) return store.rules;
   store.rules = await q(sb.from('v_production_rules_current')
-    .select('rule_no,version,kind,strength,all_channels,channels,stages,subject,body,applies_when,exceptions,pass_criteria,check_method,judged_by,examples,basis,change_reason,created_at')
+    .select('rule_no,version,kind,strength,all_channels,channels,stages,subject,body,applies_when,exceptions,pass_criteria,check_method,judged_by,examples,created_at')
     .order('rule_no', { ascending: true }));
   return store.rules;
 }
@@ -9256,8 +9256,8 @@ const HF_TABLES = {
 let rfPop = null;     /* 窓を開いている表と列 {tb, col}。閉じているときは null */
 function ruleHits(){
   const f = state.rulesF, w = f.q.trim().toLowerCase();
-  const text = r => [r.rule_no, r.subject, r.body, r.applies_when, r.exceptions, r.pass_criteria, r.check_method,
-    ...(((r.basis || {}).owner_quotes) || []).map(x => x && x.text)].filter(v => v != null).join('\n').toLowerCase();
+  const text = r => [r.rule_no, r.subject, r.body, r.applies_when, r.exceptions, r.pass_criteria, r.check_method]
+    .filter(v => v != null).join('\n').toLowerCase();
   const has = (sel, v) => !sel || sel.includes(v);
   /* 番組を選んだときは「選んだ番組のどれかを含む行」と「全番組の行（channels が空）」の両方を出す。
      チェックを全部外した列は1行も残さない */
@@ -9274,13 +9274,6 @@ function ruleExamples(ex){
     esc(x && x.path)}${x && x.note ? `<span class="exn"> — ${esc(x.note)}</span>` : ''}</li>`).join('');
   const li = part(ex && ex.good, '良い例') + part(ex && ex.bad, '悪い例');
   return li ? `<ul class="exl">${li}</ul>` : '';
-}
-/* 根拠はオーナーの発言（原文と日時）と由来の動画だけ出す。記録の覚え書き（note）は作る側の内部の話なので出さない */
-function ruleBasis(b){
-  const qs = (((b || {}).owner_quotes) || []).map(x => `<li>「${esc(x && x.text)}」<span class="exn"> ${
-    esc(fmtDT(x && x.said_at) || '')}</span></li>`).join('');
-  const vids = ((b || {}).videos || []).length ? `<div class="exn">由来の動画 ${esc(b.videos.join('・'))}</div>` : '';
-  return (qs ? `<ul class="exl">${qs}</ul>` : '<span class="none">オーナーの発言なし</span>') + vids;
 }
 /* 行の番組を登録簿の順で。全番組の行（channels が空）は null */
 function ruleChList(r){
@@ -9304,8 +9297,7 @@ const RL_VL = '<i class="vl" aria-hidden="true"></i>'.repeat(5);
 function ruleRowHTML(r){
   const no = String(r.rule_no);
   const judge = [kvText(r.check_method), r.judged_by ? '見る係: ' + esc(r.judged_by) : ''].filter(Boolean).join('\n');
-  const ver = `第${esc(r.version)}版 ${esc(fmtDate(r.created_at) || '')}`
-    + (r.change_reason ? `\n変更の理由: ${esc(r.change_reason)}` : '');
+  const ver = `第${esc(r.version)}版 ${esc(fmtDate(r.created_at) || '')}`;
   const kc = RULE_KIND_CLS[r.kind], chl = ruleChList(r);
   return `<details class="rl${kc ? ' ' + kc : ''}" data-rno="${esc(no)}"${rulesOpen.has(no) ? ' open' : ''}>
     <summary class="rlrow"><span class="no">${esc(no)}</span>
@@ -9322,7 +9314,6 @@ function ruleRowHTML(r){
       ['合格の条件', kvText(r.pass_criteria)],
       ['判定のしかた', judge],
       ['手本', ruleExamples(r.examples)],
-      ['根拠', ruleBasis(r.basis)],
       ['版', ver]])}</div></details>`;
 }
 async function renderRules(){
