@@ -430,8 +430,9 @@ td.dim{color:var(--muted)}
 .mtx thead th.grp,.mtx thead th.grp+th,
 .mtx th:not(.st)+th.st,.mtx td:not(.st)+td.st,
 .mtx th.st+th:not(.st),.mtx td.st+td:not(.st){box-shadow:inset 1px 0 0 var(--stage-line)}
-/* タイトルの下の「いまの工程」の1行（作業中の記録がある行だけ・#637） */
-.mtx td.ttl .wknow{margin-top:6px; max-width:560px; line-height:1.4; container-type:inline-size}
+/* タイトルの下の「いまの工程」の1行（作業中の記録がある行だけ・#637）。幅はタイトルの列いっぱい
+   （オーナー指摘・560px で止めていたときは、列が空いているのに札が「…」で切れた） */
+.mtx td.ttl .wknow{margin-top:6px; line-height:1.4; container-type:inline-size}
 /* タイトルの列が狭い（中身が 280px 以下＝おおむね幅 1520px より狭い画面）ときは、札・残り（経過）・進みの棒・機械と時刻を1段ずつ縦に積む
    （2段のままだと札が「…」で切れ、棒の数と残りが重なる） */
 @container (max-width:280px){
@@ -2512,7 +2513,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/5 20:04';
+const BUILT_AT = '10/5 20:15';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
