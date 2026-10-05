@@ -2512,7 +2512,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/4 17:44';
+const BUILT_AT = '10/5 20:04';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3796,8 +3796,8 @@ function stockFacetOpts(facets){
    消える、だとどこへ行ったのか分からない）。完了・ネタ案・没は既定で畳み、件数だけ見せる。
    「承認済み・投稿まで」は投稿待ち（承認は済み・予約はまだ）と予約済み（YouTube に登録済み・公開
    時刻待ち）。以前は「完了」に投稿済みと混ざっていた（オーナー要望 2026-09-30「予約済みと投稿待ちは
-   違うので、投稿されるまでは完了ではなく別のまとまりに」）。進行係が予約する番組（雑学・歯科）も、
-   人が公開を決める番組（力わざ・からくり・検証）も同じここに入る。
+   違うので、投稿されるまでは完了ではなく別のまとまりに」）。どの番組の動画も、検証用の動画も
+   同じここに入る。
    並びは DB 側の sort_rank（承認待ち→修正中→進行中→投稿済み→ネタ案）のまま見出しを差し込む。
    手元で並べ直すのは、承認待ちの中（直した版を先頭へ）と「承認済み・投稿まで」の中だけ（groupSections）。
    絞り込み・並べ替え中は順番の意味が変わるのでセクションを外し、素直な一覧にする。
@@ -3812,10 +3812,10 @@ const SECTIONS = [
   {key:'triage', label:'あなたの番 — ネタの仕分け',
    hint:'台本の型に乗らなかったネタです。切り口を変える／このまま作る／没 を選んでください'},
   {key:'ai',   label:AI_TAG + '作業中',            hint:'AIが自動で進めています（差し戻した分の直しもここ）'},
-  /* 公開を人が決める番組（力わざ・からくり）と検証のタブでは、予約を待っているわけではないので
-     言葉を替える（hintManual・secHeadInner）。どこが自動かは書かない（静的な HTML は誰でも読めるため） */
+  /* 番組のタブはどの番組も同じ言葉。検証のタブだけ言葉を替える（検証用の動画は投稿しないので、
+     予約を待っているわけではない・hintPilot・secHeadInner）。番組名で分けない */
   {key:'wait', label:'承認済み・投稿まで',          hint:'予約か公開を待っています。あなたの操作は要りません',
-   hintManual:'承認は済んでいます。公開の時期はまだ決まっていません'},
+   hintPilot:'承認は済んでいます。公開の時期はまだ決まっていません'},
   {key:'done', label:'完了（投稿済み）',            fold:true},
   {key:'idea', label:'ネタ案（未着手）',            fold:true},
   {key:'drop', label:'没',                         fold:true}
@@ -3856,12 +3856,9 @@ function groupSections(rows){
   if (g.wait) g.wait.sort(waitCmp);
   return SECTIONS.map(s => Object.assign({}, s, {rows: g[s.key] || []})).filter(s => s.rows.length);
 }
-/* 公開を人が決めるタブ（進行係を通らない番組と、検証のタブ）。offDispatcherItem と同じ見分け方 */
-const manualPubTab = () => state.ch === PILOT_CH || STORAGE_ONLY_CH.has(state.ch);
 /* 見出しの共通部分（表の行とスマホのカード見出しで同じ文言・同じ開閉状態を使う） */
 function secHeadInner(s){
-  const hint = (state.ch === PILOT_CH && s.hintPilot) ? s.hintPilot
-    : (s.hintManual && manualPubTab()) ? s.hintManual : s.hint;
+  const hint = (state.ch === PILOT_CH && s.hintPilot) ? s.hintPilot : s.hint;
   return `<span class="sn">${s.fold ? `<span class="tri">${secOpen(s) ? '▾' : '▸'}</span>` : ''}${esc(s.label)}</span>
     <span class="n">${s.rows.length}件</span>${hint ? `<span class="hint">${esc(hint)}</span>` : ''}`;
 }
