@@ -1173,26 +1173,60 @@ tr.dropped td{color:var(--muted)}
   accent-color:var(--act); cursor:pointer}
 .cvolpop .cbtn{min-width:0; height:30px; font-size:var(--fs-xs); white-space:nowrap}
 /* YouTube Shorts の画面部品を映像の上に重ねる層（操作バーの「Shorts」で出し入れ）。字幕・注釈と被らないかを見る。
-   位置は m.youtube.com をビューポート 402×874（iPhone 17 Pro）で実測し、映像 402×715 に対する % で置いた。
-   iOS アプリの配置は未計測。層の矩形は JS が映像の表示領域（object-fit の余白を除く）に合わせ、--u は映像の幅の 1% */
-.ytui{position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none;
-  --u:4px; color:#fff; line-height:1}
+   位置は iPhone 17 Pro 実機の YouTube アプリの画面（402×874pt）を実測した値。アプリは映像を高さに合わせて広げるので、
+   9:16 の映像は 445×791pt になり左右 4.83% ずつが画面の外に切れる。部品の % はこの映像の全幅・全高に対する値。
+   層の矩形は JS が映像の表示領域（object-fit の余白を除く）に合わせ、文字と部品の大きさは層の幅（cqw）に追従する */
+.ytui{position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; overflow:hidden;
+  container-type:size; color:#fff; line-height:1; font-weight:600}
 .ytui>*{position:absolute; margin:0}
-.ytui .yi{left:88.1%; width:7.96%; height:auto; aspect-ratio:1/1; overflow:visible;
-  filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
-.ytui .yn{left:84%; width:16%; height:2.24%; display:flex; align-items:center; justify-content:center;
-  font-size:calc(var(--u) * 3.2); white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.6)}
-.ytui .like{top:76.9%}   .ytui .yn.like{top:81.4%}
-.ytui .cmt{top:85.3%}    .ytui .yn.cmt{top:89.8%}
-.ytui .share{top:93.7%}  .ytui .yn.share{top:98.2%}
-.ytui .yav{left:4%; top:95.2%; width:7.96%; aspect-ratio:1/1; border-radius:var(--r-pill);
+.ytui svg{display:block; height:auto; overflow:visible; filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.ytui .yt{display:flex; align-items:center; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.6)}
+/* 左右の切れる帯＝iPhone では見えない範囲。層の中で塗りつぶすのはここだけ */
+.ytui .ycut{top:0; bottom:0; width:4.83%; background:rgba(0,0,0,.66)}
+.ytui .ycut.l{left:0}
+.ytui .ycut.r{right:0}
+/* 上: 状態バー（時計・電波・電池）／「＜ ショート」・検索・⋮ の段／丸いチップの段 */
+.ytui .yclock{left:14.88%; top:2.63%; height:3%; font-size:3.8cqw}
+.ytui .ysig{left:69.6%; top:3.25%; width:4.27%}
+.ytui .ywifi{left:75.7%; top:3.3%; width:3.6%}
+.ytui .ybat{left:81.1%; top:3.4%; width:5.48%}
+.ytui .yback{left:9.55%; top:9.7%; width:2.47%}
+.ytui .yhd{left:17%; top:9.1%; height:3.5%; font-size:3.9cqw}
+.ytui .ysrch{left:75.4%; top:9.61%; width:4.43%}
+.ytui .ymore{left:88%; top:9.86%; width:.83%}
+.ytui .ychip{top:15.04%; height:3.79%; display:flex; align-items:center; gap:1.8cqw; padding-left:3.15cqw;
+  border:1.5px solid #fff; border-radius:var(--r-pill); font-size:2.9cqw; font-weight:500; white-space:nowrap;
+  text-shadow:0 1px 2px rgba(0,0,0,.6); box-shadow:0 0 2px rgba(0,0,0,.35)}
+.ytui .ychip svg{width:4.94cqw; flex:0 0 auto}
+.ytui .ychip.c1{left:8.43%; width:34.09%}
+.ytui .ychip.c2{left:44.38%; width:22.4%}
+.ytui .ychip.c3{left:68.65%; width:22.4%}
+.ytui .ychip.c4{left:92.92%; width:22.4%}
+/* 右の列: いいね（親指）・コメント・共有・リミックス（32pt 四方・中心が x 88.0%・中心どうし 60pt 間隔）と音の円盤 */
+.ytui .yi{left:84.4%; width:7.19%}
+.ytui .yi.like{top:62.33%}
+.ytui .yi.cmt{top:69.85%}
+.ytui .yi.share{top:77.5%}
+.ytui .yi.remix{top:85.08%}
+.ytui .yn{left:78%; width:20%; height:2.4%; justify-content:center; font-size:2.4cqw}
+.ytui .yn.num{font-size:2.7cqw}
+.ytui .yn.like{top:65.99%}
+.ytui .yn.cmt{top:73.58%}
+.ytui .yn.share{top:81.16%}
+.ytui .yn.remix{top:88.73%}
+.ytui .ydisc{left:84.4%; top:93.55%; width:7.12%; aspect-ratio:1/1; border:2px solid #fff; border-radius:22%;
   background:var(--muted); box-shadow:0 1px 2px rgba(0,0,0,.35)}
-.ytui .ych{left:13.9%; top:96.4%; height:2.24%; max-width:24.4%; display:flex; align-items:center;
-  font-size:calc(var(--u) * 3.6); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  text-shadow:0 1px 2px rgba(0,0,0,.6)}
-.ytui .ysub{left:40.3%; top:94.4%; width:32.3%; height:5.6%; display:flex; align-items:center;
-  justify-content:center; border-radius:var(--r-pill); background:#fff; color:#000;
-  font-size:calc(var(--u) * 3.45); font-weight:600; white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,.35)}
+/* 左下: チャンネルの丸・名前・「チャンネル登録」、その下に題の1行（末尾は「…」） */
+.ytui .yav{left:8.65%; top:90.77%; width:6.97%; aspect-ratio:1/1; border-radius:var(--r-pill);
+  background:var(--muted); box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.ytui .ych{left:17.64%; top:90.77%; height:4.05%; font-size:3.15cqw}
+.ytui .ysub{left:39.44%; top:90.77%; width:23.15%; height:4.05%; justify-content:center; border-radius:var(--r-pill);
+  background:#fff; color:#000; font-size:2.5cqw; font-weight:700; text-shadow:none; box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.ytui .ytitle{display:block; left:8.65%; width:82.9%; top:95.6%; height:2.6cqh; line-height:2.6cqh;
+  font-size:3.2cqw; font-weight:400; overflow:hidden; text-overflow:ellipsis}
+/* 再生位置の線（映像の一番下 2pt・見えている幅いっぱい）。赤い所が再生済み（--p は JS が 0〜1 で入れる） */
+.ytui .yprog{left:4.83%; right:4.83%; bottom:0; height:max(1.5px, .25%); background:rgba(255,255,255,.35)}
+.ytui .yprog i{display:block; height:100%; width:calc(var(--p, 0) * 100%); background:#ff3b30}
 .ctime{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums; flex:0 0 auto}
 .seek{position:relative; flex:1 0 100%; order:1; height:36px; cursor:pointer; touch-action:none}
 .ctime{margin-left:auto}
@@ -2633,7 +2667,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/7 11:26';
+const BUILT_AT = '10/7 11:55';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4982,22 +5016,51 @@ function assetsHTML(files, tapMode){
   return head + assetBlocksHTML(files.filter(isLatest), tapMode) + olds;
 }
 
-/* Shorts の画面部品（右の いいね・コメント・共有、左下の チャンネルのアイコン・名前・登録ボタン）。
-   文字はダミー。位置と大きさは CSS の .ytui 側（実測の値）。音の円盤と、映像の外にある題・チップは描かない */
+/* Shorts の画面部品（iPhone の YouTube アプリ）。上＝状態バー・「＜ ショート」の段・丸いチップの段、
+   右＝いいね・コメント・共有・リミックス・音の円盤、左下＝チャンネルの丸・名前・登録ボタン・題の1行、下＝再生位置の線。
+   左右の切れる帯も描く。文字はダミー。位置と大きさは CSS の .ytui 側（実測の値） */
 const YTUI_HTML = `<div class="ytui" data-ytui aria-hidden="true" hidden>
-  <svg class="yi like" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round">
-    <path d="M12 20.3s-7.4-4.5-9.2-9C1.5 8 3.6 4.6 7 4.6c2.1 0 3.6 1.2 5 3.1 1.4-1.9 2.9-3.1 5-3.1 3.4 0 5.5 3.4 4.2 6.7-1.8 4.5-9.2 9-9.2 9z"/></svg>
-  <span class="yn like">1.2万</span>
-  <svg class="yi cmt" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round">
+  <i class="ycut l"></i><i class="ycut r"></i>
+  <span class="yt yclock">11:36</span>
+  <svg class="ysig" viewBox="0 0 19 13" fill="#fff"><rect y="9" width="3.2" height="4" rx="1"/><rect x="5.2" y="6.3" width="3.2" height="6.7" rx="1"/>
+    <rect x="10.4" y="3.3" width="3.2" height="9.7" rx="1"/><rect x="15.6" width="3.2" height="13" rx="1"/></svg>
+  <svg class="ywifi" viewBox="0 0 16 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+    <path d="M1.5 4.6a9.5 9.5 0 0 1 13 0M4.3 7.5a5.5 5.5 0 0 1 7.4 0"/><circle cx="8" cy="10.4" r="1.4" fill="#fff" stroke="none"/></svg>
+  <svg class="ybat" viewBox="0 0 25 12" fill="#fff"><rect width="22" height="12" rx="3.6"/><rect x="23" y="4" width="2" height="4" rx="1" opacity=".5"/></svg>
+  <svg class="yback" viewBox="0 0 11 18" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.5 1.5L1.8 9l7.7 7.5"/></svg>
+  <span class="yt yhd">ショート</span>
+  <svg class="ysrch" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+    <circle cx="8.5" cy="8.5" r="7"/><path d="M13.6 13.6L19 19"/></svg>
+  <svg class="ymore" viewBox="0 0 4 16" fill="#fff"><circle cx="2" cy="2" r="1.9"/><circle cx="2" cy="8" r="1.9"/><circle cx="2" cy="14" r="1.9"/></svg>
+  <span class="ychip c1"><svg viewBox="0 0 22 20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+    <path d="M4 1.8h14"/><rect x="1.5" y="4.5" width="19" height="14" rx="2.2"/><path d="M9 8.3v6.4l5.3-3.2z" fill="#fff" stroke="none"/></svg>登録チャンネル</span>
+  <span class="ychip c2"><svg viewBox="0 0 22 20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+    <path d="M7.6 6.2a5.3 5.3 0 0 0 0 7.6M14.4 6.2a5.3 5.3 0 0 1 0 7.6M4.5 3.2a9.6 9.6 0 0 0 0 13.6M17.5 3.2a9.6 9.6 0 0 1 0 13.6"/>
+    <circle cx="11" cy="10" r="2.2" fill="#fff" stroke="none"/></svg>ライブ</span>
+  <span class="ychip c3"><svg viewBox="0 0 22 20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+    <path d="M2 6.5V5a3 3 0 0 1 3-3h3M14 2h3a3 3 0 0 1 3 3v1.5M20 13.5V15a3 3 0 0 1-3 3h-3M8 18H5a3 3 0 0 1-3-3v-1.5"/>
+    <circle cx="11" cy="10" r="3.4" fill="#fff" stroke="none"/><circle cx="16.3" cy="5.6" r="1" fill="#fff" stroke="none"/></svg>レンズ</span>
+  <span class="ychip c4"></span>
+  <svg class="yi like" viewBox="-4 -4 32 32" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round">
+    <path d="M7 21V10l4.3-7.3c.3-.4.7-.6 1.2-.6 1.2 0 2.1 1.1 1.9 2.3L13.6 9H19a2 2 0 0 1 2 2.3l-1.4 7.9A2.2 2.2 0 0 1 17.4 21H7zM7 10H4a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 4 21h3"/></svg>
+  <span class="yt yn num like">249</span>
+  <svg class="yi cmt" viewBox="-4 -4 32 32" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round">
     <path d="M5.5 4h13A1.5 1.5 0 0 1 20 5.5v10a1.5 1.5 0 0 1-1.5 1.5H13l-4 3.4V17H5.5A1.5 1.5 0 0 1 4 15.5v-10A1.5 1.5 0 0 1 5.5 4z"/>
     <path d="M8 9h8M8 12.5h5"/></svg>
-  <span class="yn cmt">320</span>
-  <svg class="yi share" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round">
+  <span class="yt yn num cmt">0</span>
+  <svg class="yi share" viewBox="-4 -4 32 32" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round">
     <path d="M13.5 5l7 6.5-7 6.5v-3.8c-4.9 0-8.2 1.4-10.5 4.8.7-5.4 3.7-9.6 10.5-10.2z"/></svg>
-  <span class="yn share">共有</span>
-  <span class="yav"></span>
-  <span class="ych">@チャンネル名</span>
-  <span class="ysub">チャンネル登録</span>
+  <span class="yt yn share">共有</span>
+  <svg class="yi remix" viewBox="-4 -4 32 32" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4.4 10.4A7.8 7.8 0 0 1 18.2 6.3M18.7 2.4l-.4 4.1-4.1-.4M19.6 13.6A7.8 7.8 0 0 1 5.8 17.7M5.3 21.6l.4-4.1 4.1.4M12 8.4v7.2M8.4 12h7.2"/></svg>
+  <span class="yt yn remix">リミックス</span>
+  <i class="ydisc"></i>
+  <i class="yav"></i>
+  <span class="yt ych">@チャンネル</span>
+  <span class="yt ysub">チャンネル登録</span>
+  <span class="yt ytitle">船を何隻乗せても、重さが変わらない箱がある 仕組みを図で見ると分かる #shorts</span>
+  <i class="yprog"><i></i></i>
 </div>`;
 
 /* ── 動画の枠（#509 段1 → 段4 でタップ入力）───────────────────────────────
@@ -5403,15 +5466,21 @@ function armVideoBar(el){
     const y = (a.r.top  - b.top  - box.clientTop)  + (a.r.height - a.h) / 2;
     yt.style.left = x + 'px'; yt.style.top = y + 'px';
     yt.style.width = a.w + 'px'; yt.style.height = a.h + 'px';
-    yt.style.setProperty('--u', (a.w / 100) + 'px');
     yt.style.visibility = '';
+  };
+  /* 層の一番下の再生位置の線。赤い所を再生済みの割合（0〜1）にする */
+  const ytProg = yt && yt.querySelector('.yprog');
+  const progYt = () => {
+    if (!ytProg || yt.hidden) return;
+    ytProg.style.setProperty('--p', String(dur() ? Math.min(1, v.currentTime / dur()) : 0));
   };
   const paintYt = () => {
     if (!yt || !ytBtn) return;
     yt.hidden = !ytOn;
     ytBtn.setAttribute('aria-pressed', String(ytOn));
-    placeYt();
+    placeYt(); progYt();
   };
+  v.addEventListener('timeupdate', progYt);
   if (ytBtn) ytBtn.addEventListener('click', () => {
     ytOn = !ytOn;
     try { localStorage.setItem('dash.ytui', ytOn ? '1' : '0'); } catch (_) {}
