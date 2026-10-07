@@ -1673,6 +1673,62 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   color:var(--muted); font-size:var(--fs-2xs); border-top:1px solid var(--border-2);
   letter-spacing:.02em; line-height:1.7}
 
+/* ═══ 制作フロー（#695）══════════════════════════════════════════
+   横に工程（1列＝1つの係の仕事）・縦に項目。左の項目名と上の工程は貼り付け、表の箱の中で縦横に送る
+   （箱の高さを画面に合わせるので、ページを送らなくても見出しが残る）。色は既存の変数で、明暗どちらにも対応 */
+.fl-meta{display:flex; flex-wrap:wrap; gap:2px 14px; color:var(--muted); font-size:var(--fs-xs); margin:-10px 0 var(--sp-3)}
+.fl-tabs{display:flex; gap:var(--sp-2); margin:0 0 var(--sp-3); overflow-x:auto; scrollbar-width:none}
+.fl-tabs::-webkit-scrollbar{display:none}
+.fl-tab{flex:0 0 auto; font-family:inherit; font-size:var(--fs-sm); padding:5px 13px; border:1px solid var(--border);
+  border-radius:var(--r-pill); background:var(--surface-1); color:var(--ink-2); white-space:nowrap}
+.fl-tab[aria-selected="true"]{background:var(--ink); color:var(--page); border-color:var(--ink); font-weight:650}
+.fl-tab[disabled]{cursor:default; color:var(--muted)}
+.fl-later{margin-left:7px; font-size:var(--fs-2xs); border:1px solid var(--border); border-radius:var(--r-pill); padding:0 6px}
+.fl-wrap{overflow:auto; max-height:calc(100vh - 160px); min-height:320px;
+  border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-1); box-shadow:var(--shadow-1)}
+/* 表の既定（1行に収める・見出しは大文字・行の地を変える）はこの表では外す */
+.fl-tbl{border-collapse:separate; border-spacing:0; width:max-content; font-size:var(--fs-xs); line-height:1.55}
+.fl-tbl th,.fl-tbl td{padding:8px 10px; border-bottom:1px solid var(--grid); border-right:1px solid var(--grid);
+  vertical-align:top; text-align:left; white-space:normal; width:184px; min-width:184px; max-width:184px;
+  overflow-wrap:anywhere}
+.fl-tbl tbody tr:last-child td,.fl-tbl tbody tr:last-child th{border-bottom:none}
+.fl-tbl tbody tr:hover td{background:transparent}
+.fl-tbl td.fl-span,.fl-tbl tbody tr:hover td.fl-span{width:auto; max-width:none; background:var(--stage-bg)}
+.fl-tbl thead th{position:sticky; top:0; z-index:2; background:var(--surface-3); color:var(--ink-2); font-weight:400;
+  font-size:var(--fs-xs); letter-spacing:normal; text-transform:none; padding:8px 10px; border-bottom:1px solid var(--grid)}
+.fl-tbl .fl-row{position:sticky; left:0; z-index:1; background:var(--surface-2); width:112px; min-width:112px; max-width:112px;
+  color:var(--ink-2); font-weight:700; font-size:var(--fs-2xs); letter-spacing:.04em}
+.fl-tbl thead .fl-row{z-index:3; background:var(--surface-3)}
+.fl-tbl thead th.fl-gate{background:var(--attn); color:var(--attn-ink)}
+.fl-tbl td.fl-gate,.fl-tbl tbody tr:hover td.fl-gate{background:color-mix(in srgb, var(--attn) 45%, transparent)}
+.fl-stage{display:block; font-size:var(--fs-2xs); color:var(--muted); margin-bottom:2px}
+.fl-tbl thead th.fl-gate .fl-stage{color:inherit}
+.fl-step{display:block; font-size:var(--fs-sm); font-weight:700; color:var(--ink)}
+.fl-tbl thead th.fl-gate .fl-step{color:var(--attn-ink)}
+.fl-ln{margin:0 0 3px}
+.fl-ln:last-child{margin-bottom:0}
+.fl-name{font-weight:700}
+.fl-id{color:var(--muted); font-family:ui-monospace,Consolas,monospace; font-size:var(--fs-2xs)}
+.fl-note,.fl-lab{color:var(--muted)}
+.fl-none{color:var(--muted)}
+.fl-tbl code,.fl-notes code{font-family:ui-monospace,Consolas,monospace; font-size:.92em; background:var(--surface-2);
+  border-radius:4px; padding:0 3px}
+.fl-b{display:inline-block; font-size:var(--fs-2xs); font-weight:700; line-height:1.6; padding:0 8px; margin:0 3px 0 2px;
+  border-radius:var(--r-pill); white-space:nowrap; vertical-align:1px}
+.fl-ln .fl-b:first-child{margin-left:0}
+.fl-b.opus{background:var(--s1-tint); color:var(--s1-ink)}
+.fl-b.sonnet{background:var(--good-tint); color:var(--good-text)}
+.fl-b.human{background:var(--attn); color:var(--attn-ink)}
+.fl-b.main{background:var(--act-soft); color:var(--sub-ink)}
+.fl-b.tool{background:var(--surface-3); color:var(--ink-2)}
+.fl-notes{margin:var(--sp-3) 0 0; padding-left:18px; color:var(--ink-2); font-size:var(--fs-xs); line-height:1.7}
+.fl-notes li{margin:0 0 4px}
+.fl-foot{margin:var(--sp-2) 0 0; color:var(--muted); font-size:var(--fs-xs)}
+@media (max-width:680px){
+  .fl-tbl th,.fl-tbl td{width:156px; min-width:156px; max-width:156px; padding:7px 8px}
+  .fl-tbl .fl-row{width:92px; min-width:92px; max-width:92px}
+}
+
 @media (max-width:980px){
   .kpis{grid-template-columns:repeat(2,1fr)}
 }
@@ -1698,6 +1754,11 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
      チャンネルタブは沈んでいて選べないので、その場所を借りても困らない */
   .chtab.sys[aria-selected="true"]{font-size:var(--fs-sm)}
   .chtab.sys[aria-selected="true"] .lbl{display:inline}
+  /* 共通画面の札が増えて入りきらない幅では、名前を縮めずに札の列を横に送る（#695。選んだ札は renderShell が
+     見える所まで送る）。札は下の線に1px 重ねて描くので、その1px を箱の中に入れてから箱ごと1px 下げる */
+  .systabs{flex:0 1 auto; min-width:0; overflow-x:auto; overflow-y:hidden; scrollbar-width:none;
+    padding-bottom:1px; margin-bottom:-1px}
+  .systabs::-webkit-scrollbar{display:none}
   .syncchip{display:none}
   /* 下の固定タブバーが無い（＝制作1つだけ）ときは、その分の余白も取らない */
   body[data-solonav="1"] main{padding-bottom:var(--sp-6)}
@@ -2535,6 +2596,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   <section class="view" id="view-analytics"></section>
   <section class="view" id="view-rules"></section>
   <section class="view" id="view-assets"></section>
+  <section class="view" id="view-flow"></section>
   <!-- Blender素材の一覧の見本の絵を大きく見る（見た目は承認画面の拡大表示と同じ） -->
   <div class="sv-lbox" id="plbox" hidden>
     <img id="plboximg" alt="">
@@ -2667,7 +2729,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/7 11:56';
+const BUILT_AT = '10/8 06:07';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2793,6 +2855,8 @@ const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pe
                 threads:{}, rework:{}, looks:{}, rvRev:{}, sbGone:{}, analytics:{}, assets:{},
                 /* 決まりの一覧・Blender素材の一覧（#574）。開いたときに取る（⟳ で取り直す）。chNames は番組の名前 */
                 rules:null, prodAssets:null, chNames:{},
+                /* 制作フローの図（#695）。開いたときに flow.json を取る（⟳ で取り直す） */
+                flow:null,
                 /* 検証用の動画が1本でもあるか（#523）。loadPilotFlag が入れる */
                 pilot:{has:false} };
 const clearVideoCaches = () => {
@@ -2819,7 +2883,10 @@ const VIEWS = [
      画面の呼び名は「動画制作ルールDB」（オーナー指示 2026-09-30 09:02・#572）。タブは短く「ルール」——
      正式名のままだとスマホの幅（390px）でタブの並びが画面をはみ出すため。見出しは正式名 */
   {key:'rules',     icon:'📏', label:'ルール', chIndep:true, fullOnly:true},
-  {key:'assets',    icon:'🧱', label:'素材',   chIndep:true, fullOnly:true}
+  {key:'assets',    icon:'🧱', label:'素材',   chIndep:true, fullOnly:true},
+  /* 制作フロー（#695）。Blender 制作の全体の構成（動画ごとの状態ではない）。中身は公開のときに道具が正本から作る
+     flow.json を読むだけ。全番組を見られる人にだけ出す。名前は縮めない（スマホでは札の列を横に送る） */
+  {key:'flow',      icon:'🧭', label:'制作フロー', chIndep:true, fullOnly:true}
 ];
 /* ── 権限（#208）─────────────────────────────────────────────────
    state.me は dashboard_me() RPC の戻り値（{display_name, channels, full_access}）。
@@ -3680,6 +3747,13 @@ function renderShell(){
     `<button class="chtab sys" role="tab" aria-selected="${state.view === v.key}" data-view="${v.key}"
        title="${esc(v.label)}" aria-label="${esc(v.label)}">
       <span class="cdot" style="background:var(--axis)"></span>${v.icon}<span class="lbl">${v.label}</span></button>`).join('');
+  /* スマホの幅で札の列が入りきらないときは、選んでいる札が見える所まで列を送る（#695・CSS の .systabs） */
+  const sysBox = $('#systabs'), sysOn = sysBox.querySelector('.chtab[aria-selected="true"]');
+  if (sysOn && sysBox.scrollWidth > sysBox.clientWidth) {
+    const b = sysBox.getBoundingClientRect(), t = sysOn.getBoundingClientRect();
+    if (t.right > b.right) sysBox.scrollLeft += Math.ceil(t.right - b.right);
+    else if (t.left < b.left) sysBox.scrollLeft -= Math.ceil(b.left - t.left);
+  }
 
   $('#nav').innerHTML = views.map(v => {
     const on = state.view === v.key, n = v.badge ? v.badge() : 0;
@@ -6359,8 +6433,8 @@ let sv = null;                      /* いま組み立ててあるシーン画�
    **画面に出す単位の文言はこの3つの小さな関数だけで作る**（あちこちに直接書かない）。
    工程の名前の「シーン割り」は工程の名前なので替えない。 */
 const svUnit = () => (sv && sv.unit) ? sv.unit : 'シーン';
-const svUnitN = n => svUnit() + n;               /* 「ショット3」 */
-const svUnitCount = n => n + svUnit();           /* 「12ショット」 */
+const svUnitN = n => svUnit() + n;               /* 「シーン3」 */
+const svUnitCount = n => n + svUnit();           /* 「12シーン」 */
 /* 参照画像の欄の呼び名（#574）。目録の refs_label（例「使った素材」）があればその言葉、無ければ「参照画像」。
    拡大表示の題などの短い形は、無ければ今までどおり「参照」（参照①）。使わないと決めた目録の呼び名は引かない */
 const svRefWord  = () => (sv && sv.mat && sv.mat.refs_label) || '参照画像';
@@ -7004,9 +7078,9 @@ function svBuildScript(){
   box.textContent = '';
   sv.scriptRows = [];
   const rows = svScenes();
-  /* シーンの区切りも分からないときだけ、欄いっぱいの「素材なし」にする（枠は残る） */
+  /* シーンも分からないときだけ、欄いっぱいの「素材なし」にする（枠は残る） */
   if (!rows.length) {
-    box.appendChild(svNoMat('ナレーションも' + svUnit() + 'の区切りもまだありません'));
+    box.appendChild(svNoMat('ナレーションも' + svUnit() + 'もまだありません'));
     sv.q('[data-sv-scriptmeta]').textContent = '—';
     return;
   }
@@ -7937,7 +8011,7 @@ async function armScene(node, files, pre){
     const sw = q('[data-sv-switch]'); if (sw.hidden) sw.hidden = false;
     setText(q('[data-sv-facts]'), (d ? fmtT(d) : '—')
       + (sv.scenes.length ? ' ・ ' + svUnit() + ' ' + sv.scenes.length
-                          : ' ・ ' + svUnit() + 'の区切りは不明'));
+                          : ' ・ ' + svUnit() + 'の数は不明'));
     if (!same) {
       svBuildScript();
       /* 台本は畳まない。スマホは台本のタブを押したときだけ出る（#552。以前はスマホだけ畳んでいた） */
@@ -10056,10 +10130,10 @@ function assetSource(s){
       /^https?:\/\//.test(url) ? ` <a href="${esc(url)}" target="_blank" rel="noopener noreferrer">出典 ↗</a>` : ''}</li>`;
   }).join('')}</ul>` : '';
 }
-/* 使った動画とショット。shots はショットの番号（承認画面の目録の n と同じ）。空は動画全体で使った物 */
+/* 使った動画とシーン。shots はシーンの番号（承認画面の目録の n と同じ）。空は動画全体で使った物 */
 function assetUsed(used){
   return used.length ? `<ul class="exl">${used.map(u => `<li><b>${esc(u.seq)}</b> ${esc(u.title || '')}<div class="exn">${
-    (u.shots || []).length ? 'ショット ' + esc(u.shots.join('・')) : '動画全体'}</div></li>`).join('')}</ul>` : '';
+    (u.shots || []).length ? 'シーン ' + esc(u.shots.join('・')) : '動画全体'}</div></li>`).join('')}</ul>` : '';
 }
 /* 呼び方（081 の call）。{functions:[{function, signature, doc}]（最初が主な呼び口）, …} の関数ごとに
    呼び方の1行と説明を出す。それ以外の形はそのまま文字で出す */
@@ -10258,6 +10332,78 @@ async function replayApproveOutbox(){
   if (msgs.length) toast(msgs.join(' ／ '));
 }
 
+/* ══ 制作フロー（#695）═══════════════════════════════════════════
+   Blender 制作の全体の構成（横に工程・縦に項目）。中身は公開のときに道具が正本（係の定義・監督の手順書・番組の工程表・
+   審査の包みの道具）から作る flow.json を読むだけで、この画面に表を書かない。形の正本は README の「制作フローの札」。
+   1マス＝行の並び、1行＝文字のかけら（k: name 太字・id 識別子・note 薄字・label 見出し・badge 札）。字の中の `…` は等幅 */
+const FLOW_URL = 'flow.json';
+const FLOW_TONES = ['opus', 'sonnet', 'main', 'human', 'tool'];
+async function loadFlow(){
+  if (store.flow) return store.flow;
+  const res = await fetch(FLOW_URL + '?_=' + Date.now(), { cache: 'no-store' });
+  if (!res.ok) throw new Error(res.status === 404 ? '制作フローの図がまだありません（公開のときに作ります）'
+                                                  : `制作フローの図を読めません（${res.status}）`);
+  const f = await res.json();
+  /* 形を確かめる（列の数と、各行のマスの数・まとめたマスの幅の合計が合わない図は描かない） */
+  const n = f && Array.isArray(f.cols) ? f.cols.length : 0;
+  const ok = f && f.v === 1 && n > 0 && Array.isArray(f.rows) && f.rows.every(r =>
+    r.spans ? r.spans.reduce((a, s) => a + (s.n | 0), 0) === n : Array.isArray(r.cells) && r.cells.length === n);
+  if (!ok) throw new Error('制作フローの図の形が違います');
+  store.flow = f;
+  return f;
+}
+const flowText = t => esc(t).replace(/`([^`]+)`/g, '<code>$1</code>');
+function flowSpan(s){
+  const t = flowText(s && s.t);
+  if (s.k === 'badge') return `<span class="fl-b ${FLOW_TONES.includes(s.tone) ? s.tone : 'tool'}">${t}</span>`;
+  if (s.k === 'name') return `<b class="fl-name">${t}</b>`;
+  if (s.k === 'id') return `<span class="fl-id">${t}</span>`;
+  if (s.k === 'note') return `<span class="fl-note">${t}</span>`;
+  if (s.k === 'label') return `<span class="fl-lab">${t}</span>`;
+  return t;
+}
+const flowLines = lines => (lines && lines.length)
+  ? lines.map(ln => `<div class="fl-ln">${(ln || []).map(flowSpan).join('')}</div>`).join('')
+  : '<span class="fl-none">—</span>';
+function flowHTML(f){
+  const tabs = (f.tabs || []).map(t => t.later
+    ? `<button type="button" class="fl-tab" disabled aria-disabled="true">${flowText(t.label)}<span class="fl-later">後で</span></button>`
+    : `<button type="button" class="fl-tab" aria-selected="${t.on ? 'true' : 'false'}">${flowText(t.label)}</button>`).join('');
+  const head = `<tr><th class="fl-row" scope="col">工程 →</th>${f.cols.map(c =>
+    `<th scope="col"${c.gate ? ' class="fl-gate"' : ''}>${c.stage && c.stage !== c.name ? `<span class="fl-stage">${flowText(c.stage)}</span>` : ''}`
+    + `<span class="fl-step">${c.gate ? '◆ ' : ''}${flowText(c.name)}</span></th>`).join('')}</tr>`;
+  const body = f.rows.map(r => `<tr><th class="fl-row" scope="row">${flowText(r.label)}</th>${r.spans
+    ? r.spans.map(s => `<td${s.n > 1 ? ` colspan="${s.n}" class="fl-span"` : ''}>${flowLines(s.lines)}</td>`).join('')
+    : r.cells.map((lines, i) => `<td${f.cols[i].gate ? ' class="fl-gate"' : ''}>${flowLines(lines)}</td>`).join('')}</tr>`).join('');
+  const notes = (f.notes || []).map(ln => `<li>${ln.map(flowSpan).join(' ')}</li>`).join('');
+  return `
+    <div class="pagehead"><div class="eyebrow">制作フロー</div><h1>🧭 ${flowText(f.title)}</h1></div>
+    <div class="fl-meta"><span>${flowText((f.programs || []).join('・'))}</span>
+      <span>係の定義 ${f.agents | 0}本・監督の手順書・番組の工程表・審査の包みの道具から描く</span>
+      <span>描いた時刻 ${flowText(f.built_at)}</span></div>
+    <div class="fl-tabs" role="tablist" aria-label="作り方">${tabs}</div>
+    <div class="fl-wrap"><table class="fl-tbl"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+    ${notes ? `<ul class="fl-notes">${notes}</ul>` : ''}
+    <p class="fl-foot">この画面は人が書きません。係の定義・監督の手順書・番組の工程表・審査の包みの道具を、ダッシュボードを公開するたびに読んで描きます。</p>`;
+}
+async function renderFlow(){
+  const el = $('#view-flow');
+  if (!store.flow) el.innerHTML = loading();
+  let f;
+  try { f = await loadFlow(); } catch (e) { el.innerHTML = errBox(e.message); return; }
+  el.innerHTML = flowHTML(f);
+  fitFlow();
+}
+/* 表の箱の高さを、ページを送らずに画面の下端まで届く高さにする。ページを送ると箱の見出しが上の帯の下に隠れるため
+   （箱の中で縦横に送れば、上の工程と左の項目名は残る）。開いたときと画面の大きさが変わったときに合わせる */
+function fitFlow(){
+  const w = document.querySelector('#view-flow.active .fl-wrap');
+  if (!w) return;
+  const top = w.getBoundingClientRect().top + window.scrollY;
+  w.style.maxHeight = Math.max(320, Math.floor(window.innerHeight - top - 16)) + 'px';
+}
+window.addEventListener('resize', () => { if (state.view === 'flow') fitFlow(); });
+
 /* ══ 描画オーケストレーション ═══════════════════════════════════ */
 /* 進捗マトリクスのページスクロール用: サイトヘッダー(.topbar＝トップバー＋ナビ)の実高さと
    マトリクス2段ヘッダーの1段目高さを実測し CSS 変数へ反映（sticky thead の top オフセット・#204）。 */
@@ -10276,6 +10422,7 @@ async function render(){
     else if (state.view === 'analytics') await renderAnalytics();
     else if (state.view === 'rules')     await renderRules();
     else if (state.view === 'assets')    await renderAssets();
+    else if (state.view === 'flow')      await renderFlow();
     state.lastSync = new Date().toISOString();
   } catch (e) {
     $('#view-' + state.view).innerHTML = errBox(e.message);
@@ -10289,6 +10436,7 @@ async function render(){
 
 async function reloadAll(){
   clearVideoCaches(); store.analytics = {}; store.assets = {}; store.rules = null; store.prodAssets = null;
+  store.flow = null;
   state.busy = true; renderShell();
   try { await loadBootstrap(); } catch (e) { toast('再読み込みに失敗: ' + e.message); }
   await render();
@@ -10546,6 +10694,7 @@ $('#loginform').addEventListener('submit', async ev => {
 async function signOut(){
   await sb.auth.signOut();
   clearVideoCaches(); store.analytics = {}; store.assets = {}; store.rules = null; store.prodAssets = null;
+  store.flow = null;
   store.channels = []; store.pilotChannels = []; store.accounts = [];
   state.user = null; state.me = null; state.ch = null; state.view = 'stock'; state.stockPage = 0;
   showLogin();
