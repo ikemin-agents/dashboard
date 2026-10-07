@@ -1157,7 +1157,42 @@ tr.dropped td{color:var(--muted)}
   color:var(--ink); border-radius:var(--r-sm); min-width:44px; height:36px; cursor:pointer; padding:0 8px}
 .cbtn:hover{background:var(--surface-3)}
 .cbtn.play{min-width:46px; font-size:var(--fs-md)}
-.cvol{flex:0 0 auto; width:84px; accent-color:var(--act, #3d4f66); cursor:pointer}
+/* 押してある間（Shorts の重ね表示・音量の枠が開いている・消音中）の見た目 */
+.cbtn[aria-pressed="true"],.cbtn[aria-expanded="true"]{background:var(--act-soft); color:var(--sub-ink);
+  border-color:var(--act-line); box-shadow:inset 0 0 0 1px var(--act-line)}
+/* 音量: 🔊 を押すとその上に小さな枠が開き、縦のつまみ（上が 100）と消音の切り替えが出る。
+   もう一度押す・枠の外を押す・Esc で閉じる。画面の外に出そうなら JS が左右にずらす（--dx）・下に開く（.down） */
+.cvolwrap{position:relative; display:inline-flex; flex:0 0 auto}
+.cvolpop{position:absolute; left:50%; bottom:calc(100% + 6px); z-index:6;
+  transform:translateX(calc(-50% + var(--dx, 0px)));
+  display:flex; flex-direction:column; align-items:center; gap:var(--sp-2);
+  padding:var(--sp-3) var(--sp-2) var(--sp-2); background:var(--surface-1);
+  border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--shadow-2)}
+.cvolpop.down{bottom:auto; top:calc(100% + 6px)}
+.cvolbar{writing-mode:vertical-lr; direction:rtl; width:28px; height:100px; margin:0;
+  accent-color:var(--act); cursor:pointer}
+.cvolpop .cbtn{min-width:0; height:30px; font-size:var(--fs-xs); white-space:nowrap}
+/* YouTube Shorts の画面部品を映像の上に重ねる層（操作バーの「Shorts」で出し入れ）。字幕・注釈と被らないかを見る。
+   位置は m.youtube.com をビューポート 402×874（iPhone 17 Pro）で実測し、映像 402×715 に対する % で置いた。
+   iOS アプリの配置は未計測。層の矩形は JS が映像の表示領域（object-fit の余白を除く）に合わせ、--u は映像の幅の 1% */
+.ytui{position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none;
+  --u:4px; color:#fff; line-height:1}
+.ytui>*{position:absolute; margin:0}
+.ytui .yi{left:88.1%; width:7.96%; height:auto; aspect-ratio:1/1; overflow:visible;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.ytui .yn{left:84%; width:16%; height:2.24%; display:flex; align-items:center; justify-content:center;
+  font-size:calc(var(--u) * 3.2); white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.ytui .like{top:76.9%}   .ytui .yn.like{top:81.4%}
+.ytui .cmt{top:85.3%}    .ytui .yn.cmt{top:89.8%}
+.ytui .share{top:93.7%}  .ytui .yn.share{top:98.2%}
+.ytui .yav{left:4%; top:95.2%; width:7.96%; aspect-ratio:1/1; border-radius:var(--r-pill);
+  background:var(--muted); box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.ytui .ych{left:13.9%; top:96.4%; height:2.24%; max-width:24.4%; display:flex; align-items:center;
+  font-size:calc(var(--u) * 3.6); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.ytui .ysub{left:40.3%; top:94.4%; width:32.3%; height:5.6%; display:flex; align-items:center;
+  justify-content:center; border-radius:var(--r-pill); background:#fff; color:#000;
+  font-size:calc(var(--u) * 3.45); font-weight:600; white-space:nowrap; box-shadow:0 1px 2px rgba(0,0,0,.35)}
 .ctime{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums; flex:0 0 auto}
 .seek{position:relative; flex:1 0 100%; order:1; height:36px; cursor:pointer; touch-action:none}
 .ctime{margin-left:auto}
@@ -2215,8 +2250,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .abox .dcg,.sview .abox .afold,.sview .svrefnote,.sview .addrow,
   .sview .dbar .sv-barfacts,.sview .dbar .btn.kill,.sview .sheet .tagrow,
   .sview .sheet .atnudge .pickbtn,.sview .sv-now .nar,
-  .sview .sv-ctrls-slot .ctime,.sview .sv-ctrls-slot [data-cbtn="mute"],
-  .sview .sv-ctrls-slot .cvol{display:none}   /* 音量のつまみも 🔊 と一緒に畳む（再生の棒と2本に見えた・#604 E4） */
+  .sview .sv-ctrls-slot .ctime,.sview .sv-ctrls-slot .cvolwrap,
+  .sview .sv-ctrls-slot [data-cbtn="ytui"]{display:none}   /* 音量（🔊 と枠）と Shorts の重ね表示のボタンも畳む（#604 E4） */
+  /* 出し入れのボタンが無いので、重ねる層も出さない（広い画面で ON にしたまま来ても絵を隠さない） */
+  .sview .vidbox .ytui{display:none!important}
 
   /* ── 上の帯（← 一覧／番号と題名／案のタブ／版）── */
   .sview>.dtop{grid-area:top; position:static; margin:0; border-radius:0; border-width:0 0 1px;
@@ -2596,7 +2633,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/6 09:28';
+const BUILT_AT = '10/7 11:25';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4945,6 +4982,24 @@ function assetsHTML(files, tapMode){
   return head + assetBlocksHTML(files.filter(isLatest), tapMode) + olds;
 }
 
+/* Shorts の画面部品（右の いいね・コメント・共有、左下の チャンネルのアイコン・名前・登録ボタン）。
+   文字はダミー。位置と大きさは CSS の .ytui 側（実測の値）。音の円盤と、映像の外にある題・チップは描かない */
+const YTUI_HTML = `<div class="ytui" data-ytui aria-hidden="true" hidden>
+  <svg class="yi like" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round">
+    <path d="M12 20.3s-7.4-4.5-9.2-9C1.5 8 3.6 4.6 7 4.6c2.1 0 3.6 1.2 5 3.1 1.4-1.9 2.9-3.1 5-3.1 3.4 0 5.5 3.4 4.2 6.7-1.8 4.5-9.2 9-9.2 9z"/></svg>
+  <span class="yn like">1.2万</span>
+  <svg class="yi cmt" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M5.5 4h13A1.5 1.5 0 0 1 20 5.5v10a1.5 1.5 0 0 1-1.5 1.5H13l-4 3.4V17H5.5A1.5 1.5 0 0 1 4 15.5v-10A1.5 1.5 0 0 1 5.5 4z"/>
+    <path d="M8 9h8M8 12.5h5"/></svg>
+  <span class="yn cmt">320</span>
+  <svg class="yi share" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round">
+    <path d="M13.5 5l7 6.5-7 6.5v-3.8c-4.9 0-8.2 1.4-10.5 4.8.7-5.4 3.7-9.6 10.5-10.2z"/></svg>
+  <span class="yn share">共有</span>
+  <span class="yav"></span>
+  <span class="ych">@チャンネル名</span>
+  <span class="ysub">チャンネル登録</span>
+</div>`;
+
 /* ── 動画の枠（#509 段1 → 段4 でタップ入力）───────────────────────────────
    tapMode が無ければブラウザ既定の操作バー（controls）のまま（台本・絵コンテ・以前の版）。
    'edit'（完成の承認待ち）と 'view'（見るだけ）では自前の操作バーに差し替える——既定の
@@ -4961,6 +5016,7 @@ function videoBlockHTML(f, tapMode){
     <div class="vidbox" data-vbox>
       <video preload="metadata" playsinline disablepictureinpicture crossorigin="anonymous"
              src="${esc(f.url)}"></video>
+      ${YTUI_HTML}
       <div class="hitlayer" data-hit></div>
       <div class="pin" data-pin hidden></div>
       ${tapMode === 'edit' ? `<div class="pickband" data-pickband hidden>
@@ -4978,8 +5034,16 @@ function videoBlockHTML(f, tapMode){
         <div class="knob" data-knob style="left:0"></div>
       </div>
       <span class="ctime" data-ctime>0:00 / 0:00</span>
-      <button class="cbtn" type="button" data-cbtn="mute" aria-label="消音">🔊</button>
-      <input class="cvol" type="range" data-cvol min="0" max="100" step="5" value="100" aria-label="音量">
+      <span class="cvolwrap" data-cvolwrap>
+        <button class="cbtn" type="button" data-cbtn="mute" aria-label="音量" aria-haspopup="dialog"
+                aria-expanded="false">🔊</button>
+        <div class="cvolpop" data-cvolpop role="dialog" aria-label="音量" hidden>
+          <input class="cvolbar" type="range" data-cvol min="0" max="100" step="5" value="100" aria-label="音量">
+          <button class="cbtn" type="button" data-cmute aria-pressed="false">消音</button>
+        </div>
+      </span>
+      <button class="cbtn" type="button" data-cbtn="ytui" aria-pressed="false"
+              aria-label="YouTube Shorts の画面部品を重ねて表示" title="YouTube Shorts のボタンや名前の位置を重ねて表示">Shorts</button>
     </div></div>`;
 }
 
@@ -5222,19 +5286,51 @@ function armVideoBar(el){
   });
   $$('[data-cbtn="back"]').addEventListener('click', () => { v.currentTime = Math.max(0, v.currentTime - 0.5); });
   $$('[data-cbtn="fwd"]').addEventListener('click', () => { v.currentTime = Math.min(dur(), v.currentTime + 0.5); });
-  /* 音量（オーナー要望 2026-09-29）。決めた音量はこの端末に覚えておき、次に開いた動画にも効かせる。
+  /* 音量。🔊 を押すとその上に小さな枠が開き、縦のつまみ（0〜100）と消音の切り替えが出る。
+     もう一度押す・枠の外を押す・Esc で閉じる。決めた音量はこの端末に覚えておき、次に開いた動画にも効かせる。
      iPhone・iPad は端末の音量ボタンだけが効く作りなので、つまみを動かしても変わらない */
-  const vol = $$('[data-cvol]');
+  const vol = $$('[data-cvol]'), volWrap = $$('[data-cvolwrap]'), volPop = $$('[data-cvolpop]');
+  const muteT = $$('[data-cmute]');
   const paintVol = () => {
     const off = v.muted || v.volume === 0;
     mute.textContent = off ? '🔇' : '🔊';
     if (vol) vol.value = String(v.muted ? 0 : Math.round(v.volume * 100));
+    if (muteT) muteT.setAttribute('aria-pressed', String(!!v.muted));
   };
   try {
     const kept = Number(localStorage.getItem('dash.volume'));
     if (isFinite(kept) && kept > 0 && kept <= 1) v.volume = kept;
   } catch (_) {}
-  mute.addEventListener('click', () => { v.muted = !v.muted; paintVol(); });
+  /* 枠を画面の外に出さない: 左右ははみ出したぶんだけずらし、上に入らなければボタンの下に開く */
+  const placeVol = () => {
+    volPop.classList.remove('down');
+    volPop.style.removeProperty('--dx');
+    const r = volPop.getBoundingClientRect(), W = document.documentElement.clientWidth;
+    const dx = r.left < 8 ? 8 - r.left : (r.right > W - 8 ? (W - 8) - r.right : 0);
+    if (dx) volPop.style.setProperty('--dx', dx + 'px');
+    if (r.top < 8) volPop.classList.add('down');
+  };
+  const volOut = e => { if (!volWrap.isConnected || !volWrap.contains(e.target)) closeVol(); };
+  /* Esc は枠だけを閉じる（詳細を閉じる Esc の受け手より先に受けて、そちらへは回さない） */
+  const volKey = e => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault(); e.stopPropagation();
+    closeVol(); if (mute.isConnected) mute.focus();
+  };
+  const closeVol = () => {
+    if (!volPop || volPop.hidden) return;
+    volPop.hidden = true; mute.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('pointerdown', volOut, true);
+    window.removeEventListener('keydown', volKey, true);
+  };
+  const openVol = () => {
+    volPop.hidden = false; mute.setAttribute('aria-expanded', 'true');
+    placeVol();
+    document.addEventListener('pointerdown', volOut, true);
+    window.addEventListener('keydown', volKey, true);
+  };
+  mute.addEventListener('click', () => { if (!volPop) return; if (volPop.hidden) openVol(); else closeVol(); });
+  if (muteT) muteT.addEventListener('click', () => { v.muted = !v.muted; paintVol(); });
   if (vol) vol.addEventListener('input', () => {
     const x = Math.min(1, Math.max(0, Number(vol.value) / 100));
     v.muted = x === 0;
@@ -5293,6 +5389,40 @@ function armVideoBar(el){
     pin.hidden = false;
   };
   ctl.hidePin = () => { pin.hidden = true; };
+  /* Shorts の画面部品を重ねる層。層を映像の表示領域（ピンと同じ area()＝余白を除いた所）と同じ位置・大きさに
+     置き、中の部品は % で並べる。出すかどうかはこの端末に覚えておき、次に開いた動画にも効かせる（既定は出さない） */
+  const yt = $$('[data-ytui]'), ytBtn = $$('[data-cbtn="ytui"]');
+  let ytOn = false;
+  try { ytOn = localStorage.getItem('dash.ytui') === '1'; } catch (_) {}
+  const placeYt = () => {
+    if (!yt || yt.hidden) return;
+    const a = area(), b = box.getBoundingClientRect();
+    if (!a || !b.width || !b.height) { yt.style.visibility = 'hidden'; return; }
+    /* 層の基準は枠の内側（枠線の内側）なので、枠線の太さ（clientLeft/Top）を引く */
+    const x = (a.r.left - b.left - box.clientLeft) + (a.r.width - a.w) / 2;
+    const y = (a.r.top  - b.top  - box.clientTop)  + (a.r.height - a.h) / 2;
+    yt.style.left = x + 'px'; yt.style.top = y + 'px';
+    yt.style.width = a.w + 'px'; yt.style.height = a.h + 'px';
+    yt.style.setProperty('--u', (a.w / 100) + 'px');
+    yt.style.visibility = '';
+  };
+  const paintYt = () => {
+    if (!yt || !ytBtn) return;
+    yt.hidden = !ytOn;
+    ytBtn.setAttribute('aria-pressed', String(ytOn));
+    placeYt();
+  };
+  if (ytBtn) ytBtn.addEventListener('click', () => {
+    ytOn = !ytOn;
+    try { localStorage.setItem('dash.ytui', ytOn ? '1' : '0'); } catch (_) {}
+    paintYt();
+  });
+  /* 動画の実寸が分かったとき・変わったとき・枠の大きさが変わったとき（画面の幅・シートの開閉・置き場所の移動）に合わせ直す */
+  v.addEventListener('loadedmetadata', placeYt);
+  v.addEventListener('resize', placeYt);
+  if (window.ResizeObserver) new ResizeObserver(placeYt).observe(box);
+  else window.addEventListener('resize', placeYt);
+  paintYt();
   /* いまのコマを小さな JPEG に切り出す（画面に出すだけ・送らない）。
      crossorigin を外していたら canvas が汚れて読めないので、その場合は作らない */
   ctl.thumb = (x, y) => {
