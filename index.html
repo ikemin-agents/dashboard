@@ -1550,23 +1550,29 @@ tr.dropped td{color:var(--muted)}
 .chchip[aria-pressed="false"] i{background:transparent}
 .chlegend .hint{font-size:var(--fs-2xs); color:var(--muted); font-weight:400}
 /* チャンネルの現在地: 大分類ごとの小さな表を横に並べる。指標名の下に期間・目安を薄字で、
-   数字の下の補足（計測済 N 本など）は .sub で1行。幅が足りなければ表が次の段に折り返す */
+   数字の下の補足（計測済 N 本など）は .sub で1行。幅が足りなければ表が次の段に折り返す。
+   表が箱より広くなったとき（数字の桁が増えた・段の幅が狭い）は、右端の番組の列を切らずに箱の中で横に送る
+   （overflow-x:auto。hidden だと右端の番組の列が見えなくなる）。大分類の名前は折り返してよい所（GROUPS の nm の |）
+   でだけ2行にする（keep-all＋<wbr>。1行のままだと 1400px で収益化の表が箱より広くなる）。指標の名前（th.lb）も
+   語の途中で折らない（「早期アクセ／ス」にしない）。長い名前は | の所で折る（gainLb）。薄字の補足（.subm）はどこで折ってもよい */
 .nowgrid{display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:var(--sp-3)}
-.nowblk{border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; background:var(--surface-1); min-width:0}
+.nowblk{border:1px solid var(--border); border-radius:var(--r-md); overflow-x:auto; background:var(--surface-1); min-width:0}
+.nowblk thead th.gn{white-space:normal; word-break:keep-all}
 .nowblk table{width:100%; table-layout:auto}
 .nowblk th, .nowblk td{padding:7px 10px}
 .nowblk thead th{position:static; font-size:var(--fs-2xs); letter-spacing:.05em; text-transform:none; color:var(--ink);
   background:var(--surface-2); border-bottom:1px solid var(--border)}
 .nowblk thead th.num{font-size:var(--fs-sm)}
-.nowblk tbody th.lb{text-align:left; font-weight:680; color:var(--ink); white-space:normal; vertical-align:top; line-height:1.3}
-.nowblk th.lb .subm{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; white-space:normal; line-height:1.35; margin-top:2px}
+.nowblk tbody th.lb{text-align:left; font-weight:680; color:var(--ink); white-space:normal; word-break:keep-all; vertical-align:top; line-height:1.3}
+.nowblk th.lb .subm{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; white-space:normal; word-break:normal; line-height:1.35; margin-top:2px}
 .nowblk td.num{vertical-align:top; font-weight:600; white-space:nowrap}
 .nowblk td .sub{display:block; font-size:var(--fs-2xs); color:var(--muted); font-weight:400; margin-top:2px; white-space:normal; line-height:1.35}
 @media (max-width:640px){
   .nowgrid{grid-template-columns:1fr}
-  /* 番組が4つ並ぶと 390px で右端の番組の列が枠に切られていた（表 343px／枠 322px・#604 E5）。
-     セルの左右の余白を詰めて枠に収める */
-  .nowblk th, .nowblk td{padding:7px 5px}
+  /* 番組が4つ並ぶと 390px で表が枠より広くなる（再生数の「+13,944 回」など）。セルの左右の余白を詰め、
+     数字を 12px にして枠に収める（それでも入らない桁になったら箱の中で横に送る・上の overflow-x） */
+  .nowblk th, .nowblk td{padding:7px 4px}
+  .nowblk td.num{font-size:var(--fs-xs)}
   .nowblk td .sub{white-space:normal}
   .nowblk td .sub.subw{display:none}   /* 「登録者 433/500・再生 74万/300万」は幅が足りないので畳む */
 }
@@ -2729,7 +2735,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/9 11:32';
+const BUILT_AT = '10/9 12:42';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4055,7 +4061,8 @@ function sectionOf(it){
   if (it.stage === 'dropped') return 'drop';
   if (it.stage === 'triage')  return 'triage';  /* ネタの仕分け待ち（#314）。ゲートは持たない */
   /* 作業中の記録がある（#637）。承認待ちより優先する。投稿済み・予約済みは記録があっても動かさない
-     （DB の並び 091 の「記録あり AND stage <> 'posted'」と同じ） */
+     （DB の並び 091 の「記録あり AND stage <> 'posted'」と同じ。workOf も同じ条件で記録を落とすので、
+     工程の帯の位置 svFlowAt もこの答えに揃う） */
   if (it._work && it.stage !== 'posted') return 'ai';
   if (it._rv) return 'rv';                    /* あなたの番。工程より優先する */
   if (it._rc) return 'ai';                    /* 差し戻しの直し中も AI の番 */
@@ -6354,13 +6361,18 @@ const SV_FROM_PSTAGE = [0, 1, 2, 7, 8, 10, 12];
    work_stage は帯の工程のキーで、帯の位置（SV_STEPS の添字）への写しはここ1か所（WORK_STEP）。
    記録がある動画は帯の位置を work_stage の工程に置き（svFlowAt。承認の記録からの位置より優先）、その工程の
    2行目に作業の中身を出す（svStepState・svFlowHTML）。「いまの工程」の1行（nowLineHTML）は、一覧の行
-   （表とカード）と詳細画面の帯のすぐ下で同じ部品を使う */
+   （表とカード）と詳細画面の帯のすぐ下で同じ部品を使う。
+   ⚠️ 投稿済み・予約済み（stage が posted）の動画は、記録が残っていても記録なしとして読む（workOf）。DB の並び
+   （v_dashboard_list の sort_rank の「記録あり AND stage <> 'posted'」）と一覧のまとまり（sectionOf）と同じ条件で、
+   ここで落とすので帯の位置・帯の2行目・一覧の札と印・「いまの工程」の1行・承認待ちの件数がみな同じ答えになる
+   （承認のあとに素材の棚の作業が記録を書いても、予約済みの動画が「映像」に戻って描かれない） */
 const WORK_STEP = {idea:0, script:1, narration:2, scenes:3, blocking:4, still:5, video:7, export:8};
 /* 数えられる作業で、最後に書いてからこれだけたった行は「止まっているかも」（黄色＋「更新なし N分」） */
 const WORK_STALL_MS = 10 * 60 * 1000;
 function workOf(r){
   const k = r && r.work_stage;
   if (!k || !Object.prototype.hasOwnProperty.call(WORK_STEP, k)) return null;
+  if (r.stage === 'posted') return null;   /* 投稿済み・予約済みは記録を使わない（上の ⚠️） */
   const num = v => (v == null || v === '' || !isFinite(Number(v))) ? null : Number(v);
   const ms = v => { const t = Date.parse(v || ''); return isNaN(t) ? null : t; };
   const txt = v => (v == null ? '' : String(v).trim());
@@ -6598,7 +6610,9 @@ function svPubTime(it){
   return m ? `${m[1].padStart(2, '0')}:${m[2]} に公開` : '';
 }
 /* いまの位置。作業中の記録があればその工程（#637・承認の記録より優先）、承認待ち・修正中の承認ポイントが
-   あればその位置、無ければ本体の工程から写す。listRow は SV_SKIP と同じ（一覧の行） */
+   あればその位置、無ければ本体の工程から写す。投稿済み・予約済みの動画は記録を持たない（workOf が落とす。
+   一覧のまとまり sectionOf・DB の並びと同じ条件）ので、記録が残っていても予約済み・投稿済みの位置に出る。
+   listRow は SV_SKIP と同じ（一覧の行） */
 function svFlowAt(it, listRow){
   if (it._work) return it._work.step;
   const rv = it._rv || it._rc;
@@ -9389,13 +9403,13 @@ async function renderAnalytics(){
   /* 行の名前は「表示中のチャンネルが全部 30日ぶんの記録を持つ」ときだけ直近30日と名乗る
      （#536 低 → #538）。記録が 08/24 から 09/04 の11日しか無いのに「直近30日」と書くと、
      増え方を30日のものとして読んでしまう。足りないときは実際にある日数を名前にする
-     （チャンネルで長さが違う日は「11〜30日」のように幅で出す）。 */
+     （チャンネルで長さが違う日は「11〜30日」のように幅で出す）。| は折り返してよい所（表の名前の欄で <wbr> にする） */
   const gainLb = (fa, fb) => {
     const ns = stAll.map(st => (fa(st) && fb(st)) ? dayNum(fb(st)) - dayNum(fa(st)) + 1 : null)
                     .filter(n => n != null).map(n => Math.min(30, n));
     if (!ns.length || ns.every(n => n >= 30)) return '直近30日';
     const lo = Math.min(...ns), hi = Math.max(...ns);
-    return `記録のある期間（${lo === hi ? lo : `${lo}〜${hi}`}日）`;
+    return `記録の|ある|期間（${lo === hi ? lo : `${lo}〜${hi}`}日）`;
   };
   const delta = (v, unit) => v == null ? '—' : `${v >= 0 ? '+' : ''}${nf(v)} ${unit}`;
   /* 登録者の記録が1つも無い番組（投稿先が未定の番組など）は、0% ではなく「—」にする（現在地の「いま」と同じ・#604 A10） */
@@ -9430,7 +9444,8 @@ async function renderAnalytics(){
       { lb:'投稿済', note:'これまでの合計', cell: st => `${st.posted.length} 本` },
       { lb:'最新の公開', note:'日付と動画の番号', cell: st => st.lastPub ? `${esc(fmtMDW(st.lastPub.published_at))}<span class="sub">${esc(st.lastPub.seq)}</span>` : '—' }
     ]},
-    { nm:'収益化までの達成率', rows:[
+    /* 長い名前は | の所でだけ折り返してよい（下の見出しで <wbr> にする） */
+    { nm:'収益化までの|達成率', rows:[
       { lb:'早期アクセス', note:'登録者 500 と再生 300万・低い方', cell: st => mnOf(st, MONETIZE[0]) },
       { lb:'広告収益', note:'登録者 1,000 と再生 1,000万・低い方', cell: st => mnOf(st, MONETIZE[1]) }
     ]}
@@ -9438,8 +9453,8 @@ async function renderAnalytics(){
   /* 大分類ごとに小さな表を1つずつ作り、横に並べる（幅いっぱいに使って縦を短く・2026-09-04）。
      各表: 見出し帯＝大分類名＋チャンネルの色チップ、行＝指標（名前の下に期間・目安）、列＝チャンネル */
   const nowBlocks = sers.length ? GROUPS.map(g => `<div class="nowblk"><table>
-      <thead><tr><th>${esc(g.nm)}</th>${sers.map(s => `<th class="num" title="${esc(s.name)}"><span class="chcell">${chSw(s.color)}${s.icon}</span></th>`).join('')}</tr></thead>
-      <tbody>${g.rows.map(r => `<tr><th class="lb">${esc(r.lb)}<span class="subm">${esc(r.note)}</span></th>${
+      <thead><tr><th class="gn">${g.nm.split('|').map(esc).join('<wbr>')}</th>${sers.map(s => `<th class="num" title="${esc(s.name)}"><span class="chcell">${chSw(s.color)}${s.icon}</span></th>`).join('')}</tr></thead>
+      <tbody>${g.rows.map(r => `<tr><th class="lb">${r.lb.split('|').map(esc).join('<wbr>')}<span class="subm">${esc(r.note)}</span></th>${
         sers.map(s => `<td class="num">${r.cell(ST[s.ch], s.ch)}</td>`).join('')}</tr>`).join('')}</tbody>
     </table></div>`).join('')
     : `<div class="noitem">表示するチャンネルがありません</div>`;
