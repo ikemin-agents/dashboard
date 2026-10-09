@@ -2735,7 +2735,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/9 20:34';
+const BUILT_AT = '10/9 20:43';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3865,7 +3865,7 @@ const badgeHTML = b => b ? `<span class="sbadge ${b.cls}"${b.tip ? ` title="${es
    AI審査だけが起点のもの（基準に届かず作り直しているだけ）は無彩色に落とす。
    文言は必ずこの2つの関数を通す＝表記のゆれを1か所に閉じる。 */
 const rcAiOnly = it => it._rcSrc === 'ai';
-const rcText  = it => rcAiOnly(it) ? `AI審査で${gateName(it._rc, it)}作り直し中`
+const rcText  = it => rcAiOnly(it) ? `AIの点検で${gateName(it._rc, it)}作り直し中`
                                    : `${AI_TAG}${gateName(it._rc, it)}修正対応中`;
 /* 列に出す短い文言（オーナー要望 2026-09-03）。長い説明は tip（ツールチップ）に回す */
 const rcShort = it => rcAiOnly(it) ? '作り直し中' : 'AI修正中';
@@ -3875,7 +3875,7 @@ const rcCls   = it => rcAiOnly(it) ? 'rcai' : 'rc';
 const openSplit = (it, b) => {
   const w = n => b ? `<b>${n}件</b>` : `${n}件`;
   return [it._openH  ? `あなたの指摘 ${w(it._openH)}`  : '',
-          it._openAi ? `AI審査 ${w(it._openAi)}` : ''].filter(Boolean).join('・');
+          it._openAi ? `AIの点検 ${w(it._openAi)}` : ''].filter(Boolean).join('・');
 };
 /* 承認ポイントの名前（完成／台本／静止画）は工程の区切りを見れば分かるので状態の文言には入れない。
    知りたいときのためにツールチップには今までどおり全文を残す。 */
@@ -4410,7 +4410,7 @@ const MARK_LEGEND = `<div class="legend2">
   <span class="lg"><span class="mark done">✓</span>済み</span>
   <span class="lg"><span class="mark work">●</span>AI作業中<span class="ex">（AIが自動で進めています）</span><span class="exs">（AIが進行中）</span></span>
   <span class="lg"><span class="mark rc">↺</span>AI修正中<span class="ex">（あなたが出した指摘をAIが直しています）</span><span class="exs">（指摘を直し中）</span></span>
-  <span class="lg"><span class="mark rcai">↺</span>作り直し中<span class="ex">（AIの審査で指摘が出たので直しています。あなたの操作は要りません）</span><span class="exs">（AIの指摘で直し中）</span></span>
+  <span class="lg"><span class="mark rcai">↺</span>作り直し中<span class="ex">（AIの点検で指摘が出たので直しています。あなたの操作は要りません）</span><span class="exs">（AIの指摘で直し中）</span></span>
   <span class="lg"><span class="mark rv">●</span>承認待ち<span class="ex">（あなたの番）</span><span class="exs">（あなたの番）</span></span>
   <span class="lg"><span class="mark pubwait">●</span>投稿待ち</span>
   <span class="lg"><span class="mark skip"></span>なし</span></div>`;
@@ -4624,7 +4624,7 @@ function detailHTML(it){
     ? decideHTML(it, it._rv, changeLines(evs))
     : `<div class="decide">${it._rc
         ? (rcAiOnly(it)
-            ? `<div class="dstate rcai">↺ AI審査の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
+            ? `<div class="dstate rcai">↺ AIの点検の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
             : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${esc(gateName(it._rc, it))}）。直り次第、新しい版で出し直します。</div>`)
         : `<div class="dstate">● いまは「${esc(curName)}」の工程です。</div>`}</div>`;
 
@@ -6793,7 +6793,7 @@ function sceneDetailHTML(it, plan){
     ? decideHTML(it, gate, [], barFacts, true, true)   /* タップ入力の欄は最初から出す（#637） */
     : `<div class="decide">${it._rc
         ? (rcAiOnly(it)
-            ? `<div class="dstate rcai">↺ AI審査の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
+            ? `<div class="dstate rcai">↺ AIの点検の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
             : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${esc(gateName(it._rc, it))}）。直り次第、新しい版で出し直します。</div>`)
         : `<div class="dstate">● いまは「${esc(curName)}」の工程です。ここは見るだけの画面です。</div>`}</div>`;
 
@@ -8675,7 +8675,7 @@ function aiChangesLine(e){
   if (o === false) return AI_UNREADABLE;
   const role = aiRoleOf(e.author);
   const head = (o && o.source === 'final-validate') || role === '機械測定'
-    ? '機械測定' : (role ? `AI審査（${role}）` : 'AI審査');
+    ? '機械測定' : (role ? `AIの点検（${role}）` : 'AIの点検');
   let what = '';
   if (o) {
     const items = Array.isArray(o.items) ? o.items : [];
@@ -8703,7 +8703,7 @@ function aiSummaryLine(e, it){
     return `提出（${g}${v ? ' ' + v : ''}）`;
   }
   const t = cmtPreview(e.body, 80);
-  if (e.kind === 'reject') return `却下（${g}）${t ? '：' + t : ''}`;
+  if (e.kind === 'reject') return `没（${g}）${t ? '：' + t : ''}`;
   return t || '（本文なし）';
 }
 
@@ -8844,7 +8844,7 @@ function aiLogHTML(evs, it){
   const rows = newestFirst(evs.filter(e => isAiAuthor(e.author) || e.kind === 'request_review'));
   if (!rows.length) return '';
   return `<details class="dsec aifold">
-      <summary class="dsum">AI の記録<span class="n">（${rows.length}件・審査・機械測定・提出）</span></summary>
+      <summary class="dsum">AI の記録<span class="n">（${rows.length}件・点検・機械測定・提出）</span></summary>
       <div class="ailog">${rows.map(e => `<div class="ailine">
         <span class="d">${esc(fmtMD(e.created_at))}</span>
         <span class="t">${esc(aiSummaryLine(e, it))}</span></div>`).join('')}</div>
