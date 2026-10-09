@@ -597,9 +597,9 @@ td.ttl .flags{margin-left:8px}
 .emptyrow td{text-align:center; color:var(--muted); padding:26px; cursor:default}
 .emptyrow:hover td{background:transparent!important}
 /* ── ネタ案の行（#672・ideaMtxRow / ideaMtxHead）──────────────────────────────
-   タイトルの列に逆説の芯（太字）・題材（小さく）・印。工程の12列の所は1マス（colspan）にして、海外・日本の再生数を
+   タイトルの列に芯（太字）・題材（小さく）・印。工程の12列の所は1マス（colspan）にして、海外・日本の再生数を
    決まった幅の右揃えで出す（マスの左端と幅は列の幅で決まるので、どの行でも数字の位置がそろう）。
-   列の見出し（逆説の芯と題材／海外／日本）は、ネタ案の行が続く塊の頭に1行だけ（ideaRuns） */
+   列の見出し（芯の見出し（ideaCoreLabel）と題材／海外／日本）は、ネタ案の行が続く塊の頭に1行だけ（ideaRuns） */
 .mtx tbody td.ttl .icore{font-weight:650; color:var(--ink)}
 .mtx tbody td.ttl .isub{font-size:var(--fs-xs); color:var(--ink-2); margin-top:2px}
 .mtx tbody td.ttl .imarks{margin-top:6px}
@@ -680,7 +680,7 @@ td.ttl .flags{margin-left:8px}
 .wknow.stall .wk-bar{background:var(--surface-3)}
 .wknow.stall .wk-bar>i{background:var(--axis)}
 .scard-extra{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums}
-/* スマホのネタ案のカード（#672・ideaCardHTML）: 番号 → 逆説の芯と海外・日本の再生数（右揃えの2列）→ 題材 → 印。
+/* スマホのネタ案のカード（#672・ideaCardHTML）: 番号 → 芯と海外・日本の再生数（右揃えの2列）→ 題材 → 印。
    滞留と工程の印の行は出さない。列の見出しはネタ案のカードが続く塊の頭に1つ（ideaCardHead） */
 .scard.icard,.icardhead{grid-template-columns:minmax(0,1fr) 64px 64px; column-gap:8px}
 .scard.icard{row-gap:4px; align-items:baseline}
@@ -2735,7 +2735,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/9 20:49';
+const BUILT_AT = '10/9 21:28';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4057,6 +4057,12 @@ const SECTIONS = [
 ];
 /* 予約済み＝YouTube に登録済みで公開時刻を待っている。DB の工程は「投稿済」に入るが、まだ公開されていない */
 const isResv = it => it.stage === 'posted' && it.pub_status === '予約済';
+/* 予約の時刻（scheduled_at）を過ぎた予約済み。YouTube では公開されているが、DB の公開の記録は公開を確かめて
+   「投稿済」に変わるまで「予約済」のまま。画面の言葉だけ「公開済み（記録の更新待ち）」に替える（札・投稿日の
+   ツールチップ・帯の状態の欄・まとまりの見出しの一言）。DB の値・並び（v_dashboard_list）・まとまり（sectionOf）・
+   帯の位置（svFlowAt）・色（curTone）は予約済みのまま。時刻が読めない行は過ぎていない扱い */
+const resvPast = it => isResv(it) && Date.parse(it.scheduled_at || '') <= Date.now();
+const RESV_PAST = '公開済み（記録の更新待ち）';
 function sectionOf(it){
   if (it.stage === 'dropped') return 'drop';
   if (it.stage === 'triage')  return 'triage';  /* ネタの仕分け待ち（#314）。ゲートは持たない */
@@ -4096,7 +4102,13 @@ function groupSections(rows){
 }
 /* 見出しの共通部分（表の行とスマホのカード見出しで同じ文言・同じ開閉状態を使う） */
 function secHeadInner(s){
-  const hint = (state.ch === PILOT_CH && s.hintPilot) ? s.hintPilot : s.hint;
+  let hint = (state.ch === PILOT_CH && s.hintPilot) ? s.hintPilot : s.hint;
+  /* 承認済み・投稿までに予約の時刻を過ぎた予約済み（resvPast）があれば、待っているのは記録の更新だけだと書く
+     （いつ・何が記録を更新するかは書かない＝運用の中身は画面に書かない約束） */
+  const past = s.key === 'wait' ? (s.rows || []).filter(resvPast).length : 0;
+  if (past) hint = past === s.rows.length
+    ? '公開済みです。記録が更新されると「完了」へ移ります。あなたの操作は要りません'
+    : `予約か公開を待っています。予約の時刻を過ぎた${past}件は公開済みで、記録が更新されると「完了」へ移ります。あなたの操作は要りません`;
   return `<span class="sn">${s.fold ? `<span class="tri">${secOpen(s) ? '▾' : '▸'}</span>` : ''}${esc(s.label)}</span>
     <span class="n">${s.rows.length}件</span>${hint ? `<span class="hint">${esc(hint)}</span>` : ''}`;
 }
@@ -4122,7 +4134,7 @@ const shortDT = s => String(s || '').replace(/^\d{4}-/, '').replace(/\([日月�
    例: 2026-08-30(土) 18:00 → 08-30(土) 18:00 */
 const stDate = it => isResv(it) ? it.resv : it.stage === 'posted' ? it.pub : null;
 const stDateHTML = it => { const d = stDate(it);
-  return d ? `<span class="stdt" title="${esc(d)} に${isResv(it) ? '公開予定' : '公開'}">${esc(d.replace(/^\d{4}-/, ''))}</span>` : ''; };
+  return d ? `<span class="stdt" title="${esc(d)} に${isResv(it) && !resvPast(it) ? '公開予定' : '公開'}">${esc(d.replace(/^\d{4}-/, ''))}</span>` : ''; };
 const MCOL = {
   seq:   {sort:1, w:'74px',        td: it => `<td class="seq">${esc(it.seq)}</td>`},
   /* hf＝見出しの右端に置く、列の無い絞り込み（いまは使う列なし） */
@@ -4185,7 +4197,7 @@ function mtxHead(cols){
       ? SV_STEPS.map(s => `<th class="st" title="${esc(s.name)}">${stepLabelHTML(s)}</th>`).join('')
       : colTH(k)).join('')}</tr>`;
 }
-/* ネタ案のまとまりの行（ideaRow）は、逆説の芯・題材・再生数の形で描く（ideaMtxRow・#672）。ほかの行は今までどおり */
+/* ネタ案のまとまりの行（ideaRow）は、芯・題材・再生数の形で描く（ideaMtxRow・#672）。ほかの行は今までどおり */
 const mtxRow = (it, cols) => ideaRow(it) ? ideaMtxRow(it, cols) : `<tr data-vid="${it.id}" tabindex="0" class="${
     (it.stage === 'dropped' ? 'dropped ' : '') + stateCls(it)}">${
     cols.map(k => k === 'flow' ? flowCellsHTML(it) : MCOL[k].td(it)).join('')}</tr>`;
@@ -4219,7 +4231,7 @@ function matrixTable(core, err){
   const ok = okLast(MCOLS);
   const secTR = s => `<tr class="secrow s-${s.key}${s.fold ? ' foldable' : ''}"${secAttrs(s)}>
       <td colspan="${ok ? N - 1 : N}">${secHeadInner(s)}</td>${ok ? '<td class="okcol"></td>' : ''}</tr>`;
-  /* ネタ案の行が続く塊の頭には、列の見出し（逆説の芯と題材／海外／日本）の行を1行だけ挟む（#672・ideaRuns） */
+  /* ネタ案の行が続く塊の頭には、列の見出し（芯の見出し（ideaCoreLabel）と題材／海外／日本）の行を1行だけ挟む（#672・ideaRuns） */
   const tr = list => ideaRuns(list, it => mtxRow(it, MCOLS), it => ideaMtxHead(it, MCOLS));
   const body = err ? `<tr class="emptyrow"><td colspan="${N}">${errBox(err)}</td></tr>`
     : !rows.length
@@ -4241,6 +4253,10 @@ function stageBadge(it){
   if (it.stage === 'triage')  return {cls:'rv',   gl:'●', text:'仕分け待ち'};
   /* 予約済みは「投稿済」と分ける（オーナー要望 2026-09-30）。言葉は工程の帯の状態の欄と同じ。
      予定時刻は投稿日の列（stDateHTML。スマホのカードは札の左）とツールチップに出す */
+  /* 予約の時刻を過ぎたら「公開済み（記録の更新待ち）」（resvPast）。表の状態の列は幅が足りないので「公開済み」まで、
+     スマホのカードは全部（long）。色は予約済みと同じ */
+  if (resvPast(it))           return {cls:'pubwait', gl:'✓', text:'公開済み', long:RESV_PAST,
+                                      tip:`${it.resv} に公開済み（記録の更新待ち）`};
   if (isResv(it))             return {cls:'pubwait', gl:'●', text:'予約済み',
                                       tip: it.resv ? `${it.resv} に公開予定` : '公開時刻を待っています'};
   if (it.stage === 'posted')  return {cls:'done', gl:'✓', text:'投稿済み'};
@@ -4255,13 +4271,13 @@ function stageBadge(it){
 }
 function stockCards(rows, err){
   const card = it => {
-    /* ネタ案のまとまりのカードは逆説の芯・再生数・題材・印だけ（滞留と工程の印の行は出さない・#672） */
+    /* ネタ案のまとまりのカードは芯・再生数・題材・印だけ（滞留と工程の印の行は出さない・#672） */
     if (ideaRow(it)) return ideaCardHTML(it);
     const b = stageBadge(it);
     /* 作業中の記録がある行（#637）は札の代わりに「いまの工程」の1行を出す（承認ボタンも出さない）。
        広い画面の表と同じく、版・直した指摘・指摘の札は出さず、承認待ちだけ「ユーザー確認 N回目」を添える（#637） */
     const badges = it._work ? ''
-      : `${stDateHTML(it)}${badgeHTML(b)}${looksHTML(it, true)}${quickOkHTML(it)}`;
+      : `${stDateHTML(it)}${badgeHTML(b && b.long ? Object.assign({}, b, {text:b.long}) : b)}${looksHTML(it, true)}${quickOkHTML(it)}`;
     /* 予約済み・投稿済みの日付は札の左に出す（表の投稿日の列と同じ中身）。下段は再生数だけ */
     const extra = it.stage === 'posted'
       ? (it.plays != null ? `<span class="sx">▶ ${nf(it.plays)} 回再生</span>` : '')
@@ -4344,8 +4360,10 @@ function ideaCount(n){
 /* 再生数の1つ（数字が無ければ薄い「なし」）。添え書きはツールチップ */
 const ideaCountHTML = (s, cls) => `<span class="${cls}${s.count == null ? ' no' : ''}"${
     s.note ? ` title="${esc(s.note)}"` : ''}>${esc(ideaCount(s.count))}</span>`;
-/* 芯の見出し。からくりは「題の案」、ほかの番組は「逆説の芯」 */
-const ideaCoreLabel = it => (it && it.channel === 'karakuri') ? '題の案' : '逆説の芯';
+/* 芯の見出し。芯に入れる物は番組で違うので、見出しも番組で替える: 力わざは「逆説の芯」、からくりは「題の案」、
+   雑学・歯科はネタ案を入れる口の --hook と同じ1文なので「フック」。どれでもない番組は「芯」 */
+const IDEA_CORE_LABEL = {'rikiwaza':'逆説の芯', 'karakuri':'題の案', 'buzz-zatsugaku':'フック', 'dental':'フック'};
+const ideaCoreLabel = it => (it && IDEA_CORE_LABEL[it.channel]) || '芯';
 /* 調べた日（動画の行を作った時刻）: 10/4(日) の形（零詰めなし・JST）。読めなければ空 */
 function ideaDay(iso){
   if (!iso) return '';
@@ -5099,8 +5117,10 @@ function assetsHTML(files, tapMode){
 
 /* Shorts の画面部品（iPhone の YouTube アプリ）。上＝状態バー・「＜ ショート」の段・丸いチップの段、
    右＝いいね・コメント・共有・リミックス・音の円盤、左下＝チャンネルの丸・名前・登録ボタン・題の1行、下＝再生位置の線。
-   左右の切れる帯も描く。文字はダミー。位置と大きさは CSS の .ytui 側（実測の値） */
-const YTUI_HTML = `<div class="ytui" data-ytui aria-hidden="true" hidden>
+   左右の切れる帯も描く。題はその動画の題（ytuiTitle）、ほかの文字（時刻・チャンネル名）はダミー。
+   位置と大きさは CSS の .ytui 側（実測の値） */
+function ytuiHTML(it){
+  return `<div class="ytui" data-ytui aria-hidden="true" hidden>
   <i class="ycut l"></i><i class="ycut r"></i>
   <span class="yt yclock">11:36</span>
   <svg class="ysig" viewBox="0 0 19 13" fill="#fff"><rect y="9" width="3.2" height="4" rx="1"/><rect x="5.2" y="6.3" width="3.2" height="6.7" rx="1"/>
@@ -5140,9 +5160,18 @@ const YTUI_HTML = `<div class="ytui" data-ytui aria-hidden="true" hidden>
   <i class="yav"></i>
   <span class="yt ych">@チャンネル</span>
   <span class="yt ysub">チャンネル登録</span>
-  <span class="yt ytitle">船を何隻乗せても、重さが変わらない箱がある 仕組みを図で見ると分かる #shorts</span>
+  <span class="yt ytitle">${esc(ytuiTitle(it))}</span>
   <i class="yprog"><i></i></i>
 </div>`;
+}
+/* Shorts の画面部品に出す題。公開の題（主口の YouTube の公開の記録の題＝上書きの題があればそれ。分析の画面で
+   読んだ記録が手元にあるときだけ見る）→ 無ければ動画の題。どちらも無ければ番号 */
+const ytuiTitle = it => {
+  if (!it) return '';
+  const a = store.analytics && store.analytics[it.channel];
+  const p = a && Array.isArray(a.pubs) ? a.pubs.find(x => x.seq === it.seq) : null;
+  return (p && p.effective_title) || it.title || it.seq || '';
+};
 
 /* ── 動画の枠（#509 段1 → 段4 でタップ入力）───────────────────────────────
    tapMode が無ければブラウザ既定の操作バー（controls）のまま（台本・絵コンテ・以前の版）。
@@ -5160,7 +5189,7 @@ function videoBlockHTML(f, tapMode){
     <div class="vidbox" data-vbox>
       <video preload="metadata" playsinline disablepictureinpicture crossorigin="anonymous"
              src="${esc(f.url)}"></video>
-      ${YTUI_HTML}
+      ${ytuiHTML(curItem)}
       <div class="hitlayer" data-hit></div>
       <div class="pin" data-pin hidden></div>
       ${tapMode === 'edit' ? `<div class="pickband" data-pickband hidden>
@@ -6663,7 +6692,8 @@ function svStepState(it, i, cur, skipNote){
   if (it._work) return { cls:'cur', st:workLine2(it._work) };
   if (it._rv) return { cls:'cur', st:'承認待ち' };
   if (it._rc) return { cls:'cur', st:rcShort(it) };
-  return { cls:'cur', st: it.stage === 'posted' ? '予約済み'
+  /* 予約の時刻を過ぎた予約済みは「公開済み（記録の更新待ち）」（resvPast・一覧の札と同じ言葉） */
+  return { cls:'cur', st: it.stage === 'posted' ? (resvPast(it) ? RESV_PAST : '予約済み')
                         : it.stage === 'queue' ? '投稿待ち'
                         : it.stage === 'idea'  ? '着手前' : 'AI作業中' };
 }
@@ -8931,6 +8961,18 @@ function niceTicks(min, max, target){
   return { lo, hi, ticks };
 }
 
+/* 横軸の日付の文字の大きさ（axesSvg の横書きの font-size と同じ）と、隣の日付とのすき間（px） */
+const DATE_TICK_PX = 11, DATE_TICK_GAP = 6;
+/* 文字の幅（px）。画面があれば実際の字体で測り、測れなければ字の種類で見積もる
+   （漢字・かなは1字ぶん、数字は 0.6 字、記号は 0.4 字） */
+function tickTextW(s, px){
+  try {
+    if (tickTextW.ctx === undefined)
+      tickTextW.ctx = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d');
+    if (tickTextW.ctx) { tickTextW.ctx.font = `${px}px system-ui,sans-serif`; return tickTextW.ctx.measureText(s).width; }
+  } catch (_) { tickTextW.ctx = null; }
+  return [...String(s)].reduce((w, c) => w + px * (c.charCodeAt(0) > 0xff ? 1 : /\d/.test(c) ? 0.6 : 0.4), 0);
+}
 /* 横軸（日付）: 毎日に目盛りを打つ（オーナー指定 2026-09-03）。ラベルは MM/DD(曜)。
    1日あたりの幅で出し方を変える: 広ければ横書きで毎日 → 狭ければ斜め45°で毎日 →
    さらに狭ければ斜めのまま間引く（目盛りの線は間引かない）。右端の日は必ずラベルを付ける。
@@ -8941,19 +8983,28 @@ function dateTicks(rows, plotW){
   const d0 = rows[0].d, d1 = rows[n - 1].d, span = Math.max(1, d1 - d0);
   const per = plotW / span;                 /* 1日あたりの幅(px) */
   /* 日付の文字は**横書きのまま間引く**（オーナー指摘 2026-09-29「細かすぎる・5日単位に」）。
-     毎日が並ばない幅なら 5日 → 10日 → 15日 → 30日おき。数えるのは右端（いちばん新しい日）から。
-     目盛りの線は毎日のまま */
+     毎日が並ばない幅なら 5日 → 10日 → 15日 → 30日 → 60日 → 90日 → 180日 → 365日おき。数えるのは右端（いちばん新しい日）から。
+     間隔は日付の文字の幅を測って決める（隣の日付と DATE_TICK_GAP 以上あける。66px より詰めない）。
+     30日おきで止めると、スマホの幅で期間が長いときに日付どうしが重なるため。目盛りの線は毎日のまま */
   const rot = false;
-  const stride = [1, 5, 10, 15, 30].find(k => k * per >= 66) || 30;
   const lb = t => fmtMDW(t + 'T00:00:00+09:00');
+  const tOf = d => { const row = rows.find(r => r.d === d); return row ? row.t : jstAdd(rows[0].t, d - d0); };
+  /* いちばん幅を取る形（数字4つ・記号3つ・曜日1字）と右端の日付の、広い方で測る */
+  const w = Math.max(tickTextW('00/00(水)', DATE_TICK_PX), tickTextW(lb(tOf(d1)), DATE_TICK_PX));
+  const need = Math.max(66, w + DATE_TICK_GAP);
+  const stride = [1, 5, 10, 15, 30, 60, 90, 180, 365].find(k => k * per >= need)
+    || Math.ceil(need / per / 365) * 365;
   const ticks = [];
   for (let d = d0; d <= d1; d++){
-    const i = d - d0;
     const labeled = (d1 - d) % stride === 0;
-    const row = rows.find(r => r.d === d);
-    const t = row ? row.t : jstAdd(rows[0].t, i);
-    ticks.push({ v:d, lb: labeled ? lb(t) : '' });
+    ticks.push({ v:d, lb: labeled ? lb(tOf(d)) : '' });
   }
+  /* 右端の日付は右寄せで置く（axesSvg）ので、そのすぐ左の日付（中央寄せ）とは字の幅の1.5倍ほど要る。
+     足りなければ、そのすぐ左の日付だけ出さない（右端は必ず出す） */
+  const prev = ticks.length - 1 - stride;
+  if (prev >= 0 && ticks[prev].lb
+      && stride * per < tickTextW(ticks[ticks.length - 1].lb, DATE_TICK_PX) + tickTextW(ticks[prev].lb, DATE_TICK_PX) / 2 + DATE_TICK_GAP)
+    ticks[prev].lb = '';
   return { ticks, rot, pb: rot ? 58 : 26 };
 }
 /* 日付の並びの両端だけを dateTicks に渡す（横軸の規則を全グラフで同じにする） */
@@ -8986,7 +9037,7 @@ function axesSvg(g){
       ? `<text transform="translate(${x.toFixed(1)} ${(by + 8).toFixed(1)}) rotate(-45)" text-anchor="end" font-size="9.5"
         font-family="system-ui,sans-serif" style="fill:var(--muted)">${esc(t.lb)}</text>`
       : `<text x="${x.toFixed(1)}" y="${(by + 16).toFixed(1)}" text-anchor="${
-          x > g.x0 + g.plotW - 24 ? 'end' : 'middle'}" font-size="11"
+          x > g.x0 + g.plotW - 24 ? 'end' : 'middle'}" font-size="${DATE_TICK_PX}"
         font-family="system-ui,sans-serif" style="fill:var(--muted)">${esc(t.lb)}</text>`;
   });
   return s;
