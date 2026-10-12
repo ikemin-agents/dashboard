@@ -2636,7 +2636,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 /* 検証だけの番組（experiment）の絵は検証タブ（PILOT_META）と同じにする（#604 A10） */
 const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'experiment':'🧪', 'karakuri':'⚙️'};
 /* 番組の短い呼び名（番組の登録簿の display_label と同じ言葉・同じ順・#572）。ルールの一覧の番組の列と、
-   その上の番組の絞り込み、Blender素材の一覧の番組の列と絞り込みに使う。ここに無い番組は DB の名前で出す（test_channel_registry.py が登録簿と突き合わせる） */
+   その上の番組の絞り込み、Blender素材の一覧の番組の列と絞り込みに使う。ここに無い番組は DB の名前で出す */
 const CH_SHORT = {'buzz-zatsugaku':'雑学', 'dental':'歯科', 'rikiwaza':'力わざ', 'experiment':'検証', 'karakuri':'からくり'};
 /* 動画の番号の頭2文字 → 番組（各番組の config.json の episode_prefix の写し・#572）。Blender素材の一覧の番組の列と絞り込みに使う。
    ここに無い頭は、頭の2文字をそのまま番組の値と呼び名にする（黙って消さない） */
@@ -2735,7 +2735,7 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/12 08:44';
+const BUILT_AT = '10/12 10:45';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
