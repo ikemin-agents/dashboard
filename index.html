@@ -2735,7 +2735,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/14 08:58';
+const BUILT_AT = '10/14 11:03';
+/* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
+   index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
+const BUILT_HASH = '7124d61ecb64';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3799,6 +3802,9 @@ function renderShell(){
    比べる」ことで気づけるようにする。違っていればバナーを出して再読込を促す。 */
 /* 起動時の1回だけでは、画面を開いたまま何時間も置いたときに気づけない（#523）。
    5分おき・タブが前面に戻ったとき・詳細を開くときにも確かめる。
+   比べるのは公開時刻でなく**画面ファイルの中身の印**（BUILT_HASH）。公開は係の定義や手順書を直しただけでも
+   走る（制作フローの図を作り直すため）ので、時刻で比べると画面が変わっていなくても帯が出てしまう。
+   中身が同じなら黙る。公開された側に印が無い（古い公開の道具）ときだけ時刻で比べる。
    ⚠️ **勝手に読み込み直さない**——指摘を書いている最中に画面が作り直されると手が止まる。
    知らせるだけにして、書きかけが残ることを文言に添える（下書きは端末に控えてある）。 */
 const NEWVER_EVERY = 5 * 60 * 1000;
@@ -3815,6 +3821,8 @@ async function checkForUpdate(){
     const text = await res.text();
     const m    = text.match(/const BUILT_AT = '([^']*)'/);
     if (!m || m[1] === BUILT_AT || builtLocal(m[1])) return;
+    const h    = text.match(/const BUILT_HASH = '([^']*)'/);
+    if (h && !builtLocal(h[1]) && !builtLocal(BUILT_HASH) && h[1] === BUILT_HASH) return;
     if (document.getElementById('newver')) return;
     const bar = document.createElement('div');
     bar.id = 'newver';
