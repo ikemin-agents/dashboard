@@ -1410,6 +1410,8 @@ tr.dropped td{color:var(--muted)}
   cursor:pointer; line-height:1.35; overflow-wrap:anywhere}
 .rfpop label:hover{background:var(--surface-2)}
 .rfpop input{flex:0 0 auto; width:15px; height:15px; margin:1px 0 0; accent-color:var(--s1); cursor:pointer}
+/* 値の一覧の下の、列に依らないチェック（素材の「棚から外した物も見る」・#856）。線で値の一覧と分ける */
+.rfpop .rfmore{border-top:1px solid var(--border); margin-top:4px; padding-top:4px}
 /* 値の本数（動画の一覧の工程・ジャンル・#637）。右端にそろえ、字は小さく薄く */
 .rfpop .rfn{margin-left:auto; padding-left:var(--sp-3); font-size:var(--fs-2xs); color:var(--muted);
   font-variant-numeric:tabular-nums; white-space:nowrap}
@@ -2735,10 +2737,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/14 13:02';
+const BUILT_AT = '10/15 22:48';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '7124d61ecb64';
+const BUILT_HASH = 'f7fcfc190bf8';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2833,8 +2835,9 @@ const state = {
   /* 決まりの一覧・Blender素材の一覧の絞り込み（#574）。空文字＝絞らない。
      決まりの列（q 以外）は見出しの窓のチェック（#572）で、null＝絞らない・配列＝チェックの付いた値だけ残す */
   rulesF:{q:'', ch:null, stage:null, kind:null, strength:null, subject:null},
-  /* 素材の列も見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す） */
-  assetsF:{kind:null, ch:null, seq:null}
+  /* 素材の列も見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す）。
+     retired＝窓の「棚から外した物も見る」（#856・既定は外す＝棚から外した素材を出さない） */
+  assetsF:{kind:null, ch:null, seq:null, retired:false}
 };
 
 /* ── 開いていたタブ・チャンネルを覚える ──────────────────────────────
@@ -9882,7 +9885,10 @@ let assetsOpts = {};  /* 同じく素材の列ごとの値の一覧（renderAsse
    def＝列の既定の選び（null の状態でチェックが付く値）。無ければ全部の値（＝全部チェックで絞らない） */
 const HF_TABLES = {
   rules:  { view: '#view-rules',  list: '#rulelist',  cols: RF_COLS, f: () => state.rulesF,  opts: () => rulesOpts,  paint: () => paintRules() },
-  assets: { view: '#view-assets', list: '#assetlist', cols: AF_COLS, f: () => state.assetsF, opts: () => assetsOpts, paint: () => paintAssets() },
+  /* more＝どの列の窓にも値の一覧の下に出す、列に依らないチェック（key＝絞り込みの状態のキー、t＝言葉、reopts＝変えたあとに
+     列ごとの値の一覧を作り直す）。素材は「棚から外した物も見る」（#856） */
+  assets: { view: '#view-assets', list: '#assetlist', cols: AF_COLS, f: () => state.assetsF, opts: () => assetsOpts, paint: () => paintAssets(),
+            more: { key: 'retired', t: '棚から外した物も見る', reopts: () => buildAssetsOpts() } },
   /* 動画の一覧（#637）。絞り込みは DB 側（listQuery）なので、描き直しは1ページ目から取り直す（件数とページ切りも DB の数）。
      工程の既定は没を除く全部（今までどおり没は既定では出さない）。没にチェックを足すと没も出る */
   stock:  { view: '#view-stock',  list: '#stocktable', cols: SF_COLS, f: () => state.stockF,  opts: () => stockOpts,
@@ -10039,7 +10045,9 @@ function rfPopHTML(tb, col){
   return `<button type="button" class="rfall" data-rfall>${hfAllOn(tb, col) ? 'すべて外す' : 'すべて選ぶ'}</button>`
     + `<div class="rflist">${(T.opts()[col] || []).map(o => `<label><input type="checkbox" value="${esc(o.v)}"${
       on.includes(o.v) ? ' checked' : ''}><span>${esc(o.t)}</span>${
-      o.n != null ? `<span class="rfn">${nf(o.n)}</span>` : ''}</label>`).join('')}</div>`;
+      o.n != null ? `<span class="rfn">${nf(o.n)}</span>` : ''}</label>`).join('')}</div>`
+    + (T.more ? `<div class="rfmore"><label><input type="checkbox" data-rfmore${T.f()[T.more.key] ? ' checked' : ''}><span>${
+      esc(T.more.t)}</span></label></div>` : '');
 }
 function placeRfPop(){
   const T = rfPop && HF_TABLES[rfPop.tb], pop = $('#rfpop');
@@ -10085,7 +10093,7 @@ function setHF(tb, col, sel){
   if (!pop || !rfPop || rfPop.tb !== tb || rfPop.col !== col) return;
   const on = hfOn(tb, col);
   pop.querySelector('[data-rfall]').textContent = hfAllOn(tb, col) ? 'すべて外す' : 'すべて選ぶ';
-  pop.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = on.includes(i.value); });
+  pop.querySelectorAll('.rflist input[type="checkbox"]').forEach(i => { i.checked = on.includes(i.value); });
 }
 /* 外を押したら閉じるのは pointerdown で拾う（iPhone は押せない所を押しても click を送らないため）。
    一覧の中（表の画面の中）を押して閉じたときは、そのあとに続く click（行を開く・見本を大きく見る）を1回だけ食べる */
@@ -10126,6 +10134,15 @@ document.addEventListener('click', e => {
 }, true);
 document.addEventListener('change', e => {
   if (!rfPop || !e.target.closest || !e.target.closest('#rfpop')) return;
+  /* 列に依らないチェック（素材の「棚から外した物も見る」）。値の一覧が変わるので窓の中身も作り直す */
+  if (e.target.matches('[data-rfmore]')) {
+    const T = HF_TABLES[rfPop.tb], pop = $('#rfpop');
+    T.f()[T.more.key] = e.target.checked;
+    if (T.more.reopts) T.more.reopts();
+    T.paint();
+    if (pop && rfPop) { pop.innerHTML = rfPopHTML(rfPop.tb, rfPop.col); placeRfPop(); pop.querySelector('[data-rfmore]')?.focus({ preventScroll: true }); }
+    return;
+  }
   setHF(rfPop.tb, rfPop.col, [...document.querySelectorAll('#rfpop .rflist input:checked')].map(i => i.value));
 });
 document.addEventListener('keydown', e => {
@@ -10173,10 +10190,12 @@ function assetVals(r, col){
   const v = col === 'ch' ? usedChs(r) : usedSeqs(r);
   return v.length ? v : [''];
 }
+/* 一覧に出しうる行。棚から外した素材は「棚から外した物も見る」を入れたときだけ（#856） */
+const assetsInScope = () => ((store.prodAssets || {}).rows || []).filter(r => state.assetsF.retired || !r.retired_at);
 /* チェックの付いた値のどれかに当てはまる行だけ（列の間は「かつ」）。チェックを全部外した列は1行も残さない */
 function assetHits(){
   const f = state.assetsF;
-  return ((store.prodAssets || {}).rows || []).filter(r =>
+  return assetsInScope().filter(r =>
     Object.keys(AF_COLS).every(col => !f[col] || assetVals(r, col).some(v => f[col].includes(v))));
 }
 /* 出典とライセンス（081 の source）。{made_from:{type, from, license}（切り出した元）,
@@ -10265,9 +10284,19 @@ async function renderAssets(){
   const el = $('#view-assets');
   if (rfPop && rfPop.tb === 'assets') closeRfPop();   /* 画面を作り直すと窓も消える */
   if (!store.prodAssets) el.innerHTML = loading();
-  const { rows } = await loadProdAssets();
-  /* 窓に並べるのは行に実際にある値だけ。種類は決まった並び→並びに無い値、番組は登録簿の順、使った動画は番号の順
-     （呼び名は番号と題）。使った動画が無い素材があるときだけ、番組と使った動画の窓の最後に「なし」 */
+  await loadProdAssets();
+  buildAssetsOpts();
+  el.innerHTML = `
+    <div class="pagehead"><div class="eyebrow">素材</div><h1>🧱 Blender素材の一覧</h1></div>
+    <div class="toolbar"><span class="hits" id="assetshits"></span></div>
+    <div class="lst" id="assetlist"></div>`;
+  paintAssets();
+}
+/* 窓に並べるのは一覧に出しうる行（棚から外した素材は「棚から外した物も見る」のときだけ）に実際にある値だけ。種類は決まった並び→
+   並びに無い値、番組は登録簿の順、使った動画は番号の順（呼び名は番号と題）。使った動画が無い素材があるときだけ、番組と使った動画の
+   窓の最後に「なし」 */
+function buildAssetsOpts(){
+  const rows = assetsInScope();
   const seen = col => { const s = new Set(); rows.forEach(r => assetVals(r, col).forEach(v => s.add(v))); return s; };
   const kinds = seen('kind'), chs = seen('ch'), seqs = seen('seq'), titles = new Map();
   rows.forEach(r => usedOf(r).forEach(u => { if (!titles.has(String(u.seq))) titles.set(String(u.seq), u.title || ''); }));
@@ -10279,11 +10308,6 @@ async function renderAssets(){
     seq: withNone(seqs, [...seqs].filter(Boolean).sort((a, b) => a.localeCompare(b))
       .map(v => ({ v, t: titles.get(v) ? `${v} ${titles.get(v)}` : v })))
   };
-  el.innerHTML = `
-    <div class="pagehead"><div class="eyebrow">素材</div><h1>🧱 Blender素材の一覧</h1></div>
-    <div class="toolbar"><span class="hits" id="assetshits"></span></div>
-    <div class="lst" id="assetlist"></div>`;
-  paintAssets();
 }
 function paintAssets(){
   const box = $('#assetlist');
