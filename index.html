@@ -2769,10 +2769,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/17 00:21';
+const BUILT_AT = '10/17 01:30';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'fc2cf75206c5';
+const BUILT_HASH = 'c27348071961';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -6412,7 +6412,7 @@ const SV_STEPS = [
   {name:'ネタ案',               what:'候補の登録'},
   {name:'台本',                 what:'文章（md）'},
   {name:'ナレーション',          brk:'ナレー|ション', what:'音声（ElevenLabs）'},
-  {name:'シーン割り',            brk:'シーン|割り', what:'設計図（json）'},
+  {name:'シーン割り',            brk:'シーン|割り', what:'設計図（json）', whatBlender:'シーン詳細設計'},
   {name:'Blender の仮組み',      short:'仮組み', what:'動きとカメラの確認用の動画', offOnly:true},
   {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）'},
   {name:'仮組み＋静止画の承認',   brk:'仮組み|＋静止画|の承認', what:'オーナーが見る', gate:'storyboard', offOnly:true},
