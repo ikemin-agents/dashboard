@@ -2771,10 +2771,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/17 17:24';
+const BUILT_AT = '10/17 19:45';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'd09f966320fd';
+const BUILT_HASH = 'cfb794fec6ae';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -10601,8 +10601,8 @@ async function replayApproveOutbox(){
 }
 
 /* ══ 制作フロー（#695）═══════════════════════════════════════════
-   Blender 制作の全体の構成（横に工程・縦に項目）。中身は公開のときに道具が正本（係の定義・監督の手順書・番組の工程表・
-   審査の包みの道具）から作る flow.json を読むだけで、この画面に表を書かない。形の正本は README の「制作フローの札」。
+   Blender 制作の全体の構成（横に工程・縦に項目）。中身は公開のときに道具が正本（係の定義・監督の手順書・番組の工程表）
+   から作る flow.json を読むだけで、この画面に表を書かない。形の正本は README の「制作フローの札」。
    1マス＝行の並び、1行＝文字のかけら（k: name 太字・id 識別子・note 薄字・label 見出し・badge 札）。字の中の `…` は等幅 */
 const FLOW_URL = 'flow.json';
 const FLOW_TONES = ['opus', 'sonnet', 'main', 'human', 'tool'];
@@ -10647,12 +10647,12 @@ function flowHTML(f){
   return `
     <div class="pagehead"><div class="eyebrow">制作フロー</div><h1>🧭 ${flowText(f.title)}</h1></div>
     <div class="fl-meta"><span>${flowText((f.programs || []).join('・'))}</span>
-      <span>係の定義 ${f.agents | 0}本・監督の手順書・番組の工程表・審査の包みの道具から描く</span>
+      <span>係の定義 ${f.agents | 0}本・監督の手順書・番組の工程表から描く</span>
       <span>描いた時刻 ${flowText(f.built_at)}</span></div>
     <div class="fl-tabs" role="tablist" aria-label="作り方">${tabs}</div>
     <div class="fl-wrap"><table class="fl-tbl"><thead>${head}</thead><tbody>${body}</tbody></table></div>
     ${notes ? `<ul class="fl-notes">${notes}</ul>` : ''}
-    <p class="fl-foot">この画面は人が書きません。係の定義・監督の手順書・番組の工程表・審査の包みの道具を、ダッシュボードを公開するたびに読んで描きます。</p>`;
+    <p class="fl-foot">この画面は人が書きません。係の定義・監督の手順書・番組の工程表を、ダッシュボードを公開するたびに読んで描きます。</p>`;
 }
 async function renderFlow(){
   const el = $('#view-flow');
