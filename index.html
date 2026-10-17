@@ -1325,7 +1325,7 @@ tr.dropped td{color:var(--muted)}
   body.sheetopen .dview.hasbar{padding-bottom:calc(var(--dbar-h) + 46dvh + env(safe-area-inset-bottom))}
 }
 
-/* ═══ 決まりの一覧・Blender素材の一覧（#574）═══════════════════════════════
+/* ═══ 決まりの一覧・共用素材の一覧（#574）═══════════════════════════════
    1行＝1つ。見出しの行と同じ列の幅で並べる（位置を揃える）。行を押すと下に中身が開く */
 .lst{border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-1);
   box-shadow:var(--shadow-1); overflow:hidden; min-width:0}
@@ -1422,7 +1422,7 @@ tr.dropped td{color:var(--muted)}
 .rlrow .chm{align-self:stretch; margin:-9px calc(var(--sp-3) / -2); font-weight:700; color:var(--ink)}
 .rlrow .chm>span{padding-top:9px}
 .rl .vl,.al .vl{display:none}
-/* Blender素材の一覧の罫線も同じ通し方（#572・オーナー 2026-09-30 20:30）。縦の線は 見本｜名前｜種類｜番組｜使った動画 の間の4本
+/* 共用素材の一覧の罫線も同じ通し方（#572・オーナー 2026-09-30 20:30）。縦の線は 見本｜名前｜種類｜番組｜使った動画 の間の4本
    （使った動画と ▸ の間には引かない）で、行の中の .vl（AL_VL）。横の線と色はルールと同じ */
 @media (min-width:900px){
   .rlrow .chs{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
@@ -2639,7 +2639,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   <section class="view" id="view-assets"></section>
   <section class="view" id="view-flow"></section>
   <section class="view" id="view-expr"></section>
-  <!-- Blender素材の一覧の見本の絵を大きく見る（見た目は承認画面の拡大表示と同じ） -->
+  <!-- 共用素材の一覧の見本の絵を大きく見る（見た目は承認画面の拡大表示と同じ） -->
   <div class="sv-lbox" id="plbox" hidden>
     <img id="plboximg" alt="">
     <div class="lcap" id="plboxcap"></div>
@@ -2672,9 +2672,9 @@ const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 /* 検証だけの番組（experiment）の絵は検証タブ（PILOT_META）と同じにする（#604 A10） */
 const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'experiment':'🧪', 'karakuri':'⚙️'};
 /* 番組の短い呼び名（番組の登録簿の display_label と同じ言葉・同じ順・#572）。ルールの一覧の番組の列と、
-   その上の番組の絞り込み、Blender素材の一覧の番組の列と絞り込みに使う。ここに無い番組は DB の名前で出す */
+   その上の番組の絞り込み、共用素材の一覧の番組の列と絞り込みに使う。ここに無い番組は DB の名前で出す */
 const CH_SHORT = {'buzz-zatsugaku':'雑学', 'dental':'歯科', 'rikiwaza':'力わざ', 'experiment':'検証', 'karakuri':'からくり'};
-/* 動画の番号の頭2文字 → 番組（各番組の config.json の episode_prefix の写し・#572）。Blender素材の一覧の番組の列と絞り込みに使う。
+/* 動画の番号の頭2文字 → 番組（各番組の config.json の episode_prefix の写し・#572）。共用素材の一覧の番組の列と絞り込みに使う。
    ここに無い頭は、頭の2文字をそのまま番組の値と呼び名にする（黙って消さない） */
 const SEQ_CH = {'BZ':'buzz-zatsugaku', 'DT':'dental', 'RW':'rikiwaza', 'XP':'experiment', 'KR':'karakuri'};
 /* 検証だけを持つ番組（#551・05-experiment）。動画は 9000番台だけなので、自分のタブは常に空になる。
@@ -2771,10 +2771,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/17 11:24';
+const BUILT_AT = '10/17 11:35';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '3ac0e6af7a39';
+const BUILT_HASH = 'd09f966320fd';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2866,7 +2866,7 @@ const state = {
   busy:false, lastSync:null,
   /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
   secOpen:{},
-  /* 決まりの一覧・Blender素材の一覧の絞り込み（#574）。空文字＝絞らない。
+  /* 決まりの一覧・共用素材の一覧の絞り込み（#574）。空文字＝絞らない。
      決まりの列（q 以外）は見出しの窓のチェック（#572）で、null＝絞らない・配列＝チェックの付いた値だけ残す */
   rulesF:{q:'', ch:null, stage:null, kind:null, strength:null, subject:null},
   /* 素材の列も見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す）。
@@ -2901,7 +2901,7 @@ function loadUI(){
              追い越された提出の時刻（ms）。レビュー記録で確かめた結果を一覧の行にも効かせる */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
                 threads:{}, rework:{}, looks:{}, rvRev:{}, sbGone:{}, analytics:{}, assets:{},
-                /* 決まりの一覧・Blender素材の一覧（#574）。開いたときに取る（⟳ で取り直す）。chNames は番組の名前 */
+                /* 決まりの一覧・共用素材の一覧（#574）。開いたときに取る（⟳ で取り直す）。chNames は番組の名前 */
                 rules:null, prodAssets:null, chNames:{},
                 /* 制作フローの図（#695）。開いたときに flow.json を取る（⟳ で取り直す） */
                 flow:null,
@@ -2927,7 +2927,7 @@ const VIEWS = [
   /* 分析はチャンネル横断の1画面（2026-09-04）。見えるチャンネルを色で重ねて出すので、
      チャンネルタブの右の共通タブに置く。 */
   {key:'analytics', icon:'📈', label:'分析', chIndep:true},
-  /* 決まりの一覧とBlender素材の一覧（#574・オーナー決定 2026-09-29）。読むだけ。旧「運営」タブの代わり
+  /* 決まりの一覧と共用素材の一覧（#574・オーナー決定 2026-09-29）。読むだけ。旧「運営」タブの代わり
      （運営で見ていた AI の残量・請求・gen-farm・制作の詰まりは PC のステータス画面で見る）。
      決まりは番組で閲覧を分けない表なので、全チャンネル可の人にだけ出す（共同運営者は制作と分析のまま）。
      画面の呼び名は「動画制作ルールDB」（オーナー指示 2026-09-30 09:02・#572）。タブは短く「ルール」——
@@ -6447,7 +6447,7 @@ const SV_FROM_PSTAGE = [0, 1, 2, 7, 8, 10, 12];
    ⚠️ 投稿済み・予約済み（stage が posted）の動画は、記録が残っていても記録なしとして読む（workOf）。DB の並び
    （v_dashboard_list の sort_rank の「記録あり AND stage <> 'posted'」）と一覧のまとまり（sectionOf）と同じ条件で、
    ここで落とすので帯の位置・帯の2行目・一覧の札と印・「いまの工程」の1行・承認待ちの件数がみな同じ答えになる
-   （承認のあとに素材の棚の作業が記録を書いても、予約済みの動画が「映像」に戻って描かれない） */
+   （承認のあとに共用素材の作業が記録を書いても、予約済みの動画が「映像」に戻って描かれない） */
 const WORK_STEP = {idea:0, script:1, narration:2, scenes:3, blocking:4, still:5, video:7, export:8};
 /* 数えられる作業で、最後に書いてからこれだけたった行は「止まっているかも」（黄色＋「更新なし N分」） */
 const WORK_STALL_MS = 10 * 60 * 1000;
@@ -9878,7 +9878,7 @@ function drawSpark(){
     bindHover(wrap, r.pts, r.mode);
   });
 }
-/* ══ ④ 決まりの一覧・Blender素材の一覧（#574・オーナー決定 2026-09-29）═══════════════
+/* ══ ④ 決まりの一覧・共用素材の一覧（#574・オーナー決定 2026-09-29）═══════════════
    読むだけの2画面（旧「運営」タブの代わり）。本文は DB のビューから**ログイン後にだけ**読む
    （公開ページには書かない）。絞り込みは画面の中でする（行は百件ほどで、全部取ってから絞る）。
      決まり … v_production_rules_current（080）。いま有効な版だけ
@@ -9918,7 +9918,7 @@ async function loadRules(){
 /* 見出しを押して絞り込む列（#572・オーナー 2026-09-30 17:25「エクセルみたいにヘッダー部分を押すとフィルター」）。
    キーは state.rulesF のキー、値は見出しの言葉。押すとその列の値の一覧がチェックつきの窓で出る（全部チェック＝絞らない） */
 const RF_COLS = {kind:'種類', strength:'強さ', ch:'番組', subject:'対象', stage:'工程'};
-/* Blender素材の一覧も同じ形で絞る（#572・オーナー 2026-09-30 20:30「こっちも同じフィルターにしてほしい」）。キーは state.assetsF のキー */
+/* 共用素材の一覧も同じ形で絞る（#572・オーナー 2026-09-30 20:30「こっちも同じフィルターにしてほしい」）。キーは state.assetsF のキー */
 const AF_COLS = {kind:'種類', ch:'番組', seq:'使った動画'};
 let rulesOpts = {};   /* 列ごとの値の一覧 {v, t}（renderRules が行と番組の登録簿から作る） */
 let assetsOpts = {};  /* 同じく素材の列ごとの値の一覧（renderAssets が行から作る） */
@@ -10207,7 +10207,7 @@ async function loadProdAssets(){
     rows = await q(sb.from('v_production_assets')
       .select('asset_key,name_ja,kind,call,sample_image,source,note,updated_at,used_in,retired_at,retired_reason'));
   } catch (e) {
-    console.warn('[dashboard] Blender素材の一覧を読めませんでした:', e.message);   /* 画面は「素材なし」 */
+    console.warn('[dashboard] 共用素材の一覧を読めませんでした:', e.message);   /* 画面は「素材なし」 */
   }
   rows.sort(assetCmp);
   /* 見本の絵は非公開の置き場にあるので、まとめて署名URLにする（1時間で切れるのは他の素材と同じ） */
@@ -10329,7 +10329,7 @@ async function renderAssets(){
   await loadProdAssets();
   buildAssetsOpts();
   el.innerHTML = `
-    <div class="pagehead"><div class="eyebrow">素材</div><h1>🧱 Blender素材の一覧</h1></div>
+    <div class="pagehead"><div class="eyebrow">素材</div><h1>🧱 共用素材の一覧</h1></div>
     <div class="toolbar"><span class="hits" id="assetshits"></span></div>
     <div class="lst" id="assetlist"></div>`;
   paintAssets();
@@ -10751,7 +10751,7 @@ document.addEventListener('click', e => {
   /* 詳細内の「戻る／閉じる」は履歴を戻す（popstate で一覧へ復帰・経路を一本化） */
   if (e.target.closest('[data-close]')) { history.back(); return; }
 
-  /* Blender素材の一覧: 見本の絵を押したら大きく見る（行の中にあるので、行の開閉は止める） */
+  /* 共用素材の一覧: 見本の絵を押したら大きく見る（行の中にあるので、行の開閉は止める） */
   const plb = e.target.closest('[data-plbox]');
   if (plb) { e.preventDefault(); openPlbox(plb.dataset.plbox, plb.dataset.plcap); return; }
   if (e.target.closest('[data-plbox-close]') || e.target.id === 'plbox') { closePlbox(); return; }
