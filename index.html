@@ -400,19 +400,21 @@ td.dim{color:var(--muted)}
    幅の出どころは ①各列の col の style（JS 側 MCOL の w。タイトルは幅を書かず、残りを全部取る）
    ②.mtx th.okcol（承認）の2つだけ。工程の12列は 1列 46px に決める（#637）。
    列の合計が広いので、左右パディングを 14px → 10px に詰めて収める。 */
-/* 固定列（番号・ステータス・ユーザー確認・投稿日・滞留・承認）の合計は 558px、工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げ、
+/* 固定列（番号・ステータス・あなたが見た回数・投稿日・滞留・承認）の合計は 558px、工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げ、
    余りはタイトルの列が全部取る（工程の列は広げない・オーナー指摘）。最小幅は 558＋214＋552＝1324px（タイトルが 214px を切る画面では表を横に送る）。
    版・直した指摘・指摘の3列は外した（#637）ので、その幅はタイトルに回る */
 .mtx{--st-w:46px}
 .mtx table{table-layout:fixed; min-width:1324px}
 .mtx col.stcol{width:var(--st-w)}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
-/* 中身の短い列（ユーザー確認・滞留）は左右の余白を 6px に詰める（「10回目」「120日」が入る幅で、表の最小幅を抑える・#637） */
+/* 中身の短い列（あなたが見た回数・滞留）は左右の余白を 6px に詰める（「10回目」「120日」が入る幅で、表の最小幅を抑える・#637） */
 .mtx td.nar,.mtx th.nar{padding-left:6px; padding-right:6px}
+/* 見出しを折り返してよい列（MCOL の brk の | の所だけで折る。「あなたが見た／回数」） */
+.mtx thead th.wrap{white-space:normal; word-break:keep-all; line-height:1.25}
 /* 番号の列も同じく詰める（10px のままだと字の幅の広い番号が「RW00…」と切れた・#637） */
 .mtx td.seq{padding-left:6px; padding-right:6px}
 /* 見出しと中身のそろえ方を1つにする（オーナー指摘・右寄せと中央寄せが混ざって揺れて見えた）。
-   タイトルだけ文章なので左、ほかの列（番号・状態・ユーザー確認・工程・滞留・承認）は見出しも中身も中央。区画の帯の行は左 */
+   タイトルだけ文章なので左、ほかの列（番号・状態・あなたが見た回数・工程・滞留・承認）は見出しも中身も中央。区画の帯の行は左 */
 .mtx thead th,.mtx tbody td{text-align:center}
 .mtx thead th[data-sort="title"],.mtx tbody td.ttl,.mtx tbody tr.secrow td,.mtx tbody tr.emptyrow td{text-align:left}
 /* 工程の12列（#637）。見出しの上の段に「工程」の欄（colspan）を設け、その下に1列ずつ。名前は帯の名前で、
@@ -551,7 +553,7 @@ td.dim{color:var(--muted)}
    列幅（残り幅）の中で折り返す */
 .mtx td.ttl{min-width:0; max-width:none}
 .sbadges .okbtn{margin-left:auto}
-/* スマホのカードの「ユーザー確認 N回目」（承認待ちだけ・#637）。札ではなく添え書きの字 */
+/* スマホのカードの「あなたが見た回数 N回目」（承認待ちだけ・#637）。札ではなく添え書きの字 */
 .sbadges .looks{font-size:var(--fs-xs); font-weight:650; color:var(--ink-2); white-space:nowrap}
 .sbadges,.flags{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
 .flags{display:inline-flex; vertical-align:middle}
@@ -2769,10 +2771,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/17 10:27';
+const BUILT_AT = '10/17 11:24';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'c27348071961';
+const BUILT_HASH = '3ac0e6af7a39';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3948,7 +3950,7 @@ const FIRST_BADGE = {cls:'idea', gl:'', text:'初回', tip:'差し戻しのな�
 const reworkBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)]) : '';
 /* 承認待ちの行の3つ（オーナー要望 2026-09-19）。直すのは毎回 AI なので「AIが修正」では何も
    伝わらない。①版の番号 ②今回**誰の指摘**を直した版か ③**あなたが見るのは何回目**か。
-   一覧に出すのは ③ だけ（ユーザー確認の列・#637）。①② の列の定義（MCOL の rev・src）は残してある */
+   一覧に出すのは ③ だけ（あなたが見た回数の列・#637）。①② の列の定義（MCOL の rev・src）は残してある */
 const revNumHTML = it => {
   const n = it._rv ? submittedRevOf(it.id, it._rv) : null;
   if (!it._rv) return '';
@@ -3956,11 +3958,11 @@ const revNumHTML = it => {
     : '<span title="版の番号が記録に無い（古い提出）">—</span>';
 };
 const srcBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)] || FIRST_BADGE) : '';
-/* 一覧の「ユーザー確認」（承認待ちの行だけ）。lbl＝スマホのカードは列の見出しが無いので、見出しと同じ言葉を頭に添える */
+/* 一覧の「あなたが見た回数」（承認待ちの行だけ）。lbl＝スマホのカードは列の見出しが無いので、見出しと同じ言葉を頭に添える */
 const looksHTML = (it, lbl) => {
   const n = it._rv ? store.looks[it.id] : null;
   return n ? `<span class="looks" title="あなたがこの動画を見るのは${n}回目（これまでに承認か修正依頼をした回数＋今回）">${
-    lbl ? 'ユーザー確認 ' : ''}${n}回目</span>` : '';
+    lbl ? 'あなたが見た回数 ' : ''}${n}回目</span>` : '';
 };
 /* 承認画面の上の帯に出す札。状態（承認待ち・修正中）は工程の帯に出ているので除く */
 function svTopFlagsHTML(it){
@@ -4191,11 +4193,12 @@ const MCOL = {
   state: {label:'ステータス', w:'108px', td: it => `<td class="bcol">${badgeHTML(stageBadge(it))}</td>`},
   /* 投稿日＝予約済みは公開の予定時刻、投稿済みは公開した時刻（stDateHTML）。ほかは空欄。どの番組も同じ形 */
   when:  {label:'投稿日', w:'136px', td: it => `<td>${stDateHTML(it)}</td>`},
-  /* 版・直した指摘・ユーザー確認は承認待ちの行だけ。作業中の記録がある行（#637）は AI の番なので出さない */
+  /* 版・直した指摘・あなたが見た回数は承認待ちの行だけ。作業中の記録がある行（#637）は AI の番なので出さない */
   rev:   {label:'版',   w:'44px', thx:' nar', td: it => `<td class="num nar">${it._work ? '' : revNumHTML(it)}</td>`},
   src:   {label:'直した指摘', w:'120px', td: it => `<td class="bcol">${it._work ? '' : srcBadgeHTML(it)}</td>`},
-  /* あなたがこの動画を見るのは何回目か（1回目・2回目…）。幅は見出し「ユーザー確認」（約 71px）が余白 6px ずつと少しの余裕を持って入る幅 */
-  looks: {label:'ユーザー確認', w:'88px', thx:' num nar', td: it => `<td class="num nar">${it._work ? '' : looksHTML(it)}</td>`},
+  /* あなたがこの動画を見るのは何回目か（1回目・2回目…）。見出し「あなたが見た回数」は「あなたが見た」と「回数」の2行に折る（brk）。
+     幅は1行目（約 71px）が余白 6px ずつと少しの余裕を持って入る幅 */
+  looks: {label:'あなたが見た回数', brk:'あなたが見た|回数', w:'88px', thx:' num nar wrap', td: it => `<td class="num nar">${it._work ? '' : looksHTML(it)}</td>`},
   open:  {label:'指摘', w:'56px', thx:' nar', td: it => `<td class="bcol nar">${openBadgeHTML(it)}</td>`},
   flow:  {label:'工程'},
   genre: {sort:1, w:'136px',        td: it => `<td><span class="genre">${esc(it.genreLabel)}</span></td>`},
@@ -4216,15 +4219,16 @@ const MCOL = {
 /* ジャンルの列は外した（オーナー指示 2026-09-19・承認の判断に使わない。絞り込みのジャンル選択は残す） */
 /* 投稿日時・再生数・登録者増も外した（同日・数字は分析タブで見る） */
 /* 版・直した指摘・指摘も外した（#637・オーナー指摘「4列がごちゃごちゃして分かりにくい」）。承認待ちの行に残すのは
-   「あなたが何回目に見るか」のユーザー確認の1列だけ。外した3列の幅はタイトルの列に回る。詳細画面の札はそのまま */
-/* 並びは左から ステータス・ユーザー確認・投稿日・滞留 → 工程 → 承認（ユーザー確認は工程より左・オーナー指定） */
+   「あなたが何回目に見るか」のあなたが見た回数の1列だけ。外した3列の幅はタイトルの列に回る。詳細画面の札はそのまま */
+/* 並びは左から ステータス・あなたが見た回数・投稿日・滞留 → 工程 → 承認（あなたが見た回数は工程より左・オーナー指定） */
 const MCOLS    = ['seq','title','state','looks','when','days','flow','ok'];
 /* 表の列の数（flow は工程の12列） */
 const colCount = cols => cols.reduce((n, k) => n + (k === 'flow' ? SV_STEPS.length : 1), 0);
 
 function colTH(k){
   const c = MCOL[k], w = c.w ? ` style="width:${c.w}"` : '';
-  if (!c.sort) return `<th class="${(c.thx || '').trim()}"${w}>${esc(c.label || '')}</th>`;
+  const text = c.brk ? c.brk.split('|').map(esc).join('<wbr>') : esc(c.label || '');   /* brk の | で折ってよい */
+  if (!c.sort) return `<th class="${(c.thx || '').trim()}"${w}>${text}</th>`;
   const s = state.stockSort, on = s && s.key === k;
   const lb = SORT_LABEL[k] + (on ? `<span class="ar">${s.dir === 'asc' ? '▲' : '▼'}</span>` : '');
   /* 列の無い絞り込み（ジャンル）は、その見出しの右端に置く（hf・#637。ルールの工程を本文の見出しの右端に置くのと同じ）。
@@ -4324,7 +4328,7 @@ function stockCards(rows, err){
     if (ideaRow(it)) return ideaCardHTML(it);
     const b = stageBadge(it);
     /* 作業中の記録がある行（#637）は札の代わりに「いまの工程」の1行を出す（承認ボタンも出さない）。
-       広い画面の表と同じく、版・直した指摘・指摘の札は出さず、承認待ちだけ「ユーザー確認 N回目」を添える（#637） */
+       広い画面の表と同じく、版・直した指摘・指摘の札は出さず、承認待ちだけ「あなたが見た回数 N回目」を添える（#637） */
     const badges = it._work ? ''
       : `${stDateHTML(it)}${badgeHTML(b && b.long ? Object.assign({}, b, {text:b.long}) : b)}${looksHTML(it, true)}${quickOkHTML(it)}`;
     /* 予約済み・投稿済みの日付は札の左に出す（表の投稿日の列と同じ中身）。下段は再生数だけ */
@@ -4437,7 +4441,7 @@ const ideaCmp = (x, y) => { const a = ideaOf(x).views, b = ideaOf(y).views;
 const ideaRuns = (rows, row, head) => rows.map((it, i) =>
     (ideaRow(it) && !(i > 0 && ideaRow(rows[i - 1])) ? head(it) : '') + row(it)).join('');
 /* 広い画面の表の行: タイトルの列に芯・題材・印、滞留は空、工程の12列は1マスにまとめて海外・日本の再生数。
-   ほかの列（番号・状態・ユーザー確認・投稿日・承認）は今までの列の中身のまま */
+   ほかの列（番号・状態・あなたが見た回数・投稿日・承認）は今までの列の中身のまま */
 function ideaMtxRow(it, cols){
   const d = ideaOf(it);
   const cell = k => k === 'flow'
