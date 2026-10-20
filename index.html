@@ -398,13 +398,13 @@ td.dim{color:var(--muted)}
    区画（あなたの番／AI作業中／完了…）が変わっても列の縦位置がずれないよう、
    表は必ず1つ・列見出しも1つにし、幅は table-layout:fixed で先に決める。
    幅の出どころは ①各列の col の style（JS 側 MCOL の w。タイトルは幅を書かず、残りを全部取る）
-   ②.mtx th.okcol（承認）の2つだけ。工程の12列は 1列 46px に決める（#637）。
+   ②.mtx th.okcol（承認）の2つだけ。工程の13列は 1列 46px に決める（#637）。
    列の合計が広いので、左右パディングを 14px → 10px に詰めて収める。 */
-/* 固定列（番号・ステータス・あなたが見た回数・投稿日・滞留・承認）の合計は 558px、工程の12列は 1列 46px（552px）に決める（#637）。表は画面の幅いっぱいに広げ、
-   余りはタイトルの列が全部取る（工程の列は広げない・オーナー指摘）。最小幅は 558＋214＋552＝1324px（タイトルが 214px を切る画面では表を横に送る）。
+/* 固定列（番号・ステータス・あなたが見た回数・投稿日・滞留・承認）の合計は 558px、工程の13列は 1列 46px（598px）に決める（#637）。表は画面の幅いっぱいに広げ、
+   余りはタイトルの列が全部取る（工程の列は広げない・オーナー指摘）。最小幅は 558＋214＋598＝1370px（タイトルが 214px を切る画面では表を横に送る）。
    版・直した指摘・指摘の3列は外した（#637）ので、その幅はタイトルに回る */
 .mtx{--st-w:46px}
-.mtx table{table-layout:fixed; min-width:1324px}
+.mtx table{table-layout:fixed; min-width:1370px}
 .mtx col.stcol{width:var(--st-w)}
 .mtx td,.mtx th{overflow:hidden; text-overflow:ellipsis; padding-left:10px; padding-right:10px}
 /* 中身の短い列（あなたが見た回数・滞留）は左右の余白を 6px に詰める（「10回目」「120日」が入る幅で、表の最小幅を抑える・#637） */
@@ -417,7 +417,7 @@ td.dim{color:var(--muted)}
    タイトルだけ文章なので左、ほかの列（番号・状態・あなたが見た回数・工程・滞留・承認）は見出しも中身も中央。区画の帯の行は左 */
 .mtx thead th,.mtx tbody td{text-align:center}
 .mtx thead th[data-sort="title"],.mtx tbody td.ttl,.mtx tbody tr.secrow td,.mtx tbody tr.emptyrow td{text-align:left}
-/* 工程の12列（#637）。見出しの上の段に「工程」の欄（colspan）を設け、その下に1列ずつ。名前は帯の名前で、
+/* 工程の13列（#637）。見出しの上の段に「工程」の欄（colspan）を設け、その下に1列ずつ。名前は帯の名前で、
    長い2つは用語集の略（stepLabelHTML）。承認ポイントは ◆。入りきらない名前は <wbr> の所で折り返す */
 .mtx th.st,.mtx td.st{text-align:center; padding-left:2px; padding-right:2px}
 .mtx thead th.st{font-size:10.5px; line-height:1.25; letter-spacing:0; text-transform:none; color:var(--ink-2);
@@ -426,7 +426,7 @@ td.dim{color:var(--muted)}
 .mtx thead th.grp{text-align:center; color:var(--ink); font-size:11px; letter-spacing:.14em; padding:4px 0;
   border-bottom:1px solid var(--stage-line)}
 .mtx thead th.pad{padding:4px 0; border-bottom:none}
-/* 工程の12列をひとかたまりの欄に見せる（#637・オーナー指摘）。見出しの「工程」の段から表の最後の行まで、
+/* 工程の13列をひとかたまりの欄に見せる（#637・オーナー指摘）。見出しの「工程」の段から表の最後の行まで、
    薄い青の地（凡例の「工程」と同じ色）と左右の縦の罫線で囲む。見出しは一段濃い地、行と区画の帯の行は薄い地
    （帯の行も行と同じ地にして、欄を上から下まで一続きに見せる。帯だけ濃くすると空の青い四角が目立った）。
    罫線は box-shadow で描き、列の幅を変えない（右の罫線は欄のすぐ右のマスの左端に描く）。
@@ -480,7 +480,7 @@ td.dim{color:var(--muted)}
       列幅が揃わず、状態・版・指摘の縦位置がずれる。 */
 .mtx tbody tr.secrow{cursor:default; background:var(--surface-2)}
 .mtx tbody tr.secrow.foldable{cursor:pointer}
-/* 帯の中でも工程の欄（12列の位置）を同じ地と左右の罫線で続ける（#637）。位置 --flow-r（右端から）と幅 --flow-w は
+/* 帯の中でも工程の欄（13列の位置）を同じ地と左右の罫線で続ける（#637）。位置 --flow-r（右端から）と幅 --flow-w は
    flowBoxStyle が列の幅から作って表に持たせる（無ければ左の外・幅 0＝描かない） */
 .mtx tbody tr.secrow td,.mtx tbody tr.secrow:hover td{background:
   linear-gradient(var(--stage-line), var(--stage-line)) right calc(var(--flow-r, -9px) + var(--flow-w, 0px) - 1px) top 0 / 1px 100% no-repeat,
@@ -590,8 +590,9 @@ td.ttl .flags{margin-left:8px}
    表（min 1186px）が収まらなくなる幅は 1246 未満だけになった。
    工程を12列にし、版・直した指摘・指摘の3列を外して（#637）表の最小幅が 1188px になったので、収まらなくなる幅は 1247 未満
    （1188＋main の左右の余白 40＋縦のスクロールバー 17＋表の容器の左右の枠線 2）。
-   投稿日の列を足したので最小幅は 1324px、収まらなくなる幅は 1383 未満 */
-@media (max-width:1382.98px){
+   投稿日の列を足したので最小幅は 1324px、収まらなくなる幅は 1383 未満。
+   工程に企画書を足して13列にしたので最小幅は 1370px、収まらなくなる幅は 1429 未満 */
+@media (max-width:1428.98px){
   .tblwrap.mtx{overflow-x:auto}
   .mtx thead tr:first-child th{top:0}
   .mtx thead tr:nth-child(2) th{top:var(--mtxrow1, 24px)}
@@ -599,7 +600,7 @@ td.ttl .flags{margin-left:8px}
 .emptyrow td{text-align:center; color:var(--muted); padding:26px; cursor:default}
 .emptyrow:hover td{background:transparent!important}
 /* ── ネタ案の行（#672・ideaMtxRow / ideaMtxHead）──────────────────────────────
-   タイトルの列に芯（太字）・題材（小さく）・印。工程の12列の所は1マス（colspan）にして、海外・日本の再生数を
+   タイトルの列に芯（太字）・題材（小さく）・印。工程の13列の所は1マス（colspan）にして、海外・日本の再生数を
    決まった幅の右揃えで出す（マスの左端と幅は列の幅で決まるので、どの行でも数字の位置がそろう）。
    列の見出し（芯の見出し（ideaCoreLabel）と題材／海外／日本）は、ネタ案の行が続く塊の頭に1行だけ（ideaRuns） */
 .mtx tbody td.ttl .icore{font-weight:650; color:var(--ink)}
@@ -642,7 +643,7 @@ td.ttl .flags{margin-left:8px}
   font-variant-numeric:tabular-nums; white-space:nowrap}
 .scard-days.slow{color:var(--warn); font-weight:680}
 .scard-ttl{flex:1 1 auto; min-width:0; font-size:var(--fs-md); line-height:1.45; font-weight:600}
-/* ── スマホのカードの工程（#637・flowRowHTML）: 広い画面の表と同じ12個の印に、見出しと同じ名前を添えて横に並べる ──
+/* ── スマホのカードの工程（#637・flowRowHTML）: 広い画面の表と同じ13個の印に、見出しと同じ名前を添えて横に並べる ──
    幅に入らない分は横に動かして見る（スクロールバーは出さない）。開いたときにいまの工程を真ん中へ送る（centerFlowRows） */
 .prow{position:relative; display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px;
   overscroll-behavior-x:contain}
@@ -1229,6 +1230,9 @@ tr.dropped td{color:var(--muted)}
 /* 再生位置の線（映像の一番下 2pt・見えている幅いっぱい）。赤い所が再生済み（--p は JS が 0〜1 で入れる） */
 .ytui .yprog{left:4.83%; right:4.83%; bottom:0; height:max(1.5px, .25%); background:rgba(255,255,255,.35)}
 .ytui .yprog i{display:block; height:100%; width:calc(var(--p, 0) * 100%); background:#ff3b30}
+/* 画面の部品に隠れる範囲（hidden-zones.json の矩形）。赤みの薄い網と細い枠。位置は JS が映像の 1080×1920 に対する % で入れる */
+.ytui .yzones{left:0; top:0; width:100%; height:100%}
+.ytui .yzone{position:absolute; background:rgba(255,59,48,.16); box-shadow:inset 0 0 0 1px rgba(255,59,48,.75)}
 .ctime{font-size:var(--fs-xs); color:var(--ink-2); font-variant-numeric:tabular-nums; flex:0 0 auto}
 .seek{position:relative; flex:1 0 100%; order:1; height:36px; cursor:pointer; touch-action:none}
 .ctime{margin-left:auto}
@@ -1908,7 +1912,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   mask-image:linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent)}
 /* 矢羽根（シェブロン）の帯（#570）。右が尖り、左が同じ形に欠ける。各工程は2行
    （名前／作るもの・道具。知らせることがある工程だけ2行目が状態の言葉）。済みは色と ✓ で示す。
-   左右の余白は矢羽根の欠けと尖りに文字が掛からない分だけ（#604 E1 で詰めた。1400px で 12 個を1行に
+   左右の余白は矢羽根の欠けと尖りに文字が掛からない分だけ（#604 E1 で詰めた。1400px で全部の工程を1行に
    収めるため。足りない分は svFitFlow が長い2行目から縮める） */
 :is(.sview,.dflow) .sv-step{--ar:10px; position:relative; display:flex; flex-direction:column; justify-content:center;
   flex:0 0 auto; min-width:72px; height:38px; padding:0 calc(var(--ar) + 3px) 0 calc(var(--ar) + 6px);
@@ -2700,7 +2704,7 @@ const isPilotSeq = seq => {
 /* ── 進行係を通らない動画（検証用と storage_only の番組・#569）─────────────────
    手元の提出の入口（submit_for_review.py）から出す動画。**02・03 の本編はここに入らない**。
    この動画だけ次の3つが違う（オーナー決定 2026-09-29「置き場は動画ごとに1つ」）:
-     ・レビュー素材の置き場が承認ポイントに依らず1つ（ONE_DIR）。Blender の仮組みは参照動画の欄に、
+     ・レビュー素材の置き場が承認ポイントに依らず1つ（ONE_DIR）。Blender仮組みは参照動画の欄に、
        完成動画が出来たら主画面の欄に出る。旧い置き場（storyboard/）は新しい置き場が空のときだけ読む
      ・仮組み＋静止画（storyboard）の承認待ちが、そのあとの完成の動きに追い越されたら数えない
      ・承認ポイントの呼び名（storyboard は「仮組み＋静止画」） */
@@ -2723,7 +2727,7 @@ const CH_GATES = {'buzz-zatsugaku':['final'], 'dental':['final']};
    見る承認だったので帯の「静止画」 */
 const GATE_LABEL = {script:'台本', storyboard:'静止画', final:'完成'};
 /* 承認ポイントの呼び名は**この関数を通す**（#569）。進行係を通らない動画の storyboard は
-   「仮組み＋静止画」の承認（仮組み＝Blender の仮組み。この承認ポイントを持つかは番組の human_gates）。02・03 は GATE_LABEL のまま。
+   「仮組み＋静止画」の承認（仮組み＝Blender仮組み。この承認ポイントを持つかは番組の human_gates）。02・03 は GATE_LABEL のまま。
    it は動画の行（seq と channel があればよい）。無ければ GATE_LABEL と同じ */
 const GATE_LABEL_OFF = {storyboard:'仮組み＋静止画'};
 const gateName = (gate, it) => (offDispatcherItem(it) && GATE_LABEL_OFF[gate]) || GATE_LABEL[gate] || gate;
@@ -2746,7 +2750,7 @@ const RE_TXT = /\.(md|txt|srt|vtt|json|csv)$/i;
    それでも作り直しは GPU 時間と順番待ちを食うので、進む前に見てほしいことは残す。 */
 const GATE_CAUTION = {storyboard:'承認すると映像生成へ進みます（gen-farm で生成・追加費用なし）。'};
 
-/* 表示上の7工程（videos.status からの写像）。一覧の行と詳細の帯は12個の帯（SV_STEPS）で出し、
+/* 表示上の7工程（videos.status からの写像）。一覧の行と詳細の帯は13個の帯（SV_STEPS）で出し、
    ここは工程の絞り込み・工程の履歴・札のツールチップに使う（#637）。
      name  = 絞り込み・工程の履歴の工程名（体言）。帯の工程の名前で書く。board は帯のナレーション〜静止画にまたがる
      work  = その工程を進行中のときのバッジ文言（「台本中」のような不自然な略を避ける・#205） */
@@ -2771,10 +2775,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/19 12:49';
+const BUILT_AT = '10/21 02:52';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'cfb794fec6ae';
+const BUILT_HASH = '19f16ad57c61';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3916,7 +3920,7 @@ const badgeHTML = b => b ? `<span class="sbadge ${b.cls}"${b.tip ? ` title="${es
    AI審査だけが起点のもの（基準に届かず作り直しているだけ）は無彩色に落とす。
    文言は必ずこの2つの関数を通す＝表記のゆれを1か所に閉じる。 */
 const rcAiOnly = it => it._rcSrc === 'ai';
-const rcText  = it => rcAiOnly(it) ? `AIの点検で${gateName(it._rc, it)}作り直し中`
+const rcText  = it => rcAiOnly(it) ? `別AIの点検で${gateName(it._rc, it)}作り直し中`
                                    : `${AI_TAG}${gateName(it._rc, it)}修正対応中`;
 /* 列に出す短い文言（オーナー要望 2026-09-03）。長い説明は tip（ツールチップ）に回す */
 const rcShort = it => rcAiOnly(it) ? '作り直し中' : 'AI修正中';
@@ -3926,7 +3930,7 @@ const rcCls   = it => rcAiOnly(it) ? 'rcai' : 'rc';
 const openSplit = (it, b) => {
   const w = n => b ? `<b>${n}件</b>` : `${n}件`;
   return [it._openH  ? `あなたの指摘 ${w(it._openH)}`  : '',
-          it._openAi ? `AIの点検 ${w(it._openAi)}` : ''].filter(Boolean).join('・');
+          it._openAi ? `別AIの点検 ${w(it._openAi)}` : ''].filter(Boolean).join('・');
 };
 /* 承認ポイントの名前（完成／台本／静止画）は工程の区切りを見れば分かるので状態の文言には入れない。
    知りたいときのためにツールチップには今までどおり全文を残す。 */
@@ -3987,7 +3991,7 @@ const quickOkHTML = it => {
       data-label="${esc(lb)}" data-donelabel="${esc(w.approved)}"
       title="${esc(w.approve(gname))}">${esc(lb)}</button>`;
 };
-/* ── 一覧の行の工程（#637）: 詳細画面の工程の帯と同じ12個に印を付ける ──────────────────────
+/* ── 一覧の行の工程（#637）: 詳細画面の工程の帯と同じ13個に印を付ける ──────────────────────
    広い画面の表は「工程」の欄の下に1列ずつ（flowCellsHTML）、スマホのカードは印の下に名前を添えて横に並べる（flowRowHTML）。
    位置（svFlowAt）・使わない工程（SV_SKIP）・各工程の状態（svStepState）は帯と同じ関数で決める。
    使わない工程は帯と同じく動画の制作方法で決める（listRow・#637。一覧は目録を読まないので、制作方法が NULL なら足さない）。
@@ -4004,7 +4008,7 @@ const curTone = it => it._work ? 'work'
 /* 列の見出しとスマホの印の下の名前（帯の名前。長い2つは用語集の略・承認ポイントは ◆）。正式名はツールチップ。
    狭い列で折り返してよい所（SV_STEPS の brk の |）に <wbr> を入れる（「ナレーショ／ン」のように切れないように） */
 const stepLabelHTML = s => (s.gate ? '◆' : '') + (s.brk || s.short || s.name).split('|').map(esc).join('<wbr>');
-/* 12個の印 {cls, gl（字）, tip（ツールチップ）, skip, cur（いまの工程）, focus（スマホで真ん中に送る印）} と、
+/* 13個の印 {cls, gl（字）, tip（ツールチップ）, skip, cur（いまの工程）, focus（スマホで真ん中に送る印）} と、
    読み上げ用のいまの工程の名前 */
 function stepMarks(it){
   const dead = it.stage === 'dropped';
@@ -4027,7 +4031,7 @@ function stepMarks(it){
   return { marks, curName, dead };
 }
 const markHTML = m => `<span class="mark ${m.cls}" title="${esc(m.tip)}">${m.gl}</span>`;
-/* 広い画面の表の12列のマス */
+/* 広い画面の表の13列のマス */
 const flowCellsHTML = it => stepMarks(it).marks.map(m => `<td class="st">${markHTML(m)}</td>`).join('');
 /* スマホのカードの1行（印の下に名前）。横に動かせる。いまの工程は centerFlowRows が真ん中へ送る */
 function flowRowHTML(it){
@@ -4172,8 +4176,8 @@ const secAttrs = s => s.fold
    w＝その列の固定幅。table-layout:fixed なので、ここに書いた幅がそのまま列幅になる
    （幅を書いていないタイトル列だけが残り幅を取る）。列幅が中身に左右されない＝
    区画がどれでもワッペンの左端と縦位置が揃う。
-   flow は工程の12列の位置の目印（詳細画面の帯と同じ12個・#637）。見出しは2段で、上の段に「工程」の欄、
-   その下に1列ずつ（mtxHead・mtxRow・mtxCols が flow を12列に開く）。幅を書かない工程の12列が残りを等分し、
+   flow は工程の13列の位置の目印（詳細画面の帯と同じ13個・#637）。見出しは2段で、上の段に「工程」の欄、
+   その下に1列ずつ（mtxHead・mtxRow・mtxCols が flow を13列に開く）。幅を書かない工程の13列が残りを等分し、
    タイトルは幅を書かず、画面の幅に合わせて残りを取る。作業中の記録がある動画は、タイトルの下に
    「いまの工程」の1行（nowLineHTML。スマホのカード・詳細画面と同じ部品）を出す。
    td を丸ごと返すのは、投稿日時が値の有無で中身もツールチップも変わるため。
@@ -4222,7 +4226,7 @@ const MCOL = {
    「あなたが何回目に見るか」のあなたが見た回数の1列だけ。外した3列の幅はタイトルの列に回る。詳細画面の札はそのまま */
 /* 並びは左から ステータス・あなたが見た回数・投稿日・滞留 → 工程 → 承認（あなたが見た回数は工程より左・オーナー指定） */
 const MCOLS    = ['seq','title','state','looks','when','days','flow','ok'];
-/* 表の列の数（flow は工程の12列） */
+/* 表の列の数（flow は工程の13列） */
 const colCount = cols => cols.reduce((n, k) => n + (k === 'flow' ? SV_STEPS.length : 1), 0);
 
 function colTH(k){
@@ -4236,7 +4240,7 @@ function colTH(k){
   return `<th class="sortable${c.thx || ''}" data-sort="${k}"${w}>${c.hf
     ? `<span class="thf"><span>${lb}</span>${hfBtn('stock', c.hf)}</span>` : lb}</th>`;
 }
-/* 列見出しは2段（#637）。上の段は工程の12列の上に「工程」の欄、下の段に列の名前（工程は帯の名前・長い2つは略・
+/* 列見出しは2段（#637）。上の段は工程の13列の上に「工程」の欄、下の段に列の名前（工程は帯の名前・長い2つは略・
    承認ポイントは ◆。マウスを載せると正式名）。
    右端の承認の列は表が横に送れる幅で右に貼り付くので、上の段でも別のマス（.okcol）にして一緒に貼り付ける。
    1つのマスにまとめると、送れる幅で工程の欄の薄い青の地が承認の列の上まで見え、下の行と右端がずれる（okLast） */
@@ -4256,7 +4260,7 @@ const mtxRow = (it, cols) => ideaRow(it) ? ideaMtxRow(it, cols) : `<tr data-vid=
     cols.map(k => k === 'flow' ? flowCellsHTML(it) : MCOL[k].td(it)).join('')}</tr>`;
 /* 列幅は <colgroup> で決める。table-layout:fixed は「最初の行のセル」の幅しか見ないが、最初の行は「工程」の欄
    （colspan）なので、2段目の th に書いた幅は無視されて全列が均等割りになる。col に書けば行の中身に関係なく効く。
-   幅を書かない工程の12列が残りを等分する（表の最小幅で 1列 46px 以上を残す） */
+   幅を書かない工程の13列が残りを等分する（表の最小幅で 1列 46px 以上を残す） */
 const mtxCols = cols => `<colgroup>${cols.map(k => k === 'flow'
     ? SV_STEPS.map(() => '<col class="stcol">').join('')
     : `<col${MCOL[k].w ? ` style="width:${MCOL[k].w}"` : (k === 'ok' ? ' style="width:var(--okcol-w)"' : '')}>`).join('')}</colgroup>`;
@@ -4440,7 +4444,7 @@ const ideaCmp = (x, y) => { const a = ideaOf(x).views, b = ideaOf(y).views;
    並べ替え・絞り込み中は塊ごと）。ネタ案の行が無ければ rows.map(row).join('') と同じ */
 const ideaRuns = (rows, row, head) => rows.map((it, i) =>
     (ideaRow(it) && !(i > 0 && ideaRow(rows[i - 1])) ? head(it) : '') + row(it)).join('');
-/* 広い画面の表の行: タイトルの列に芯・題材・印、滞留は空、工程の12列は1マスにまとめて海外・日本の再生数。
+/* 広い画面の表の行: タイトルの列に芯・題材・印、滞留は空、工程の13列は1マスにまとめて海外・日本の再生数。
    ほかの列（番号・状態・あなたが見た回数・投稿日・承認）は今までの列の中身のまま */
 function ideaMtxRow(it, cols){
   const d = ideaOf(it);
@@ -4481,7 +4485,7 @@ const MARK_LEGEND = `<div class="legend2">
   <span class="lg"><span class="mark done">✓</span>済み</span>
   <span class="lg"><span class="mark work">●</span>AI作業中<span class="ex">（AIが自動で進めています）</span><span class="exs">（AIが進行中）</span></span>
   <span class="lg"><span class="mark rc">↺</span>AI修正中<span class="ex">（あなたが出した指摘をAIが直しています）</span><span class="exs">（指摘を直し中）</span></span>
-  <span class="lg"><span class="mark rcai">↺</span>作り直し中<span class="ex">（AIの点検で指摘が出たので直しています。あなたの操作は要りません）</span><span class="exs">（AIの指摘で直し中）</span></span>
+  <span class="lg"><span class="mark rcai">↺</span>作り直し中<span class="ex">（別AIの点検で指摘が出たので直しています。あなたの操作は要りません）</span><span class="exs">（AIの指摘で直し中）</span></span>
   <span class="lg"><span class="mark rv">●</span>承認待ち<span class="ex">（あなたの番）</span><span class="exs">（あなたの番）</span></span>
   <span class="lg"><span class="mark pubwait">●</span>投稿待ち</span>
   <span class="lg"><span class="mark skip"></span>なし</span></div>`;
@@ -4695,7 +4699,7 @@ function detailHTML(it){
     ? decideHTML(it, it._rv, changeLines(evs))
     : `<div class="decide">${it._rc
         ? (rcAiOnly(it)
-            ? `<div class="dstate rcai">↺ AIの点検の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
+            ? `<div class="dstate rcai">↺ 別AIの点検の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
             : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${esc(gateName(it._rc, it))}）。直り次第、新しい版で出し直します。</div>`)
         : `<div class="dstate">● いまは「${esc(curName)}」の工程です。</div>`}</div>`;
 
@@ -5175,6 +5179,7 @@ function assetsHTML(files, tapMode){
 function ytuiHTML(it){
   return `<div class="ytui" data-ytui aria-hidden="true" hidden>
   <i class="ycut l"></i><i class="ycut r"></i>
+  <i class="yzones" data-yzones></i>
   <span class="yt yclock">11:36</span>
   <svg class="ysig" viewBox="0 0 19 13" fill="#fff"><rect y="9" width="3.2" height="4" rx="1"/><rect x="5.2" y="6.3" width="3.2" height="6.7" rx="1"/>
     <rect x="10.4" y="3.3" width="3.2" height="9.7" rx="1"/><rect x="15.6" width="3.2" height="13" rx="1"/></svg>
@@ -5225,6 +5230,30 @@ const ytuiTitle = it => {
   const p = a && Array.isArray(a.pubs) ? a.pubs.find(x => x.seq === it.seq) : null;
   return (p && p.effective_title) || it.title || it.seq || '';
 };
+/* 画面の部品に隠れる範囲。公開のときに正本から作る hidden-zones.json を読み、.ytui の中（[data-yzones]）に矩形を描く。
+   位置は frame（1080×1920）に対する %。読めなければ矩形を出さないだけ（次に開いたときに読み直す） */
+const ZONES_URL = 'hidden-zones.json';
+let zonesP = null;
+function loadZones(){
+  if (!zonesP) zonesP = fetch(ZONES_URL + '?_=' + Date.now(), { cache: 'no-store' })
+    .then(res => res.ok ? res.json() : null)
+    .catch(() => null)
+    .then(z => {
+      const ok = z && z.frame && z.frame.w > 0 && z.frame.h > 0 && Array.isArray(z.zones);
+      if (!ok) zonesP = null;
+      return ok ? z : null;
+    });
+  return zonesP;
+}
+function paintZones(el){
+  if (!el) return;
+  loadZones().then(z => {
+    if (!z) return;
+    const pc = (n, d) => ((Number(n) || 0) / d * 100).toFixed(3) + '%';
+    el.innerHTML = z.zones.map(q => `<i class="yzone" data-zone="${esc(q.name)}" style="left:${pc(q.x, z.frame.w)};`
+      + `top:${pc(q.y, z.frame.h)};width:${pc(q.w, z.frame.w)};height:${pc(q.h, z.frame.h)}"></i>`).join('');
+  });
+}
 
 /* ── 動画の枠（#509 段1 → 段4 でタップ入力）───────────────────────────────
    tapMode が無ければブラウザ既定の操作バー（controls）のまま（台本・絵コンテ・以前の版）。
@@ -5620,6 +5649,7 @@ function armVideoBar(el){
   const yt = $$('[data-ytui]'), ytBtn = $$('[data-cbtn="ytui"]');
   let ytOn = false;
   try { ytOn = localStorage.getItem('dash.ytui') === '1'; } catch (_) {}
+  if (yt) paintZones(yt.querySelector('[data-yzones]'));
   const placeYt = () => {
     if (!yt || yt.hidden) return;
     const a = area(), b = box.getBoundingClientRect();
@@ -6400,7 +6430,7 @@ async function submitTapChanges(box, key){
 
 /* 動画と同じフォルダに置かれるシーンの素材表。内部ファイルなので素材の一覧には出さない */
 const RE_MATERIALS = /^materials_v(\d+)\.json$/i;
-/* 工程の帯（#570・オーナー決定 2026-09-29）。**全番組で同じ12個**を同じ順に並べ、使わない工程は
+/* 工程の帯（#570・オーナー決定 2026-09-29）。**全番組で同じ13個**を同じ順に並べ、使わない工程は
    斜線の地＋取り消し線で残す（並びは崩さない）。見本は dashboard/flow-mockup.html。
      name    … 1行目（工程の名前。用語集にある言葉は正式名で書く）
      what    … 2行目（作るもの・道具）。whatOff は進行係を通らない動画（offDispatcherItem）のとき、
@@ -6414,10 +6444,12 @@ const RE_MATERIALS = /^materials_v(\d+)\.json$/i;
      brk     … その名前を狭い列で折り返してよい所（| の位置・stepLabelHTML）。帯には使わない */
 const SV_STEPS = [
   {name:'ネタ案',               what:'候補の登録'},
+  /* 企画書は台本の前に監督が書く文書（言いたいこと・フック・話の順）。Blender の動画（進行係を通らない動画）だけが使う */
+  {name:'企画書',               what:'文章（md）・監督が書く', offOnly:true},
   {name:'台本',                 what:'文章（md）'},
   {name:'ナレーション',          brk:'ナレー|ション', what:'音声（ElevenLabs）'},
   {name:'シーン割り',            brk:'シーン|割り', what:'設計図（json）', whatBlender:'シーン詳細設計'},
-  {name:'Blender の仮組み',      short:'仮組み', what:'動きとカメラの確認用の動画', offOnly:true},
+  {name:'Blender仮組み',         short:'仮組み', what:'動きとカメラの確認用の動画', offOnly:true},
   {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）'},
   {name:'仮組み＋静止画の承認',   brk:'仮組み|＋静止画|の承認', what:'オーナーが見る', gate:'storyboard', offOnly:true},
   /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「Blender のコマ計算」。
@@ -6429,14 +6461,14 @@ const SV_STEPS = [
   {name:'公開',                 what:'', post:true, pubTime:true}
 ];
 /* 承認ポイント → 帯の位置 */
-const SV_GATE_STEP = {storyboard:6, final:9};
+const SV_GATE_STEP = {storyboard:7, final:10};
 /* 本体が持っている工程（PSTAGES / displayIdx の7つ）→ 帯の位置。1つの工程が帯の何個分にも
    またがるとき（board＝ナレーション〜静止画）は**またがる先頭**を指す。DB の工程からは
    ナレーション・仮組み・静止画の済み・未を細かく判定できないので、無理に済みにしない
-   （いまの位置より前は済み、後はこれから）。投稿済は全部済み（12＝帯の外）。
+   （いまの位置より前は済み、後はこれから）。投稿済は全部済み（13＝帯の外）。
      idea→ネタ案 / script→台本 / board→ナレーション / video→映像 / edit→完成動画の書き出し /
      queue→予約投稿 / posted→（全部済み） */
-const SV_FROM_PSTAGE = [0, 1, 2, 7, 8, 10, 12];
+const SV_FROM_PSTAGE = [0, 2, 3, 8, 9, 11, 13];
 
 /* ── いまの作業の記録（#637）────────────────────────────────────────────
    一覧のビューの末尾の work_* 列。記録が無い動画は全部 NULL（列がまだ無い DB では undefined で、同じく記録なし）。
@@ -6448,7 +6480,7 @@ const SV_FROM_PSTAGE = [0, 1, 2, 7, 8, 10, 12];
    （v_dashboard_list の sort_rank の「記録あり AND stage <> 'posted'」）と一覧のまとまり（sectionOf）と同じ条件で、
    ここで落とすので帯の位置・帯の2行目・一覧の札と印・「いまの工程」の1行・承認待ちの件数がみな同じ答えになる
    （承認のあとに共用素材の作業が記録を書いても、予約済みの動画が「映像」に戻って描かれない） */
-const WORK_STEP = {idea:0, script:1, narration:2, scenes:3, blocking:4, still:5, video:7, export:8};
+const WORK_STEP = {idea:0, script:2, narration:3, scenes:4, blocking:5, still:6, video:8, export:9};
 /* 数えられる作業で、最後に書いてからこれだけたった行は「止まっているかも」（黄色＋「更新なし N分」） */
 const WORK_STALL_MS = 10 * 60 * 1000;
 function workOf(r){
@@ -6619,7 +6651,7 @@ function svSignHit(ch, seq, dir, rels, sub){
 /* その動画で使わない工程は、**動画の制作方法**（一覧のビューの production_method / production_method_name /
    production_method_skip・#637）で決める。方法ごとの「使わない工程」は DB の制作方法の一覧が持ち、ここには写さない
    （作り方が増えても画面は直さなくてよい）。一覧の行も詳細画面も同じ列を読むので、同じ答えになる。
-   番組で決まる「この番組では なし」（02・03 の Blender の仮組みと使わない承認ポイント）が先で、制作方法の分はその上に
+   番組で決まる「この番組では なし」（02・03 の Blender仮組みと使わない承認ポイント）が先で、制作方法の分はその上に
    「この動画では なし」として足す（02・03 の「静止画＋H3」は仮組みを使わないが、そこは番組の判定が先に立つので
    今の表示のまま）。
    制作方法が NULL（分からない）の動画だけ、詳細画面は**承認画面が読む素材の目録**で予備の判定をする（#604 中1）——
@@ -6666,8 +6698,8 @@ const svMethod = (it, listRow) => {
 };
 /* 静止画を使わない作り方（映像を Blender で描く）か。映像の2行目を「コマ計算（Blender）」にするのに使う */
 const svBlenderOnly = (it, listRow) => svMethod(it, listRow).skip.includes('still');
-/* その動画で使わない工程と、状態の欄に出す言葉（12個ぶん。null＝使う）。
-   Blender の仮組みとその承認は進行係を通らない動画（力わざ・からくり・検証用）だけ、公開の側は検証用では使わない。
+/* その動画で使わない工程と、状態の欄に出す言葉（13個ぶん。null＝使う）。
+   Blender仮組みとその承認は進行係を通らない動画（力わざ・からくり・検証用）だけ、公開の側は検証用では使わない。
    承認ポイントは番組の human_gates（chMeta の gates）に無ければ使わない（#572・力わざとからくりは完成だけ）。
    その上に、制作方法の使わない工程（静止画＋H3 の仮組み・Blender だけの静止画など）を「この動画では なし」で足す */
 const SV_SKIP_TIP = {'この番組では なし':'この番組ではこの工程を使いません',
@@ -6700,9 +6732,9 @@ function svFlowAt(it, listRow){
   const rv = it._rv || it._rc;
   let i;
   if (rv && SV_GATE_STEP[rv] != null) i = SV_GATE_STEP[rv];
-  else if (rv === 'script') i = 1;
+  else if (rv === 'script') i = 2;
   /* 予約済みは「投稿済」の工程に入る（公開の記録がステータスを進める）。公開時刻を待っている */
-  else if (it.stage === 'posted' && it.pub_status === '予約済') i = 11;
+  else if (it.stage === 'posted' && it.pub_status === '予約済') i = 12;
   else {
     const d = displayIdx(it);
     i = (d < 0 || SV_FROM_PSTAGE[d] == null) ? 0 : SV_FROM_PSTAGE[d];
@@ -6876,7 +6908,7 @@ function sceneDetailHTML(it, plan){
     ? decideHTML(it, gate, [], barFacts, true, true)   /* タップ入力の欄は最初から出す（#637） */
     : `<div class="decide">${it._rc
         ? (rcAiOnly(it)
-            ? `<div class="dstate rcai">↺ AIの点検の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
+            ? `<div class="dstate rcai">↺ 別AIの点検の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
             : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${esc(gateName(it._rc, it))}）。直り次第、新しい版で出し直します。</div>`)
         : `<div class="dstate">● いまは「${esc(curName)}」の工程です。ここは見るだけの画面です。</div>`}</div>`;
 
@@ -7013,7 +7045,7 @@ function svRelayout(opts){
   }
   if (sv && o.repaint !== false) { svPaintNow(); svPaintRefFace(); }
 }
-/* 工程の帯を1行の幅に収める（#604 E1。1400px でも 12 個で 1500px 前後になり、横に送られて頭の
+/* 工程の帯を1行の幅に収める（#604 E1。1400px でも全部の工程で 1500px 前後かそれ以上になり、横に送られて頭の
    「ネタ案」「台本」が隠れ、端の文字が切れていた）。縮めるのは2行目（作るもの・道具／状態）だけで、
    名前（1行目）は切らない。いちばん長い2行目から順に同じ幅までそろえて縮め（足りない分だけ）、
    切れた2行目は「…」で終わる（全文はツールチップ）。名前だけでも入らない幅（狭い画面）では今までどおり
@@ -7900,7 +7932,7 @@ function svPaintMainHead(){
   setText(sv.q('[data-sv-refttl]'), borrow ? emptyTtl : '参照動画');
   setText(sv.q('[data-sv-segref]'), borrow ? emptyTtl : '参照動画');
   const sub = sv.q('[data-sv-finallbl]');
-  /* 借りているときの添え字は目録の label（例「Blender の仮組み（通し）」）。ふだんはファイル名 */
+  /* 借りているときの添え字は目録の label（例「Blender仮組み（通し）」）。ふだんはファイル名 */
   setText(sub, borrow ? label : String(sv.videoName || '').replace(/\.[^.]+$/, ''));
 }
 
@@ -8758,7 +8790,7 @@ function aiChangesLine(e){
   if (o === false) return AI_UNREADABLE;
   const role = aiRoleOf(e.author);
   const head = (o && o.source === 'final-validate') || role === '機械測定'
-    ? '機械測定' : (role ? `AIの点検（${role}）` : 'AIの点検');
+    ? '機械測定' : (role ? `別AIの点検（${role}）` : '別AIの点検');
   let what = '';
   if (o) {
     const items = Array.isArray(o.items) ? o.items : [];
