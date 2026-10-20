@@ -1124,7 +1124,7 @@ tr.dropped td{color:var(--muted)}
 /* ═══ 完成動画のタップ入力（#509 段4・見本 dashboard/review-mockup.html）═══════
    完成の承認待ちで mp4 を見ているときだけ出る。動画の気になる場所をタップ → 赤丸のピン →
    右列の入力シートに時刻とシーンが入る、という流れ。ブラウザ既定の操作バー（controls）は
-   タップを吸ってしまうので、再生・コマ送り・シークを自前で持つ。
+   タップを吸ってしまうので、再生・フレーム送り・シークを自前で持つ。
    ⚠️ 見た目の正本は見本のファイル。ここは同じ値を本体のトークンで書き直したもの。 */
 .vidbox{position:relative; margin:var(--sp-2) auto; background:#000; border-radius:var(--r-md);
   overflow:hidden; border:1px solid var(--border); max-width:100%;
@@ -1255,7 +1255,7 @@ tr.dropped td{color:var(--muted)}
 .sheet{background:var(--surface-1); border:1px solid var(--s1); border-radius:var(--r-lg);
   box-shadow:var(--shadow-2); padding:var(--sp-3) var(--sp-3) var(--sp-3)}
 .sheet .at{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:var(--sp-3)}
-/* スマホの完成レビューでだけシートの中に出すコマ送りの行（オーナー指摘 2026-09-22）。
+/* スマホの完成レビューでだけシートの中に出すフレーム送りの行（オーナー指摘 2026-09-22）。
    広い画面では動画の下の操作バーに −0.5s／+0.5s があるので、ここは出さない */
 .sheet .atnudge{display:none}
 /* スマホの承認画面（#552）の入力画面だけで使う部品。ほかの画面・パソコン幅では出さない
@@ -2022,8 +2022,8 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 /* ⚠️ 参照動画の列は**常に出す**（オーナー指摘 2026-09-21）。番組や動画によって列が消えると
    並びが揃わないので、1本も無い動画でも同じ大きさの枠を置いて中に「素材なし」と書く */
 .sview .sv-screen{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
-/* 主画面に出せる動画がまだ無く、目録の「通しの参照動画」を借りている回だけ、
-   借りた通しを**参照動画の列の位置**へ、本来の動画の位置（左）を「素材なし」の面へ入れ替える
+/* 主画面に出せる動画がまだ無く、目録の「参照動画（全フレーム）」を借りている回だけ、
+   借りた全フレームの動画を**参照動画の列の位置**へ、本来の動画の位置（左）を「素材なし」の面へ入れ替える
    （オーナー決定 2026-09-21）。入れ替えるのは見た目の位置と見出しだけで、連動の親・指摘に付く
    ファイル名・尺の照合は主画面の動画のまま。ショットごとの参照動画がある回は入れ替えない。
    どの幅でも .sv-screens は「左右2つ」なので、order だけで足りる（縦に積む状態は無い） */
@@ -2535,7 +2535,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
     border-color:var(--act-line); box-shadow:inset 0 0 0 1px var(--act-line); font-weight:680}
   .sview .sheet .sv-mtog .hint{font-size:var(--fs-xs); color:var(--muted)}
   .sview .sheet .sv-mtog[hidden]{display:none}
-  /* メモとして書いているあいだは、時刻・場面・静止画・コマ送りを出さない */
+  /* メモとして書いているあいだは、時刻・場面・静止画・フレーム送りを出さない */
   .sview .sheet .sv-mmemolbl{display:none; font-size:var(--fs-md); font-weight:700}
   .sview .sheet.memo-on .sv-mmemolbl{display:inline}
   .sview .sheet.memo-on .at .t,.sview .sheet.memo-on .at .sc,.sview .sheet.memo-on .atnudge,
@@ -2747,7 +2747,7 @@ const RE_VID = /\.(mp4|mov|webm|m4v)$/i;
 const RE_TXT = /\.(md|txt|srt|vtt|json|csv)$/i;
 /* 承認時の追加注意（課金や不可逆な工程に進むゲート） */
 /* 承認時の追加注意。**金額の話はしない**——生成は gen-farm ローカルで 0円（#273）。
-   それでも作り直しは GPU 時間と順番待ちを食うので、進む前に見てほしいことは残す。 */
+   それでも作り直しは GPU 時間とキューの待ちを食うので、進む前に見てほしいことは残す。 */
 const GATE_CAUTION = {storyboard:'承認すると映像生成へ進みます（gen-farm で生成・追加費用なし）。'};
 
 /* 表示上の7工程（videos.status からの写像）。一覧の行と詳細の帯は13個の帯（SV_STEPS）で出し、
@@ -2775,10 +2775,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/21 02:52';
+const BUILT_AT = '10/21 05:18';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '19f16ad57c61';
+const BUILT_HASH = 'cc89bf1d98fd';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3266,8 +3266,8 @@ async function loadThread(videoId){
   return store.threads[videoId];
 }
 
-/* いまの版の番号を DB に聞く（一覧のビューが古い版の提出を除くのに使っているのと同じ窓口）。
-   画面は版の表そのものを読めないので、番号だけを返すこの窓口を通す。覚えずに毎回聞くのは、
+/* いまの版の番号を DB に聞く（一覧のビューが古い版の提出を除くのに使っているのと同じ DB の関数）。
+   画面は版の表そのものを読めないので、番号だけを返すこの関数を通す。覚えずに毎回聞くのは、
    詳細を開き直したときに必ず最新で判定するため（1件ぶんの軽い問い合わせ）。
    答えが得られなければ null を返し、呼び出し側は従来どおりレビュー記録から代用する。 */
 async function loadCurRev(videoId){
@@ -3566,7 +3566,7 @@ async function signPaths(paths){
     }
   } catch (_) { /* 下で1つずつ出し直す */ }
   if (!ok) {
-    /* まとめて出す窓口が断ったときだけ、今までどおり1つずつ出す */
+    /* まとめて出す API（createSignedUrls）が断ったときだけ、今までどおり1つずつ出す */
     await Promise.all(miss.map(async p => {
       try { const { data: s } = await sb.storage.from(ASSET_BUCKET).createSignedUrl(p, ASSET_TTL); put(p, s && s.signedUrl); }
       catch (_) { /* その素材は「素材なし」 */ }
@@ -4367,7 +4367,7 @@ function stockCards(rows, err){
 
 /* ── ネタ案の一覧と詳細（#672・見本「案 一覧」「案 詳細」）──────────────────────────────
    一覧のビューの末尾の列 idea（jsonb・NULL あり）・source_url・jp_competition・created_at を読む（画面は select('*')）。
-   idea の形は DB の窓口が決める: 入っているときはキーが全部あり、無い項目は null か []。
+   idea の形は DB 側が決める: 入っているときはキーが全部あり、無い項目は null か []。
    **列が無い DB・idea が NULL の行でも壊れない**（workOf と同じ考え）: 芯は hook（無ければタイトル）、出典は source_url、
    ほかは「なし」。jp_competition は読まない（バズ雑学・歯科医番長の分は DB 側で idea に写す）。
    この形で描くのは**ネタ案のまとまりに入る行だけ**（ideaRow＝sectionOf が idea。作業中の記録がある案は【AI】作業中の
@@ -4418,7 +4418,7 @@ function ideaCount(n){
 const ideaCountHTML = (s, cls) => `<span class="${cls}${s.count == null ? ' no' : ''}"${
     s.note ? ` title="${esc(s.note)}"` : ''}>${esc(ideaCount(s.count))}</span>`;
 /* 芯の見出し。芯に入れる物は番組で違うので、見出しも番組で替える: 力わざは「逆説の芯」、からくりは「題の案」、
-   雑学・歯科はネタ案を入れる口の --hook と同じ1文なので「フック」。どれでもない番組は「芯」 */
+   雑学・歯科はネタ案を入れるコマンドの --hook と同じ1文なので「フック」。どれでもない番組は「芯」 */
 const IDEA_CORE_LABEL = {'rikiwaza':'逆説の芯', 'karakuri':'題の案', 'buzz-zatsugaku':'フック', 'dental':'フック'};
 const ideaCoreLabel = it => (it && IDEA_CORE_LABEL[it.channel]) || '芯';
 /* 調べた日（動画の行を作った時刻）: 10/4(日) の形（零詰めなし・JST）。読めなければ空 */
@@ -4913,7 +4913,7 @@ async function openDetail(vid, gate, hint){
   /* ネタ案の画面（#672）は素材を見ないので、置き場を読みに行かない */
   const plan = ideaRow(it) ? null : await useSceneView(it);
   if (token !== openSeq) return;
-  /* 案の無い画面は、主画面の動画・目録・時刻表をここでそろえる（待つのは、借りた通しの仮組みの署名と、
+  /* 案の無い画面は、主画面の動画・目録・時刻表をここでそろえる（待つのは、借りたBlender仮組み（全フレーム）の署名と、
      先に取っていない版の目録・時刻表のときだけ）。目録で決まる帯（Blender だけか）も最初の描画で正しく出す */
   let pre = null;
   if (plan && plan.kind !== 'variant') {
@@ -4957,7 +4957,7 @@ function prefetchAssets(it){
 
 /* この動画を「シーン素材つきの画面」で開くか（#519 段2 → #523 で絵コンテにも → #569）。
    ・見ている承認ポイントが完成か絵コンテ（仮組み＋静止画）であること（台本は従来の画面）
-   ・主画面に出せる動画（決まりの名前の mp4・案・通しの仮組み）が置き場にあること
+   ・主画面に出せる動画（決まりの名前の mp4・案・Blender仮組み（全フレーム））が置き場にあること
    ネタの仕分け・没は対象外。返すのは { gate:承認ポイント, dir:読む置き場, kind }。 */
 async function useSceneView(it){
   if (!it || it.stage === 'triage' || it.stage === 'dropped') return null;
@@ -4979,9 +4979,9 @@ async function useSceneView(it){
     const a = await loadAssetsFirst(it.channel, it.seq, assetDirsOf(it, gate));
     const files = a.files || [], dir = a.dir;
     if (!files.length) return null;
-    /* 公開して保管庫へ移した動画は、置き場の動画（完成・案・通しの仮組み）を片付けてある（#602）。
+    /* 公開して保管庫へ移した動画は、置き場の動画（完成・案・Blender仮組み（全フレーム））を片付けてある（#602）。
        主画面に出す動画が無ければこの画面は使わず、従来の画面で YouTube を案内する（目録だけ残っていても
-       通しの仮組みを借りない——借りる先も片付けてあり、壊れた枠になる） */
+       Blender仮組み（全フレーム）を借りない——借りる先も片付けてあり、壊れた枠になる） */
     if (ytUrlOf(it) && !svMainFile(files, dir, one)) return null;
     if (svVariants(files, one, dir).list.length) return { gate, dir, kind:'variant', files };
     if (svMainFile(files, dir, one))  return { gate, dir, kind:'video', files };
@@ -5437,7 +5437,7 @@ function armLazyAssets(root){
 /* ══ 完成動画のタップ入力（#509 段4）══════════════════════════════════════════
    「完成」の承認待ちで mp4 を見ているときだけ出る。動画の気になる場所をタップすると、その
    再生位置とシーン名が入った入力シートが開き、定型の言葉＋一言で指摘を1件にする。送るのは
-   修正依頼の受け口に添える `p_notes`（**形の正本は DB 側の検証関数**・画面はそれに合わせる）。
+   修正依頼を受け付ける DB の関数に添える `p_notes`（**形の正本は DB 側の検証関数**・画面はそれに合わせる）。
    **静止画は送らない**——サムネイルは画面の中で「どの指摘のことか」を見分けるためだけに作る。
    見た目と操作の正本は `dashboard/review-mockup.html`（オーナー承認済みの見本）。 */
 
@@ -5453,9 +5453,9 @@ const NOTE_TAGS = {
 const NOTE_TAGS_ALL = [...new Set([...NOTE_TAGS.picture, ...NOTE_TAGS.whole])];
 const NOTE_KIND_LABEL = {picture:'', whole:'▣ いまの画面 ・ '};
 /* 廃止した種類（'audio'）が下書きや過去の指摘に残っていたら「いまの画面」として読む。
-   **落とさない**——書いた本人には消える理由が無い（受け口は 'audio' を弾くので送る前に直す） */
+   **落とさない**——書いた本人には消える理由が無い（DB の関数は 'audio' を弾くので送る前に直す） */
 const normKind = k => (k === 'picture' ? 'picture' : 'whole');
-/* 受け口と同じ上限。送ってから断られないよう画面の側でも先に止める（正本は DB の検証関数） */
+/* DB の関数と同じ上限。送ってから断られないよう画面の側でも先に止める（正本は DB の検証関数） */
 const NOTE_LIM = {items:50, tag:100, note:500, memo:2000, title:100};
 /* 動画と同じフォルダに置かれるシーンの時刻表。内部ファイルなので素材の一覧には出さない */
 const RE_TIMELINE = /^scenes_timeline_v(\d+)\.json$/i;
@@ -5472,7 +5472,7 @@ const fmtT = t => {
   const m = Math.floor(t / 60), s = Math.floor(t % 60);
   return m + ':' + (s < 10 ? '0' : '') + s;
 };
-/* 0.1秒まで出す形（指摘のシートのコマ送り。0:47.0 のように読む） */
+/* 0.1秒まで出す形（指摘のシートのフレーム送り。0:47.0 のように読む） */
 const fmtT1 = t => {
   if (!isFinite(t) || t < 0) t = 0;
   const m = Math.floor(t / 60), s = t % 60;
@@ -5685,7 +5685,7 @@ function armVideoBar(el){
   if (window.ResizeObserver) new ResizeObserver(placeYt).observe(box);
   else window.addEventListener('resize', placeYt);
   paintYt();
-  /* いまのコマを小さな JPEG に切り出す（画面に出すだけ・送らない）。
+  /* いまのフレームを小さな JPEG に切り出す（画面に出すだけ・送らない）。
      crossorigin を外していたら canvas が汚れて読めないので、その場合は作らない */
   ctl.thumb = (x, y) => {
     if (!ctl.canvas) return null;
@@ -5787,7 +5787,7 @@ function tapPanelHTML(it, shown){
       <div class="at"><span class="sv-mmemolbl">全体へのメモ</span><span class="t" data-stime>0:00</span>
         <span class="sc" data-sscene></span>
         <span class="gbadge fix" data-smode hidden>直しています</span></div>
-      <!-- スマホでだけ出るコマ送りの行（オーナー指摘 2026-09-22）。広い画面は動画の下の
+      <!-- スマホでだけ出るフレーム送りの行（オーナー指摘 2026-09-22）。広い画面は動画の下の
            操作バーに同じものがあるので CSS で隠す -->
       <div class="atnudge">
         <button class="btn sm" type="button" data-tapact="nudge-back" aria-label="0.5秒もどる">−0.5s</button>
@@ -5979,7 +5979,7 @@ function tapOpenSheet(){
   /* スマホの1画面（#552 の続き）: 段2「書く」＝全画面の入力画面。段1（場所を選ぶ）は降り、
      止めた場面の静止画を作り、入力欄にすぐ打てるようにする（押した操作の中なので
      iPhone でもキーボードが出る）。入力画面では動画が隠れるので、直すときの時刻合わせは
-     静止画をコマ送りのたびに作り直して見せる */
+     静止画をフレーム送りのたびに作り直して見せる */
   if (svMobileOn()) {
     tapPickOff();
     sheet.classList.toggle('memo-on', !!tap.draft.memo);
@@ -6337,7 +6337,7 @@ function armTap(node, files, mode){
     if (e.target.matches('[data-snote]')) tapSyncTags();
     if (e.target.matches('[data-memo]'))  { tapDraftSave(); tapPaintMemo(); tapSyncBar(); }
   });
-  /* スマホの入力画面では動画が隠れているので、コマ送り・「直す」で時刻が動いたら
+  /* スマホの入力画面では動画が隠れているので、フレーム送り・「直す」で時刻が動いたら
      上の小さな静止画を作り直す（#552 の続き） */
   ctl.video.addEventListener('seeked', () => {
     if (tap && tap.draft && !tap.draft.memo && svMobileOn()) tapSheetThumb();
@@ -6360,7 +6360,7 @@ function armTap(node, files, mode){
 const tapActive = key => !!(tap && tap.mode === 'edit' && tap.key.startsWith(String(key) + '|'));
 
 /* ── 送る ────────────────────────────────────────────────────────────
-   本文（p_body）は受け口が notes から自動で作るので渡さない。全体へのメモは notes.memo に
+   本文（p_body）は DB の関数が notes から自動で作るので渡さない。全体へのメモは notes.memo に
    入れる。版は承認と同じ「見ていた版」を添え、裏で新しい版が出ていたら断ってもらう。 */
 function tapNotes(){
   const memo = tapMemoVal();
@@ -6377,7 +6377,7 @@ function tapNotes(){
       pin: normKind(r.kind) === 'picture' && r.pin ? { x: r.pin.x, y: r.pin.y } : null,
       tag: r.tag ? String(r.tag).slice(0, NOTE_LIM.tag) : null,
       note: r.note ? String(r.note).slice(0, NOTE_LIM.note) : null,
-      /* 案のタブがあるときだけ、見ていた案の印を添える（受け口は知らないキーを拒まない・#523） */
+      /* 案のタブがあるときだけ、見ていた案の印を添える（DB の関数は知らないキーを拒まない・#523） */
       ...(r.variant ? { variant: String(r.variant).slice(0, NOTE_LIM.tag) } : {})
     }))
   };
@@ -6452,9 +6452,9 @@ const SV_STEPS = [
   {name:'Blender仮組み',         short:'仮組み', what:'動きとカメラの確認用の動画', offOnly:true},
   {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）'},
   {name:'仮組み＋静止画の承認',   brk:'仮組み|＋静止画|の承認', what:'オーナーが見る', gate:'storyboard', offOnly:true},
-  /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「Blender のコマ計算」。
+  /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「Blenderレンダリング」。
      作り込みも帯では「映像」に入る）。2行目は短く道具まで（帯を1行に収めるため） */
-  {name:'映像',                 what:'テイク（H3）', whatBlender:'コマ計算（Blender）'},
+  {name:'映像',                 what:'テイク（H3）', whatBlender:'Blenderレンダリング（Blender）'},
   {name:'完成動画の書き出し',     short:'書き出し', what:'映像・音声・字幕を1本に（Remotion）', whatOff:'映像・注釈・字幕・音を1本に'},
   {name:'完成の承認',            brk:'完成の|承認', what:'オーナーが見る', gate:'final'},
   {name:'予約投稿',              brk:'予約|投稿', what:'YouTube に登録', post:true},
@@ -6507,10 +6507,10 @@ const fmtHMW = (t, now) => {
   return `${(now - t) > 6 * DAY ? fmtMD(iso) + ' ' : ''}${fmtTime(iso)}(${jstWD(d)})`;
 };
 const actWord = w => !w.activity ? '作業中' : (w.activity.endsWith('中') ? w.activity : w.activity + '中');
-/* 札の言葉「映像・コマ計算中」（工程の名前は帯の名前）。作業の中身が空の記録（コマ計算を途中で止めたあとの
+/* 札の言葉「映像・Blenderレンダリング中」（工程の名前は帯の名前）。作業の中身が空の記録（Blenderレンダリングを途中で止めたあとの
    「映像」だけの記録など・#637）は工程の名前だけ（「映像」） */
 const workTitle = w => w.activity ? `${SV_STEPS[w.step].name}・${actWord(w)}` : SV_STEPS[w.step].name;
-/* 帯の2行目（「コマ計算 812/1852」か「作り込み中」。作業の中身が空なら記録の無いときと同じ「AI作業中」） */
+/* 帯の2行目（「Blenderレンダリング 812/1852」か「作り込み中」。作業の中身が空なら記録の無いときと同じ「AI作業中」） */
 const workLine2 = w => w.counted ? `${w.activity || '作業'} ${w.done}/${w.total}` : (w.activity ? actWord(w) : 'AI作業中');
 /* 止まっているかも: 数えられる作業で最後の書き込みから WORK_STALL_MS 以上。たった長さ（ミリ秒）か null */
 const workStall = (w, now) => (w && w.counted && w.updated != null && now - w.updated >= WORK_STALL_MS)
@@ -6573,8 +6573,8 @@ const svRefShort = () => (sv && sv.mat && sv.mat.refs_label) || '参照';
    案ごとのフォルダ（variants/…）——ので、読み取りはこの1つの関数に寄せる。
    ショット方式の目録が足す3つ（unit・ref_video_full・start_kind）もここで読む（#523）:
      unit           … 単位の呼び名（「ショット」。無ければ「シーン」）
-     ref_video_full … 通しの参照動画（完成動画がまだ無いときの主画面）
-     start_kind     … 'chain' なら前のショットの最後の1コマから続く（開始の絵を作らない） */
+     ref_video_full … 参照動画（全フレーム）（完成動画がまだ無いときの主画面）
+     start_kind     … 'chain' なら前のショットの最後の1フレームから続く（開始の絵を作らない） */
 function parseMaterials(text){
   try {
     const o = JSON.parse(text);
@@ -6596,7 +6596,7 @@ function parseMaterials(text){
       .filter(s => isFinite(s.start) && isFinite(s.end) && isFinite(s.n));
     if (!rows.length) return null;
     const full = (o && o.ref_video_full && o.ref_video_full.src)
-      ? { label: String(o.ref_video_full.label || '通しの参照動画'), src: String(o.ref_video_full.src) }
+      ? { label: String(o.ref_video_full.label || '参照動画（全フレーム）'), src: String(o.ref_video_full.src) }
       : null;
     const unit = (o && typeof o.unit === 'string' && o.unit.trim()) ? o.unit.trim() : 'シーン';
     /* refs の欄の呼び名（#574）。全部 Blender の動画は「使った素材」。無ければ今までどおり「参照画像」 */
@@ -6606,7 +6606,7 @@ function parseMaterials(text){
   } catch (_) { return null; }
 }
 /* 動画と同じ版の目録だけを使う（時刻表と同じ作法）。主画面の動画がまだ無いとき
-   （通しの参照動画で見る回）は版を突き合わせられないので、いちばん新しい版を使う。 */
+   （参照動画（全フレーム）で見る回）は版を突き合わせられないので、いちばん新しい版を使う。 */
 function sceneMaterials(files, videoName){
   const m = /_v(\d+)\./i.exec(String(videoName || ''));
   const want = m ? Number(m[1]) : null;
@@ -6664,7 +6664,7 @@ function svSignHit(ch, seq, dir, rels, sub){
    帯は目録より先に描くので、目録が届いた時点で描き直す（svPaintFlow） */
 const SV_MADE = new Map();               /* 「動画|案|版」→ true（Blender だけ）／false（目印の無い目録） */
 /* いま見ている目録の鍵。版は、案があれば索引の版（案の目録はこの版だけを読む）、無ければ主画面の動画の版
-   （目録は動画と同じ版だけを読む）。主画面の動画が無く通しの仮組みを借りている回は置き場のいちばん新しい目録の版 */
+   （目録は動画と同じ版だけを読む）。主画面の動画が無くBlender仮組み（全フレーム）を借りている回は置き場のいちばん新しい目録の版 */
 /* 鍵の作り方（組み立てる前の画面 svPrepare と、組み立てた画面 svMadeKey で同じ式を使う） */
 const svMadeKeyOf = (id, variant, variantsVer, mainLabel, files, videoName) => {
   const ver = variant ? variantsVer
@@ -6696,7 +6696,7 @@ const svMethod = (it, listRow) => {
   }
   return { skip: [], name: '' };
 };
-/* 静止画を使わない作り方（映像を Blender で描く）か。映像の2行目を「コマ計算（Blender）」にするのに使う */
+/* 静止画を使わない作り方（映像を Blender で描く）か。映像の2行目を「Blenderレンダリング（Blender）」にするのに使う */
 const svBlenderOnly = (it, listRow) => svMethod(it, listRow).skip.includes('still');
 /* その動画で使わない工程と、状態の欄に出す言葉（13個ぶん。null＝使う）。
    Blender仮組みとその承認は進行係を通らない動画（力わざ・からくり・検証用）だけ、公開の側は検証用では使わない。
@@ -6773,7 +6773,7 @@ function svStepState(it, i, cur, skipNote){
     return { cls:'done', st:'' };
   }
   if (i > cur) return { cls:'', st:'' };
-  /* 作業中の記録がある（#637）: 2行目は作業の中身（「コマ計算 812/1852」か「作り込み中」） */
+  /* 作業中の記録がある（#637）: 2行目は作業の中身（「Blenderレンダリング 812/1852」か「作り込み中」） */
   if (it._work) return { cls:'cur', st:workLine2(it._work) };
   if (it._rv) return { cls:'cur', st:'承認待ち' };
   if (it._rc) return { cls:'cur', st:rcShort(it) };
@@ -7225,7 +7225,7 @@ function svBuildScript(){
     b.type = 'button'; b.className = 'sv-sline';
     b.title = svUnitN(s.n) + (s.title ? '「' + s.title + '」' : '');
     /* 開始フレームのサムネ。無ければ同じ大きさの「素材なし」の面
-       （前の1コマから続く作りでも、面の大きさは変えない・#523） */
+       （前の1フレームから続く作りでも、面の大きさは変えない・#523） */
     const u = svUrl(s.start_img);
     if (u) {
       const im = document.createElement('img');
@@ -7363,7 +7363,7 @@ function svPaintNow(){
       wrap.appendChild(b);
     } else {
       /* **枠は必ず作る**。中は「素材なし」（作らない設計のときだけ理由を添える）。
-         前の1コマから続く作りのときだけ、文言そのものを差し替える（sl.none・#523） */
+         前の1フレームから続く作りのときだけ、文言そのものを差し替える（sl.none・#523） */
       const nne = document.createElement('div');
       nne.className = 'none';
       nne.appendChild(document.createTextNode(sl.none || '素材なし'));
@@ -7379,13 +7379,13 @@ function svPaintNow(){
   /* 素材表が無い／そのシーンに無いときも、上段2枠と下段の参照画像の枠は同じ大きさで出す */
   const kind = (sv.mat && s) ? s.end_kind : 'frame';
   /* 開始の絵を作らない作り（start_kind:'chain'）のときは「素材なし」ではなく、
-     前の1コマから続くことを書く。**枠の位置と大きさは変えない**（#523） */
+     前の1フレームから続くことを書く。**枠の位置と大きさは変えない**（#523） */
   const startKind = (sv.mat && s) ? s.start_kind : 'frame';
   const top = document.createElement('div');
   top.className = 'sv-shelfrow';
   top.appendChild(slotEl({ cap: kind === 'still' ? '静止（1枚）' : '開始フレーム',
     src: (sv.mat && s) ? s.start_img : null,
-    none: startKind === 'chain' ? '前の' + svUnit() + 'の最後の1コマから続きます' : null }));
+    none: startKind === 'chain' ? '前の' + svUnit() + 'の最後の1フレームから続きます' : null }));
   const sep = document.createElement('span');
   sep.className = 'sv-sep'; sep.textContent = '→';
   top.appendChild(sep);
@@ -7464,8 +7464,8 @@ function svStepLbox(d){
    参照のほうが短ければ末尾で止めて知らせ、長ければシーンが変わった時点で次の参照へ替わる。
    速度は変えない。 */
 /* 参照動画の候補。そのシーンに参照動画が無く、主画面が本物の映像（借りていない）で、目録に
-   通しの参照動画（ref_video_full）があるなら、通しを候補にする（オーナー指摘 2026-09-23:
-   H3 の映像が入った途端に右のモックが消えた）。通しは主画面と同じ時間軸なので `full:true` を付け、
+   参照動画（全フレーム）（ref_video_full）があるなら、全フレームの動画を候補にする（オーナー指摘 2026-09-23:
+   H3 の映像が入った途端に右のモックが消えた）。全フレームの動画は主画面と同じ時間軸なので `full:true` を付け、
    同期の起点をシーンの頭ではなく 0 秒にする */
 const svRefList = () => {
   const s = svSceneByN(sv.curN);
@@ -7730,11 +7730,11 @@ function svPaintBar(){
 
 /* ── 主画面の動画と案（#523）─────────────────────────────────────────
    主画面に出すのは「その承認ポイントのフォルダの {承認ポイント}_v{NN}.mp4」。無ければ
-   目録の「通しの参照動画」（ref_video_full）。どちらも無ければこの画面は使わない。 */
+   目録の「参照動画（全フレーム）」（ref_video_full）。どちらも無ければこの画面は使わない。 */
 /* dir＝置き場のフォルダ名（動画の名前の頭もこれ: final/final_v01.mp4・storyboard/storyboard_v01.mp4）。
    latest＝進行係を通らない動画（#569）。置き場が1つなので、別の版の提出が同じフォルダに並ぶ——
    **置き場の中でいちばん新しい版**（動画と目録の版の大きい方）の動画だけを主画面にする。
-   その版が目録だけ（仮組みだけの提出）なら null を返し、その版の通しの仮組みを主画面に借りる。
+   その版が目録だけ（仮組みだけの提出）なら null を返し、その版のBlender仮組み（全フレーム）を主画面に借りる。
    古い版の完成動画を新しい版の仮組みより先に出さないため */
 function svMainFile(files, dir, latest){
   const re = new RegExp('^' + dir + '_v(\\d+)\\.[A-Za-z0-9]+$', 'i');
@@ -7746,7 +7746,7 @@ function svMainFile(files, dir, latest){
   }
   if (best) return (latest && svNewestMaterialsVer(files) > bv) ? null : best;
   /* 完成だけは 02・03 の従来どおり「決まりの名前が無ければ最後の動画」を使う。
-     絵コンテは決まりの名前だけを候補にする——**関係のない動画が通しの仮組みより先に出る**のを
+     絵コンテは決まりの名前だけを候補にする——**関係のない動画がBlender仮組み（全フレーム）より先に出る**のを
      防ぐため（#523 のレビュー指摘8）。ここで null を返せば ref_video_full へ落ちる */
   if (dir !== 'final') return null;
   const vids = files.filter(f => f.kind === 'video' && f.url);
@@ -7837,7 +7837,7 @@ async function svSource(ch, seq, dir, files, v, ver, latest){
   }
   if (out.mat) {
     out.urls = await svSign(ch, seq, dir, svMatRels(out.mat), v ? v.dir : null);
-    /* 主画面の動画がまだ無ければ、通しの参照動画を主画面にする（左の見出しは目録の label） */
+    /* 主画面の動画がまだ無ければ、参照動画（全フレーム）を主画面にする（左の見出しは目録の label） */
     if (!out.videoUrl && out.mat.ref_video_full) {
       out.videoUrl = out.urls[out.mat.ref_video_full.src] || null;
       out.videoName = out.mat.ref_video_full.src.split('/').pop();
@@ -7861,7 +7861,7 @@ function svMatRels(mat){
 /* 案の無い画面の「見せるもの」を、画面を組み立てる前にそろえる（#637・svSource の案なしと同じ中身）。
    主画面の動画は置き場を読んだ時点で署名済みなので、それで先に読み始め、目録の画像の署名は待たずに並べて取る
    （urlsP。届いたら svFillUrls が枠に画像を入れる）。控えに全部あれば待たずに使う。待つのは、主画面に出す動画が
-   無く目録の通しの仮組みを借りる回（その署名が要る）と、先に取っていない版の目録・時刻表があるときだけ */
+   無く目録のBlender仮組み（全フレーム）を借りる回（その署名が要る）と、先に取っていない版の目録・時刻表があるときだけ */
 async function svPrepare(it, plan){
   const { dir, files } = plan;
   const latest = offDispatcherItem(it);
@@ -7902,9 +7902,9 @@ function afterVideo(v, fn){
   setTimeout(go, 5000);
 }
 
-/* 主画面に出せる動画（{承認ポイント}_v{NN}.mp4）がまだ無く、目録の「通しの参照動画」を
+/* 主画面に出せる動画（{承認ポイント}_v{NN}.mp4）がまだ無く、目録の「参照動画（全フレーム）」を
    主画面に借りている状態か（オーナー決定 2026-09-21）。借りているときは**見た目の位置だけ**
-   入れ替えて、借りた通しを「参照動画」の列に、左（本来の動画の位置）を「素材なし」の面にする。
+   入れ替えて、借りた全フレームの動画を「参照動画」の列に、左（本来の動画の位置）を「素材なし」の面にする。
    ⚠️ ショットごとの参照動画がある回は入れ替えない——右の列はそちらが使うので潰さない。
    `hasRefVideo` が決まるのは尺の照合のあと（apply）なので、決まるまでは今までどおりの並び。 */
 const svBorrowed = () => !!(sv && sv.mainLabel && sv.hasRefVideo === false);
@@ -7923,7 +7923,7 @@ function svPaintMainHead(){
   const emptyTtl = '映像';
   const stage = sv.q('[data-sv-stage]');
   if (stage) { if (borrow) stage.dataset.borrow = '1'; else delete stage.dataset.borrow; }
-  /* 左の見出し: 借りているときは「参照動画」、主画面の動画があり通しの仮組みを右に出す回は「映像」
+  /* 左の見出し: 借りているときは「参照動画」、主画面の動画がありBlender仮組み（全フレーム）を右に出す回は「映像」
      （「絵コンテの動画」は意味が取れない・オーナー指摘 2026-09-22/23）。02・03 の完成は今までどおり */
   const mainTtl = borrow ? '参照動画' : ((sv.mat && sv.mat.ref_video_full) ? emptyTtl : label);
   /* 字が変わるときだけ書き換える（組み立てと長さが届いたときに同じ字を書き直さない・#637） */
@@ -7932,7 +7932,7 @@ function svPaintMainHead(){
   setText(sv.q('[data-sv-refttl]'), borrow ? emptyTtl : '参照動画');
   setText(sv.q('[data-sv-segref]'), borrow ? emptyTtl : '参照動画');
   const sub = sv.q('[data-sv-finallbl]');
-  /* 借りているときの添え字は目録の label（例「Blender仮組み（通し）」）。ふだんはファイル名 */
+  /* 借りているときの添え字は目録の label（例「Blender仮組み（全フレーム）」）。ふだんはファイル名 */
   setText(sub, borrow ? label : String(sv.videoName || '').replace(/\.[^.]+$/, ''));
 }
 
@@ -8291,7 +8291,7 @@ function svTapOff(root){
    ⚠️ この4つ（.abox / .wbox / .rjbox / .dbar）は必ず同じ .decide の直下に置く——
    バーのボタンは自分の外にある囲みを .decide 経由で引き当てる（actBox / writeGroup）。 */
 /* ── 下端のボタンの言葉（#523）──────────────────────────────────────
-   **呼ぶ受け口は本編とまったく同じ**。言葉も本編と同じにそろえた（オーナー決定 2026-09-29
+   **呼ぶ DB の関数は本編とまったく同じ**。言葉も本編と同じにそろえた（オーナー決定 2026-09-29
    「承認、とかの同じ文言にしてほしい」。#523 で検証用だけ「この方向でOK／指摘を送る／この案はやめる」に
    替えていたのをやめた）。検証用の動画で変わるのは、進む先の注意書きを出さないことだけ。 */
 const isPilotItem = it => !!(it && isPilotSeq(it.seq));
@@ -8498,7 +8498,7 @@ function rpcErrText(error, act){
   if (code === '22023')
     return /reason is empty/i.test(raw)  ? '没にする理由を入力してください'
          : /body is empty/i.test(raw)    ? 'コメントを入力してください'
-         /* 指摘の形が受け口の決まりに合わなかった（件数・文字数の上限、欠けた項目など） */
+         /* 指摘の形が DB の関数の決まりに合わなかった（件数・文字数の上限、欠けた項目など） */
          : /invalid notes/i.test(raw)    ? '指摘の中身を受け付けてもらえませんでした。件数や文字数を減らすか、画面を新しくしてやり直してください'
          /* triage_idea の action 不正（#314）。ボタン以外から呼ばれたときだけ出る */
          : /invalid action/i.test(raw)   ? '操作の指定が不正です。画面を再読み込みしてやり直してください'
@@ -8681,7 +8681,7 @@ async function approveNow(vid, gate, note, rev){
   store.assets = {}; store.analytics = {};
   delete store.threads[Number(vid)];
   /* 承認待ちバッジだけは今すぐ正しくする（この1件を減らす。一覧は触らない）。
-     ⚠️ **記録されなかった承認では減らさない**（#572）。同じ版に人の承認が既にあると、受け口は何も
+     ⚠️ **記録されなかった承認では減らさない**（#572）。同じ版に人の承認が既にあると、DB の関数は何も
      記録せず already_approved を返す。そのあと同じ版で出し直された動画は、一覧のビューでは
      承認待ちのまま残る——手元だけ減らすと DB と食い違い、タブの数字が消えた（KR0001・KR0002 で
      「身近なからくり」の数字が消えた・2026-09-30 09:02）。どちらの場合も、最後に全番組の件数を
@@ -10302,7 +10302,7 @@ function assetUsed(used){
   return used.length ? `<ul class="exl">${used.map(u => `<li><b>${esc(u.seq)}</b> ${esc(u.title || '')}<div class="exn">${
     (u.shots || []).length ? 'シーン ' + esc(u.shots.join('・')) : '動画全体'}</div></li>`).join('')}</ul>` : '';
 }
-/* 呼び方（081 の call）。{functions:[{function, signature, doc}]（最初が主な呼び口）, …} の関数ごとに
+/* 呼び方（081 の call）。{functions:[{function, signature, doc}]（最初が主に呼ぶもの）, …} の関数ごとに
    呼び方の1行と説明を出す。それ以外の形はそのまま文字で出す */
 function assetCall(c){
   if (c && typeof c === 'object' && !Array.isArray(c) && Array.isArray(c.functions)) c = c.functions;
@@ -10312,7 +10312,7 @@ function assetCall(c){
     : `<pre class="code">${esc(typeof x === 'string' ? x : JSON.stringify(x, null, 1))}</pre>`).join('');
 }
 /* 一覧の行に出す説明（#572・オーナー 2026-09-30 20:30「名前だけでなく、どういう内容なのかもう少し一覧側で」）。
-   開いたときに「呼び方」の下に出る説明文のうち、最初の関数（主な呼び口）の説明の1行目。最初の関数に説明が無ければ、
+   開いたときに「呼び方」の下に出る説明文のうち、最初の関数（主に呼ぶもの）の説明の1行目。最初の関数に説明が無ければ、
    説明のある次の関数の1行目。説明が次の行へ続くのに1行目が文の途中（「・」「、」など）で終わるときは「…」を付ける。
    長さは CSS で2行に切る（超えたら「…」） */
 function assetDesc(c){
