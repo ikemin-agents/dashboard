@@ -1,0 +1,54 @@
+{
+  "source": "00-config/production-defaults.json の items.screen_hidden_zones_px",
+  "frame": {
+    "w": 1080,
+    "h": 1920
+  },
+  "value": {
+    "side": 52,
+    "top": 110,
+    "right_column": {
+      "x_from": 845,
+      "y_from": 1195,
+      "y_to": 1740
+    },
+    "bottom_from": 1740
+  },
+  "zones": [
+    {
+      "name": "left",
+      "x": 0,
+      "y": 0,
+      "w": 52,
+      "h": 1920
+    },
+    {
+      "name": "right",
+      "x": 1028,
+      "y": 0,
+      "w": 52,
+      "h": 1920
+    },
+    {
+      "name": "top",
+      "x": 0,
+      "y": 0,
+      "w": 1080,
+      "h": 110
+    },
+    {
+      "name": "right_column",
+      "x": 845,
+      "y": 1195,
+      "w": 235,
+      "h": 545
+    },
+    {
+      "name": "bottom",
+      "x": 0,
+      "y": 1740,
+      "w": 1080,
+      "h": 180
+    }
+  ]
+}
