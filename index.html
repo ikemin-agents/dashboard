@@ -2775,10 +2775,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/21 06:08';
+const BUILT_AT = '10/21 16:46';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'cc89bf1d98fd';
+const BUILT_HASH = '58127a00cf95';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -6480,7 +6480,7 @@ const SV_FROM_PSTAGE = [0, 2, 3, 8, 9, 11, 13];
    （v_dashboard_list の sort_rank の「記録あり AND stage <> 'posted'」）と一覧のまとまり（sectionOf）と同じ条件で、
    ここで落とすので帯の位置・帯の2行目・一覧の札と印・「いまの工程」の1行・承認待ちの件数がみな同じ答えになる
    （承認のあとに共用素材の作業が記録を書いても、予約済みの動画が「映像」に戻って描かれない） */
-const WORK_STEP = {idea:0, script:2, narration:3, scenes:4, blocking:5, still:6, video:8, export:9};
+const WORK_STEP = {idea:0, proposal:1, script:2, narration:3, scenes:4, blocking:5, still:6, video:8, export:9};
 /* 数えられる作業で、最後に書いてからこれだけたった行は「止まっているかも」（黄色＋「更新なし N分」） */
 const WORK_STALL_MS = 10 * 60 * 1000;
 function workOf(r){
