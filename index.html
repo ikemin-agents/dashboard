@@ -2703,7 +2703,7 @@ const PILOT_ONLY_CH = new Set(['experiment']);
 /* 進行係を通らない番組（登録簿の dispatcher_mode が storage_only・#569）。登録簿にある番組だけを書く
    （test_channel_registry.py が登録簿と突き合わせる）。この番組の動画と検証用の動画は、手元の提出の
    入口から出し、**レビュー素材の置き場が動画ごとに1つ**になる（下の offDispatcherItem） */
-const STORAGE_ONLY_CH = new Set(['rikiwaza', 'experiment', 'karakuri']);
+const STORAGE_ONLY_CH = new Set(['buzz-zatsugaku', 'dental', 'rikiwaza', 'experiment', 'karakuri']);
 /* ── 検証用の動画（試作・検証）の見分け方 ──────────────────────────────
    番号の数字部が 9000 以上なら本編ではない。**見分け方はこの1か所だけ**（チャンネルの
    振り分けもここを通す）。検証用は各番組のタブ・在庫の数・
@@ -2718,7 +2718,7 @@ const isPilotSeq = seq => {
   return !!(m && Number(m[1]) >= PILOT_MIN);
 };
 /* ── 進行係を通らない動画（検証用と storage_only の番組・#569）─────────────────
-   手元の提出の入口（submit_for_review.py）から出す動画。**02・03 の本編はここに入らない**。
+   手元の提出の入口（submit_for_review.py）から出す動画。雑学・歯科も進行係の制作から外したので入る（#1036）。
    この動画だけ次の3つが違う（オーナー決定 2026-09-29「置き場は動画ごとに1つ」）:
      ・レビュー素材の置き場が承認ポイントに依らず1つ（ONE_DIR）。Blender仮組みは参照動画の欄に、
        完成動画が出来たら主画面の欄に出る。旧い置き場（storyboard/）は新しい置き場が空のときだけ読む
@@ -2791,10 +2791,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/22 11:26';
+const BUILT_AT = '10/22 19:11';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '13f4975c386b';
+const BUILT_HASH = 'bce066d7dff0';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
