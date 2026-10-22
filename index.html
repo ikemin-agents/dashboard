@@ -2223,6 +2223,13 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .gbadge.fix{background:var(--attn); color:var(--attn-ink)}
 /* 入力シートが開いているあいだは一覧の場所を譲る（動画は動かさない） */
 .sview .sv-sec.sb.sheeton .nlistwrap{display:none}
+/* 見るだけの画面の「この版への私の指摘」（状態の1行の下）。一覧はタップ入力の一覧と同じ形で、
+   サムネ（保存していない）と「直す・消す」の列が無いぶん2列に詰める。見出しはスマホだけ（件数は②の見出し） */
+.sview .sv-livenotes{order:2; flex:1 1 auto; min-height:0; display:flex; flex-direction:column}
+.sview .sv-livenotes>.sv-livehd{display:none}
+.sview .nitem.sv-lrow{grid-template-columns:minmax(0,1fr) auto; min-height:0}
+.sview .nitem.sv-lrow.nojump{cursor:default}
+.sview .nitem.sv-lrow.nojump:hover{background:transparent}
 /* シートは**中身の高さぶん**取る（枠に合わせて縮めない・監査 #533）。縮めると定型の札の
    3段目・自由記述の欄・「この指摘を足す」「やめる」が内側のスクロールの下に隠れ、そこに
    続きがあるという手がかりが出ない（PC 1400×900 の実測で 291px の中身が 94px に潰れていた）。
@@ -2475,6 +2482,11 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
     overflow:visible; flex:0 0 auto; min-height:auto}
   .sview .sv-sec.sc>.sv-sechd{display:flex; height:auto; min-height:28px; font-size:var(--fs-sm)}
   .sview .sv-prevlist{flex:0 0 auto; overflow:visible; min-height:auto}
+  /* 見るだけの画面の「この版への私の指摘」は前回までの指摘の上（svMobileLayout が移す） */
+  .sview .sv-sec.sc>.sv-livenotes{flex:0 0 auto; min-height:auto; gap:4px;
+    padding-bottom:8px; border-bottom:1px solid var(--border-2)}
+  .sview .sv-livenotes>.sv-livehd{display:flex; font-size:var(--fs-sm)}
+  .sview .sv-sec.sb .sv-livenotes{display:none}   /* 移す前（②の中のまま）は格子に紛れ込ませない */
   .sview .nitem.sv-scn,.sview .sv-prow.cur{box-shadow:inset 3px 0 0 var(--act-line)}
   .sview .memo{height:64px; min-height:64px; max-height:none; font-size:16px}
   /* 全体へのメモはスマホでは入力欄を出さない（触るとキーボードが勝手に出る・#552 の続き）。
@@ -2779,10 +2791,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/22 09:33';
+const BUILT_AT = '10/22 09:43';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'f15175907d2d';
+const BUILT_HASH = '13f4975c386b';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -6856,7 +6868,8 @@ function svPaintFlow(){
    対応の記録（今回変えた内容）は②の先頭の「変更」に出ているので、ここには出さない。 */
 function svPrevNotes(it, evs, gate){
   const g = gate || 'final';
-  const liveRev = it._rv === g ? submittedRevOf(it.id, g) : null;
+  /* 左に出ている完成動画は、承認待ちでなくても最新の提出の版（差し戻した直後・ほかの工程でも同じ） */
+  const liveRev = submittedRevOf(it.id, g);
   const rows = [];
   for (const e of newestFirst(evs.filter(x => !isAiAuthor(x.author)
       && (x.kind === 'request_changes' || x.kind === 'comment')))) {
@@ -6872,6 +6885,7 @@ function svPrevNotes(it, evs, gate){
           title: r.scene_title || '', tag: r.tag || null,
           /* どの案を見て書いた指摘かは送ったあとも残す（#523 のレビュー指摘2） */
           variant: r.variant ? String(r.variant) : null,
+          kind: normKind(r.kind),
           body: r.note || '', when, rev, live,
           pin: (live && normKind(r.kind) === 'picture' && r.pin) ? r.pin : null });
       }
@@ -6884,6 +6898,16 @@ function svPrevNotes(it, evs, gate){
     }
   }
   return rows;
+}
+/* ②と③の振り分け（行はどちらも svPrevNotes から作る）。承認待ちでないときは、左に出ている完成動画の版に
+   付いた指摘を②へ（付けたときと同じ一覧の形で大きく出す）、それより前の版の指摘を③へ。
+   承認待ちのときは②がタップ入力の欄なので、今までどおり全部③。
+   ②の並びはタップ入力の一覧と同じ時刻の順。時刻の無い行（全体へのメモ・古い本文だけの依頼）は最後 */
+function svSplitNotes(it, rows, gate){
+  if (it._rv === (gate || 'final')) return { live: [], prev: rows };
+  const live = rows.filter(r => r.live), prev = rows.filter(r => !r.live);
+  const timed = live.filter(r => r.t != null).sort((a, b) => a.t - b.t);
+  return { live: timed.concat(live.filter(r => r.t == null)), prev };
 }
 
 /* ── 画面の組み立て ─────────────────────────────────────────────── */
@@ -6899,7 +6923,16 @@ function sceneDetailHTML(it, plan){
   const evs = threadOf(it.id);
   const sub = latestSub(evs);
   const ver = subRevLabel(sub);
-  const prev = svPrevNotes(it, evs, gate);
+  const notes = svSplitNotes(it, svPrevNotes(it, evs, gate), gate);
+  const prev = notes.prev;
+  /* 承認待ちでないとき、左の動画の版に付いた指摘を状態の1行の下に出す入れ物（行は svBuildLive が入れる）。
+     1件も無ければ置かない＝状態の1行だけになり、③が右の列に広がる。
+     見出しはスマホだけ（③の上へ移したときに、どの一覧かを示す。広い画面は②の見出しに件数が出る） */
+  const liveBox = notes.live.length
+    ? `<div class="sv-livenotes" data-sv-livenotes>
+        <div class="nhd sv-livehd">この版への私の指摘<span class="n" data-sv-livecount>${notes.live.length}件</span></div>
+        <div class="nlistwrap"><div class="nlist" data-sv-livelist></div></div></div>`
+    : '';
   /* 下端バーの左（事実だけ）。承認の先は工程の帯の次の工程から取る */
   const barFacts = `<div class="sv-barfacts">
     <span class="bf"><span data-sv-state>指摘 0件</span></span>
@@ -6914,7 +6947,7 @@ function sceneDetailHTML(it, plan){
         ? (rcAiOnly(it)
             ? `<div class="dstate rcai">↺ 別AIの点検の指摘で${esc(gateName(it._rc, it))}を作り直しています。あなたの操作は要りません。</div>`
             : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${esc(gateName(it._rc, it))}）。直り次第、新しい版で出し直します。</div>`)
-        : `<div class="dstate">● いまは「${esc(curName)}」の工程です。ここは見るだけの画面です。</div>`}</div>`;
+        : `<div class="dstate">● いまは「${esc(curName)}」の工程です。ここは見るだけの画面です。</div>`}${liveBox}</div>`;
 
   return `<div class="dview sview${it._rv === gate ? ' hasbar' : ''}" role="region"
       aria-label="${esc(it.title)} の詳細">
@@ -7108,7 +7141,10 @@ function svMobileLayout(){
   const vt = q('[data-sv-vtabs]'), dtop = q('.dtop'), shd = q('.sv-sec.sa>.sv-sechd');
   const sc = q('.sv-sec.sc'), wrap = q('.sv-wrap');
   const tb = q('.decide [data-tapbox]'), abox = q('.decide [data-abox]');
+  const live = q('[data-sv-livenotes]'), dst = q('.sv-sec.sb .decide>.dstate');
   if (mob) {
+    /* 見るだけの画面の「この版への私の指摘」→ 指摘のタブの中、前回までの指摘の上 */
+    if (live && sc && live.parentNode !== sc) sc.prepend(live);
     if (ref && mat && ref.parentNode !== mat) mat.appendChild(ref);
     const ttl = dtop && dtop.querySelector('.ttl');
     if (vt && ttl && vt.parentNode !== dtop) ttl.after(vt);
@@ -7125,6 +7161,8 @@ function svMobileLayout(){
     /* 案のタブの広い画面での置き場所は①の見出し行の中・facts の左（オーナー決定 2026-09-29 案A） */
     if (vt && shd && vt.parentNode !== shd) shd.insertBefore(vt, shd.querySelector(':scope > .facts'));
     if (sc && wrap && sc.parentNode !== wrap) wrap.appendChild(sc);
+    /* 広い画面では②の状態の1行のすぐ下（③を広げる CSS は「状態の1行だけ」かどうかで決まる） */
+    if (live && dst && live.previousElementSibling !== dst) dst.after(live);
     if (abox && tb) {
       const fold = abox.querySelector(':scope > .afold');
       tb.querySelectorAll(':scope > .sv-macau').forEach(c => {
@@ -7172,6 +7210,11 @@ function svPaintNotesCur(){
     });
   }
   if (sv.root.dataset.mtab !== 'notes') return;
+  /* 見るだけの画面の「この版への私の指摘」は③の上に並ぶので、先に探す */
+  if (!first && sv.liveRows) {
+    const p = sv.liveRows.find(r => r.scene != null && r.scene === sv.curN);
+    if (p) first = p.el;
+  }
   if (!first && sv.prevRows) {
     const p = sv.prevRows.find(r => r.scene != null && r.scene === sv.curN);
     if (p) first = p.el;
@@ -7219,7 +7262,9 @@ function svBuildScript(){
   }
   /* そのシーンに前回の指摘が何件あるか（帯に付けていた印をここへ移した） */
   const byScene = {};
-  for (const p of (sv.prev || [])) if (p.scene != null) byScene[p.scene] = (byScene[p.scene] || 0) + 1;
+  /* ②に分けた「この版への私の指摘」も数える（分ける前と同じ件数） */
+  for (const p of (sv.prev || []).concat(sv.liveNotes || []))
+    if (p.scene != null) byScene[p.scene] = (byScene[p.scene] || 0) + 1;
   /* 素材表が無くても、時刻表があれば行の形（番号・時刻・タイトル）は出し、
      ナレーションの場所に「素材なし」と書く（行ごと消さない） */
   let chars = 0;
@@ -7605,6 +7650,7 @@ function svSyncScene(force){
   svPaintNow();
   svPaintScript();
   svPaintPrevCur();
+  svPaintLiveCur();
   svPaintNotesCur();
   svApplyRef();
 }
@@ -7674,6 +7720,8 @@ function svBuildPrev(){
       if (tap) tapGoto(p.t, p.pin);
       else if (sv.ctl) { sv.ctl.video.pause();
         try { sv.ctl.video.currentTime = p.t; } catch (_) {}
+        /* ②の行から出したピンは、前の版の指摘へ飛んだら外す（前の版の画の位置は今の動画に合わない） */
+        sv.livePin = null; sv.ctl.hidePin();
         sv.ctl.paint(); }
       sv.manual = false;
       svSyncScene();
@@ -7687,6 +7735,73 @@ function svBuildPrev(){
 function svPaintPrevCur(){
   if (!sv || !sv.prevRows) return;
   for (const r of sv.prevRows) r.el.classList.toggle('cur', r.scene != null && r.scene === sv.curN);
+}
+
+/* ── ② 見るだけの画面の「この版への私の指摘」────────────────────────────
+   承認待ちでないとき（AIが対応中・ほかの工程）、左に出ている完成動画の版に付けた指摘を、付けたときの
+   タップ入力の一覧と同じ形で出す。AI と相談しながら見返せるよう、行を押すとその時刻へ飛び、場所を指した
+   指摘ならピンを出す。目盛りには指摘の時刻に赤い印。直す・消すは無い（送ったあとの指摘は変えられない）。
+   サムネは保存していないので、画の列は出さない（.sv-lrow で2列にする） */
+function svBuildLive(){
+  if (!sv) return;
+  const list = sv.q('[data-sv-livelist]');
+  sv.liveRows = [];
+  if (!list) return;
+  list.textContent = '';
+  setText(sv.q('[data-sv-livecount]'), sv.liveNotes.length + '件');
+  for (const r of sv.liveNotes) {
+    const row = document.createElement('div');
+    row.className = 'nitem sv-lrow';
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const l1 = document.createElement('div');
+    l1.className = 'l1';
+    if (r.t != null) {
+      const tt = document.createElement('span'); tt.className = 'tt'; tt.textContent = fmtT(r.t);
+      l1.appendChild(tt);
+      /* タップ入力の一覧と同じく、場所を指していない指摘にだけ印を1つ付ける */
+      if (r.kind && r.kind !== 'picture') {
+        const k = document.createElement('span'); k.className = 'sc'; k.textContent = '▣ 画面全体';
+        l1.appendChild(k);
+      }
+    }
+    const where = r.scene == null ? '' : tapWhere('picture', r.t, r.scene, r.title);
+    if (where) { const s = document.createElement('span'); s.className = 'sc'; s.textContent = where; l1.appendChild(s); }
+    const vl = svVariantLabel(r.variant);
+    if (vl) { const s = document.createElement('span'); s.className = 'sc'; s.textContent = vl; l1.appendChild(s); }
+    if (r.tag) { const g = document.createElement('span'); g.className = 'gbadge fix'; g.textContent = r.tag; l1.appendChild(g); }
+    if (l1.childNodes.length) meta.appendChild(l1);
+    if (r.body) { const n = document.createElement('div'); n.className = 'note'; n.textContent = r.body; meta.appendChild(n); }
+    row.appendChild(meta);
+    /* 時刻の無い行（全体へのメモ・古い本文だけの依頼）は押しても飛ぶ先が無い */
+    if (r.t != null) row.addEventListener('click', () => svLiveGoto(r));
+    else row.classList.add('nojump');
+    list.appendChild(row);
+    sv.liveRows.push({ el: row, scene: r.scene });
+  }
+  svPaintLiveCur();
+}
+/* 行を押したとき（タップ入力の tapGoto と同じ動き。こちらは tap が無いので主画面の操作バーを使う） */
+function svLiveGoto(r){
+  if (!sv || !sv.ctl || r.t == null) return;
+  const c = sv.ctl;
+  c.video.pause();
+  try { c.video.currentTime = r.t; } catch (_) {}
+  sv.livePin = r.pin || null;
+  if (r.pin) c.showPin(r.pin.x, r.pin.y); else c.hidePin();
+  c.paint();
+  sv.manual = false;
+  svSyncScene();
+}
+/* いま見ているシーンへの指摘の行を強調する（③の svPaintPrevCur と同じ付け替え） */
+function svPaintLiveCur(){
+  if (!sv || !sv.liveRows) return;
+  for (const r of sv.liveRows) r.el.classList.toggle('cur', r.scene != null && r.scene === sv.curN);
+}
+/* 目盛りの赤い印。承認待ち（タップ入力）の印は tapPaint が置くので、ここでは触らない */
+function svLiveMarks(){
+  if (!sv || !sv.ctl || !sv.liveNotes.length || (tap && tap.mode === 'edit')) return;
+  sv.ctl.marks(sv.liveNotes.filter(r => r.t != null));
 }
 
 /* ── 下端バーの左（事実だけ・良し悪しは書かない）── */
@@ -7715,7 +7830,9 @@ function svPaintBar(){
   if (!sv || !sv.root.isConnected) return;
   const st = sv.q('[data-sv-state]'), cnt = sv.q('[data-sv-ncount]');
   const n = (tap && tap.mode === 'edit' && tap.vid === sv.it.id) ? tap.items.length : null;
-  setText(cnt, n == null ? '見るだけ' : (n + '件'));
+  /* 見るだけの画面でも、②に左の動画の版への指摘を出しているときはその件数 */
+  const ln = (sv.liveNotes || []).length;
+  setText(cnt, n != null ? (n + '件') : ln ? (ln + '件') : '見るだけ');
   setText(st, n == null ? 'この画面では指摘を足せません' : ('指摘 ' + n + '件'));
   const next = sv.q('[data-sv-next]');
   if (next) {
@@ -8091,10 +8208,16 @@ async function armScene(node, files, pre){
          mat: null, tl: null, scenes: [], urls: src.urls, urlsPending: true, urlsGen: 0,
          curN: null, manualN: null, manual: false,
          scriptRows: [], scriptHold: 0, scriptAuto: false, prevRows: [],
-         lboxList: [], lboxI: 0, prev: [], watched: [], booted: false };
+         lboxList: [], lboxI: 0, prev: [], liveNotes: [], liveRows: [], livePin: null,
+         watched: [], booted: false };
   sv.watchedBy[sv.variant || ''] = sv.watched;   /* 見た範囲は案ごと（#523 のレビュー指摘7） */
   if (tap) tap.variant = sv.variant;
-  sv.prev = svPrevNotes(sv.it, threadOf(sv.it.id), gate);
+  {
+    const nt = svSplitNotes(sv.it, svPrevNotes(sv.it, threadOf(sv.it.id), gate), gate);
+    sv.prev = nt.prev;
+    /* ②の一覧は入れ物を置いた（承認待ちでなく、左の動画の版に指摘がある）ときだけ使う */
+    sv.liveNotes = q('[data-sv-livenotes]') ? nt.live : [];
+  }
   svPaintMainHead();
   svBuildVariantTabs();
   svPaintFlow();
@@ -8158,8 +8281,12 @@ async function armScene(node, files, pre){
       svSyncScene(true);
       /* 単位の呼び名が決まるのはここなので、それを使う一覧はここで描き直す（#523） */
       svBuildPrev();
+      svBuildLive();
       if (tap && tap.mode === 'edit') tapPaint();
     }
+    /* 見るだけの画面の目盛りの赤い印（②に出した指摘の時刻）。位置は尺で割るので、長さが届いてから置く。
+       案を切り替えたときも動画を読み直して、ここをもう一度通る */
+    if (d) svLiveMarks();
     svPaintWatch();
     svPaintBar();
     if (!same) svRelayout({ repaint: false });   /* いまのシーンの素材は svSyncScene が描いたばかり */
@@ -8200,6 +8327,8 @@ async function armScene(node, files, pre){
   /* 動画の枠の大きさが変わったら（タブの開閉・入力欄・キーボード）、書いている指摘の印を
      置き直す。印は枠に対する割合で置くので、枠の縦横比が変わるとずれる。スマホだけ（#552） */
   if (window.ResizeObserver) new ResizeObserver(() => {
+    /* 見るだけの画面で②の行から出したピンも同じ理由で置き直す */
+    if (tapMobile() && !tap && sv && sv.ctl && sv.livePin) sv.ctl.showPin(sv.livePin.x, sv.livePin.y);
     if (!tapMobile() || !tap || !tap.ctl) return;
     if (tap.draft && tap.draft.x != null) tap.ctl.showPin(tap.draft.x, tap.draft.y);
     else if (!tap.draft) tap.ctl.hidePin();
