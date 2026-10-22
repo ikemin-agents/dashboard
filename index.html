@@ -2300,6 +2300,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
      行の高さも変えないので、ページ全体が縦に動くこともない。 */
   .sview .sv-sec.sb.sheeton{grid-row:1 / span 2; position:relative; z-index:2}
   .sview .sv-wrap:has(.sv-sec.sb.sheeton) .sv-sec.sc{visibility:hidden}
+  /* ②が状態の1行だけ（承認待ちでない＝AIが対応中・ほかの工程）のときは、②を1行の高さに縮め、
+     ③を右の列の残り全部に広げる。対応中も前回の指摘を読める大きさで出す（オーナー指摘）。
+     ①は grid-row 1 / span 2 のままなので動画と台本の大きさは変わらない */
+  .sview .sv-wrap:has(.sv-sec.sb .decide>.dstate:only-child){grid-template-rows:auto minmax(0,1fr)}
 }
 /* ≧1700px: 台本・動画2本・素材の3列（上下端をそろえる） */
 @media (min-width:1700px){
@@ -2775,10 +2779,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/22 04:40';
+const BUILT_AT = '10/22 09:33';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '58127a00cf95';
+const BUILT_HASH = 'f15175907d2d';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
