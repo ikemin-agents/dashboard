@@ -2859,10 +2859,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/23 22:41';
+const BUILT_AT = '10/23 22:46';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'fcceab929d09';
+const BUILT_HASH = '75baa68b2390';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -9044,11 +9044,15 @@ async function apvLoad(it){
   } catch (e) { err = `予約の一覧を読めませんでした（${e.message || e}）。空いている日は確かめてから選んでください`; }
   /* 完成に人の承認があり、まだ予約されていない動画（進行係の次の周期を待っている）も、埋まっている日に数える。
      承認のときに日時を選んだ物はその日。選んでいない物（日時の無い承認）は、進行係と同じ決まりで次の空き日に
-     承認の古い順に置いて数える（進行係はそれを次の空き日に予約するので、既定の枠と重ならないように） */
+     承認の古い順に置いて数える（進行係はそれを次の空き日に予約するので、既定の枠と重ならないように）。
+     DB の状態「投稿待ち」は、進行係が付く番組では完成を提出した時点で付く（提出済み＝投稿待ち・dispatcher.py の
+     desired_status）ので、状態だけでは承認済みと分からない。一覧の承認済みの判定（gateApproved）と同じく、
+     人の承認の時刻（approved_final_at）があり、完成の承認ポイントが承認待ち（review）でも差し戻しの直し中
+     （changes）でもない動画だけ数える */
   try {
-    const vs = (await q(sb.from('v_dashboard_list').select('id,seq,title,channel,status,pub_status,approved_final_at')
-      .eq('channel', it.channel).eq('status', '投稿待ち').neq('id', it.id).limit(200)))
-      .filter(v => !v.pub_status && !pubs.some(p => p.video_id === v.id))
+    const vs = (await q(sb.from('v_dashboard_list').select('id,seq,title,channel,status,pub_status,approved_final_at,final_state')
+      .eq('channel', it.channel).eq('status', '投稿待ち').neq('id', it.id).not('approved_final_at', 'is', null).limit(200)))
+      .filter(v => !v.pub_status && !v.final_state && !pubs.some(p => p.video_id === v.id))
       .sort((a, b) => String(a.approved_final_at || '').localeCompare(String(b.approved_final_at || '')));
     const get = cols => sb.from('review_events').select(cols).eq('gate', 'final').eq('kind', 'approve')
       .in('video_id', vs.map(v => v.id));
