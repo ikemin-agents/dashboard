@@ -2859,10 +2859,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/23 09:44';
+const BUILT_AT = '10/23 21:18';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'd116ef9c87ca';
+const BUILT_HASH = 'fcceab929d09';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -8963,7 +8963,7 @@ function quickApproveGo(key, btn, publishAt, info, shownRev){
 
 /* ── 完成の承認の確認（公開の日時を選ぶ・#1091）──────────────────────────────
    完成の承認だけ、押したら確認を出す（PC は真ん中・スマホは下から）。予約投稿の工程を持つ番組では公開の日時を
-   選ばせる。既定は次の空き枠で、決まりは進行係（run_stage.py の next_publish_date・same_day_open）と同じ:
+   選ばせる。既定は次の空き枠で、決まりは進行係（publish_slot.py の next_free_day・run_stage.py の same_day_open）と同じ:
    1日1本・番組の公開時刻（channels.publish_time_jst）・公開時刻の30分前より前なら今日も候補・日本時間で数える。
    予約の一覧は v_publications（主の口の予約済・投稿済）と、日時を選んで承認済みでまだ予約されていない動画。
    予約がある日を選んでも止めない（「1日1本」は次の空き枠を決めるときだけの決まり）。選んだ日時は承認の受け口の
@@ -8971,7 +8971,7 @@ function quickApproveGo(key, btn, publishAt, info, shownRev){
    日時の部分の無い確認だけ。番組ごとの時刻はここに書かない（DB から読む） */
 const APV_WD = '日月火水木金土';
 const APV_MARGIN_MIN = 30;                 /* run_stage.py の SAME_DAY_MARGIN_MIN と同じ */
-const APV_SPAN_DAYS = 60;                  /* 次の空き枠を探す先（run_stage.py の next_publish_date と同じ） */
+const APV_SPAN_DAYS = 60;                  /* 次の空き枠を探す先（publish_slot.py の SPAN_DAYS と同じ） */
 const APV_WHO = { koike: '小池' };
 const APV_CHECK = '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>';
 const apvHHMM = v => {
@@ -11130,21 +11130,26 @@ async function replayApproveOutbox(){
 }
 
 /* ══ 制作フロー（#695）═══════════════════════════════════════════
-   Blender 制作の全体の構成（横に工程・縦に項目）。中身は公開のときに道具が正本（係の定義・監督の手順書・番組の工程表）
-   から作る flow.json を読むだけで、この画面に表を書かない。形の正本は README の「制作フローの札」。
-   1マス＝行の並び、1行＝文字のかけら（k: name 太字・id 識別子・note 薄字・label 見出し・badge 札）。字の中の `…` は等幅 */
+   作り方（作業場の構成）ごとの制作の全体の構成（横に工程・縦に項目）を札で切り替える。中身は公開のときに道具が正本
+   （係の定義・監督の手順書・番組の工程表）から作る flow.json を読むだけで、この画面に表を書かない。形の正本は README の
+   「制作フローの札」。flows の1つ＝札1つ。1マス＝行の並び、1行＝文字のかけら（k: name 太字・id 識別子・note 薄字・
+   label 見出し・badge 札）。字の中の `…` は等幅 */
 const FLOW_URL = 'flow.json';
 const FLOW_TONES = ['opus', 'sonnet', 'main', 'human', 'tool'];
+let flowKey = null;   /* 選んでいる札（flows の key）。無ければ最初の札 */
 async function loadFlow(){
   if (store.flow) return store.flow;
   const res = await fetch(FLOW_URL + '?_=' + Date.now(), { cache: 'no-store' });
   if (!res.ok) throw new Error(res.status === 404 ? '制作フローの図がまだありません（公開のときに作ります）'
                                                   : `制作フローの図を読めません（${res.status}）`);
   const f = await res.json();
-  /* 形を確かめる（列の数と、各行のマスの数・まとめたマスの幅の合計が合わない図は描かない） */
-  const n = f && Array.isArray(f.cols) ? f.cols.length : 0;
-  const ok = f && f.v === 1 && n > 0 && Array.isArray(f.rows) && f.rows.every(r =>
-    r.spans ? r.spans.reduce((a, s) => a + (s.n | 0), 0) === n : Array.isArray(r.cells) && r.cells.length === n);
+  /* 形を確かめる（札ごとに、列の数と、各行のマスの数・まとめたマスの幅の合計が合わない図は描かない） */
+  const okFlow = g => {
+    const n = g && Array.isArray(g.cols) ? g.cols.length : 0;
+    return n > 0 && g.key && Array.isArray(g.rows) && g.rows.every(r =>
+      r.spans ? r.spans.reduce((a, s) => a + (s.n | 0), 0) === n : Array.isArray(r.cells) && r.cells.length === n);
+  };
+  const ok = f && f.v === 2 && Array.isArray(f.flows) && f.flows.length > 0 && f.flows.every(okFlow);
   if (!ok) throw new Error('制作フローの図の形が違います');
   store.flow = f;
   return f;
@@ -11162,10 +11167,12 @@ function flowSpan(s){
 const flowLines = lines => (lines && lines.length)
   ? lines.map(ln => `<div class="fl-ln">${(ln || []).map(flowSpan).join('')}</div>`).join('')
   : '<span class="fl-none">—</span>';
-function flowHTML(f){
-  const tabs = (f.tabs || []).map(t => t.later
-    ? `<button type="button" class="fl-tab" disabled aria-disabled="true">${flowText(t.label)}<span class="fl-later">後で</span></button>`
-    : `<button type="button" class="fl-tab" aria-selected="${t.on ? 'true' : 'false'}">${flowText(t.label)}</button>`).join('');
+function flowHTML(all){
+  const f = all.flows.find(g => g.key === flowKey) || all.flows[0];
+  const tabs = all.flows.map(g =>
+    `<button type="button" class="fl-tab" role="tab" data-flow="${esc(g.key)}" aria-selected="${g === f ? 'true' : 'false'}">${flowText(g.label)}</button>`).join('')
+    + (all.later || []).map(t =>
+    `<button type="button" class="fl-tab" disabled aria-disabled="true">${flowText(t)}<span class="fl-later">後で</span></button>`).join('');
   const head = `<tr><th class="fl-row" scope="col">工程 →</th>${f.cols.map(c =>
     `<th scope="col"${c.gate ? ' class="fl-gate"' : ''}>${c.stage && c.stage !== c.name ? `<span class="fl-stage">${flowText(c.stage)}</span>` : ''}`
     + `<span class="fl-step">${c.gate ? '◆ ' : ''}${flowText(c.name)}</span></th>`).join('')}</tr>`;
@@ -11177,7 +11184,7 @@ function flowHTML(f){
     <div class="pagehead"><div class="eyebrow">制作フロー</div><h1>🧭 ${flowText(f.title)}</h1></div>
     <div class="fl-meta"><span>${flowText((f.programs || []).join('・'))}</span>
       <span>係の定義 ${f.agents | 0}本・監督の手順書・番組の工程表から描く</span>
-      <span>描いた時刻 ${flowText(f.built_at)}</span></div>
+      <span>描いた時刻 ${flowText(all.built_at)}</span></div>
     <div class="fl-tabs" role="tablist" aria-label="作り方">${tabs}</div>
     <div class="fl-wrap"><table class="fl-tbl"><thead>${head}</thead><tbody>${body}</tbody></table></div>
     ${notes ? `<ul class="fl-notes">${notes}</ul>` : ''}
@@ -11188,8 +11195,12 @@ async function renderFlow(){
   if (!store.flow) el.innerHTML = loading();
   let f;
   try { f = await loadFlow(); } catch (e) { el.innerHTML = errBox(e.message); return; }
-  el.innerHTML = flowHTML(f);
-  fitFlow();
+  const paint = () => {
+    el.innerHTML = flowHTML(f);
+    el.querySelectorAll('.fl-tab[data-flow]').forEach(b => b.addEventListener('click', () => { flowKey = b.dataset.flow; paint(); }));
+    fitFlow();
+  };
+  paint();
 }
 /* 表の箱の高さを、ページを送らずに画面の下端まで届く高さにする。ページを送ると箱の見出しが上の帯の下に隠れるため
    （箱の中で縦横に送れば、上の工程と左の項目名は残る）。開いたときと画面の大きさが変わったときに合わせる */
