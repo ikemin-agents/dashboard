@@ -2859,10 +2859,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/23 23:06';
+const BUILT_AT = '10/23 23:20';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '75baa68b2390';
+const BUILT_HASH = '1951ebfe696a';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -6519,7 +6519,7 @@ const RE_MATERIALS = /^materials_v(\d+)\.json$/i;
    斜線の地＋取り消し線で残す（並びは崩さない）。見本は dashboard/flow-mockup.html。
      name    … 1行目（工程の名前。用語集にある言葉は正式名で書く）
      what    … 2行目（作るもの・道具）。whatOff は進行係を通らない動画（offDispatcherItem）のとき、
-               whatBlender は Blender だけで作った動画（svBlenderOnly）のとき
+               whatBy は動画の制作方法のキー（svMethod の key）ごとの2行目（どれよりも先に使う）
      gate    … 承認ポイント（◆ を付け、承認済みは緑＋承認の日時）
      offOnly … 進行係を通らない動画だけが使う（02・03 の本編では「この番組では なし」）
      still   … Blender だけで作った動画は使わない（「この動画では なし」・#604 中1）
@@ -6533,13 +6533,15 @@ const SV_STEPS = [
   {name:'企画書',               what:'文章（md）・監督が書く', offOnly:true},
   {name:'台本',                 what:'文章（md）'},
   {name:'ナレーション',          brk:'ナレー|ション', what:'音声（ElevenLabs）'},
-  {name:'シーン割り',            brk:'シーン|割り', what:'設計図（json）', whatBlender:'シーン詳細設計'},
+  {name:'シーン割り',            brk:'シーン|割り', what:'設計図（json）', whatBy:{blender_only:'シーン詳細設計'}},
   {name:'Blender仮組み',         short:'仮組み', what:'動きとカメラの確認用の動画', offOnly:true},
   {name:'静止画',               what:'開始フレーム（FLUX.2）', whatOff:'開始フレーム（NB）'},
   {name:'仮組み＋静止画の承認',   brk:'仮組み|＋静止画|の承認', what:'オーナーが見る', gate:'storyboard', offOnly:true},
   /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「Blenderレンダリング」。
-     作り込みも帯では「映像」に入る）。2行目は短く道具まで（帯を1行に収めるため） */
-  {name:'映像',                 what:'テイク（H3）', whatBlender:'Blenderレンダリング（Blender）'},
+     作り込みも帯では「映像」に入る）。地図の動画の映像は、地図と衛星写真の場面を Remotion で組み立てる。
+     2行目は短く道具まで（帯を1行に収めるため） */
+  {name:'映像',                 what:'テイク（H3）',
+   whatBy:{blender_only:'Blenderレンダリング（Blender）', map_remotion:'地図の組み立て（Remotion）'}},
   {name:'完成動画の書き出し',     short:'書き出し', what:'映像・音声・字幕を1本に（Remotion）', whatOff:'映像・注釈・字幕・音を1本に'},
   {name:'完成の承認',            brk:'完成の|承認', what:'オーナーが見る', gate:'final'},
   {name:'予約投稿',              brk:'予約|投稿', what:'YouTube に登録', post:true},
@@ -6766,23 +6768,21 @@ const svNoteMade = (key, mat) => {
 /* 組み立てる前の画面の鍵（{ id, key }・#637）。案の無い画面は目録を読んでから最初の帯を描くので、
    画面（sv）ができる前の最初の描画から目録の判定を使う（以前は目録が届いてから帯を描き直していた） */
 let svPreMade = null;
-/* その動画の制作方法の「使わない工程」（帯の工程のキーの並び。位置へは WORK_STEP で写す）と方法の名前。
-   listRow＝一覧の行（制作方法だけで決め、目録の予備の判定をしない） */
+/* その動画の制作方法の「使わない工程」（帯の工程のキーの並び。位置へは WORK_STEP で写す）と方法の名前とキー。
+   キーは帯の2行目の出し分け（SV_STEPS の whatBy）にだけ使う。listRow＝一覧の行（制作方法だけで決め、目録の予備の判定をしない） */
 const svMethod = (it, listRow) => {
-  if (!it) return { skip: [], name: '' };
+  if (!it) return { skip: [], name: '', key: '' };
   if (it.production_method) {
     return { skip: Array.isArray(it.production_method_skip) ? it.production_method_skip : [],
-             name: String(it.production_method_name || '') };
+             name: String(it.production_method_name || ''), key: String(it.production_method) };
   }
   if (!listRow && offDispatcherItem(it)) {
     const key = (sv && sv.it && sv.it.id === it.id && sv.madeKey)
       || (svPreMade && svPreMade.id === it.id ? svPreMade.key : null);
-    if (key && SV_MADE.get(key) === true) return { skip: ['still'], name: 'Blender だけ' };
+    if (key && SV_MADE.get(key) === true) return { skip: ['still'], name: 'Blender だけ', key: 'blender_only' };
   }
-  return { skip: [], name: '' };
+  return { skip: [], name: '', key: '' };
 };
-/* 静止画を使わない作り方（映像を Blender で描く）か。映像の2行目を「Blenderレンダリング（Blender）」にするのに使う */
-const svBlenderOnly = (it, listRow) => svMethod(it, listRow).skip.includes('still');
 /* その動画で使わない工程と、状態の欄に出す言葉（13個ぶん。null＝使う）。
    Blender仮組みとその承認は進行係を通らない動画（力わざ・からくり・検証用）だけ、公開の側は検証用では使わない。
    承認ポイントは番組の human_gates（chMeta の gates）に無ければ使わない（#572・力わざとからくりは完成だけ）。
@@ -6877,13 +6877,13 @@ const sigOf = s => {
    変わったマスだけを差し替える（svPatchFlow・#637） */
 function svFlowHTML(it){
   const cur = svFlowAt(it);
-  const skip = SV_SKIP(it), off = offDispatcherItem(it), bl = svBlenderOnly(it);
+  const skip = SV_SKIP(it), off = offDispatcherItem(it), mk = svMethod(it).key;
   /* いまの工程の色は一覧の印と同じ決まり（curTone・#637）。状態の言葉（2行目）は今までどおり */
   const tone = curTone(it);
   const steps = SV_STEPS.map((s, i) => {
     const { cls, st } = svStepState(it, i, cur, skip[i]);
     const what = s.pubTime ? (skip[i] ? '—' : svPubTime(it))
-      : ((bl && s.whatBlender) || (off && s.whatOff) || s.what);
+      : ((mk && s.whatBy && s.whatBy[mk]) || (off && s.whatOff) || s.what);
     const tip = skip[i] === 'この動画では なし' ? svMethodTip(it) : (skip[i] ? (SV_SKIP_TIP[skip[i]] || '') : '');
     /* 2行だけ（オーナー指摘 2026-09-29 16:24「ごちゃごちゃ・文字を減らして」）。済みは色と ✓ だけで
        示し、2行目は「作るもの・道具」。知らせることがある工程（いまの工程・承認済み・使わない）
