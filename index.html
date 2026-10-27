@@ -2859,10 +2859,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/27 11:40';
+const BUILT_AT = '10/27 13:57';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '1951ebfe696a';
+const BUILT_HASH = '0aed06aa63dd';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -10420,7 +10420,7 @@ const RULE_KINDS = ['規則', '方針', '知見', '仮説'];
 /* 種類ごとの行の色（CSS の .rl.k-*）。ここに無い種類は色を付けない */
 const RULE_KIND_CLS = {'規則':'k-rule', '方針':'k-policy', '知見':'k-insight', '仮説':'k-hypo'};
 const RULE_STRENGTHS = ['必須', '推奨', '参考'];
-const ASSET_KINDS = ['材質', '部品', '景色', '動きの型', '強調', '検査'];
+const ASSET_KINDS = ['材質', '部品', '景色', '動きの型', '見せ方', '効果音'];   // 並びは db/cli/commands/production_assets.ts の ASSET_KINDS と同じ
 const rulesOpen = new Set(), assetsOpen = new Set();
 document.addEventListener('toggle', e => {
   const d = e.target;
