@@ -1553,37 +1553,6 @@ tr.dropped td{color:var(--muted)}
 .athumb img{display:block; width:100%; height:100%; object-fit:cover}
 .athumb.none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2);
   font-size:var(--fs-2xs); cursor:inherit; text-align:center}
-/* ═══ 表現方法の見本の一覧（#886）══════════════════════════════════
-   上に絞り込み（状態・表したい物・分からせたい事）、下に表したい物ごとの見出しとカードの並び。
-   カードは幅 400px で1列、広い画面で2〜3列（1列の最小 280px・最大3列） */
-.xp-filt{display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px var(--sp-3); align-items:start; margin:0 0 var(--sp-3)}
-.xp-filt .lb{font-size:var(--fs-xs); color:var(--muted); padding-top:6px; white-space:nowrap}
-.xp-filt .chips{margin:0}
-.xp-filt .rgbtn .n{font-size:var(--fs-2xs); opacity:.75; font-variant-numeric:tabular-nums}
-.xp-h{font-size:var(--fs-md); font-weight:700; margin:var(--sp-5) 0 var(--sp-2); display:flex; align-items:baseline; gap:8px}
-.xp-h .n{font-size:var(--fs-2xs); color:var(--muted); font-weight:500}
-.xp-grid{display:grid; gap:var(--sp-3);
-  grid-template-columns:repeat(auto-fill, minmax(max(280px, calc((100% - 2 * var(--sp-3)) / 3)), 1fr))}
-.xp-card{background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden;
-  display:flex; flex-direction:column; min-width:0}
-.xp-card.off .xp-tt{color:var(--ink-2)}
-.xp-ims{display:grid; grid-template-columns:minmax(0,1fr); gap:2px; height:200px; background:var(--surface-3)}
-.xp-ims.n2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.xp-im{display:block; padding:0; border:0; margin:0; background:transparent; cursor:zoom-in; min-width:0; height:200px}
-.xp-im img{display:block; width:100%; height:100%; object-fit:contain}
-.xp-ims .none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2); font-size:var(--fs-xs)}
-.xp-bd{padding:10px 12px 12px; display:flex; flex-direction:column; gap:6px; min-width:0}
-.xp-tt{font-weight:700; font-size:var(--fs-sm); line-height:1.45}
-.xp-tt .tagk{font-weight:650; margin-left:6px; vertical-align:1px}
-.xp-gp{font-size:var(--fs-2xs); color:var(--muted)}
-.xp-tags{display:flex; flex-wrap:wrap; gap:4px}
-.xp-tags .tagk{white-space:normal}
-.xp-ds{margin:0; font-size:var(--fs-xs); color:var(--ink-2); line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere}
-@media (max-width:640px){
-  .xp-filt{grid-template-columns:minmax(0,1fr); gap:4px}
-  .xp-filt .lb{padding-top:4px}
-  .xp-ims,.xp-im{height:180px}
-}
 /* 中くらいの幅では、番組の列を短い呼び名に戻し（見出しは「番組」1つ）、本文を2行目へ降ろす（見出しの行は残す）。
    見出しの「本文」の字は消し、工程の絞り込みだけを見出しの行の右端に残す（列の左端は行と同じ位置のまま） */
 @media (max-width:899px){
@@ -2725,7 +2694,6 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   <section class="view" id="view-rules"></section>
   <section class="view" id="view-assets"></section>
   <section class="view" id="view-flow"></section>
-  <section class="view" id="view-expr"></section>
   <!-- 共用素材の一覧の見本の絵を大きく見る（見た目は承認画面の拡大表示と同じ） -->
   <div class="sv-lbox" id="plbox" hidden>
     <img id="plboximg" alt="">
@@ -2859,10 +2827,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/27 14:53';
+const BUILT_AT = '10/27 21:05';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '0aed06aa63dd';
+const BUILT_HASH = '9032c4a79274';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2959,9 +2927,7 @@ const state = {
   rulesF:{q:'', ch:null, stage:null, kind:null, strength:null, subject:null},
   /* 素材の列も見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す）。
      retired＝窓の「棚から外した物も見る」（#856・既定は外す＝棚から外した素材を出さない） */
-  assetsF:{kind:null, ch:null, seq:null, retired:false},
-  /* 表現方法の見本（#886）: 表したい物・分からせたい事は1つ選ぶか null（すべて）。all＝状態を問わず全部（既定は採用だけ） */
-  exprF:{subject:null, intent:null, all:false}
+  assetsF:{kind:null, ch:null, seq:null, retired:false}
 };
 
 /* ── 開いていたタブ・チャンネルを覚える ──────────────────────────────
@@ -2993,8 +2959,6 @@ const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pe
                 rules:null, prodAssets:null, chNames:{},
                 /* 制作フローの図（#695）。開いたときに flow.json を取る（⟳ で取り直す） */
                 flow:null,
-                /* 表現方法の見本の一覧（#886）。開いたときに取る（⟳ で取り直す） */
-                exprs:null,
                 /* 検証用の動画が1本でもあるか（#523）。loadPilotFlag が入れる */
                 pilot:{has:false} };
 const clearVideoCaches = () => {
@@ -3022,8 +2986,6 @@ const VIEWS = [
      正式名のままだとスマホの幅（390px）でタブの並びが画面をはみ出すため。見出しは正式名 */
   {key:'rules',     icon:'📏', label:'ルール', chIndep:true, fullOnly:true},
   {key:'assets',    icon:'🧱', label:'素材',   chIndep:true, fullOnly:true},
-  /* 表現方法の見本の一覧（#886）。読むだけ。番組で行を分けない表なので、全番組を見られる人にだけ出す */
-  {key:'expr',      icon:'🎨', label:'表現方法', chIndep:true, fullOnly:true},
   /* 制作フロー（#695）。Blender 制作の全体の構成（動画ごとの状態ではない）。中身は公開のときに道具が正本から作る
      flow.json を読むだけ。全番組を見られる人にだけ出す。名前は縮めない（スマホでは札の列を横に送る） */
   {key:'flow',      icon:'🧭', label:'制作フロー', chIndep:true, fullOnly:true}
@@ -10904,134 +10866,6 @@ function openPlbox(src, cap){
 function closePlbox(){ $('#plbox').hidden = true; $('#plboximg').src = ''; }
 const plboxOpen = () => !$('#plbox').hidden;
 
-/* ══ 表現方法の見本の一覧（#886）══════════════════════════════════
-   v_production_expressions を読むだけ。行は数十件なので全部取り、絞り込みは画面の中でする（⟳ で取り直す）。
-   既定は状態が「オーナーが採用」の見本だけ。見出しは表したい物（tags の subject）で、札を2つ持つ見本は両方の見出しに出る。
-   絞り込みは札ごとに当てる（表したい物と分からせたい事を両方選ぶと、その2つが同じ札にある見本だけ）。
-   見本の絵は review-assets の中のパス（sample_images）をまとめて署名URLにする（素材の一覧と同じ取り方） */
-const XP_ADOPTED = 'オーナーが採用';
-const XP_GROUPS = ['空気・気圧', '力', '時間の経過', '建物・町の建ち方', '強調'];
-/* jsonb の配列は文字の JSON で来ても読む（外から来た値なので、形が違っても落ちない） */
-const xpArr = v => {
-  if (typeof v === 'string') { try { v = JSON.parse(v); } catch (_) { return v ? [v] : []; } }
-  return Array.isArray(v) ? v : [];
-};
-const xpTags = r => xpArr(r.tags).filter(t => t && typeof t === 'object')
-  .map(t => ({ subject: String(t.subject || '').trim(), intent: String(t.intent || '').trim() }))
-  .filter(t => t.subject || t.intent);
-const xpImgs = r => xpArr(r.sample_images)
-  .map(x => typeof x === 'string' ? x : (x && (x.path || x.name)) || '').filter(Boolean);
-const xpGroupRank = g => { const i = XP_GROUPS.indexOf(g); return i < 0 ? 99 : i; };
-const xpCmp = (a, b) => xpGroupRank(a.group_ja) - xpGroupRank(b.group_ja)
-  || String(a.title || '').localeCompare(String(b.title || ''), 'ja');
-async function loadExprs(){
-  if (store.exprs && Date.now() - store.exprs.at < ASSET_CACHE) return store.exprs;
-  let rows = [];
-  try {
-    rows = await q(sb.from('v_production_expressions')
-      .select('expression_key,group_ja,title,description,tags,tags_text,status,sample_images,updated_at'));
-  } catch (e) {
-    console.warn('[dashboard] 表現方法の見本の一覧を読めませんでした:', e.message);   /* 画面は「まだありません」 */
-  }
-  rows.sort(xpCmp);
-  const urls = {}, paths = [...new Set(rows.flatMap(xpImgs))];
-  if (paths.length) {
-    try {
-      const { data } = await sb.storage.from(ASSET_BUCKET).createSignedUrls(paths, ASSET_TTL);
-      (data || []).forEach((r, i) => { if (r && r.signedUrl) urls[r.path || paths[i]] = r.signedUrl; });
-    } catch (_) { /* 取れなければ「絵は未登録」の面になるだけ */ }
-  }
-  store.exprs = { rows, urls, at: Date.now() };
-  return store.exprs;
-}
-/* 状態で残す行（既定は採用だけ） */
-const xpInScope = () => ((store.exprs || {}).rows || []).filter(r => state.exprF.all || r.status === XP_ADOPTED);
-/* 札が絞り込みに当たるか。skip に渡した側の絞り込みは見ない（ボタンの件数を数えるため） */
-const xpTagHit = (t, skip) => (skip === 'subject' || !state.exprF.subject || t.subject === state.exprF.subject)
-  && (skip === 'intent' || !state.exprF.intent || t.intent === state.exprF.intent);
-/* 表したい物の並び: その札を持つ見本のまとまりの並びの早い順 → 名前 */
-function xpSubjects(rows){
-  const rank = new Map();
-  rows.forEach(r => xpTags(r).forEach(t => {
-    if (!t.subject) return;
-    const g = xpGroupRank(r.group_ja);
-    if (!rank.has(t.subject) || g < rank.get(t.subject)) rank.set(t.subject, g);
-  }));
-  return [...rank.keys()].sort((a, b) => rank.get(a) - rank.get(b) || a.localeCompare(b, 'ja'));
-}
-function setExprF(k, v){
-  if (k === 'all') state.exprF.all = v === '1';
-  else if (k === 'subject' || k === 'intent') state.exprF[k] = v || null;
-  else return;
-  paintExprs();
-}
-/* 1件のカード。絵は2枚なら横に並べ、無ければ「絵は未登録」。押すと大きく見る（素材の一覧と同じ #plbox） */
-function exprCardHTML(r, urls){
-  const title = r.title || r.expression_key || '';
-  const ims = xpImgs(r).map(p => urls[p]).filter(Boolean).slice(0, 2);
-  const pics = ims.length
-    ? ims.map((u, i) => `<button type="button" class="xp-im" data-plbox="${esc(u)}" data-plcap="${esc(title)}"
-        aria-label="${esc(title)}の見本${ims.length > 1 ? (i + 1) + '枚目' : ''}を大きく見る"><img src="${esc(u)}" alt="" loading="lazy"></button>`).join('')
-    : `<span class="none">絵は未登録</span>`;
-  const tagTxt = String(r.tags_text || '').trim();
-  const tags = tagTxt ? tagTxt.split('／').map(s => s.trim()).filter(Boolean)
-    : xpTags(r).map(t => [t.subject, t.intent].filter(Boolean).join(' × '));
-  const off = r.status !== XP_ADOPTED;
-  return `<article class="xp-card${off ? ' off' : ''}">
-    <div class="xp-ims${ims.length > 1 ? ' n2' : ''}">${pics}</div>
-    <div class="xp-bd">
-      <div class="xp-tt">${esc(title)}${state.exprF.all && r.status ? `<span class="tagk">${esc(r.status)}</span>` : ''}</div>
-      ${r.group_ja ? `<div class="xp-gp">まとまり: ${esc(r.group_ja)}</div>` : ''}
-      ${tags.length ? `<div class="xp-tags">${tags.map(t => `<span class="tagk">${esc(t)}</span>`).join('')}</div>` : ''}
-      ${r.description ? `<p class="xp-ds">${esc(r.description)}</p>` : ''}
-    </div></article>`;
-}
-async function renderExprs(){
-  const el = $('#view-expr');
-  if (!store.exprs) el.innerHTML = loading();
-  await loadExprs();
-  el.innerHTML = `
-    <div class="pagehead"><div class="eyebrow">表現方法</div><h1>🎨 表現方法の見本</h1></div>
-    <div id="xpfilt"></div>
-    <div class="toolbar"><span class="hits" id="xphits"></span></div>
-    <div id="xplist"></div>`;
-  paintExprs();
-}
-function paintExprs(){
-  const box = $('#xplist'), fb = $('#xpfilt');
-  if (!box || !fb) return;
-  const f = state.exprF, rows = xpInScope(), urls = (store.exprs || {}).urls || {};
-  /* ボタンに並べる値と件数（もう一方の絞り込みを当てた見本の数）。選んでいる値が無くなったら外す */
-  const count = (col, v) => rows.filter(r => xpTags(r).some(t => t[col] === v && xpTagHit(t, col))).length;
-  const subs = xpSubjects(rows);
-  const ints = [...new Set(rows.flatMap(r => xpTags(r).map(t => t.intent)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
-  if (f.subject && !subs.includes(f.subject)) f.subject = null;
-  if (f.intent && !ints.includes(f.intent)) f.intent = null;
-  const chipRow = (col, label, vals) => `<span class="lb">${label}</span><div class="chips" role="group" aria-label="${label}">
-    <button type="button" class="rgbtn" data-xpf="${col}" data-v="" aria-pressed="${!f[col]}">すべて</button>${
-    vals.map(v => `<button type="button" class="rgbtn" data-xpf="${col}" data-v="${esc(v)}" aria-pressed="${f[col] === v}">${
-      esc(v)}<span class="n">${count(col, v)}</span></button>`).join('')}</div>`;
-  fb.innerHTML = `<div class="xp-filt">
-    <span class="lb">状態</span><div class="chips"><div class="seg" role="group" aria-label="状態">
-      <button type="button" data-xpf="all" data-v="0" aria-pressed="${!f.all}">採用だけ</button>
-      <button type="button" data-xpf="all" data-v="1" aria-pressed="${f.all}">全部</button></div></div>
-    ${subs.length ? chipRow('subject', '表したい物', subs) : ''}
-    ${ints.length ? chipRow('intent', '分からせたい事', ints) : ''}</div>`;
-  /* 表したい物ごとの見出し。札を2つ持つ見本は両方の見出しに出る（同じ見出しに2回は出さない） */
-  const secs = (f.subject ? [f.subject] : subs).map(sub => ({
-    sub, items: rows.filter(r => xpTags(r).some(t => t.subject === sub && xpTagHit(t)))
-  })).filter(s => s.items.length);
-  /* 札の無い見本は、絞り込んでいないときだけ最後に「札なし」でまとめる */
-  const bare = (f.subject || f.intent) ? [] : rows.filter(r => !xpTags(r).some(t => t.subject));
-  if (bare.length) secs.push({ sub: '札なし', items: bare });
-  const shown = new Set(secs.flatMap(s => s.items.map(r => r.expression_key)));
-  $('#xphits').textContent = shown.size + '件';
-  box.innerHTML = secs.length
-    ? secs.map(s => `<h2 class="xp-h">${esc(s.sub)}<span class="n">${s.items.length}件</span></h2>
-        <div class="xp-grid">${s.items.map(r => exprCardHTML(r, urls)).join('')}</div>`).join('')
-    : `<div class="lstnone">${((store.exprs || {}).rows || []).length ? '当てはまる見本はありません' : '表現方法の見本はまだありません'}</div>`;
-}
-
 /* ══ ツールチップ ═══════════════════════════════════════════════ */
 const tip = $('#tip');
 function showTip(html, x, y){
@@ -11235,7 +11069,6 @@ async function render(){
     else if (state.view === 'rules')     await renderRules();
     else if (state.view === 'assets')    await renderAssets();
     else if (state.view === 'flow')      await renderFlow();
-    else if (state.view === 'expr')      await renderExprs();
     state.lastSync = new Date().toISOString();
   } catch (e) {
     $('#view-' + state.view).innerHTML = errBox(e.message);
@@ -11249,7 +11082,7 @@ async function render(){
 
 async function reloadAll(){
   clearVideoCaches(); store.analytics = {}; store.assets = {}; store.rules = null; store.prodAssets = null;
-  store.flow = null; store.exprs = null;
+  store.flow = null;
   state.busy = true; renderShell();
   try { await loadBootstrap(); } catch (e) { toast('再読み込みに失敗: ' + e.message); }
   await render();
@@ -11300,9 +11133,6 @@ document.addEventListener('click', e => {
   const plb = e.target.closest('[data-plbox]');
   if (plb) { e.preventDefault(); openPlbox(plb.dataset.plbox, plb.dataset.plcap); return; }
   if (e.target.closest('[data-plbox-close]') || e.target.id === 'plbox') { closePlbox(); return; }
-  /* 表現方法の見本の絞り込み（#886） */
-  const xpb = e.target.closest('[data-xpf]');
-  if (xpb) { setExprF(xpb.dataset.xpf, xpb.dataset.v); return; }
   /* ルール・素材・動画の一覧の絞り込みは見出しの窓（上の HF_TABLES の近く） */
 
   /* チャンネル名そのものを押したときは、開閉ではなく切り替えとして扱う（2026-08-20） */
@@ -11513,7 +11343,7 @@ $('#loginform').addEventListener('submit', async ev => {
 async function signOut(){
   await sb.auth.signOut();
   clearVideoCaches(); store.analytics = {}; store.assets = {}; store.rules = null; store.prodAssets = null;
-  store.flow = null; store.exprs = null;
+  store.flow = null;
   store.channels = []; store.pilotChannels = []; store.accounts = [];
   state.user = null; state.me = null; state.ch = null; state.view = 'stock'; state.stockPage = 0;
   showLogin();
