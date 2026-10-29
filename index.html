@@ -2827,10 +2827,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/29 09:50';
+const BUILT_AT = '10/29 16:33';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '9032c4a79274';
+const BUILT_HASH = 'ca3d252b83ed';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -4639,7 +4639,8 @@ async function pollWorkList(){
   delete store.core[ch];
   /* 先に取ってから描き直す（取れない回に表を読み込みエラーで消さない） */
   try { await loadCore(ch); } catch (_) { if (!store.core[ch]) store.core[ch] = old; return; }
-  try { await loadPending(ch, true); renderShell(); } catch (_) { /* 件数は前のまま */ }
+  /* 見ていない番組の件数も1分ごとに取り直す（タブを切り替えなくても新しい提出の件数が出る・#1238） */
+  try { await loadPendingAll(true); renderShell(); } catch (_) { /* 件数は前のまま */ }
   if (state.ch === ch && state.detail == null && $('#stocktable')) await refreshStockTable();
 }
 async function pollWorkDetail(){
