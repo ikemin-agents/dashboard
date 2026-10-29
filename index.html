@@ -231,7 +231,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chrow{display:flex; align-items:flex-end; gap:var(--sp-3); margin-top:var(--sp-3)}
 .chtabs{display:flex; gap:var(--sp-1); overflow-x:auto; scrollbar-width:none; min-width:0}
 .systabs{display:flex; gap:var(--sp-1); margin-left:auto; flex:0 0 auto}
-/* 共通画面（稼働・システム）は上の行にだけ出す（下のナビ側は常に隠す） */
+/* 共通画面（分析・決まり・共用素材・制作フロー）は上の行にだけ出す（下のナビ側は常に隠す） */
 .navbtn.indep{display:none}
 .chtab.sys .lbl{margin-left:4px}
 .chtabs::-webkit-scrollbar{display:none}
@@ -243,7 +243,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chtab .cdot{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
 .chtab[aria-selected="true"]{background:var(--surface-2); color:var(--ink); font-weight:650;
   border-color:var(--border-2); box-shadow:inset 0 2px 0 0 var(--chac)}
-/* チャンネル共通の画面（稼働・システム）を見ている間は「いまチャンネルは効いていない」
+/* チャンネル共通の画面（分析・決まり・共用素材・制作フロー）を見ている間は「いまチャンネルは効いていない」
    ことを薄さで示す。ただし押せなくはしない（2026-08-20 オーナー指摘: グレーアウトして
    元に戻れない）。押したらそのチャンネルの制作へ戻る＝ここが戻り道になる。 */
 /* ── チャンネル切替（スマホ）──────────────────────────────────────────
@@ -1483,7 +1483,7 @@ tr.dropped td{color:var(--muted)}
   cursor:pointer; line-height:1.35; overflow-wrap:anywhere}
 .rfpop label:hover{background:var(--surface-2)}
 .rfpop input{flex:0 0 auto; width:15px; height:15px; margin:1px 0 0; accent-color:var(--s1); cursor:pointer}
-/* 値の一覧の下の、列に依らないチェック（素材の「棚から外した物も見る」・#856）。線で値の一覧と分ける */
+/* 値の一覧の下の、列に依らないチェック（素材の「共用素材から外した物も見る」・#856）。線で値の一覧と分ける */
 .rfpop .rfmore{border-top:1px solid var(--border); margin-top:4px; padding-top:4px}
 /* 値の本数（動画の一覧の工程・ジャンル・#637）。右端にそろえ、字は小さく薄く */
 .rfpop .rfn{margin-left:auto; padding-left:var(--sp-3); font-size:var(--fs-2xs); color:var(--muted);
@@ -1531,7 +1531,7 @@ tr.dropped td{color:var(--muted)}
 .tagk{justify-self:start; font-size:var(--fs-2xs); white-space:nowrap; color:var(--ink-2);
   border:1px solid var(--border-2); border-radius:var(--r-sm); padding:1px 6px; background:var(--surface-2)}
 .tagk.must{color:var(--ink); font-weight:700}
-/* 棚から外した素材（#594）: 名前の横の言葉の札と、薄めた名前（札が言葉なので色だけで分けていない） */
+/* 共用素材から外した素材（#594）: 名前の横の言葉の札と、薄めた名前（札が言葉なので色だけで分けていない） */
 .tagk.tagret{font-weight:650; vertical-align:1px}
 .al.retired>summary .nm{color:var(--ink-2)}
 .lstbody{padding:6px 14px 14px}
@@ -1823,7 +1823,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   /* チャンネルは「いま見ているものだけ」を出し、押して切り替える（オーナー要望 2026-08-20） */
   .chtabs{display:none}
   .chpickwrap{display:block}
-  /* 狭い画面でも共通画面（稼働・システム）はチャンネルタブの右に置く（オーナー指定 2026-08-20）。
+  /* 狭い画面でも共通画面（分析・決まり・共用素材・制作フロー）はチャンネルタブの右に置く（オーナー指定 2026-08-20）。
      チャンネル名の場所を残すため、この2つは記号だけにして文字を畳む（読み上げと長押しの
      ためのラベルは title / aria-label に残す）。チャンネル側は詰めて横スクロールで逃がす */
   .chtab{padding:8px 10px; gap:5px}
@@ -1847,7 +1847,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   body[data-solonav="1"] #toast{bottom:16px}
   .nav{position:fixed; bottom:0; left:0; right:0; top:auto; border-top:1px solid var(--border);
     border-bottom:none; background:var(--surface-1); z-index:50; padding-bottom:env(safe-area-inset-bottom)}
-  /* タブ数は権限で変わる（制限ありユーザーは「稼働」が出ない・#208 / #249 でシステムが増えた）。
+  /* タブ数は権限で変わる（制限ありユーザーは、全チャンネル可の人にだけ出す画面が出ない）。
      固定列数にすると人によって右端が余る／はみ出すので、あるぶんだけ等分する */
   .nav-in{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr)}
   .navbtn{flex-direction:column; gap:3px; font-size:var(--fs-2xs); padding:9px 2px 8px; border-bottom:none;
@@ -2674,7 +2674,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
         </div>
       </span>
     </div>
-    <!-- チャンネルタブの右に、チャンネルに依存しない画面（稼働・システム）を並べる。
+    <!-- チャンネルタブの右に、チャンネルに依存しない画面（分析・決まり・共用素材・制作フロー）を並べる。
          別の入れ物にしてあるのは、チャンネル横断の画面を開いている間 .chtabs は
          「選べない（＝関係ない）」ものとして沈むため。同じ入れ物だと自分自身も押せなくなる。 -->
     <div class="chrow">
@@ -2827,10 +2827,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/29 23:59';
+const BUILT_AT = '10/30 00:05';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '1b2d0fbab8e2';
+const BUILT_HASH = 'ccd7b2e731ce';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2926,7 +2926,7 @@ const state = {
      決まりの列（q 以外）は見出しの窓のチェック（#572）で、null＝絞らない・配列＝チェックの付いた値だけ残す */
   rulesF:{q:'', ch:null, stage:null, kind:null, strength:null, subject:null},
   /* 素材の列も見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す）。
-     retired＝窓の「棚から外した物も見る」（#856・既定は外す＝棚から外した素材を出さない） */
+     retired＝窓の「共用素材から外した物も見る」（#856・既定は外す＝共用素材から外した素材を出さない） */
   assetsF:{kind:null, ch:null, seq:null, retired:false}
 };
 
@@ -2979,13 +2979,13 @@ const VIEWS = [
   /* 分析はチャンネル横断の1画面（2026-09-04）。見えるチャンネルを色で重ねて出すので、
      チャンネルタブの右の共通タブに置く。 */
   {key:'analytics', icon:'📈', label:'分析', chIndep:true},
-  /* 決まりの一覧と共用素材の一覧（#574・オーナー決定 2026-09-29）。読むだけ。旧「運営」タブの代わり
-     （運営で見ていた AI の残量・請求・gen-farm・制作の詰まりは PC のステータス画面で見る）。
+  /* 決まりの一覧と共用素材の一覧。読むだけ。
+     AI の残量・請求・gen-farm・制作の詰まりは PC のステータス画面で見る。
      決まりは番組で閲覧を分けない表なので、全チャンネル可の人にだけ出す（共同運営者は制作と分析のまま）。
-     画面の呼び名は「動画制作ルールDB」（オーナー指示 2026-09-30 09:02・#572）。タブは短く「ルール」——
+     画面の呼び名は「動画制作ルールDB」。タブは短く「決まり」——
      正式名のままだとスマホの幅（390px）でタブの並びが画面をはみ出すため。見出しは正式名 */
-  {key:'rules',     icon:'📏', label:'ルール', chIndep:true, fullOnly:true},
-  {key:'assets',    icon:'🧱', label:'素材',   chIndep:true, fullOnly:true},
+  {key:'rules',     icon:'📏', label:'決まり', chIndep:true, fullOnly:true},
+  {key:'assets',    icon:'🧱', label:'共用素材', chIndep:true, fullOnly:true},
   /* 制作フロー（#695）。Blender 制作の全体の構成（動画ごとの状態ではない）。中身は公開のときに道具が正本から作る
      flow.json を読むだけ。全番組を見られる人にだけ出す。名前は縮めない（スマホでは札の列を横に送る） */
   {key:'flow',      icon:'🧭', label:'制作フロー', chIndep:true, fullOnly:true}
@@ -3328,10 +3328,9 @@ async function loadCurRev(videoId){
 /* ── ゲートの状態（#205）─────────────────────────────────────────
    video×gate ごとに「最後に状態を決めたイベント」で決まる2状態。
      review  = 承認待ち（AIが提出済み・あなたの番）
-     changes = 【AI】修正中（あなたがコメントを出した・AIの番）
+     changes = 【AI】修正中（あなたが指摘を出した・AIの番）
    approve / reject が来たら解消。判定は毎回 review_events から作り直す＝
-   差し戻し対応係が resolution_status を閉じれば UI 側は何もせず追随する
-   （2026-08-28 まではこれを夜間の在庫番がやっていた）。 */
+   差し戻し対応係が resolution_status を閉じれば UI 側は何もせず追随する */
 /* 状態を決めるイベント（これ以外の kind は現在の状態に影響しない） */
 const STATE_KINDS = ['request_review', 'request_changes', 'approve', 'reject'];
 /* a のほうが b より新しいか。同時刻なら id の大きい方を後とみなす（連番のため） */
@@ -3418,7 +3417,7 @@ const AI_ROLE_JA = {
   'video-frame-reviewer':'静止画審査係', 'video-check-final':'完成審査係',
   'video-final-reviewer':'完成審査係', 'video-rework':'差し戻し対応係',
   'video-topic-refill':'ネタ補充係', 'final-validate':'機械測定', 'dispatcher':'進行係',
-  'youtube-step':'作業係（旧）', 'youtube-stock-keeper':'夜間の在庫番（旧）', 'youtube-produce':'制作の進行',
+  'youtube-step':'作業係（旧）', 'youtube-stock-keeper':'ネタ補充係（旧）', 'youtube-produce':'制作の進行',
   'main-session':'制作の進行', 'backfill':'記録の後追い'
 };
 const aiRoleOf = a => AI_ROLE_JA[String(a || '').replace(/^ai:/, '')] || null;
@@ -3841,7 +3840,7 @@ function renderShell(){
       }).join('')}</div>` : ''}</details>`;
   })();
 
-  /* チャンネルに依存しない画面（稼働・システム）はチャンネルタブの右へ（オーナー要望 2026-08-19）。
+  /* チャンネルに依存しない画面（分析・決まり・共用素材・制作フロー）はチャンネルタブの右へ（オーナー要望 2026-08-19）。
      下のナビはそのチャンネルの中の画面（制作・分析）だけにして、2つの軸を混ぜない。
      ⚠️ スマホだけは逆にする: 画面が狭いとチャンネル名が読めなくなるので、共通画面は
      従来どおり下の固定タブバーに置く。両方に描いて CSS で出し分ける（画面幅の判定を
@@ -3990,7 +3989,7 @@ const openBadgeHTML = it => it._open
    でしか意味が無いので、承認待ちの動画にだけ出す。初回の提出は札なし。 */
 const REWORK_BADGE = {
   human: {cls:'rwh',  gl:'↻', text:'あなたの指摘', tip:'あなたの指摘を直して出し直した版'},
-  ai:    {cls:'rwai', gl:'↻', text:'AIの指摘',   tip:'AI の点検で出た指摘を直して出し直した版（あなたの指摘は関係していない）'}
+  ai:    {cls:'rwai', gl:'↻', text:'別AIの点検', tip:'別AIの点検で出た指摘を直して出し直した版（あなたの指摘は関係していない）'}
 };
 /* 差し戻しが1件も無い＝初回の提出。表の「版」列だけは空欄にせず「初版」と書く
    （空欄だと「取れなかった」のか「初版」なのか読めない）。
@@ -4005,7 +4004,7 @@ const reworkBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)]) : '
 const revNumHTML = it => {
   const n = it._rv ? submittedRevOf(it.id, it._rv) : null;
   if (!it._rv) return '';
-  return n != null ? `<span class="revnum" title="第${n}版（あなたの指摘でも AI の指摘でも、直すたびに1つ進む）">v${n}</span>`
+  return n != null ? `<span class="revnum" title="第${n}版（あなたの指摘でも別AIの点検の指摘でも、直すたびに1つ進む）">v${n}</span>`
     : '<span title="版の番号が記録に無い（古い提出）">—</span>';
 };
 const srcBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)] || FIRST_BADGE) : '';
@@ -4143,7 +4142,7 @@ function stockFacetOpts(facets){
    承認待ちの件数（loadPending）も記録がある動画を数えない */
 const SECTIONS = [
   /* 検証のタブも本編と同じ言葉（2026-09-29 オーナー決定・ACT_WORDS と同じ） */
-  {key:'rv',   label:'あなたの番 — 承認待ち',      hint:'素材を見て、承認するか修正を依頼してください'},
+  {key:'rv',   label:'あなたの番 — 承認待ち',      hint:'動画と画像を見て、承認するか修正を依頼してください'},
   /* ネタの仕分け（#314）。台本の型カタログの3型に乗らずAIが起草を見送った案。
      AI は没にしないので、ここに溜まったものはオーナーが必ず1回見る */
   {key:'triage', label:'あなたの番 — ネタの仕分け',
@@ -5144,10 +5143,10 @@ window.addEventListener('popstate', e => {
 /* ══ ② レビュー ═════════════════════════════════════════════════ */
 
 /* ── 素材の描画 ─────────────────────────────────────────────── */
-const NO_ASSET = `<div class="noitem">まだ素材がありません
+const NO_ASSET = `<div class="noitem">まだ動画と画像がありません
   <span class="s">制作が進むとここに入ります</span></div>`;
 /* 公開済みの動画の YouTube の URL（無ければ null）。公開して保管庫へ移した動画は、この画面の置き場から
-   動画のファイルを片付けてある（#602・画像と目録は残る）。置き場に動画が無いときは「まだ素材がありません」
+   動画のファイルを片付けてある（#602・画像と目録は残る）。置き場に動画が無いときは「まだ動画と画像がありません」
    ではなく YouTube を案内する */
 const ytUrlOf = it => (it && it.pub_status === '投稿済' && typeof it.youtube_url === 'string'
   && /^https:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//.test(it.youtube_url)) ? it.youtube_url : null;
@@ -5856,8 +5855,8 @@ function tapPanelHTML(it, shown){
       </div></div>
     <div class="nhd">指摘<span class="n" data-ncount>0件</span></div>
     <div class="addrow">
-      <button class="btn" type="button" data-tapact="add-pick" aria-pressed="false">＋ 場所を指してコメント</button>
-      <button class="btn" type="button" data-tapact="add-whole">＋ いまの画面にコメント</button>
+      <button class="btn" type="button" data-tapact="add-pick" aria-pressed="false">＋ 場所を指して指摘</button>
+      <button class="btn" type="button" data-tapact="add-whole">＋ いまの画面に指摘</button>
     </div>
     <div class="nlistwrap"><div class="nlist" data-nlist></div></div>
     <div class="svmemo"><label class="lbl" for="${id}-memo">全体へのメモ（任意）</label>
@@ -6311,7 +6310,7 @@ function armTap(node, files, mode){
   /* 動画のタップ。**受けるのは2つの場面だけ**で、それ以外は armVideoBar の再生／一時停止に回る:
        ①「場所を指すモード」のあいだ → その場所にピンを立ててシートを開く
        ②場所つきのシートが開いているあいだ → ピンをそこへ移す（時刻は開いた時点のまま）
-     「いまの画面にコメント」のシートが開いているあいだは受けない＝タップは再生／一時停止のまま */
+     「いまの画面に指摘」のシートが開いているあいだは受けない＝タップは再生／一時停止のまま */
   ctl.onHit = e => {
     if (!tap) return false;
     const onPicSheet = !!(tap.draft && normKind(tap.draft.kind) === 'picture');
@@ -6436,8 +6435,8 @@ async function submitTapChanges(box, key){
   /* 1件も無くメモも空なら送らない（下端のバーの誤タップよけ・自由記述のときと同じ作法） */
   if (!tap.items.length && !tapMemoVal()) {
     /* スマホの1画面にはメモの入力欄が無い（#552 の続き）ので、入口のボタンの名前で案内する */
-    wboxMsg(box, svMobileOn() ? '「＋ 指摘」から直してほしいところを書いてください'
-                              : '直してほしい場所を動画から選ぶか、下のメモに書いてください', true, 'comment');
+    wboxMsg(box, svMobileOn() ? '「＋ 指摘」から指摘を書いてください'
+                              : '指摘する場所を動画から選ぶか、下のメモに書いてください', true, 'comment');
     const m = tapEl('[data-memo]');
     if (m) { m.scrollIntoView({ block: 'center' }); m.focus(); }
     return;
@@ -7492,7 +7491,7 @@ function svPaintNow(){
   if (refs.length) {
     /* 見出しは「①」＋目録の label **そのまま**（番号は動画全体の通し番号・上の svRefNos）。拡大表示の題は
        「参照①」＋label。画面は言葉を足さない——label は提出側が具体的な名前で書く（例
-       「アクアラインを横から見た断面図（形の手本）」）。オーナーが「S14 の参照②」と番号で
+       「アクアラインを横から見た断面図（形の見本）」）。オーナーが「S14 の参照②」と番号で
        指摘できるように、**番号は画面が並び順で振る**（目録の形は変えない・全番組共通・#549
        オーナー指示 2026-09-25）。label の頭に提出側の番号（旧「①閉じた列」）が付いていたら外す */
     const nos = svRefNos(sv.mat);
@@ -7626,7 +7625,7 @@ function svApplyRef(){
   } else if (!pick.hidden) { pick.hidden = true; }
   const want = vids.length ? svUrl(vids[sv.refIdx].src) : null;
   setText(sv.q('[data-sv-reflbl]'), vids.length
-    ? ((vids[sv.refIdx].label || '動きの手本')
+    ? ((vids[sv.refIdx].label || '動きの見本')
        + (vids.length > 1 ? '（' + (sv.refIdx + 1) + '/' + vids.length + '本目）' : ''))
     : (svBorrowed() ? '' : '—'));
   if (want !== sv.refSrc) {
@@ -8501,8 +8500,8 @@ function decideHTML(it, gate, changes, barFacts, plain, tapOn){
     </div>
     <div class="wbox fixbox${tapOn ? ' tapon' : ''}" data-wbox="${esc(key)}">
       <h4 class="wh" data-freefix${ff}>${pilot ? '気になった点を送るとき' : '修正を依頼するとき'}</h4>
-      <textarea class="wta" data-freefix${ff} rows="3" aria-label="直してほしい点"
-        placeholder="直してほしい点を入力（Ctrl + Enter で送信）"></textarea>
+      <textarea class="wta" data-freefix${ff} rows="3" aria-label="指摘"
+        placeholder="指摘を入力（Ctrl + Enter で送信）"></textarea>
       ${plain ? '<div class="svrefnote" data-sv-refnote hidden>参照画像は ①② の番号で書けます</div>' : ''}
       ${tapPanelHTML(it, tapOn)}
       <div class="wmsg" data-slot="comment" hidden></div>
@@ -8664,7 +8663,7 @@ function rpcErrText(error, act){
     return '予約済み・投稿済みの動画は没にできません（先に予約の取り消し／公開の取り下げをしてください）';
   if (code === '22023')
     return /reason is empty/i.test(raw)  ? '没にする理由を入力してください'
-         : /body is empty/i.test(raw)    ? 'コメントを入力してください'
+         : /body is empty/i.test(raw)    ? '指摘を入力してください'
          /* 指摘の形が DB の関数の決まりに合わなかった（件数・文字数の上限、欠けた項目など） */
          : /invalid notes/i.test(raw)    ? '指摘の中身を受け付けてもらえませんでした。件数や文字数を減らすか、画面を新しくしてやり直してください'
          /* triage_idea の action 不正（#314）。ボタン以外から呼ばれたときだけ出る */
@@ -8677,7 +8676,7 @@ function rpcErrText(error, act){
   return act === 'approve' ? '承認できませんでした。時間をおいて再度お試しください'
        : act === 'reject'    ? '没にできませんでした。時間をおいて再度お試しください'
        : act === 'triage'    ? '仕分けを記録できませんでした。時間をおいて再度お試しください'
-                             : 'コメントを送信できませんでした。時間をおいて再度お試しください';
+                             : '修正の依頼を送信できませんでした。時間をおいて再度お試しください';
 }
 
 /* コメント欄（.wbox）・承認欄（.abox）・没欄（.rjbox）・下端の固定バー（.dbar）は
@@ -8784,7 +8783,7 @@ async function submitComment(box, key){
   /* 空のまま「修正を依頼」を押しても送らない（下端のバーの誤タップよけ）。
      入力欄は画面の上の方にあることがあるので、案内と一緒にそこまで送る */
   if (!body) {
-    wboxMsg(box, '直してほしい点を入力してください', true, 'comment');
+    wboxMsg(box, '指摘を入力してください', true, 'comment');
     if (ta) { ta.scrollIntoView({ block: 'center' }); ta.focus(); }
     return;
   }
@@ -9424,7 +9423,7 @@ function aiLogHTML(evs, it){
   const rows = newestFirst(evs.filter(e => isAiAuthor(e.author) || e.kind === 'request_review'));
   if (!rows.length) return '';
   return `<details class="dsec aifold">
-      <summary class="dsum">AI の記録<span class="n">（${rows.length}件・点検・機械測定・提出）</span></summary>
+      <summary class="dsum">別AIの点検・機械測定・提出の記録<span class="n">（${rows.length}件）</span></summary>
       <div class="ailog">${rows.map(e => `<div class="ailine">
         <span class="d">${esc(fmtMD(e.created_at))}</span>
         <span class="t">${esc(aiSummaryLine(e, it))}</span></div>`).join('')}</div>
@@ -10375,8 +10374,8 @@ function drawSpark(){
     bindHover(wrap, r.pts, r.mode);
   });
 }
-/* ══ ④ 決まりの一覧・共用素材の一覧（#574・オーナー決定 2026-09-29）═══════════════
-   読むだけの2画面（旧「運営」タブの代わり）。本文は DB のビューから**ログイン後にだけ**読む
+/* ══ ④ 決まりの一覧・共用素材の一覧 ══════════════════════════════════════
+   読むだけの2画面。本文は DB のビューから**ログイン後にだけ**読む
    （公開ページには書かない）。絞り込みは画面の中でする（行は百件ほどで、全部取ってから絞る）。
      決まり … v_production_rules_current（080）。いま有効な版だけ
      素材   … v_production_assets。ビューが無い・読めないときは「素材なし」を出して止まらない
@@ -10425,9 +10424,9 @@ let assetsOpts = {};  /* 同じく素材の列ごとの値の一覧（renderAsse
 const HF_TABLES = {
   rules:  { view: '#view-rules',  list: '#rulelist',  cols: RF_COLS, f: () => state.rulesF,  opts: () => rulesOpts,  paint: () => paintRules() },
   /* more＝どの列の窓にも値の一覧の下に出す、列に依らないチェック（key＝絞り込みの状態のキー、t＝言葉、reopts＝変えたあとに
-     列ごとの値の一覧を作り直す）。素材は「棚から外した物も見る」（#856） */
+     列ごとの値の一覧を作り直す）。素材は「共用素材から外した物も見る」（#856） */
   assets: { view: '#view-assets', list: '#assetlist', cols: AF_COLS, f: () => state.assetsF, opts: () => assetsOpts, paint: () => paintAssets(),
-            more: { key: 'retired', t: '棚から外した物も見る', reopts: () => buildAssetsOpts() } },
+            more: { key: 'retired', t: '共用素材から外した物も見る', reopts: () => buildAssetsOpts() } },
   /* 動画の一覧（#637）。絞り込みは DB 側（listQuery）なので、描き直しは1ページ目から取り直す（件数とページ切りも DB の数）。
      工程の既定は没を除く全部（今までどおり没は既定では出さない）。没にチェックを足すと没も出る */
   stock:  { view: '#view-stock',  list: '#stocktable', cols: SF_COLS, f: () => state.stockF,  opts: () => stockOpts,
@@ -10494,7 +10493,7 @@ function ruleRowHTML(r){
       ['例外', kvText(r.exceptions)],
       ['合格の条件', kvText(r.pass_criteria)],
       ['判定のしかた', judge],
-      ['手本', ruleExamples(r.examples)],
+      ['見本', ruleExamples(r.examples)],
       ['版', ver]])}</div></details>`;
 }
 async function renderRules(){
@@ -10521,7 +10520,7 @@ async function renderRules(){
     subject: subs.map(opt)
   };
   el.innerHTML = `
-    <div class="pagehead"><div class="eyebrow">ルール</div><h1>📏 動画制作ルールDB</h1></div>
+    <div class="pagehead"><div class="eyebrow">決まり</div><h1>📏 動画制作ルールDB</h1></div>
     <div class="toolbar">
       <input type="search" id="rulesq" placeholder="文字で探す" aria-label="文字で探す" value="${esc(f.q)}">
       <span class="hits" id="ruleshits"></span>
@@ -10545,7 +10544,7 @@ function paintRules(){
     + `<span class="hch1">${hf('ch')}</span><span>${hf('subject')}</span>`
     + `<span class="hbd"><span class="hbdt">本文</span>${hf('stage')}</span><span class="hend"></span>${RL_VL}</div>`
     + (hits.length ? hits.map(ruleRowHTML).join('')
-       : `<div class="lstnone">${(store.rules || []).length ? '当てはまるルールはありません' : 'ルールなし'}</div>`);
+       : `<div class="lstnone">${(store.rules || []).length ? '当てはまる決まりはありません' : '決まりなし'}</div>`);
 }
 /* ── 見出しの絞り込みの窓（ルール・素材で共用・#572）─────────────────────────
    窓は一覧の外（表の画面 view の直下）に置き、見出しの行のすぐ下に出す。チェックを変えるとその場で絞る。
@@ -10673,7 +10672,7 @@ document.addEventListener('click', e => {
 }, true);
 document.addEventListener('change', e => {
   if (!rfPop || !e.target.closest || !e.target.closest('#rfpop')) return;
-  /* 列に依らないチェック（素材の「棚から外した物も見る」）。値の一覧が変わるので窓の中身も作り直す */
+  /* 列に依らないチェック（素材の「共用素材から外した物も見る」）。値の一覧が変わるので窓の中身も作り直す */
   if (e.target.matches('[data-rfmore]')) {
     const T = HF_TABLES[rfPop.tb], pop = $('#rfpop');
     T.f()[T.more.key] = e.target.checked;
@@ -10691,7 +10690,7 @@ window.addEventListener('resize', () => { if (rfPop) placeRfPop(); });
 /* 動画の一覧の見出しは画面の上に貼り付く（表が横に送れる幅では表の容器が横に動く）ので、送ったら窓も見出しの下へ置き直す（#637） */
 document.addEventListener('scroll', () => { if (rfPop) placeRfPop(); }, { capture: true, passive: true });
 
-/* 素材の並び: 棚にある物 → 棚から外した物（下の方へ・#594）。その中で種類の並び → 名前 */
+/* 素材の並び: 棚にある物 → 共用素材から外した物（下の方へ・#594）。その中で種類の並び → 名前 */
 function assetCmp(a, b){
   const ki = k => { const i = ASSET_KINDS.indexOf(k); return i < 0 ? 99 : i; };
   return (a.retired_at ? 1 : 0) - (b.retired_at ? 1 : 0) || ki(a.kind) - ki(b.kind)
@@ -10729,7 +10728,7 @@ function assetVals(r, col){
   const v = col === 'ch' ? usedChs(r) : usedSeqs(r);
   return v.length ? v : [''];
 }
-/* 一覧に出しうる行。棚から外した素材は「棚から外した物も見る」を入れたときだけ（#856） */
+/* 一覧に出しうる行。共用素材から外した素材は「共用素材から外した物も見る」を入れたときだけ（#856） */
 const assetsInScope = () => ((store.prodAssets || {}).rows || []).filter(r => state.assetsF.retired || !r.retired_at);
 /* チェックの付いた値のどれかに当てはまる行だけ（列の間は「かつ」）。チェックを全部外した列は1行も残さない */
 function assetHits(){
@@ -10802,18 +10801,18 @@ function assetRowHTML(r, urls){
     : `<span class="athumb none">素材なし</span>`;
   /* 番組と動画の番号は名前の途中で折り返さず、「・」のあとで折り返す */
   const joinNw = list => list.map(s => `<span>${esc(s)}</span>`).join('・<wbr>');
-  /* 棚から外した素材（#594）は名前の横に言葉の札（色だけで分けない）。開くと外した日と理由 */
+  /* 共用素材から外した素材（#594）は名前の横に言葉の札（色だけで分けない）。開くと外した日と理由 */
   const retired = !!r.retired_at;
   return `<details class="al${retired ? ' retired' : ''}" data-akey="${esc(key)}"${assetsOpen.has(key) ? ' open' : ''}>
     <summary class="alrow">${thumb}<span class="nmc"><span class="nm">${esc(name)}${
-        retired ? ' <span class="tagk tagret">棚から外した</span>' : ''}</span>${
+        retired ? ' <span class="tagk tagret">共用素材から外した</span>' : ''}</span>${
         desc ? `<span class="ds">${esc(desc)}</span>` : ''}</span>
       <span class="meta"><span class="tagk">${esc(r.kind || '—')}</span>
         <span class="ach">${chs.length ? joinNw(chs.map(chShort)) : '—'}</span>
         <span class="cnt"><span>${used.length}本</span>${seqs.length ? `<span class="sq">${joinNw(seqs)}</span>` : ''}</span></span>
       <span class="caret" aria-hidden="true">▸</span>${AL_VL}</summary>
     <div class="lstbody">${kvHTML([
-      ...(retired ? [['棚から外した日と理由', kvText([fmtDate(r.retired_at), r.retired_reason].filter(Boolean).join(' ・ '))]] : []),
+      ...(retired ? [['共用素材から外した日と理由', kvText([fmtDate(r.retired_at), r.retired_reason].filter(Boolean).join(' ・ '))]] : []),
       ['出典とライセンス', assetSource(r.source)],
       ['使った動画', assetUsed(used)],
       ['呼び方', assetCall(r.call)],
@@ -10826,12 +10825,12 @@ async function renderAssets(){
   await loadProdAssets();
   buildAssetsOpts();
   el.innerHTML = `
-    <div class="pagehead"><div class="eyebrow">素材</div><h1>🧱 共用素材の一覧</h1></div>
+    <div class="pagehead"><div class="eyebrow">共用素材</div><h1>🧱 共用素材の一覧</h1></div>
     <div class="toolbar"><span class="hits" id="assetshits"></span></div>
     <div class="lst" id="assetlist"></div>`;
   paintAssets();
 }
-/* 窓に並べるのは一覧に出しうる行（棚から外した素材は「棚から外した物も見る」のときだけ）に実際にある値だけ。種類は決まった並び→
+/* 窓に並べるのは一覧に出しうる行（共用素材から外した素材は「共用素材から外した物も見る」のときだけ）に実際にある値だけ。種類は決まった並び→
    並びに無い値、番組は登録簿の順、使った動画は番号の順（呼び名は番号と題）。使った動画が無い素材があるときだけ、番組と使った動画の
    窓の最後に「なし」 */
 function buildAssetsOpts(){
@@ -11144,14 +11143,14 @@ document.addEventListener('click', e => {
   const chBtn = e.target.closest('.chtab[data-ch], .chitem[data-ch], .chgo[data-ch]');
   if (chBtn) {
     state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters();
-    /* チャンネル共通の画面（稼働・システム）から押したときは、そのチャンネルの制作へ戻す。
+    /* チャンネル共通の画面（分析・決まり・共用素材・制作フロー）から押したときは、そのチャンネルの制作へ戻す。
        戻り道が無いと「押しても何も起きない」ように見える（2026-08-20 オーナー指摘） */
     const cur = VIEWS.find(v => v.key === state.view);
     if (cur && cur.chIndep) state.view = 'stock';
     saveUI(); render(); return;
   }
 
-  /* 画面の切り替え。下のナビ（制作・分析）と、チャンネルタブ右の共通タブ（稼働・システム）の両方 */
+  /* 画面の切り替え。下のナビ（制作・分析）と、チャンネルタブ右の共通タブ（分析・決まり・共用素材・制作フロー）の両方 */
   const navBtn = e.target.closest('.navbtn[data-view], .chtab[data-view]');
   if (navBtn) { state.view = navBtn.dataset.view; saveUI(); render(); window.scrollTo({ top: 0 }); return; }
 
