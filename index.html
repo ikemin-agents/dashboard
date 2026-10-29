@@ -2827,10 +2827,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/29 16:48';
+const BUILT_AT = '10/29 16:51';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'ca3d252b83ed';
+const BUILT_HASH = '1b2d0fbab8e2';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -6502,9 +6502,11 @@ const SV_STEPS = [
   {name:'仮組み＋静止画の承認',   brk:'仮組み|＋静止画|の承認', what:'オーナーが見る', gate:'storyboard', offOnly:true},
   /* Blender だけで作った動画の映像は、仮組みを作り込んで Blender で描く（用語集「作り込み」「Blenderレンダリング」。
      作り込みも帯では「映像」に入る）。地図の動画の映像は、地図と衛星写真の場面を Remotion で組み立てる。
+     カード型の動画の映像は、カードの中の図の場面を Remotion で組み立てる。
      2行目は短く道具まで（帯を1行に収めるため） */
   {name:'映像',                 what:'テイク（H3）',
-   whatBy:{blender_only:'Blenderレンダリング（Blender）', map_remotion:'地図の組み立て（Remotion）'}},
+   whatBy:{blender_only:'Blenderレンダリング（Blender）', map_remotion:'地図の組み立て（Remotion）',
+           card_remotion:'図解の組み立て（Remotion）'}},
   {name:'完成動画の書き出し',     short:'書き出し', what:'映像・音声・字幕を1本に（Remotion）', whatOff:'映像・注釈・字幕・音を1本に'},
   {name:'完成の承認',            brk:'完成の|承認', what:'オーナーが見る', gate:'final'},
   {name:'予約投稿',              brk:'予約|投稿', what:'YouTube に登録', post:true},
