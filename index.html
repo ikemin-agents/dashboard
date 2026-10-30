@@ -231,7 +231,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chrow{display:flex; align-items:flex-end; gap:var(--sp-3); margin-top:var(--sp-3)}
 .chtabs{display:flex; gap:var(--sp-1); overflow-x:auto; scrollbar-width:none; min-width:0}
 .systabs{display:flex; gap:var(--sp-1); margin-left:auto; flex:0 0 auto}
-/* 共通画面（分析・決まり・共用素材・制作フロー）は上の行にだけ出す（下のナビ側は常に隠す） */
+/* 共通画面（分析・決まり・素材DB・制作フロー）は上の行にだけ出す（下のナビ側は常に隠す） */
 .navbtn.indep{display:none}
 .chtab.sys .lbl{margin-left:4px}
 .chtabs::-webkit-scrollbar{display:none}
@@ -243,7 +243,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chtab .cdot{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
 .chtab[aria-selected="true"]{background:var(--surface-2); color:var(--ink); font-weight:650;
   border-color:var(--border-2); box-shadow:inset 0 2px 0 0 var(--chac)}
-/* チャンネル共通の画面（分析・決まり・共用素材・制作フロー）を見ている間は「いまチャンネルは効いていない」
+/* チャンネル共通の画面（分析・決まり・素材DB・制作フロー）を見ている間は「いまチャンネルは効いていない」
    ことを薄さで示す。ただし押せなくはしない（2026-08-20 オーナー指摘: グレーアウトして
    元に戻れない）。押したらそのチャンネルの制作へ戻る＝ここが戻り道になる。 */
 /* ── チャンネル切替（スマホ）──────────────────────────────────────────
@@ -1823,7 +1823,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   /* チャンネルは「いま見ているものだけ」を出し、押して切り替える（オーナー要望 2026-08-20） */
   .chtabs{display:none}
   .chpickwrap{display:block}
-  /* 狭い画面でも共通画面（分析・決まり・共用素材・制作フロー）はチャンネルタブの右に置く（オーナー指定 2026-08-20）。
+  /* 狭い画面でも共通画面（分析・決まり・素材DB・制作フロー）はチャンネルタブの右に置く（オーナー指定 2026-08-20）。
      チャンネル名の場所を残すため、この2つは記号だけにして文字を畳む（読み上げと長押しの
      ためのラベルは title / aria-label に残す）。チャンネル側は詰めて横スクロールで逃がす */
   .chtab{padding:8px 10px; gap:5px}
@@ -2674,7 +2674,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
         </div>
       </span>
     </div>
-    <!-- チャンネルタブの右に、チャンネルに依存しない画面（分析・決まり・共用素材・制作フロー）を並べる。
+    <!-- チャンネルタブの右に、チャンネルに依存しない画面（分析・決まり・素材DB・制作フロー）を並べる。
          別の入れ物にしてあるのは、チャンネル横断の画面を開いている間 .chtabs は
          「選べない（＝関係ない）」ものとして沈むため。同じ入れ物だと自分自身も押せなくなる。 -->
     <div class="chrow">
@@ -2827,10 +2827,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '10/30 00:05';
+const BUILT_AT = '10/30 10:31';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'ccd7b2e731ce';
+const BUILT_HASH = 'fd25c69eb04a';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2985,7 +2985,7 @@ const VIEWS = [
      画面の呼び名は「動画制作ルールDB」。タブは短く「決まり」——
      正式名のままだとスマホの幅（390px）でタブの並びが画面をはみ出すため。見出しは正式名 */
   {key:'rules',     icon:'📏', label:'決まり', chIndep:true, fullOnly:true},
-  {key:'assets',    icon:'🧱', label:'共用素材', chIndep:true, fullOnly:true},
+  {key:'assets',    icon:'🧱', label:'素材DB', chIndep:true, fullOnly:true},
   /* 制作フロー（#695）。Blender 制作の全体の構成（動画ごとの状態ではない）。中身は公開のときに道具が正本から作る
      flow.json を読むだけ。全番組を見られる人にだけ出す。名前は縮めない（スマホでは札の列を横に送る） */
   {key:'flow',      icon:'🧭', label:'制作フロー', chIndep:true, fullOnly:true}
@@ -3840,7 +3840,7 @@ function renderShell(){
       }).join('')}</div>` : ''}</details>`;
   })();
 
-  /* チャンネルに依存しない画面（分析・決まり・共用素材・制作フロー）はチャンネルタブの右へ（オーナー要望 2026-08-19）。
+  /* チャンネルに依存しない画面（分析・決まり・素材DB・制作フロー）はチャンネルタブの右へ（オーナー要望 2026-08-19）。
      下のナビはそのチャンネルの中の画面（制作・分析）だけにして、2つの軸を混ぜない。
      ⚠️ スマホだけは逆にする: 画面が狭いとチャンネル名が読めなくなるので、共通画面は
      従来どおり下の固定タブバーに置く。両方に描いて CSS で出し分ける（画面幅の判定を
@@ -10825,7 +10825,7 @@ async function renderAssets(){
   await loadProdAssets();
   buildAssetsOpts();
   el.innerHTML = `
-    <div class="pagehead"><div class="eyebrow">共用素材</div><h1>🧱 共用素材の一覧</h1></div>
+    <div class="pagehead"><div class="eyebrow">共用素材</div><h1>🧱 素材DB</h1></div>
     <div class="toolbar"><span class="hits" id="assetshits"></span></div>
     <div class="lst" id="assetlist"></div>`;
   paintAssets();
@@ -11143,14 +11143,14 @@ document.addEventListener('click', e => {
   const chBtn = e.target.closest('.chtab[data-ch], .chitem[data-ch], .chgo[data-ch]');
   if (chBtn) {
     state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters();
-    /* チャンネル共通の画面（分析・決まり・共用素材・制作フロー）から押したときは、そのチャンネルの制作へ戻す。
+    /* チャンネル共通の画面（分析・決まり・素材DB・制作フロー）から押したときは、そのチャンネルの制作へ戻す。
        戻り道が無いと「押しても何も起きない」ように見える（2026-08-20 オーナー指摘） */
     const cur = VIEWS.find(v => v.key === state.view);
     if (cur && cur.chIndep) state.view = 'stock';
     saveUI(); render(); return;
   }
 
-  /* 画面の切り替え。下のナビ（制作・分析）と、チャンネルタブ右の共通タブ（分析・決まり・共用素材・制作フロー）の両方 */
+  /* 画面の切り替え。下のナビ（制作・分析）と、チャンネルタブ右の共通タブ（分析・決まり・素材DB・制作フロー）の両方 */
   const navBtn = e.target.closest('.navbtn[data-view], .chtab[data-view]');
   if (navBtn) { state.view = navBtn.dataset.view; saveUI(); render(); window.scrollTo({ top: 0 }); return; }
 
