@@ -2404,8 +2404,11 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-ctrls-slot{align-self:start}
   .sview .sv-viewswitch{display:none}
 }
-/* ── スマホ（900px 未満）: スクロールしない1画面（#552・オーナー確定 2026-09-25）──────────
-   上から「上の帯・動画・再生の操作・タブ・（タブの中身）・下の帯」を画面の高さぴったりに並べる。
+/* ── スマホ（900px 未満）: スクロールしない1画面（#552・形は見本 dashboard/review-mockup.html のスマホ）──
+   スマホでするのは「動画を見て、気になる場所に指摘を書く」だけ。上から「上の帯・動画（操作は動画の下端に重ねる）・
+   （開いた中身）・下の帯」を画面の高さぴったりに並べる。動画は幅いっぱいで、高さは 9:16 の高さと画面の残りの低いほう。
+   余った高さは動画と下の帯の間の空き（fill の行）に回す。素材・台本・指摘の一覧は下の帯の「…」「指摘 N」から開く
+   （下の帯が無い見るだけの画面だけ、従来のタブの行を出す）。
    区画の入れ物（.sv-wrap・①・②・.decide・.abox・.wbox・.rjbox）は display:contents で外し、
    中身をこの画面の格子へ直接置く——送信の仕組みが頼っている親子（.decide の中の4つの囲み・
    .wbox の中の .tapbox）は動かさない。JS で場所を移すのは 参照動画・案のタブ・前回までの指摘・
@@ -2418,15 +2421,18 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
     height:var(--sv-vh, 100dvh); margin:0; max-width:none; animation:none;
     background:var(--page); overflow:hidden; overflow:clip;
     display:grid; grid-template-columns:minmax(0,1fr);
-    grid-template-rows:auto auto minmax(0,1fr) auto auto 0px auto auto;
-    grid-template-areas:"top" "now" "video" "ctrls" "tabs" "panel" "msg" "bar";
+    /* 動画の行は 9:16 の高さまで。残りは fill（最低 8px）が取る＝下の帯は常に画面の下端 */
+    --sv-vidmax:calc(100vw * 16 / 9);
+    grid-template-rows:auto auto minmax(0,var(--sv-vidmax)) auto 0px minmax(8px,1fr) auto auto;
+    grid-template-areas:"top" "now" "video" "tabs" "panel" "fill" "msg" "bar";
     padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
   .sview.hasbar,body.sheetopen .sview.hasbar{padding-bottom:0}
-  /* タブを開いているあいだは動画と中身で半分ずつ。入力欄・没の理由は中身の高さぶん */
+  /* 素材・台本・指摘の一覧を開いているあいだは、動画を見えている高さの 44% までに縮め、残りを中身に渡す */
   .sview[data-mtab="mat"],.sview[data-mtab="script"],.sview[data-mtab="notes"]{
-    grid-template-rows:auto auto minmax(0,1fr) auto auto minmax(0,1fr) auto auto}
+    grid-template-rows:auto auto minmax(0,min(var(--sv-vidmax), calc(var(--sv-vh, 100dvh) * .44))) auto minmax(0,1fr) 0px auto auto}
+  /* 没の理由は中身の高さぶん。動画は残り */
   .sview:has(.rjpanel:not([hidden])){
-    grid-template-rows:auto auto minmax(0,1fr) auto auto auto auto auto}
+    grid-template-rows:auto auto minmax(0,1fr) auto auto 0px auto auto}
   /* 外す入れ物（中身だけを格子に並べる） */
   .sview .sv-wrap,.sview .sv-sec.sa,.sview .sv-sec.sa .sv-stage,.sview .sv-screens,
   .sview .sv-sec.sb,.sview .sv-sec.sb .decide,.sview .sv-sec.sb .abox,.sview .sv-sec.sb .wbox,
@@ -2446,8 +2452,12 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview>.dtop{grid-area:top; position:static; margin:0; border-radius:0; border-width:0 0 1px;
     height:auto; min-height:48px; padding:4px 10px 4px 8px; gap:8px}
   .sview .dback{min-height:38px; padding:4px 12px}
+  /* 番組の札は出さず（番組は番号の頭2文字で分かる）、その分を題名に回す。版の札（完成 v01 等）は残す
+     （右上の札の列は畳み、版だけを .sv-mver の札で出す） */
   .sview .dtop .tags{display:none}
-  .sview .dtop .sv-mver{flex:0 0 auto; font-size:var(--fs-xs); color:var(--muted);
+  .sview .dtop .ttl{color:var(--ink)}
+  .sview .dtop .sv-mver{flex:0 0 auto; font-size:var(--fs-2xs); font-weight:680; white-space:nowrap;
+    border-radius:var(--r-pill); padding:2px 9px; background:var(--s1-tint); color:var(--s1-ink);
     font-variant-numeric:tabular-nums}
   /* 案のタブ（検証の動画だけ）。両方の案が見える幅を優先し、題名のほうを「…」で縮める。
      見た目は広い画面と同じ下線型。帯は 48px 以上あるので、タブ帯を引き伸ばさず縦の真ん中に置く。
@@ -2461,7 +2471,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   /* 「いまの工程」の1行（#637）。帯は出さないが、この1行は上の帯のすぐ下に出す（記録が無ければ行ごと 0） */
   .sview .sv-worknow{grid-area:now; margin:0; padding:6px 8px; border-bottom:1px solid var(--border-2)}
 
-  /* ── 動画（切らずに・入るだけ大きく）── */
+  /* ── 動画（幅いっぱい・切らずに入るだけ大きく）。ピンは映像の実領域に合わせて置くので、左右・上下の黒い余白には載らない ── */
   .sview .sv-screen.final{grid-area:video; display:flex; flex-direction:column; min-height:0; min-width:0;
     gap:0; background:#000}
   .sview .sv-screen.final>.loadbox{margin:auto}
@@ -2470,17 +2480,35 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   /* 枠いっぱいに置いて object-fit:contain で「切らずに・入るだけ大きく」（縦長でも横長でも） */
   .sview .sv-screen.final>.vidbox>video{position:absolute; inset:0; width:100%; height:100%}
 
-  /* ── 再生・−0.5秒・+0.5秒・再生バー を1行 ── */
-  .sview .sv-ctrls-slot{grid-area:ctrls; padding:4px 8px 2px}
-  .sview .sv-ctrls-slot .ctrls{flex-wrap:nowrap; gap:6px; padding:0; margin:0}
-  .sview .sv-ctrls-slot .cbtn{height:40px; min-width:48px; padding:0 6px; font-size:var(--fs-xs); flex:0 0 auto}
-  .sview .sv-ctrls-slot .cbtn.play{font-size:var(--fs-md)}
-  .sview .sv-ctrls-slot .seek{height:40px; flex:1 1 auto; order:0; min-width:60px}
-  .sview .sv-ctrls-slot .seek .tptrack{height:4px; margin-top:-2px}
+  /* ── 再生・−0.5秒・+0.5秒・再生バー を1行にして、動画の下端に半透明で重ねる（出しっぱなし）──
+     帯は動画の枠（.vidbox）の外にあり、同じ格子の場所（video）の下端に置いて、ピンを置く層（.hitlayer）より
+     上に重ねる。帯の上で押してもピンは置かれない */
+  .sview .sv-ctrls-slot{grid-area:video; align-self:end; position:relative; z-index:3; height:44px;
+    padding:0 8px; background:rgba(0,0,0,.66); color:#fff}
+  .sview .sv-ctrls-slot .ctrls{flex-wrap:nowrap; gap:4px; padding:0; margin:0; border:none; background:transparent}
+  .sview .sv-ctrls-slot .cbtn{height:36px; min-width:44px; padding:0 4px; font-size:var(--fs-xs); flex:0 0 auto;
+    background:transparent; color:#fff; border-color:rgba(255,255,255,.35)}
+  .sview .sv-ctrls-slot .cbtn:hover{background:rgba(255,255,255,.18)}
+  .sview .sv-ctrls-slot .cbtn.play{min-width:46px; font-size:var(--fs-md)}
+  .sview .sv-ctrls-slot .seek{height:44px; flex:1 1 auto; order:0; min-width:60px; margin-left:4px}
+  .sview .sv-ctrls-slot .seek .tptrack{height:4px; margin-top:-2px; background:rgba(255,255,255,.35)}
+  .sview .sv-ctrls-slot .seek .knob{border-color:#fff}
 
-  /* ── タブ（素材・台本・指摘）。もう一度押すと閉じる ── */
+  /* ── タブ（素材・台本・指摘）。もう一度押すと閉じる。出すのは下の帯が無い見るだけの画面だけ ── */
   .sview .sv-mtabs{grid-area:tabs; display:flex; gap:6px; padding:4px 8px 6px;
     border-bottom:1px solid var(--border-2)}
+  .sview:has(.dbar) .sv-mtabs{display:none}
+  /* 下の帯がある画面で中身を開いているあいだは、中身の頭に名前と「閉じる」の1行を出す（下からせり上がった一覧の形） */
+  .sview .sv-mshd{display:none}
+  .sview[data-mtab]:has(.dbar) .sv-mshd{grid-area:tabs; display:flex; align-items:center; gap:8px;
+    padding:6px 8px 6px 12px; background:var(--surface-1); border-top:2px solid var(--act-line);
+    border-radius:var(--r-lg) var(--r-lg) 0 0; box-shadow:var(--shadow-2)}
+  .sview .sv-mshd .t{font-size:var(--fs-md); font-weight:680}
+  .sview[data-mtab="mat"] .sv-mshd .t::before{content:'素材'}
+  .sview[data-mtab="script"] .sv-mshd .t::before{content:'台本'}
+  .sview[data-mtab="notes"] .sv-mshd .t::before{content:'指摘'}
+  .sview .sv-mshd .btn{margin-left:auto}
+  .sview[data-mtab]:has(.dbar) :is(.sv-matcol,.sv-script,.tapbox,.sv-sec.sc){background:var(--surface-1)}
   .sview .sv-mtabs button{flex:1 1 0; font-family:inherit; font-size:var(--fs-sm); min-height:40px;
     cursor:pointer; border:1px solid var(--border); background:var(--surface-1); color:var(--ink-2);
     border-radius:var(--r-md)}
@@ -2539,8 +2567,8 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
      動画は止まったまま大きく残し、タブと下の帯の代わりに案内の1行とボタン2つを出す。
      絵を触るとそこに印が付いて段2へ。動画の上の帯（パソコン用の案内）はスマホでは出さない */
   .sview .pickband{display:none!important}
-  body.sv-pick1 .sview.sview{grid-template-rows:auto auto minmax(0,1fr) auto auto 0px auto auto}
-  body.sv-pick1 .sview.sview .sv-mtabs,body.sv-pick1 .sview.sview .dbar,
+  body.sv-pick1 .sview.sview{grid-template-rows:auto auto minmax(0,var(--sv-vidmax)) auto 0px minmax(8px,1fr) auto auto}
+  body.sv-pick1 .sview.sview .sv-mtabs,body.sv-pick1 .sview.sview .sv-mshd,body.sv-pick1 .sview.sview .dbar,
   body.sv-pick1 .sview.sview .sv-matcol,body.sv-pick1 .sview.sview .sv-script,
   body.sv-pick1 .sview.sview .tapbox,body.sv-pick1 .sview.sview .sv-sec.sc{display:none}
   body.sv-pick1 .sview .sv-mpick{grid-area:bar; display:flex; flex-wrap:wrap; align-items:center;
@@ -2554,10 +2582,11 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
      入力欄、いちばん下（＝キーボードのすぐ上）に「この指摘を足す」「やめる」。高さは
      visualViewport（--sv-vh）に合わせ続けるので、ボタンはキーボードに隠れない。
      入力中は送信のボタン（下の帯）が画面に無い＝打っている最中に送ってしまうことがない */
-  body.sheetopen .sview.sview{grid-template-rows:0px 0px 0px 0px 0px minmax(0,1fr) auto 0px}
+  body.sheetopen .sview.sview{grid-template-rows:0px 0px 0px 0px minmax(0,1fr) 0px auto 0px}
   body.sheetopen .sview.sview>.dtop,body.sheetopen .sview.sview .sv-screen.final,
   body.sheetopen .sview.sview .sv-matcol,body.sheetopen .sview.sview .sv-script,
   body.sheetopen .sview.sview .sv-ctrls-slot,body.sheetopen .sview.sview .sv-mtabs,
+  body.sheetopen .sview.sview .sv-mshd,
   body.sheetopen .sview.sview .sv-sec.sc,body.sheetopen .sview.sview .dbar,
   body.sheetopen .sview.sview .sv-worknow{display:none}
   body.sheetopen .sview .tapbox{display:flex; flex-direction:column; padding:0; overflow:hidden}
@@ -2603,7 +2632,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   /* ── 没の理由（「…」→「没にする」で出る）── */
   .sview:has(.rjpanel:not([hidden])) .sv-matcol,.sview:has(.rjpanel:not([hidden])) .sv-script,
   .sview:has(.rjpanel:not([hidden])) .tapbox,.sview:has(.rjpanel:not([hidden])) .sv-sec.sc,
-  .sview:has(.rjpanel:not([hidden])) .sv-mtabs{display:none}
+  .sview:has(.rjpanel:not([hidden])) .sv-mtabs,.sview:has(.rjpanel:not([hidden])) .sv-mshd{display:none}
   .sview .rjpanel:not([hidden]){display:block; max-height:calc(var(--sv-vh, 100dvh) * .6);
     border-top:2px solid var(--border)}
 
@@ -2612,23 +2641,34 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .decide>.dstate{grid-area:bar; margin:0; border-radius:0;
     padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
 
-  /* ── 下の帯（常に出る）:「…」「吹き出し」「修正を依頼（件数）」「承認」── */
+  /* ── 下の帯（常に出る）:「…」「＋ 指摘」「指摘 N」「修正を依頼（N件）」「承認」。「＋ 指摘」がいちばん広い ── */
   .sview .dbar{grid-area:bar; position:relative; left:auto; right:auto; bottom:auto; z-index:auto;
-    box-shadow:none; flex-wrap:nowrap; gap:6px; padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
-  .sview .dbar .btn{height:46px; min-height:46px; font-size:var(--fs-xs); padding:0 8px; white-space:nowrap}
-  .sview .dbar .sv-mmore{flex:0 0 44px; width:44px; padding:0; font-size:18px; font-weight:700}
-  /* 入口は言葉で「＋ 指摘」（吹き出しの絵だけでは伝わらなかった・#552 の続き） */
-  .sview .dbar .sv-mcmt{flex:0 0 auto; width:auto; padding:0 10px; font-size:var(--fs-sm); font-weight:680}
+    box-shadow:none; flex-wrap:nowrap; gap:4px; padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+  /* 文字は上下とも真ん中（高さを決めた箱の中で上に寄らないように） */
+  .sview .dbar .btn{flex:1 1 0; width:auto; min-width:0; height:46px; min-height:46px; padding:0 4px;
+    font-size:var(--fs-xs); line-height:var(--lh-tight); white-space:nowrap; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; text-align:center}
+  .sview .dbar .sv-mmore{flex:0 0 44px; width:44px; padding:0; font-size:var(--fs-lg); font-weight:700}
+  /* 入口は言葉で「＋ 指摘」（吹き出しの絵だけでは伝わらなかった） */
+  .sview .dbar .sv-mcmt{flex:1.4 1 0; font-size:var(--fs-sm); font-weight:680}
+  /* 「指摘 N」: 押すと指摘の一覧（指摘の中身）が下から開く。開いているあいだは押した見た目 */
+  .sview .dbar .sv-mlist{flex:0 0 auto; padding:0 12px}
+  .sview .dbar .sv-mlist[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
   /* 指摘が0件でメモも空のときは押せない見た目（押せば今までどおり案内が出る＝誤タップよけ） */
   .sview .dbar [data-act="comment"][aria-disabled="true"]{opacity:.45}
-  .sview .dbar [data-act="comment"],.sview .dbar [data-act="approve-quick"]{flex:1 1 0; width:auto;
-    min-width:0; overflow:hidden; text-overflow:ellipsis}
+  /* 「修正を依頼」と「（N件）」は2行。承認は名前が長い工程だけ2行に折る */
+  .sview .dbar [data-act="comment"]{flex:1 1 0; width:auto; flex-direction:column}
+  .sview .dbar [data-act="comment"]>span{display:block}
+  .sview .dbar [data-act="approve-quick"]{flex:1 1 0; width:auto; white-space:normal}
   .sview .sv-mmenu{position:absolute; left:8px; bottom:calc(100% + 6px); z-index:5; display:flex;
     flex-direction:column; min-width:170px; padding:4px; background:var(--surface-1);
     border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--shadow-2)}
   .sview .sv-mmenu button{font-family:inherit; font-size:var(--fs-sm); text-align:left; cursor:pointer;
-    min-height:44px; padding:0 12px; border:none; background:transparent; color:var(--danger);
+    min-height:44px; padding:0 12px; border:none; background:transparent; color:var(--ink);
     border-radius:var(--r-sm)}
+  .sview .sv-mmenu button:hover{background:var(--surface-2)}
+  .sview .sv-mmenu button[aria-pressed="true"]{font-weight:680}
+  .sview .sv-mmenu button.danger{color:var(--danger); border-top:1px solid var(--border-2); border-radius:0}
 
   .sview .cbtn,.sview .tagbtn{height:44px}
   .sview .btn.sm{min-height:44px}
@@ -2827,10 +2867,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/1 23:08';
+const BUILT_AT = '11/2 17:55';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'fd25c69eb04a';
+const BUILT_HASH = 'c25107fa01df';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -6259,7 +6299,15 @@ function tapSyncBar(){
   const n = tap.items.length, filled = n > 0 || !!tapMemoVal();
   const req = bar.querySelector('.dbar [data-act="comment"]');
   const apv = bar.querySelector('.dbar [data-act="approve-quick"]');
-  if (req && !req.dataset.lbl) { req.textContent = actWords(curItem).commentN(n); req.classList.toggle('on', filled); }
+  if (req && !req.dataset.lbl) {
+    /* 「修正を依頼」と「（N件）」を別の span に分けて置く。広い画面は続けて1行、スマホの下の帯は2行に積む */
+    const lbl = actWords(curItem).commentN(n), cut = lbl.indexOf('（');
+    const s1 = document.createElement('span'), s2 = document.createElement('span');
+    s1.textContent = cut < 0 ? lbl : lbl.slice(0, cut);
+    s2.textContent = cut < 0 ? '' : lbl.slice(cut);
+    req.replaceChildren(s1, s2);
+    req.classList.toggle('on', filled);
+  }
   /* スマホの1画面（#552 の続き）: 何も書いていないときは押せない見た目。押せば今までどおり
      案内が出る（誤タップよけの動きは変えない）ので、disabled にはしない */
   if (req) {
@@ -7063,12 +7111,16 @@ function sceneDetailHTML(it, plan){
         <div class="sv-prevlist" data-sv-prevlist></div>
       </section>
     </div>
-    <!-- スマホだけのタブ（#552）。最初はどれも開いていない。もう一度押すと閉じる -->
+    <!-- スマホだけのタブ（#552）。最初はどれも開いていない。もう一度押すと閉じる。
+         出すのは下の帯が無い見るだけの画面だけ（下の帯がある画面は「…」と「指摘 N」から開く） -->
     <div class="sv-mtabs sv-m-only" role="group" aria-label="動画の下に開く中身">
       <button type="button" data-svact="mtab" data-mtab="mat" aria-pressed="false">素材</button>
       <button type="button" data-svact="mtab" data-mtab="script" aria-pressed="false">台本</button>
       <button type="button" data-svact="mtab" data-mtab="notes" aria-pressed="false">指摘</button>
     </div>
+    <!-- 下の帯から開いた中身の頭の1行（名前は CSS が開いている中身から出す） -->
+    <div class="sv-mshd sv-m-only"><span class="t"></span>
+      <button class="btn sm" type="button" data-svact="mclose">閉じる</button></div>
     <!-- 「＋ 指摘」の段1（場所を選ぶ）のあいだだけ、タブと下の帯の代わりに出る（#552 の続き） -->
     <div class="sv-mpick sv-m-only" role="group" aria-label="指摘の場所を選ぶ">
       <span class="msg">絵を触ると場所を指せます</span>
@@ -7867,6 +7919,8 @@ function svPaintBar(){
   const ln = (sv.liveNotes || []).length;
   setText(cnt, n != null ? (n + '件') : ln ? (ln + '件') : '見るだけ');
   setText(st, n == null ? 'この画面では指摘を足せません' : ('指摘 ' + n + '件'));
+  /* スマホの下の帯の「指摘 N」（今回の指摘の件数・「修正を依頼（N件）」と同じ数） */
+  setText(sv.q('[data-sv-mlistn]'), '指摘 ' + (n != null ? n : 0));
   const next = sv.q('[data-sv-next]');
   if (next) {
     /* 承認の先＝工程の帯で、いまの位置より後ろの最初の「使う工程」。作業中の記録がある動画（#637）は
@@ -8379,7 +8433,16 @@ async function armScene(node, files, pre){
     if (!b || !sv) return;
     const a = b.dataset.svact, stage = q('[data-sv-stage]');
     /* ── スマホの1画面だけのボタン（#552）── */
-    if (a === 'mtab') { svSetTab(root.dataset.mtab === b.dataset.mtab ? '' : b.dataset.mtab); return; }
+    if (a === 'mtab') {
+      /* タブ・「…」の中の素材と台本・下の帯の「指摘 N」のどれから押しても同じ（押したら「…」は閉じる） */
+      if (menu && !menu.hidden) {
+        menu.hidden = true;
+        q('[data-svact="more"]')?.setAttribute('aria-expanded', 'false');
+      }
+      svSetTab(root.dataset.mtab === b.dataset.mtab ? '' : b.dataset.mtab);
+      return;
+    }
+    if (a === 'mclose') { svSetTab(''); return; }
     if (a === 'more') {
       if (menu) { menu.hidden = !menu.hidden; b.setAttribute('aria-expanded', String(!menu.hidden)); }
       return;
@@ -8531,8 +8594,12 @@ function decideHTML(it, gate, changes, barFacts, plain, tapOn){
       ${plain ? `<button class="btn sv-mmore sv-m-only" type="button" data-svact="more" aria-haspopup="true"
         aria-expanded="false" aria-label="そのほかの操作">…</button>
       <div class="sv-mmenu sv-m-only" data-sv-mmenu hidden>
-        <button type="button" data-svact="kill">${esc(w.reject)}</button></div>
-      <button class="btn sv-mcmt sv-m-only" type="button" data-svact="bubble">＋ 指摘</button>` : ''}
+        <button type="button" data-svact="mtab" data-mtab="mat" aria-pressed="false">素材</button>
+        <button type="button" data-svact="mtab" data-mtab="script" aria-pressed="false">台本</button>
+        <button type="button" class="danger" data-svact="kill">${esc(w.reject)}</button></div>
+      <button class="btn sv-mcmt sv-m-only" type="button" data-svact="bubble">＋ 指摘</button>
+      <button class="btn sv-mlist sv-m-only" type="button" data-svact="mtab" data-mtab="notes"
+        aria-pressed="false" data-sv-mlistn>指摘 0</button>` : ''}
       <button class="btn kill" data-act="reject-open" data-key="${esc(key)}"
         aria-expanded="false" aria-controls="${rid}">${esc(w.reject)}</button>
       <button class="btn soft" data-act="comment" data-key="${esc(key)}">${esc(w.comment)}</button>
@@ -8707,8 +8774,9 @@ function wboxBusy(box, busy, label){
   });
   const btn = label && boxes.map(b => b.querySelector(`[data-act="${label}"]`)).find(Boolean);
   if (btn) {
-    if (busy) { btn.dataset.lbl = btn.textContent; btn.textContent = '送信中…'; }
-    else if (btn.dataset.lbl) { btn.textContent = btn.dataset.lbl; delete btn.dataset.lbl; }
+    /* 中身は innerHTML で控えて戻す（「修正を依頼」は2つの span で2行に積むので、文字だけ戻すと1行に潰れる） */
+    if (busy) { btn.dataset.lbl = btn.innerHTML; btn.textContent = '送信中…'; }
+    else if (btn.dataset.lbl) { btn.innerHTML = btn.dataset.lbl; delete btn.dataset.lbl; }
   }
   /* 没の確定は理由が入っているときだけ押せる（busy 解除で不用意に有効化しない） */
   if (!busy) boxes.forEach(syncRejectReady);
