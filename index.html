@@ -78,13 +78,7 @@
      確かめた事実の地（--good-tint）の上の文章の字 */
   --attn-text:#5c4a2f; --good-text:#0b3d0b;
 
-  /* ── ルールの一覧の種類の色（#572・オーナー 2026-09-30）。行の地・押したときの地・種類のチップの地・その文字。
-     行の地は地の色から ΔE 6〜7 の淡さ（本文の文字の読みやすさは変えない）。チップの文字はチップの地で 4.5 以上 */
-  --rk-pol-row:#fbf0f4; --rk-pol-hov:#f6e4eb; --rk-pol-chip:#f2d9e3; --rk-pol-ink:#8a2d52;   /* 方針 */
-  --rk-rul-row:#eef4fd; --rk-rul-hov:#e2ecfa; --rk-rul-chip:#d6e5f8; --rk-rul-ink:#1d5698;   /* 規則 */
-  --rk-ins-row:#eff8ef; --rk-ins-hov:#e3f2e4; --rk-ins-chip:#d6ecd8; --rk-ins-ink:#1f6428;   /* 知見 */
-  --rk-hyp-row:#fcf7e9; --rk-hyp-hov:#f8efd8; --rk-hyp-chip:#f3e5c1; --rk-hyp-ink:#6e5311;   /* 仮説 */
-  /* ルールの一覧の番組の5欄の罫線（#572・オーナー 2026-09-30 17:24）。明るいテーマは --axis と同じ。
+  /* 一覧の罫線と、見出しの絞り込みの窓の枠（#572）。明るいテーマは --axis と同じ。
      暗いテーマの --axis（#383835）は行の地の上で見えにくいので、暗いテーマだけ濃くする */
   --rl-line:var(--axis);
 
@@ -121,10 +115,6 @@
     --attn-text:#E8D9BC; --good-text:#BFE6BF;
     --danger:#8B605E; --danger-ink:#ffffff; --danger-tint:#2B1F1E;
     --mark:#D0685E; --mark-fill:rgba(208,104,94,.24);
-    --rk-pol-row:#281c21; --rk-pol-hov:#32232a; --rk-pol-chip:#442c37; --rk-pol-ink:#f0b3cb;
-    --rk-rul-row:#18202b; --rk-rul-hov:#1e2836; --rk-rul-chip:#223349; --rk-rul-ink:#a2c6f2;
-    --rk-ins-row:#19231a; --rk-ins-hov:#1f2c21; --rk-ins-chip:#263b29; --rk-ins-ink:#a4d5aa;
-    --rk-hyp-row:#262117; --rk-hyp-hov:#2f291c; --rk-hyp-chip:#3e3421; --rk-hyp-ink:#e2c68a;
     --rl-line:#4d4c47;
   }
 }
@@ -152,10 +142,6 @@
   --attn-text:#E8D9BC; --good-text:#BFE6BF;
   --danger:#8B605E; --danger-ink:#ffffff; --danger-tint:#2B1F1E;
   --mark:#D0685E; --mark-fill:rgba(208,104,94,.24);
-  --rk-pol-row:#281c21; --rk-pol-hov:#32232a; --rk-pol-chip:#442c37; --rk-pol-ink:#f0b3cb;
-  --rk-rul-row:#18202b; --rk-rul-hov:#1e2836; --rk-rul-chip:#223349; --rk-rul-ink:#a2c6f2;
-  --rk-ins-row:#19231a; --rk-ins-hov:#1f2c21; --rk-ins-chip:#263b29; --rk-ins-ink:#a4d5aa;
-  --rk-hyp-row:#262117; --rk-hyp-hov:#2f291c; --rk-hyp-chip:#3e3421; --rk-hyp-ink:#e2c68a;
   --rl-line:#4d4c47;
   --mk-todo:#77756e; --mk-skip-a:#232322; --mk-skip-b:#4f4e49; --sv-skip-a:#1e1e1d; --sv-skip-b:#333331;
 }
@@ -231,7 +217,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chrow{display:flex; align-items:flex-end; gap:var(--sp-3); margin-top:var(--sp-3)}
 .chtabs{display:flex; gap:var(--sp-1); overflow-x:auto; scrollbar-width:none; min-width:0}
 .systabs{display:flex; gap:var(--sp-1); margin-left:auto; flex:0 0 auto}
-/* 共通画面（分析・決まり・素材DB・制作フロー）は上の行にだけ出す（下のナビ側は常に隠す） */
+/* 共通画面（分析・素材DB・制作フロー）は上の行にだけ出す（下のナビ側は常に隠す） */
 .navbtn.indep{display:none}
 .chtab.sys .lbl{margin-left:4px}
 .chtabs::-webkit-scrollbar{display:none}
@@ -243,7 +229,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chtab .cdot{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
 .chtab[aria-selected="true"]{background:var(--surface-2); color:var(--ink); font-weight:650;
   border-color:var(--border-2); box-shadow:inset 0 2px 0 0 var(--chac)}
-/* チャンネル共通の画面（分析・決まり・素材DB・制作フロー）を見ている間は「いまチャンネルは効いていない」
+/* チャンネル共通の画面（分析・素材DB・制作フロー）を見ている間は「いまチャンネルは効いていない」
    ことを薄さで示す。ただし押せなくはしない（2026-08-20 オーナー指摘: グレーアウトして
    元に戻れない）。押したらそのチャンネルの制作へ戻る＝ここが戻り道になる。 */
 /* ── チャンネル切替（スマホ）──────────────────────────────────────────
@@ -1396,19 +1382,14 @@ tr.dropped td{color:var(--muted)}
   body.sheetopen .dview.hasbar{padding-bottom:calc(var(--dbar-h) + 46dvh + env(safe-area-inset-bottom))}
 }
 
-/* ═══ 決まりの一覧・共用素材の一覧（#574）═══════════════════════════════
+/* ═══ 共用素材の一覧（#574）═══════════════════════════════
    1行＝1つ。見出しの行と同じ列の幅で並べる（位置を揃える）。行を押すと下に中身が開く */
 .lst{border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-1);
   box-shadow:var(--shadow-1); overflow:hidden; min-width:0}
-.lsthead,.rlrow,.alrow{display:grid; gap:var(--sp-3); padding:9px 14px; min-width:0}
+.lsthead,.alrow{display:grid; gap:var(--sp-3); padding:9px 14px; min-width:0}
 .lsthead{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.07em;
   background:var(--surface-2); border-bottom:1px solid var(--border)}
 /* 列の幅は px で書く（見出しの行は字が小さいので、em だと列の位置がずれる） */
-/* 番組の列は番組の数（--chn・JS が入れる）× 1欄の幅（--chw） */
-.lst{--chn:5; --chw:48px}
-/* 番組の列の幅は5欄から隙間1つぶんを引く（5欄は左右の隙間の真ん中まで広げるので、5欄の外側の線が列の間の線と重なる・下の「表の罫線」） */
-.rlrow,.lsthead.rl{grid-template-columns:36px 48px 48px calc(var(--chn) * var(--chw) - var(--sp-3)) minmax(110px,200px) minmax(0,1fr) 14px; align-items:baseline}
-.lsthead.rl{align-items:end}
 /* 素材: 見本｜名前と説明｜種類｜番組｜使った動画（本数と番号）｜▸ */
 .alrow,.lsthead.al{grid-template-columns:64px minmax(0,1fr) 84px 84px 96px 14px; align-items:center}
 .lst details{border-bottom:1px solid var(--border-2)}
@@ -1419,9 +1400,7 @@ tr.dropped td{color:var(--muted)}
 .lst summary:focus-visible{outline:2px solid var(--s1); outline-offset:-2px}
 .lst .caret{color:var(--muted); font-size:11px; justify-self:end; transition:transform .15s}
 .lst details[open] .caret{transform:rotate(90deg)}
-.rlrow .no{font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink-2)}
-.rlrow .sb,.alrow .nm{font-weight:650; font-size:var(--fs-sm); overflow-wrap:anywhere}
-.rlrow .bd{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere}
+.alrow .nm{font-weight:650; font-size:var(--fs-sm); overflow-wrap:anywhere}
 /* 素材の行の説明（#572・オーナー 2026-09-30 20:30「どういう内容なのかもう少し一覧側で」）。名前の下に、
    開いたときに「呼び方」の下に出る説明文の1行目を2行まで（超えたら「…」）。
    種類・番組・使った動画は .meta でまとめ、641px 以上は表の列に並べ（display:contents）、640px 以下は名前の下の1行にする */
@@ -1431,30 +1410,8 @@ tr.dropped td{color:var(--muted)}
 .alrow .meta{display:contents}
 .alrow .ach{font-size:var(--fs-xs); color:var(--ink-2); line-height:var(--lh-tight); min-width:0}
 .alrow .ach span,.alrow .sq span{white-space:nowrap}
-/* 番組の列（#572・オーナー 2026-09-30 17:09）。900px 以上は見出しが2段（上に「番組」、下に番組の絵文字と短い呼び名）で、
-   行は当てはまる番組の欄に ✓（.chm）。899px 以下は短い呼び名を「・」でつなぐ（.chs）。
-   .chs は 900px 以上でも読み上げ用に残す（見た目は消す）。5欄は見出しと行で同じ幅の格子なので左端がそろう */
-.lsthead.rl .hchg{display:block; text-align:center; padding-bottom:3px; border-bottom:1px solid var(--rl-line)}
-.lsthead.rl .hchm,.rlrow .chm{display:grid; grid-template-columns:repeat(var(--chn),var(--chw))}
-/* 表の罫線（900px 以上だけ・#572。オーナー 2026-09-30 17:24「罫線をしっかり」→ 19:45「罫線の位置がここだけなのは変」）。
-   縦の線は全部の列の間（番号｜種類｜強さ｜雑学｜歯科｜力わざ｜検証｜からくり｜対象｜本文。本文と ▸ の間には引かない）に、
-   見出しの行（2段とも）と各行で同じ位置に通す。列の間の線は見出しの行と各行に置いた .vl（列の間の隙間の真ん中・
-   行の上下いっぱい・下の @media）。番組の欄と欄の間の線は5欄の各欄の左の線で、見出しは「番組」の下線から下だけ
-   （上の段の「番組」は5欄をまたぐ）。5欄は左右へ隙間の半分ずつ広げてあるので、いちばん左の欄の左の線は .vl と重なり、
-   いちばん右の欄の右は .vl がそのまま線になる。どの欄も線から線まで 48px（--chw）。
-   横の線は見出しの行の下・各行の下・開いた行の中身の上（下の @media）。開いた中身には縦の線を通さない（.vl は行の中だけ）。
-   色は --rl-line（明るいテーマは --axis、暗いテーマは --axis だと行の地の上で見えにくいので #4d4c47）。一覧の外枠も同じ色 */
-.lsthead.rl .hchm>span,.rlrow .chm>span{border-left:1px solid var(--rl-line); text-align:center; min-width:0}
-.lsthead.rl .hch{margin:0 calc(var(--sp-3) / -2)}
-/* 見出しの下の段は絵文字（タブと同じ CH_ICON）の下に短い呼び名。縦の線は見出しの行の下端まで伸ばす（下の余白 9px ぶん） */
-.lsthead.rl .hchm{letter-spacing:0; margin-bottom:-9px}
-.lsthead.rl .hchm>span{display:flex; flex-direction:column; align-items:center; padding:4px 0 9px}
-.lsthead.rl .hchm .ic{font-size:var(--fs-md); line-height:1.25}
-.lsthead.rl .hch1{display:none}
-/* 見出しを押して絞り込む（#572・オーナー 2026-09-30 17:25「エクセルみたいにヘッダー部分を押すとフィルター」）。
-   押せる見出しは種類・強さ・番組・対象・工程（工程は列が無いので本文の見出しの行の右端）。▾ は押せる印、絞っている列は ●。
-   番組の下の段（絵文字と呼び名）を押しても同じ窓が開き、絞っているときは外した番組の呼び名を薄くする */
-/* 見出しの行は data-hf を持つ所（ルール・素材の .lsthead、動画の一覧の表の thead とスマホの一覧の先頭の札の行・#637） */
+/* 見出しを押して絞り込む（#572）。▾ は押せる印、絞っている列は ● */
+/* 見出しの行は data-hf を持つ所（素材の .lsthead、動画の一覧の表の thead とスマホの一覧の先頭の札の行・#637） */
 [data-hf] .hf{font:inherit; letter-spacing:inherit; color:inherit; background:transparent; border:0; border-radius:var(--r-sm);
   padding:2px 4px; margin:-2px -4px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; white-space:nowrap}
 [data-hf] .hf .fm{font-size:10px; line-height:1}
@@ -1463,15 +1420,11 @@ tr.dropped td{color:var(--muted)}
 [data-hf] .hf.on .fm{color:var(--s1)}
 [data-hf] .hf[aria-expanded="true"],[data-hf] .hf[aria-expanded="true"] .fm{background:var(--ink); color:var(--page)}
 [data-hf] .hf:focus-visible{outline:2px solid var(--s1); outline-offset:1px}
-.lsthead.rl .hchm{cursor:pointer}
-.lsthead.rl .hchm>span.off>span{opacity:.35}
-.lsthead.rl .hbd{display:flex; justify-content:space-between; align-items:flex-end; gap:var(--sp-2); min-width:0}
-/* 動画の一覧のタイトルの見出し（#637）: 左に「タイトル」（押すと並べ替え）、右端にジャンルの絞り込み（列が無いので）。
-   ルールの本文の見出しの右端に工程を置くのと同じ形 */
+/* 動画の一覧のタイトルの見出し（#637）: 左に「タイトル」（押すと並べ替え）、右端にジャンルの絞り込み（列が無いので） */
 .mtx th .thf{display:flex; justify-content:space-between; align-items:flex-end; gap:var(--sp-2); min-width:0}
 .mtx th .thf>span:first-child{min-width:0; overflow:hidden; text-overflow:ellipsis}
-/* 窓は一覧の外（#view-rules・#view-assets・#view-stock の直下）に置く。一覧は角丸のため中身を切り取るので、中に置くと窓が切れる */
-#view-rules,#view-assets,#view-stock{position:relative}
+/* 窓は一覧の外（#view-assets・#view-stock の直下）に置く。一覧は角丸のため中身を切り取るので、中に置くと窓が切れる */
+#view-assets,#view-stock{position:relative}
 .rfpop{position:absolute; z-index:40; width:max-content; min-width:160px; max-width:min(320px, calc(100vw - 32px));
   background:var(--surface-1); border:1px solid var(--rl-line); border-radius:var(--r-md); box-shadow:var(--shadow-2);
   padding:6px; font-size:var(--fs-sm); color:var(--ink)}
@@ -1488,49 +1441,33 @@ tr.dropped td{color:var(--muted)}
 /* 値の本数（動画の一覧の工程・ジャンル・#637）。右端にそろえ、字は小さく薄く */
 .rfpop .rfn{margin-left:auto; padding-left:var(--sp-3); font-size:var(--fs-2xs); color:var(--muted);
   font-variant-numeric:tabular-nums; white-space:nowrap}
-/* 行の5欄は行の上下いっぱい（余白の 9px ぶん）と、左右の隙間の真ん中まで伸ばす。
-   ✓ は番号と同じ字の大きさと行の高さなので、番号と下端がそろう。色は本文の文字と同じ */
-.rlrow .chm{align-self:stretch; margin:-9px calc(var(--sp-3) / -2); font-weight:700; color:var(--ink)}
-.rlrow .chm>span{padding-top:9px}
-.rl .vl,.al .vl{display:none}
-/* 共用素材の一覧の罫線も同じ通し方（#572・オーナー 2026-09-30 20:30）。縦の線は 見本｜名前｜種類｜番組｜使った動画 の間の4本
-   （使った動画と ▸ の間には引かない）で、行の中の .vl（AL_VL）。横の線と色はルールと同じ */
+.al .vl{display:none}
+/* 表の罫線（900px 以上だけ・#572）。縦の線は 見本｜名前｜種類｜番組｜使った動画 の間の4本
+   （使った動画と ▸ の間には引かない）で、行の中の .vl（AL_VL）。横の線は外枠・見出しの行の下・各行の下・開いた行の中身の上。
+   開いた中身には縦の線を通さない（.vl は行の中だけ）。色は --rl-line（明るいテーマは --axis、暗いテーマは --axis だと
+   行の地の上で見えにくいので #4d4c47）。899px 以下は縦の線を出さず、横の線と外枠は --border / --border-2 */
 @media (min-width:900px){
-  .rlrow .chs{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
   /* 横の線（外枠・見出しの行の下・各行の下・開いた行の中身の上）を全幅で --rl-line に */
-  #rulelist,#assetlist{border-color:var(--rl-line)}
-  .lsthead.rl,.lsthead.al{border-bottom-color:var(--rl-line)}
-  .lst details.rl,.lst details.al{border-bottom-color:var(--rl-line)}
-  .lst details.rl[open]>summary,.lst details.al[open]>summary{border-bottom:1px solid var(--rl-line)}
-  /* 列の間の縦の線。見出しの行と各行に5本ずつ（素材は4本）置き、2列目から先の左端から隙間の半分だけ左（隙間の真ん中）に、
+  #assetlist{border-color:var(--rl-line)}
+  .lsthead.al{border-bottom-color:var(--rl-line)}
+  .lst details.al{border-bottom-color:var(--rl-line)}
+  .lst details.al[open]>summary{border-bottom:1px solid var(--rl-line)}
+  /* 列の間の縦の線。見出しの行と各行に4本ずつ置き、2列目から先の左端から隙間の半分だけ左（隙間の真ん中）に、
      行の上下いっぱい（余白を含む）に引く。行の中に置くので、開いた中身には通らない */
-  .lsthead.rl,.rlrow,.lsthead.al,.alrow{position:relative}
-  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl{display:block; position:absolute; top:0; bottom:0; left:0; width:1px;
+  .lsthead.al,.alrow{position:relative}
+  :is(.lsthead.al,.alrow)>.vl{display:block; position:absolute; top:0; bottom:0; left:0; width:1px;
     margin-left:calc(var(--sp-3) / -2); background:var(--rl-line); pointer-events:none}
-  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl:nth-of-type(1){grid-column-start:2}
-  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl:nth-of-type(2){grid-column-start:3}
-  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl:nth-of-type(3){grid-column-start:4}
-  :is(.lsthead.rl,.rlrow,.lsthead.al,.alrow)>.vl:nth-of-type(4){grid-column-start:5}
-  :is(.lsthead.rl,.rlrow)>.vl:nth-of-type(5){grid-column-start:6}
+  :is(.lsthead.al,.alrow)>.vl:nth-of-type(1){grid-column-start:2}
+  :is(.lsthead.al,.alrow)>.vl:nth-of-type(2){grid-column-start:3}
+  :is(.lsthead.al,.alrow)>.vl:nth-of-type(3){grid-column-start:4}
+  :is(.lsthead.al,.alrow)>.vl:nth-of-type(4){grid-column-start:5}
 }
-/* 番組の名前の途中では折り返さず、「・」のあとで折り返す */
-.rlrow .chs{font-size:var(--fs-xs); color:var(--ink-2); line-height:var(--lh-tight)}
-.rlrow .chs span{white-space:nowrap}
-/* 種類ごとの色（#572）。行（summary）だけを塗り、開いた中身は塗らない。値は :root の --rk-* */
-.rl.k-policy {--rkrow:var(--rk-pol-row); --rkhov:var(--rk-pol-hov); --rkchip:var(--rk-pol-chip); --rkink:var(--rk-pol-ink)}
-.rl.k-rule   {--rkrow:var(--rk-rul-row); --rkhov:var(--rk-rul-hov); --rkchip:var(--rk-rul-chip); --rkink:var(--rk-rul-ink)}
-.rl.k-insight{--rkrow:var(--rk-ins-row); --rkhov:var(--rk-ins-hov); --rkchip:var(--rk-ins-chip); --rkink:var(--rk-ins-ink)}
-.rl.k-hypo   {--rkrow:var(--rk-hyp-row); --rkhov:var(--rk-hyp-hov); --rkchip:var(--rk-hyp-chip); --rkink:var(--rk-hyp-ink)}
-.lst details.rl>summary{background:var(--rkrow, transparent)}
-.lst details.rl>summary:hover,.lst details.rl[open]>summary{background:var(--rkhov, var(--surface-2))}
-.rlrow .tagk.kd{background:var(--rkchip, var(--surface-2)); color:var(--rkink, var(--ink-2)); border-color:transparent; font-weight:650}
 .alrow .cnt{font-size:var(--fs-sm); font-variant-numeric:tabular-nums; color:var(--ink-2);
   display:flex; flex-direction:column; gap:1px; min-width:0}
 /* 使った動画の番号（KR0002 など）は本数の下に小さく。2本以上は「・」のあとで折り返す */
 .alrow .sq{font-size:var(--fs-2xs); line-height:var(--lh-tight); letter-spacing:.02em}
 .tagk{justify-self:start; font-size:var(--fs-2xs); white-space:nowrap; color:var(--ink-2);
   border:1px solid var(--border-2); border-radius:var(--r-sm); padding:1px 6px; background:var(--surface-2)}
-.tagk.must{color:var(--ink); font-weight:700}
 /* 共用素材から外した素材（#594）: 名前の横の言葉の札と、薄めた名前（札が言葉なので色だけで分けていない） */
 .tagk.tagret{font-weight:650; vertical-align:1px}
 .al.retired>summary .nm{color:var(--ink-2)}
@@ -1553,28 +1490,15 @@ tr.dropped td{color:var(--muted)}
 .athumb img{display:block; width:100%; height:100%; object-fit:cover}
 .athumb.none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2);
   font-size:var(--fs-2xs); cursor:inherit; text-align:center}
-/* 中くらいの幅では、番組の列を短い呼び名に戻し（見出しは「番組」1つ）、本文を2行目へ降ろす（見出しの行は残す）。
-   見出しの「本文」の字は消し、工程の絞り込みだけを見出しの行の右端に残す（列の左端は行と同じ位置のまま） */
-@media (max-width:899px){
-  .rlrow{grid-template-columns:36px 48px 48px 136px minmax(0,1fr) 14px}
-  .lsthead.rl{grid-template-columns:36px 48px 48px 136px minmax(0,1fr) auto}
-  .lsthead.rl .hbdt,.lsthead.rl .hend,.lsthead.rl .hch,.rlrow .chm{display:none}
-  .lsthead.rl .hch1{display:block}
-  .rlrow .bd{grid-column:1 / -1; grid-row:2}
-}
 @media (max-width:640px){
   .lsthead{display:none}
-  /* ルール・素材・動画の一覧（.sk・#637）の見出しは列にそろえず、絞り込める見出しだけを横に並べる（押しやすい大きさの札にする） */
-  :is(.lsthead.rl,.lsthead.al,.lsthead.sk){display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px}
-  .lsthead.rl .hno,.lsthead.al .hnf,.lsthead.al .hend{display:none}
-  :is(.lsthead.rl,.lsthead.al,.lsthead.sk) .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
+  /* 素材・動画の一覧（.sk・#637）の見出しは列にそろえず、絞り込める見出しだけを横に並べる（押しやすい大きさの札にする） */
+  :is(.lsthead.al,.lsthead.sk){display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px}
+  .lsthead.al .hnf,.lsthead.al .hend{display:none}
+  :is(.lsthead.al,.lsthead.sk) .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
     background:var(--surface-1); color:var(--ink-2); font-size:var(--fs-xs); letter-spacing:.02em}
-  :is(.lsthead.rl,.lsthead.al,.lsthead.sk) .hf.on{color:var(--ink); font-weight:750}
-  :is(.lsthead.rl,.lsthead.al,.lsthead.sk) .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
-  /* 番組の列は幅の上限まで（超えたら「・」のあとで折り返す） */
-  .rlrow{grid-template-columns:auto auto auto fit-content(80px) minmax(0,1fr) 14px; column-gap:var(--sp-2)}
-  .rlrow .chs{font-size:var(--fs-2xs)}
-  .rlrow .bd{grid-column:1 / -1; grid-row:2}
+  :is(.lsthead.al,.lsthead.sk) .hf.on{color:var(--ink); font-weight:750}
+  :is(.lsthead.al,.lsthead.sk) .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
   /* 素材の行は 見本｜名前と説明（その下に 種類・番組・使った動画 を1行）｜▸ */
   .alrow{grid-template-columns:56px minmax(0,1fr) 14px; grid-template-rows:auto 1fr; row-gap:6px}
   .alrow .athumb{grid-row:1 / span 2; align-self:start}
@@ -1823,7 +1747,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   /* チャンネルは「いま見ているものだけ」を出し、押して切り替える（オーナー要望 2026-08-20） */
   .chtabs{display:none}
   .chpickwrap{display:block}
-  /* 狭い画面でも共通画面（分析・決まり・素材DB・制作フロー）はチャンネルタブの右に置く（オーナー指定 2026-08-20）。
+  /* 狭い画面でも共通画面（分析・素材DB・制作フロー）はチャンネルタブの右に置く（オーナー指定 2026-08-20）。
      チャンネル名の場所を残すため、この2つは記号だけにして文字を畳む（読み上げと長押しの
      ためのラベルは title / aria-label に残す）。チャンネル側は詰めて横スクロールで逃がす */
   .chtab{padding:8px 10px; gap:5px}
@@ -2714,7 +2638,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
         </div>
       </span>
     </div>
-    <!-- チャンネルタブの右に、チャンネルに依存しない画面（分析・決まり・素材DB・制作フロー）を並べる。
+    <!-- チャンネルタブの右に、チャンネルに依存しない画面（分析・素材DB・制作フロー）を並べる。
          別の入れ物にしてあるのは、チャンネル横断の画面を開いている間 .chtabs は
          「選べない（＝関係ない）」ものとして沈むため。同じ入れ物だと自分自身も押せなくなる。 -->
     <div class="chrow">
@@ -2731,7 +2655,6 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 <main>
   <section class="view" id="view-stock"></section>
   <section class="view" id="view-analytics"></section>
-  <section class="view" id="view-rules"></section>
   <section class="view" id="view-assets"></section>
   <section class="view" id="view-flow"></section>
   <!-- 共用素材の一覧の見本の絵を大きく見る（見た目は承認画面の拡大表示と同じ） -->
@@ -2767,8 +2690,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 /* ══ 定義 ═══════════════════════════════════════════════════════ */
 /* 検証だけの番組（experiment）の絵は検証タブ（PILOT_META）と同じにする（#604 A10） */
 const CH_ICON = {'buzz-zatsugaku':'🌏', 'dental':'🦷', 'rikiwaza':'🏗', 'experiment':'🧪', 'karakuri':'⚙️'};
-/* 番組の短い呼び名（番組の登録簿の display_label と同じ言葉・同じ順・#572）。ルールの一覧の番組の列と、
-   その上の番組の絞り込み、共用素材の一覧の番組の列と絞り込みに使う。ここに無い番組は DB の名前で出す */
+/* 番組の短い呼び名（番組の登録簿の display_label と同じ言葉・同じ順・#572）。共用素材の一覧の番組の列と
+   絞り込みに使う。ここに無い番組は DB の名前で出す */
 const CH_SHORT = {'buzz-zatsugaku':'雑学', 'dental':'歯科', 'rikiwaza':'力わざ', 'experiment':'検証', 'karakuri':'からくり'};
 /* 動画の番号の頭2文字 → 番組（各番組の config.json の episode_prefix の写し・#572）。共用素材の一覧の番組の列と絞り込みに使う。
    ここに無い頭は、頭の2文字をそのまま番組の値と呼び名にする（黙って消さない） */
@@ -2867,10 +2790,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/3 13:27';
+const BUILT_AT = '11/3 14:17';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'c25107fa01df';
+const BUILT_HASH = 'ec26e279cf21';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2962,10 +2885,7 @@ const state = {
   busy:false, lastSync:null,
   /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
   secOpen:{},
-  /* 決まりの一覧・共用素材の一覧の絞り込み（#574）。空文字＝絞らない。
-     決まりの列（q 以外）は見出しの窓のチェック（#572）で、null＝絞らない・配列＝チェックの付いた値だけ残す */
-  rulesF:{q:'', ch:null, stage:null, kind:null, strength:null, subject:null},
-  /* 素材の列も見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す）。
+  /* 共用素材の一覧の絞り込み（#574）。列は見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す）。
      retired＝窓の「共用素材から外した物も見る」（#856・既定は外す＝共用素材から外した素材を出さない） */
   assetsF:{kind:null, ch:null, seq:null, retired:false}
 };
@@ -2995,8 +2915,8 @@ function loadUI(){
              追い越された提出の時刻（ms）。レビュー記録で確かめた結果を一覧の行にも効かせる */
 const store = { channels:[], accounts:[], byId:new Map(), core:{}, facets:{}, pending:{},
                 threads:{}, rework:{}, looks:{}, rvRev:{}, sbGone:{}, analytics:{}, assets:{},
-                /* 決まりの一覧・共用素材の一覧（#574）。開いたときに取る（⟳ で取り直す）。chNames は番組の名前 */
-                rules:null, prodAssets:null, chNames:{},
+                /* 共用素材の一覧（#574）。開いたときに取る（⟳ で取り直す）。chNames は番組の名前 */
+                prodAssets:null, chNames:{},
                 /* 制作フローの図（#695）。開いたときに flow.json を取る（⟳ で取り直す） */
                 flow:null,
                 /* 検証用の動画が1本でもあるか（#523）。loadPilotFlag が入れる */
@@ -3019,12 +2939,9 @@ const VIEWS = [
   /* 分析はチャンネル横断の1画面（2026-09-04）。見えるチャンネルを色で重ねて出すので、
      チャンネルタブの右の共通タブに置く。 */
   {key:'analytics', icon:'📈', label:'分析', chIndep:true},
-  /* 決まりの一覧と共用素材の一覧。読むだけ。
+  /* 共用素材の一覧。読むだけ。
      AI の残量・請求・gen-farm・制作の詰まりは PC のステータス画面で見る。
-     決まりは番組で閲覧を分けない表なので、全チャンネル可の人にだけ出す（共同運営者は制作と分析のまま）。
-     画面の呼び名は「動画制作ルールDB」。タブは短く「決まり」——
-     正式名のままだとスマホの幅（390px）でタブの並びが画面をはみ出すため。見出しは正式名 */
-  {key:'rules',     icon:'📏', label:'決まり', chIndep:true, fullOnly:true},
+     素材は番組で閲覧を分けない表なので、全チャンネル可の人にだけ出す（共同運営者は制作と分析のまま） */
   {key:'assets',    icon:'🧱', label:'素材DB', chIndep:true, fullOnly:true},
   /* 制作フロー（#695）。Blender 制作の全体の構成（動画ごとの状態ではない）。中身は公開のときに道具が正本から作る
      flow.json を読むだけ。全番組を見られる人にだけ出す。名前は縮めない（スマホでは札の列を横に送る） */
@@ -3071,7 +2988,7 @@ async function loadBootstrap(){
     q(sb.from('accounts').select('slug,channel,platform,handle,url,is_primary,kpi_media_key,status'))
   ]);
   store.accounts = accs;
-  /* 番組の名前（決まりの一覧の番組の欄。YouTube の口がまだ無い番組の名前も引けるように全部持つ） */
+  /* 番組の名前（YouTube の口がまだ無い番組の名前も引けるように全部持つ） */
   store.chNames = Object.fromEntries(chs.map(c => [c.slug, c.name || c.slug]));
   /* 動画チャンネル＝YouTube アカウントを持つ稼働中チャンネル */
   const videoChs = chs.filter(c => c.status !== 'closed'
@@ -3140,7 +3057,7 @@ const SORT_DB = {
 const likeEsc = s => String(s).toLowerCase().replace(/[\\%_]/g, '\\$&');
 
 /* 一覧の見出しを押して絞り込む列（#637・オーナー指摘「ほかの画面と同じように、見出しを押したらエクセルのように」）。
-   キーは state.stockF のキー、値は見出しの言葉。窓・印・閉じ方はルール・素材と同じ部品（HF_TABLES の stock）。
+   キーは state.stockF のキー、値は見出しの言葉。窓・印・閉じ方は素材と同じ部品（HF_TABLES の stock）。
    工程＝DB の工程（stage_key。前の工程のチップと同じ）。ジャンルの絞り込みは全部の番組で外した
    （オーナー決定。ジャンルを使う番組が一部だけで、番組で見出しが変わるため） */
 const SF_COLS = {stage:'工程'};
@@ -3880,7 +3797,7 @@ function renderShell(){
       }).join('')}</div>` : ''}</details>`;
   })();
 
-  /* チャンネルに依存しない画面（分析・決まり・素材DB・制作フロー）はチャンネルタブの右へ（オーナー要望 2026-08-19）。
+  /* チャンネルに依存しない画面（分析・素材DB・制作フロー）はチャンネルタブの右へ（オーナー要望 2026-08-19）。
      下のナビはそのチャンネルの中の画面（制作・分析）だけにして、2つの軸を混ぜない。
      ⚠️ スマホだけは逆にする: 画面が狭いとチャンネル名が読めなくなるので、共通画面は
      従来どおり下の固定タブバーに置く。両方に描いて CSS で出し分ける（画面幅の判定を
@@ -4321,7 +4238,7 @@ function colTH(k){
   if (!c.sort) return `<th class="${(c.thx || '').trim()}"${w}>${text}</th>`;
   const s = state.stockSort, on = s && s.key === k;
   const lb = SORT_LABEL[k] + (on ? `<span class="ar">${s.dir === 'asc' ? '▲' : '▼'}</span>` : '');
-  /* 列の無い絞り込み（ジャンル）は、その見出しの右端に置く（hf・#637。ルールの工程を本文の見出しの右端に置くのと同じ）。
+  /* 列の無い絞り込み（ジャンル）は、その見出しの右端に置く（hf・#637）。
      見出しの字を押すと並べ替え、右端のボタンを押すと絞り込みの窓 */
   return `<th class="sortable${c.thx || ''}" data-sort="${k}"${w}>${c.hf
     ? `<span class="thf"><span>${lb}</span>${hfBtn('stock', c.hf)}</span>` : lb}</th>`;
@@ -4360,7 +4277,7 @@ const flowBoxStyle = cols => {
   const right = cols.slice(gi + 1, okLast(cols) ? -1 : undefined).map(k => MCOL[k].w).filter(Boolean);
   return ` style="--flow-r:calc(${right.length ? right.join(' + ') : '0px'}); --flow-w:calc(${SV_STEPS.length} * var(--st-w))"`;
 };
-/* 見出しの行に data-hf＝表の名前（見出しを押して絞り込む・ルール・素材と同じ部品＝HF_TABLES の stock） */
+/* 見出しの行に data-hf＝表の名前（見出しを押して絞り込む・素材と同じ部品＝HF_TABLES の stock） */
 const mtxTable = (cols, body) => `<table${flowBoxStyle(cols)}>${mtxCols(cols)}<thead data-hf="stock">${mtxHead(cols)}</thead><tbody>${body}</tbody></table>`;
 
 /* err＝取れなかったときの理由。見出し（スマホは札）は残し、行の所にエラーを出す（#637。見出しで条件を変えて取り直せるように） */
@@ -4446,7 +4363,7 @@ function stockCards(rows, err){
     : sectionsOff() ? cards(rows)
     : groupSections(rows).map(s => secHead(s) + (secOpen(s) ? cards(s.rows) : '')).join('');
   /* スマホは表の見出しが無いので、絞り込める見出し（工程）だけを札の形で先頭に並べる
-     （ルール・素材の 640px 以下と同じ形・同じ窓・#637） */
+     （素材の 640px 以下と同じ形・同じ窓・#637） */
   const hf = `<div class="lsthead sk" data-hf="stock">${Object.keys(SF_COLS).map(c => hfBtn('stock', c)).join('')}</div>`;
   return `<div class="stockcards">${hf}${body}</div>`;
 }
@@ -4607,7 +4524,7 @@ async function renderStock(){
 
   /* 見出し（「動画の一覧」・番組名と件数）は出さない（#637・オーナー指摘）。番組は上のタブで選んでいて、
      承認待ち・仕分け待ちの件数もタブの数字で分かるため。その分を一覧に回す。
-     絞り込みはルール・素材と同じ形（#637）: 表の上は文字の検索と件数だけ、工程・ジャンルは見出しを押して出る窓のチェック
+     絞り込みは素材と同じ形（#637）: 表の上は文字の検索と件数だけ、工程・ジャンルは見出しを押して出る窓のチェック
      （スマホは一覧の先頭に札の形で並べる・stockCards）。並べ替えは今までどおり見出しを押す */
   el.innerHTML = `
       <div class="toolbar">
@@ -10442,23 +10359,17 @@ function drawSpark(){
     bindHover(wrap, r.pts, r.mode);
   });
 }
-/* ══ ④ 決まりの一覧・共用素材の一覧 ══════════════════════════════════════
-   読むだけの2画面。本文は DB のビューから**ログイン後にだけ**読む
+/* ══ ④ 共用素材の一覧 ══════════════════════════════════════
+   読むだけの画面。本文は DB のビューから**ログイン後にだけ**読む
    （公開ページには書かない）。絞り込みは画面の中でする（行は百件ほどで、全部取ってから絞る）。
-     決まり … v_production_rules_current（080）。いま有効な版だけ
-     素材   … v_production_assets。ビューが無い・読めないときは「素材なし」を出して止まらない
-   行は <details> で、押すと中身が開く。開いている行は絞り込みを変えても開いたまま（下の rulesOpen / assetsOpen） */
-const RULE_KINDS = ['規則', '方針', '知見', '仮説'];
-/* 種類ごとの行の色（CSS の .rl.k-*）。ここに無い種類は色を付けない */
-const RULE_KIND_CLS = {'規則':'k-rule', '方針':'k-policy', '知見':'k-insight', '仮説':'k-hypo'};
-const RULE_STRENGTHS = ['必須', '推奨', '参考'];
+     素材 … v_production_assets。ビューが無い・読めないときは「素材なし」を出して止まらない
+   行は <details> で、押すと中身が開く。開いている行は絞り込みを変えても開いたまま（下の assetsOpen） */
 const ASSET_KINDS = ['材質', '部品', '景色', '動きの型', '見せ方', '効果音'];   // 並びは db/cli/commands/production_assets.ts の ASSET_KINDS と同じ
-const rulesOpen = new Set(), assetsOpen = new Set();
+const assetsOpen = new Set();
 document.addEventListener('toggle', e => {
   const d = e.target;
   if (!d || !d.dataset) return;
-  if (d.dataset.rno) (d.open ? rulesOpen.add(d.dataset.rno) : rulesOpen.delete(d.dataset.rno));
-  else if (d.dataset.akey) (d.open ? assetsOpen.add(d.dataset.akey) : assetsOpen.delete(d.dataset.akey));
+  if (d.dataset.akey) (d.open ? assetsOpen.add(d.dataset.akey) : assetsOpen.delete(d.dataset.akey));
 }, true);
 const chName = slug => store.chNames[slug] || slug;
 /* 番組の短い呼び名と並び順（登録簿の順。無い番組は後ろ） */
@@ -10472,25 +10383,14 @@ const kvHTML = rows => `<dl class="kv">${rows.map(([k, v]) =>
   `<dt>${esc(k)}</dt><dd>${v == null || v === '' ? KV_NONE : v}</dd>`).join('')}</dl>`;
 const kvText = s => (s == null || String(s).trim() === '') ? '' : esc(s);
 
-async function loadRules(){
-  if (store.rules) return store.rules;
-  store.rules = await q(sb.from('v_production_rules_current')
-    .select('rule_no,version,kind,strength,all_channels,channels,stages,subject,body,applies_when,exceptions,pass_criteria,check_method,judged_by,examples,created_at')
-    .order('rule_no', { ascending: true }));
-  return store.rules;
-}
-/* 見出しを押して絞り込む列（#572・オーナー 2026-09-30 17:25「エクセルみたいにヘッダー部分を押すとフィルター」）。
-   キーは state.rulesF のキー、値は見出しの言葉。押すとその列の値の一覧がチェックつきの窓で出る（全部チェック＝絞らない） */
-const RF_COLS = {kind:'種類', strength:'強さ', ch:'番組', subject:'対象', stage:'工程'};
-/* 共用素材の一覧も同じ形で絞る（#572・オーナー 2026-09-30 20:30「こっちも同じフィルターにしてほしい」）。キーは state.assetsF のキー */
+/* 見出しを押して絞り込む列（#572）。キーは state.assetsF のキー、値は見出しの言葉。
+   押すとその列の値の一覧がチェックつきの窓で出る（全部チェック＝絞らない） */
 const AF_COLS = {kind:'種類', ch:'番組', seq:'使った動画'};
-let rulesOpts = {};   /* 列ごとの値の一覧 {v, t}（renderRules が行と番組の登録簿から作る） */
-let assetsOpts = {};  /* 同じく素材の列ごとの値の一覧（renderAssets が行から作る） */
-/* 見出しを押して絞る表（ルール・素材・動画の一覧で窓・印・閉じ方を共用）。view＝窓を置く画面（一覧の外）、list＝一覧、
+let assetsOpts = {};  /* 素材の列ごとの値の一覧 {v, t}（renderAssets が行から作る） */
+/* 見出しを押して絞る表（素材・動画の一覧で窓・印・閉じ方を共用）。view＝窓を置く画面（一覧の外）、list＝一覧、
    cols＝押せる列、f＝絞り込みの状態、opts＝列ごとの値の一覧、paint＝一覧の描き直し。見出しの行に data-hf＝表の名前を付ける。
    def＝列の既定の選び（null の状態でチェックが付く値）。無ければ全部の値（＝全部チェックで絞らない） */
 const HF_TABLES = {
-  rules:  { view: '#view-rules',  list: '#rulelist',  cols: RF_COLS, f: () => state.rulesF,  opts: () => rulesOpts,  paint: () => paintRules() },
   /* more＝どの列の窓にも値の一覧の下に出す、列に依らないチェック（key＝絞り込みの状態のキー、t＝言葉、reopts＝変えたあとに
      列ごとの値の一覧を作り直す）。素材は「共用素材から外した物も見る」（#856） */
   assets: { view: '#view-assets', list: '#assetlist', cols: AF_COLS, f: () => state.assetsF, opts: () => assetsOpts, paint: () => paintAssets(),
@@ -10502,119 +10402,7 @@ const HF_TABLES = {
             paint: () => { state.stockPage = 0; refreshStockTable(); } }
 };
 let rfPop = null;     /* 窓を開いている表と列 {tb, col}。閉じているときは null */
-function ruleHits(){
-  const f = state.rulesF, w = f.q.trim().toLowerCase();
-  const text = r => [r.rule_no, r.subject, r.body, r.applies_when, r.exceptions, r.pass_criteria, r.check_method]
-    .filter(v => v != null).join('\n').toLowerCase();
-  const has = (sel, v) => !sel || sel.includes(v);
-  /* 番組を選んだときは「選んだ番組のどれかを含む行」と「全番組の行（channels が空）」の両方を出す。
-     チェックを全部外した列は1行も残さない */
-  return (store.rules || []).filter(r =>
-    (!f.ch || (f.ch.length > 0 && (r.all_channels || !(r.channels || []).length || r.channels.some(c => f.ch.includes(c)))))
-    && (!f.stage || (r.stages || []).some(s => f.stage.includes(s)))
-    && has(f.kind, r.kind)
-    && has(f.strength, r.strength)
-    && has(f.subject, r.subject)
-    && (!w || text(r).includes(w)));
-}
-function ruleExamples(ex){
-  const part = (arr, lb) => (Array.isArray(arr) ? arr : []).map(x => `<li><span class="exk">${lb}</span> ${
-    esc(x && x.path)}${x && x.note ? `<span class="exn"> — ${esc(x.note)}</span>` : ''}</li>`).join('');
-  const li = part(ex && ex.good, '良い例') + part(ex && ex.bad, '悪い例');
-  return li ? `<ul class="exl">${li}</ul>` : '';
-}
-/* 行の番組を登録簿の順で。全番組の行（channels が空）は null */
-function ruleChList(r){
-  const chs = r.channels || [];
-  return (r.all_channels || !chs.length) ? null : [...chs].sort(byChRank);
-}
-/* 番組の列（899px 以下）と開いた中身。全番組は「全部」、ほかは短い呼び名を「・」でつなぐ
-   （絞り込みの選択肢と同じ言葉。名前の途中では折り返さない） */
-function ruleChHTML(r){
-  const l = ruleChList(r);
-  return l ? l.map(s => `<span>${esc(chShort(s))}</span>`).join('・<wbr>') : '全部';
-}
-/* 番組の列（900px 以上）。見出しの下の段と同じ順の欄に、当てはまる番組だけ ✓（全番組の行は全部の欄） */
-function ruleChMarks(r){
-  const l = ruleChList(r);
-  return CH_RANK.map(s => `<span>${!l || l.includes(s) ? '✓' : ''}</span>`).join('');
-}
-/* 列の間の縦の線（900px 以上・#572）。見出しの行と各行の末尾に5本置き、CSS が2〜6列目の左に並べる（:nth-of-type で
-   数えるので、見出しの行と行の中には、ほかに <i> を置かない）。899px 以下は隠す */
-const RL_VL = '<i class="vl" aria-hidden="true"></i>'.repeat(5);
-function ruleRowHTML(r){
-  const no = String(r.rule_no);
-  const judge = [kvText(r.check_method), r.judged_by ? '見る係: ' + esc(r.judged_by) : ''].filter(Boolean).join('\n');
-  const ver = `第${esc(r.version)}版 ${esc(fmtDate(r.created_at) || '')}`;
-  const kc = RULE_KIND_CLS[r.kind], chl = ruleChList(r);
-  return `<details class="rl${kc ? ' ' + kc : ''}" data-rno="${esc(no)}"${rulesOpen.has(no) ? ' open' : ''}>
-    <summary class="rlrow"><span class="no">${esc(no)}</span>
-      <span class="tagk kd">${esc(r.kind)}</span>
-      <span class="tagk${r.strength === '必須' ? ' must' : ''}">${esc(r.strength)}</span>
-      <span class="chs">${ruleChHTML(r)}</span><span class="chm" aria-hidden="true">${ruleChMarks(r)}</span>
-      <span class="sb">${esc(r.subject)}</span><span class="bd">${esc(r.body)}</span>
-      <span class="caret" aria-hidden="true">▸</span>${RL_VL}</summary>
-    <div class="lstbody">${kvHTML([
-      ['番組', chl ? esc(chl.map(chShort).join('・')) : '全部'],
-      ['工程', esc((r.stages || []).join('・'))],
-      ['当てはまる条件', kvText(r.applies_when)],
-      ['例外', kvText(r.exceptions)],
-      ['合格の条件', kvText(r.pass_criteria)],
-      ['判定のしかた', judge],
-      ['見本', ruleExamples(r.examples)],
-      ['版', ver]])}</div></details>`;
-}
-async function renderRules(){
-  const el = $('#view-rules');
-  if (rfPop && rfPop.tb === 'rules') closeRfPop();   /* 画面を作り直すと窓も消える */
-  if (!store.rules) el.innerHTML = loading();
-  let rows;
-  try { rows = await loadRules(); } catch (e) { el.innerHTML = errBox(e.message); return; }
-  const f = state.rulesF;
-  const seen = (get) => { const s = new Set(); rows.forEach(r => [].concat(get(r) || []).forEach(v => s.add(v))); return s; };
-  const stages = seen(r => r.stages), kinds = seen(r => r.kind),
-        strs = seen(r => r.strength), subs = [...seen(r => r.subject)];
-  const opt = v => ({ v, t: v });
-  /* 決まった並び（known）のうち行にある値を先に、並びに無い値は後ろに */
-  const ordered = (known, s) => [...known.filter(v => s.has(v)), ...[...s].filter(v => !known.includes(v))];
-  /* 番組の値は番組の登録簿（動画の番組の一覧）から作る。行に出てこない番組も選べる（全番組の行が出る）。
-     言葉と並びは番組の列と同じ（短い呼び名・登録簿の順） */
-  rulesOpts = {
-    ch: [...(store.pilotChannels || store.channels || [])].sort((a, b) => byChRank(a.slug, b.slug))
-      .map(c => ({ v: c.slug, t: chShort(c.slug) })),
-    stage: ordered(SV_STEPS.map(s => s.name), stages).map(opt),
-    kind: ordered(RULE_KINDS, kinds).map(opt),
-    strength: ordered(RULE_STRENGTHS, strs).map(opt),
-    subject: subs.map(opt)
-  };
-  el.innerHTML = `
-    <div class="pagehead"><div class="eyebrow">決まり</div><h1>📏 動画制作ルールDB</h1></div>
-    <div class="toolbar">
-      <input type="search" id="rulesq" placeholder="文字で探す" aria-label="文字で探す" value="${esc(f.q)}">
-      <span class="hits" id="ruleshits"></span>
-    </div>
-    <div class="lst" id="rulelist"></div>`;
-  paintRules();
-}
-function paintRules(){
-  const box = $('#rulelist');
-  if (!box) return;
-  const hits = ruleHits(), f = state.rulesF;
-  $('#ruleshits').textContent = hits.length + '件';
-  const hf = col => hfBtn('rules', col);
-  /* 番組の見出しは2段（900px 以上）と1つ（899px 以下）の両方を置き、幅で片方だけ出す。
-     2段の下の段は、タブと同じ番組の絵文字の下に短い呼び名（番組で絞っているときは、外した番組を薄く） */
-  box.style.setProperty('--chn', CH_RANK.length);
-  box.innerHTML = `<div class="lsthead rl" data-hf="rules"><span class="hno">番号</span><span>${hf('kind')}</span><span>${hf('strength')}</span>`
-    + `<span class="hch"><span class="hchg">${hf('ch')}</span><span class="hchm" data-rfcol="ch" aria-hidden="true">${CH_RANK.map(s =>
-        `<span${f.ch && !f.ch.includes(s) ? ' class="off"' : ''}><span class="ic">${esc(CH_ICON[s] || '')}</span>`
-        + `<span class="nm">${esc(chShort(s))}</span></span>`).join('')}</span></span>`
-    + `<span class="hch1">${hf('ch')}</span><span>${hf('subject')}</span>`
-    + `<span class="hbd"><span class="hbdt">本文</span>${hf('stage')}</span><span class="hend"></span>${RL_VL}</div>`
-    + (hits.length ? hits.map(ruleRowHTML).join('')
-       : `<div class="lstnone">${(store.rules || []).length ? '当てはまる決まりはありません' : '決まりなし'}</div>`);
-}
-/* ── 見出しの絞り込みの窓（ルール・素材で共用・#572）─────────────────────────
+/* ── 見出しの絞り込みの窓（素材・動画の一覧で共用・#572）─────────────────────────
    窓は一覧の外（表の画面 view の直下）に置き、見出しの行のすぐ下に出す。チェックを変えるとその場で絞る。
    外を押すか Esc で閉じる。一覧の中（行など）を押したときは閉じるだけで、その行は開かない */
 /* 絞り込める見出しのボタン。▾ は押せる印、絞っている列は ●。窓を開いている列は押した形（aria-expanded） */
@@ -10624,8 +10412,7 @@ function hfBtn(tb, col){
     + ` aria-expanded="${!!rfPop && rfPop.tb === tb && rfPop.col === col}">${esc(T.cols[col])}`
     + `<span class="fm" aria-hidden="true">${on ? '●' : '▾'}</span></button>`;
 }
-/* いま見えている、その列の見出しのボタン（ルールの番組は 900px 以上と 899px 以下で別のボタン。
-   動画の一覧は広い画面の表の見出しと、スマホの一覧の先頭の札で別のボタン） */
+/* いま見えている、その列の見出しのボタン（動画の一覧は広い画面の表の見出しと、スマホの一覧の先頭の札で別のボタン） */
 const rfBtn = (tb, col) => [...document.querySelectorAll(`${HF_TABLES[tb].list} [data-hf="${tb}"] button[data-rfcol="${col}"]`)]
   .find(b => b.getClientRects().length);
 /* 列の全部の値と、既定の選び（null の状態でチェックが付く値）と、いまチェックが付いている値 */
@@ -10633,7 +10420,7 @@ const hfAll = (tb, col) => (HF_TABLES[tb].opts()[col] || []).map(o => o.v);
 const hfDef = (tb, col) => (HF_TABLES[tb].def && HF_TABLES[tb].def(col)) || hfAll(tb, col);
 const hfOn = (tb, col) => HF_TABLES[tb].f()[col] || hfDef(tb, col);
 /* 窓の上のボタン: 既定の値（def が無ければ全部の値）に全部チェックが付いていれば「すべて外す」、1つでも外れていれば
-   「すべて選ぶ」。「すべて選ぶ」は既定に戻す（動画の一覧の工程は没を除く全部＝前のリセットと同じ。ルール・素材は全部の値で前と同じ） */
+   「すべて選ぶ」。「すべて選ぶ」は既定に戻す（動画の一覧の工程は没を除く全部＝前のリセットと同じ。素材は全部の値で前と同じ） */
 const hfAllOn = (tb, col) => { const on = hfOn(tb, col); return hfDef(tb, col).every(v => on.includes(v)); };
 /* 開いている窓の本数を、いまの値の一覧に合わせて書き直す（動画の一覧の本数は、ほかの列と文字の検索の条件で変わる） */
 function syncRfPopCounts(){
@@ -11136,7 +10923,6 @@ async function render(){
   try {
     if (state.view === 'stock')          await renderStock();
     else if (state.view === 'analytics') await renderAnalytics();
-    else if (state.view === 'rules')     await renderRules();
     else if (state.view === 'assets')    await renderAssets();
     else if (state.view === 'flow')      await renderFlow();
     state.lastSync = new Date().toISOString();
@@ -11151,7 +10937,7 @@ async function render(){
 }
 
 async function reloadAll(){
-  clearVideoCaches(); store.analytics = {}; store.assets = {}; store.rules = null; store.prodAssets = null;
+  clearVideoCaches(); store.analytics = {}; store.assets = {}; store.prodAssets = null;
   store.flow = null;
   state.busy = true; renderShell();
   try { await loadBootstrap(); } catch (e) { toast('再読み込みに失敗: ' + e.message); }
@@ -11203,7 +10989,7 @@ document.addEventListener('click', e => {
   const plb = e.target.closest('[data-plbox]');
   if (plb) { e.preventDefault(); openPlbox(plb.dataset.plbox, plb.dataset.plcap); return; }
   if (e.target.closest('[data-plbox-close]') || e.target.id === 'plbox') { closePlbox(); return; }
-  /* ルール・素材・動画の一覧の絞り込みは見出しの窓（上の HF_TABLES の近く） */
+  /* 素材・動画の一覧の絞り込みは見出しの窓（上の HF_TABLES の近く） */
 
   /* チャンネル名そのものを押したときは、開閉ではなく切り替えとして扱う（2026-08-20） */
   const goBtn = e.target.closest('.chgo[data-ch]');
@@ -11211,14 +10997,14 @@ document.addEventListener('click', e => {
   const chBtn = e.target.closest('.chtab[data-ch], .chitem[data-ch], .chgo[data-ch]');
   if (chBtn) {
     state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters();
-    /* チャンネル共通の画面（分析・決まり・素材DB・制作フロー）から押したときは、そのチャンネルの制作へ戻す。
+    /* チャンネル共通の画面（分析・素材DB・制作フロー）から押したときは、そのチャンネルの制作へ戻す。
        戻り道が無いと「押しても何も起きない」ように見える（2026-08-20 オーナー指摘） */
     const cur = VIEWS.find(v => v.key === state.view);
     if (cur && cur.chIndep) state.view = 'stock';
     saveUI(); render(); return;
   }
 
-  /* 画面の切り替え。下のナビ（制作・分析）と、チャンネルタブ右の共通タブ（分析・決まり・素材DB・制作フロー）の両方 */
+  /* 画面の切り替え。下のナビ（制作・分析）と、チャンネルタブ右の共通タブ（分析・素材DB・制作フロー）の両方 */
   const navBtn = e.target.closest('.navbtn[data-view], .chtab[data-view]');
   if (navBtn) { state.view = navBtn.dataset.view; saveUI(); render(); window.scrollTo({ top: 0 }); return; }
 
@@ -11311,8 +11097,6 @@ document.addEventListener('input', e => {
     stockQTimer = setTimeout(refreshStockTable, 250);
     return;
   }
-  /* 決まりの一覧の文字の検索は画面の中で絞るだけ（DB へは問い合わせない） */
-  if (e.target.id === 'rulesq') { state.rulesF.q = e.target.value; paintRules(); return; }
   /* 没の確定ボタンは理由が入るまで押せない（#205） */
   if (e.target.classList && e.target.classList.contains('rta')) {
     const box = e.target.closest('[data-rjbox]');
@@ -11412,7 +11196,7 @@ $('#loginform').addEventListener('submit', async ev => {
 
 async function signOut(){
   await sb.auth.signOut();
-  clearVideoCaches(); store.analytics = {}; store.assets = {}; store.rules = null; store.prodAssets = null;
+  clearVideoCaches(); store.analytics = {}; store.assets = {}; store.prodAssets = null;
   store.flow = null;
   store.channels = []; store.pilotChannels = []; store.accounts = [];
   state.user = null; state.me = null; state.ch = null; state.view = 'stock'; state.stockPage = 0;
