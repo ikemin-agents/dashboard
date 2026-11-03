@@ -2328,6 +2328,22 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-ctrls-slot{align-self:start}
   .sview .sv-viewswitch{display:none}
 }
+/* 900〜1199px（iPad の横向き）: 高さが短く幅が余るので、動画は 80% にせず画面に収まる高さまで使い、
+   左の欄（素材／台本のタブ）が余った幅を全部取る。①の行は「動画の上の段・動画・操作の段」だけにして、
+   左の欄の下端を操作の段の下端にそろえる（中身が多ければ欄の中で縦に送る）。
+   176px は描画して測った値の和: 本文の上の余白 24・工程の帯の下の間 12・①の上の余白と枠 17・見出し 32・
+   見出しの下の間 8・動画の上の段 22・その下の間 8・操作の段の上の間 8・操作の段 56・①の下の余白と枠 17・
+   下の帯との間 12（計 216）から、--sv-chrome に入っている足し分 40 を引いたもの。
+   素材の枠は小さくなりすぎると「素材なし」が1文字ずつ縦に並ぶので 150px を下限にする */
+@media (min-width:900px) and (max-width:1199px){
+  .sview{--pane-h:min(calc(100dvh - var(--sv-chrome) - 176px), 720px,
+      calc((100vw - var(--side-w) - 300px - 120px) / 2 * 16 / 9));
+    --pane-full:var(--pane-h);
+    --video-w:calc(var(--pane-h) * 9 / 16)}
+  .sview .sv-sec.sa .sv-stage{grid-template-columns:minmax(300px, 1fr) auto;
+    grid-template-rows:22px var(--pane-h) 56px}
+  .sview .sv-now{--slot-h:max(150px, calc((var(--pane-full) - 176px) / 2 * .8))}
+}
 /* ── スマホ（900px 未満）: スクロールしない1画面（#552・形は見本 dashboard/review-mockup.html のスマホ）──
    スマホでするのは「動画を見て、気になる場所に指摘を書く」だけ。上から「上の帯・動画（操作は動画の下端に重ねる）・
    （開いた中身）・下の帯」を画面の高さぴったりに並べる。動画は幅いっぱいで、高さは 9:16 の高さと画面の残りの低いほう。
@@ -2790,10 +2806,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/3 14:34';
+const BUILT_AT = '11/3 18:03';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'ec26e279cf21';
+const BUILT_HASH = 'db34497b2597';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
