@@ -2194,8 +2194,8 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
    3段目・自由記述の欄・「この指摘を足す」「やめる」が内側のスクロールの下に隠れ、そこに
    続きがあるという手がかりが出ない（PC 1400×900 の実測で 291px の中身が 94px に潰れていた）。
    足りないぶんは②の枠ごと動かす（入れ子の内側だけを動かすのはやめる）。
-   スマホは下端の固定シート（.sheet.float・position:fixed）で全部見えているので触らない。 */
-@media (min-width:900px){
+   1200px 未満（スマホと iPad の横向き）は1画面の入力画面で全部見えているので触らない。 */
+@media (min-width:1200px){
   .sview .sv-sec.sb.sheeton .sheet{flex:0 0 auto; overflow:visible}
   .sview .sv-sec.sb.sheeton .wbox{overflow-y:auto; scrollbar-width:thin}
 }
@@ -2297,8 +2297,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-sec.sb{grid-column:2; grid-row:1}
   .sview .sv-sec.sc{grid-column:2; grid-row:2}
 }
-/* 900〜1699px: 台本と素材は同じ場所をタブで入れ替える（3列だと動画が小さくなりすぎる） */
-@media (min-width:900px) and (max-width:1699px){
+/* 1200〜1699px: 台本と素材は同じ場所をタブで入れ替える（3列だと動画が小さくなりすぎる）。
+   1200px 未満は下のスマホと iPad の横向きの1画面 */
+@media (min-width:1200px) and (max-width:1699px){
   .sview{--script-w:clamp(300px, 26vw, 420px);
     --pane-full:min(calc(100dvh - var(--sv-chrome) - 162px), 720px,
       calc((100vw - var(--side-w) - var(--script-w) - 120px) / 2 * 16 / 9 / .8));
@@ -2315,9 +2316,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-stage[data-mat="mat"] .sv-script{display:none}
   .sview .sv-stage[data-mat="script"] .sv-matcol{display:none}
 }
-/* 900px 以上の共通: 4つの欄の上端をそろえ、台本と素材は①の下端まで伸ばす
+/* 1200px 以上の共通: 4つの欄の上端をそろえ、台本と素材は①の下端まで伸ばす
    （真ん中＝動画と再生の操作は短くてよい＝上詰め） */
-@media (min-width:900px){
+@media (min-width:1200px){
   .sview .sv-script,.sview .sv-matcol{min-height:0}
   .sview .sv-scriptlist{flex:1 1 0; height:auto; max-height:none; min-height:0; overflow-y:auto}
   .sview .sv-screens{grid-template-columns:repeat(2, var(--video-w)); gap:12px; align-self:start}
@@ -2328,23 +2329,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-ctrls-slot{align-self:start}
   .sview .sv-viewswitch{display:none}
 }
-/* 900〜1199px（iPad の横向き）: 高さが短く幅が余るので、動画は 80% にせず画面に収まる高さまで使い、
-   左の欄（素材／台本のタブ）が余った幅を全部取る。①の行は「動画の上の段・動画・操作の段」だけにして、
-   左の欄の下端を操作の段の下端にそろえる（中身が多ければ欄の中で縦に送る）。
-   176px は描画して測った値の和: 本文の上の余白 24・工程の帯の下の間 12・①の上の余白と枠 17・見出し 32・
-   見出しの下の間 8・動画の上の段 22・その下の間 8・操作の段の上の間 8・操作の段 56・①の下の余白と枠 17・
-   下の帯との間 12（計 216）から、--sv-chrome に入っている足し分 40 を引いたもの。
-   素材の枠は小さくなりすぎると「素材なし」が1文字ずつ縦に並ぶので 150px を下限にする */
-@media (min-width:900px) and (max-width:1199px){
-  .sview{--pane-h:min(calc(100dvh - var(--sv-chrome) - 176px), 720px,
-      calc((100vw - var(--side-w) - 300px - 120px) / 2 * 16 / 9));
-    --pane-full:var(--pane-h);
-    --video-w:calc(var(--pane-h) * 9 / 16)}
-  .sview .sv-sec.sa .sv-stage{grid-template-columns:minmax(300px, 1fr) auto;
-    grid-template-rows:22px var(--pane-h) 56px}
-  .sview .sv-now{--slot-h:max(150px, calc((var(--pane-full) - 176px) / 2 * .8))}
-}
-/* ── スマホ（900px 未満）: スクロールしない1画面（#552・形は見本 dashboard/review-mockup.html のスマホ）──
+/* ── スマホと iPad の横向き（1200px 未満）: スクロールしない1画面（#552・形は見本 dashboard/review-mockup.html のスマホ）──
    スマホでするのは「動画を見て、気になる場所に指摘を書く」だけ。上から「上の帯・動画（操作は動画の下端に重ねる）・
    （開いた中身）・下の帯」を画面の高さぴったりに並べる。動画は幅いっぱいで、高さは 9:16 の高さと画面の残りの低いほう。
    余った高さは動画と下の帯の間の空き（fill の行）に回す。素材・台本・指摘の一覧は下の帯の「…」「指摘 N」から開く
@@ -2353,9 +2338,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
    中身をこの画面の格子へ直接置く——送信の仕組みが頼っている親子（.decide の中の4つの囲み・
    .wbox の中の .tapbox）は動かさない。JS で場所を移すのは 参照動画・案のタブ・前回までの指摘・
    注意書き の4つだけ（svMobileLayout。広い画面に戻れば元の場所へ返す）。
-   高さは visualViewport の実高さ（--sv-vh）。キーボードが出ると画面ごと縮み、動画は上に残る。 */
-@media (min-width:900px){ .sv-m-only{display:none!important} }
-@media (max-width:899px){
+   高さは visualViewport の実高さ（--sv-vh）。キーボードが出ると画面ごと縮み、動画は上に残る。
+   900〜1199px（iPad の横向き）も同じ仕組みで、格子の並びだけを下の @media で横向きに変える。 */
+@media (min-width:1200px){ .sv-m-only{display:none!important} }
+@media (max-width:1199px){
   body.sv-mobile{overflow:hidden; overscroll-behavior:none}
   .sview{position:fixed; left:0; right:0; top:var(--sv-vtop, 0px); z-index:45;
     height:var(--sv-vh, 100dvh); margin:0; max-width:none; animation:none;
@@ -2614,6 +2600,49 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .btn.sm{min-height:44px}
   .sv-lbox img{max-width:100%; max-height:62dvh}
 }
+/* ── iPad の横向き（900〜1199px）: 上のスマホの1画面と同じ仕組みで、真ん中だけを横に2列にする ──
+   上の帯・いまの工程・下の帯はスマホと同じ。真ん中は左に完成動画、右に素材・台本・指摘をタブで切り替える欄。
+   動画の列の幅は「真ん中の高さ × 9/16」。高さは上下の帯の中身で変わるので、JS（svFitVidW）が動画の枠の
+   高さを測って --sv-vidw に入れる（列の幅を変えても高さは変わらないので測り直しは1回で止まる）。
+   右の欄は常に出し、残りの幅を全部取る（既定のタブは指摘）。右の欄が 360px を切る縦長の画面だけ動画を細くする。
+   ＋ 指摘の入力（段2）は右の欄に出して動画は残す。上と下の帯は隠し、高さは --sv-vh のままなので、
+   キーボードで見えている高さが縮んでも「この指摘を足す」「やめる」は隠れない。
+   格子の決まりは状態ごと（開いた中身・没の理由・段1・段2）に上で変わるので、ここでは詳細度を上げて1つにする */
+@media (min-width:900px) and (max-width:1199px){
+  body .sview.sview.sview{
+    grid-template-columns:min(var(--sv-vidw, calc((var(--sv-vh, 100dvh) - 150px) * 9 / 16)), calc(100vw - 372px)) minmax(0,1fr);
+    grid-template-rows:auto auto auto minmax(0,1fr) auto auto;
+    grid-template-areas:"top top" "now now" "video tabs" "video panel" "msg msg" "bar bar";
+    column-gap:12px}
+  .sview .dback-l{display:none}
+  /* 右の欄の頭のタブ（素材・台本・指摘 N）。下の帯があっても出す。開いた中身の頭の「閉じる」の行は出さない */
+  .sview.sview .sv-mtabs{display:flex; padding:8px 12px 8px 0; background:var(--page)}
+  .sview.sview[data-mtab]:has(.dbar) .sv-mshd{display:none}
+  .sview.sview[data-mtab]:has(.dbar) :is(.sv-matcol,.sv-script,.tapbox,.sv-sec.sc){background:var(--page)}
+  .sview .sv-matcol,.sview .tapbox{padding:4px 12px 12px 0}
+  .sview.sview[data-mtab="script"] .sv-script{padding:0 12px 12px 0}
+  /* 段1（場所を選ぶ）のあいだも右の欄はそのまま。下の帯の代わりの案内は1行に並べる */
+  body.sv-pick1 .sview.sview.sview .sv-mtabs{display:flex}
+  body.sv-pick1 .sview.sview.sview[data-mtab="mat"] .sv-matcol{display:flex}
+  body.sv-pick1 .sview.sview.sview[data-mtab="script"] .sv-script{display:flex}
+  body.sv-pick1 .sview.sview.sview[data-mtab="notes"] :is(.tapbox,.sv-sec.sc){display:flex}
+  body.sv-pick1 .sview.sview .sv-mpick{flex-wrap:nowrap}
+  .sview .sv-mpick .msg{flex:1 1 auto}
+  .sview .sv-mpick .btn{flex:0 0 auto; padding:0 20px}
+  /* 下の帯: 「…」は出さず、没にするを文字のボタンで左端に。並びは 没にする／＋ 指摘／指摘 N／修正を依頼／承認 */
+  .sview.sview .dbar .sv-mmore{display:none}
+  .sview.sview .dbar .btn.kill{display:flex; order:-1; flex:0 0 auto; width:auto; padding:0 16px}
+  .sview .dbar{gap:8px; padding-left:12px; padding-right:12px}
+  /* 没の理由は右の欄の中（タブの行の場所から下いっぱい） */
+  .sview.sview .rjpanel:not([hidden]){grid-area:3 / 2 / 5 / 3; max-height:none; overflow-y:auto;
+    padding:12px 12px 12px 0; border-top:none}
+  /* 段2「書く」: 動画は残し、入力は右の欄いっぱいに。止めた場面の静止画は左の動画で見えているので出さない */
+  body.sheetopen .sview.sview .sv-screen.final{display:flex}
+  body.sheetopen .sview.sview .tapbox{grid-area:3 / 2 / 5 / 3}
+  .sview .sheet,.sview .sheet.float{grid-template-columns:minmax(0,1fr); column-gap:0;
+    grid-template-areas:"at" "nudge" "tog" "in" "acts"; padding:12px 12px calc(10px + env(safe-area-inset-bottom)) 0}
+  .sview .sheet .sv-mthumb{display:none}
+}
 </style>
 </head>
 <body>
@@ -2806,10 +2835,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/3 18:04';
+const BUILT_AT = '11/3 18:22';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'db34497b2597';
+const BUILT_HASH = '3da5d371bc8b';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5966,8 +5995,14 @@ function tapSaveMemo(){
           : '全体へのメモを消しました');
 }
 const tapMobile = () => window.innerWidth < 900;
-/* スマホ幅でシーン素材つきの承認画面を開いているか（#552 の1画面の作りが効いているとき） */
-const svMobileOn = () => tapMobile() && !!document.querySelector('#view-detail .sview');
+/* シーン素材つきの承認画面を1画面の作り（#552）で出す幅。スマホ（900px 未満）と iPad の横向き（900〜1199px）。
+   iPad の横向きは並びだけが違う（真ん中が「動画｜右の欄」の2列・CSS の 900〜1199px の @media） */
+const svOneScreen = () => window.innerWidth < 1200;
+const svLand = () => window.innerWidth >= 900 && window.innerWidth < 1200;
+/* シーン素材つきの承認画面を1画面の作りで開いているか */
+const svMobileOn = () => svOneScreen() && !!document.querySelector('#view-detail .sview');
+/* 入力シートをその場でなく、スマホの出し方（せり上がり・1画面では段2の入力画面）で出すか */
+const tapSheetFull = () => tapMobile() || svMobileOn();
 /* シートの「いつ・どこ」の1行。直しているときは元の指摘の場面・時刻をそのまま出す（#523 のレビュー指摘2） */
 function tapSheetWhere(){
   const k = tap.draft.keep || null;
@@ -5992,8 +6027,8 @@ function tapOpenSheet(){
   tapSyncTags();
   const sheet = tapEl('[data-sheet]');
   sheet.hidden = false;
-  sheet.classList.toggle('float', tapMobile());
-  document.body.classList.toggle('sheetopen', tapMobile());
+  sheet.classList.toggle('float', tapSheetFull());
+  document.body.classList.toggle('sheetopen', tapSheetFull());
   /* シーン素材つきの画面では、広い画面のとき一覧の場所を一時的に譲る（#519） */
   document.querySelector('#view-detail [data-sv-secb]')?.classList.add('sheeton');
   /* スマホの1画面（#552 の続き）: 段2「書く」＝全画面の入力画面。段1（場所を選ぶ）は降り、
@@ -7049,7 +7084,7 @@ function sceneDetailHTML(it, plan){
     <div class="sv-mtabs sv-m-only" role="group" aria-label="動画の下に開く中身">
       <button type="button" data-svact="mtab" data-mtab="mat" aria-pressed="false">素材</button>
       <button type="button" data-svact="mtab" data-mtab="script" aria-pressed="false">台本</button>
-      <button type="button" data-svact="mtab" data-mtab="notes" aria-pressed="false">指摘</button>
+      <button type="button" data-svact="mtab" data-mtab="notes" aria-pressed="false" data-sv-mtabn>指摘</button>
     </div>
     <!-- 下の帯から開いた中身の頭の1行（名前は CSS が開いている中身から出す） -->
     <div class="sv-mshd sv-m-only"><span class="t"></span>
@@ -7151,7 +7186,7 @@ function svFitFlow(root){
    どれも中の要素は作り直さず移すだけなので、掴んでいる参照（動画・一覧）はそのまま動く。 */
 function svMobileLayout(){
   const root = document.querySelector('#view-detail .sview');
-  const mob = !!root && tapMobile();
+  const mob = !!root && svOneScreen();
   document.body.classList.toggle('sv-mobile', mob);
   if (!root) return;
   const q = s => root.querySelector(s);
@@ -7174,6 +7209,21 @@ function svMobileLayout(){
     }
     svSyncVV(root);
     if (sv) root.classList.toggle('sv-noref', !(sv.hasRefVideo || (sv.mat && sv.mat.ref_video_full && !sv.mainLabel)));
+    /* iPad の横向きは右の欄を常に出す（既定は指摘のタブ）。動画の列の幅は動画の枠の高さから決める */
+    const fin = q('.sv-screen.final');
+    if (svLand()) {
+      root.dataset.svland = '1';
+      if (!root.dataset.mtab) svSetTab('notes', root);
+      if (fin && window.ResizeObserver && !root._svVidRO) {
+        root._svVidRO = new ResizeObserver(() => svFitVidW(root));
+        root._svVidRO.observe(fin);
+      }
+    } else if (root.dataset.svland) {
+      /* 横向きからスマホの幅へ: 横向きで開いていたタブは閉じた状態に戻す（スマホは最初どれも開いていない） */
+      delete root.dataset.svland;
+      svSetTab('', root);
+    }
+    svFitVidW(root);
   } else {
     if (ref && screens && ref.parentNode !== screens) screens.appendChild(ref);
     /* 案のタブの広い画面での置き場所は①の見出し行の中・facts の左（オーナー決定 2026-09-29 案A） */
@@ -7190,13 +7240,25 @@ function svMobileLayout(){
     }
     root.style.removeProperty('--sv-vh');
     root.style.removeProperty('--sv-vtop');
+    if (root.dataset.svland) { delete root.dataset.svland; svSetTab('', root); }
+    svFitVidW(root);
   }
+}
+/* iPad の横向きの動画の列の幅（--sv-vidw）＝動画の枠の高さ × 9/16。枠の高さは上下の帯で決まり、
+   列の幅には左右されないので、入れ直しても測り直しは起きない。横向きでなければ外す */
+function svFitVidW(root){
+  const fin = root && root.querySelector('.sv-screen.final');
+  if (!root || !fin || !svLand()) { if (root) root.style.removeProperty('--sv-vidw'); return; }
+  const h = fin.getBoundingClientRect().height;
+  if (!(h > 0)) return;
+  const w = Math.floor(h * 9 / 16) + 'px';
+  if (root.style.getPropertyValue('--sv-vidw') !== w) root.style.setProperty('--sv-vidw', w);
 }
 /* 画面の高さは「いま見えている範囲」（visualViewport）に合わせる。キーボードが出るとこの高さが
    縮み、1画面ごと縮む＝動画は上に残る。100dvh は読めないときの控え（CSS 側） */
 function svSyncVV(root){
   root = root || document.querySelector('#view-detail .sview');
-  if (!root || !tapMobile()) return;
+  if (!root || !svOneScreen()) return;
   const vv = window.visualViewport;
   root.style.setProperty('--sv-vh', Math.round(vv ? vv.height : window.innerHeight) + 'px');
   root.style.setProperty('--sv-vtop', Math.round(vv ? vv.offsetTop : 0) + 'px');
@@ -7204,20 +7266,22 @@ function svSyncVV(root){
      余白（ホームバーぶん）を詰める。キーボードの上にホームバーは無い（#552 の続き） */
   root.classList.toggle('sv-kb', !!vv && (window.innerHeight - vv.height) > 120);
 }
-/* タブ（素材・台本・指摘）。同じタブをもう一度押すと閉じる（'' ＝閉じた状態） */
-function svSetTab(t){
-  if (!sv) return;
-  const root = sv.root;
+/* タブ（素材・台本・指摘）。同じタブをもう一度押すと閉じる（'' ＝閉じた状態）。
+   iPad の横向きは閉じない（右の欄は常にどれか1つ）。root は組み立ての途中（sv が無い）で呼ぶとき */
+function svSetTab(t, root){
+  root = root || (sv && sv.root);
+  if (!root) return;
   if (t) root.dataset.mtab = t; else delete root.dataset.mtab;
   root.querySelectorAll('[data-svact="mtab"]').forEach(x =>
     x.setAttribute('aria-pressed', String(!!t && x.dataset.mtab === t)));
+  if (!sv || sv.root !== root) return;
   if (t === 'script') { sv.scriptHold = 0; svPaintScript(); }
   if (t === 'notes') { sv.notesHold = 0; svPaintNotesCur(); }
 }
 /* 指摘のタブも再生中のシーンに合わせる: 今回の指摘はいまのシーンのものに印、
    前回までの指摘は既存の強調（.cur）を使い、タブが開いていれば最初の1件を中へ入れる */
 function svPaintNotesCur(){
-  if (!sv || !tapMobile()) return;
+  if (!sv || !svOneScreen()) return;
   let first = null;
   if (tap && tap.panel) {
     tap.panel.querySelectorAll('.nitem').forEach(r => {
@@ -7854,6 +7918,8 @@ function svPaintBar(){
   setText(st, n == null ? 'この画面では指摘を足せません' : ('指摘 ' + n + '件'));
   /* スマホの下の帯の「指摘 N」（今回の指摘の件数・「修正を依頼（N件）」と同じ数） */
   setText(sv.q('[data-sv-mlistn]'), '指摘 ' + (n != null ? n : 0));
+  /* タブの行の「指摘」にも同じ数（タブの行が出るのは iPad の横向きと、見るだけの画面＝数なし） */
+  setText(sv.q('[data-sv-mtabn]'), n != null ? '指摘 ' + n : '指摘');
   const next = sv.q('[data-sv-next]');
   if (next) {
     /* 承認の先＝工程の帯で、いまの位置より後ろの最初の「使う工程」。作業中の記録がある動画（#637）は
@@ -8348,8 +8414,8 @@ async function armScene(node, files, pre){
      置き直す。印は枠に対する割合で置くので、枠の縦横比が変わるとずれる。スマホだけ（#552） */
   if (window.ResizeObserver) new ResizeObserver(() => {
     /* 見るだけの画面で②の行から出したピンも同じ理由で置き直す */
-    if (tapMobile() && !tap && sv && sv.ctl && sv.livePin) sv.ctl.showPin(sv.livePin.x, sv.livePin.y);
-    if (!tapMobile() || !tap || !tap.ctl) return;
+    if (svOneScreen() && !tap && sv && sv.ctl && sv.livePin) sv.ctl.showPin(sv.livePin.x, sv.livePin.y);
+    if (!svOneScreen() || !tap || !tap.ctl) return;
     if (tap.draft && tap.draft.x != null) tap.ctl.showPin(tap.draft.x, tap.draft.y);
     else if (!tap.draft) tap.ctl.hidePin();
   }).observe(vbox);
@@ -8372,7 +8438,7 @@ async function armScene(node, files, pre){
         menu.hidden = true;
         q('[data-svact="more"]')?.setAttribute('aria-expanded', 'false');
       }
-      svSetTab(root.dataset.mtab === b.dataset.mtab ? '' : b.dataset.mtab);
+      svSetTab(root.dataset.mtab === b.dataset.mtab && !svLand() ? '' : b.dataset.mtab);
       return;
     }
     if (a === 'mclose') { svSetTab(''); return; }
@@ -8889,7 +8955,7 @@ function quickApprove(key, btn){
      わざと「送らずに承認」したい回もあるので止めはしない（#509 段4） */
   /* スマホの1画面（#552）は下の帯から1タップで届くので、**毎回1回だけ**確かめる。
      指摘が残っていればその件数、承認の注意書きがあればそれも同じ確認に書く */
-  if (btn && btn.closest('.sview') && tapMobile()) {
+  if (btn && btn.closest('.sview') && svOneScreen()) {
     const n = tapActive(key) ? tap.items.length : 0;
     const cau = [...document.querySelectorAll('#view-detail .acaution')]
       .map(c => c.textContent.trim()).filter(Boolean).join('\n');
@@ -11183,8 +11249,8 @@ function tapRelayout(){
   if (!tap || tap.mode !== 'edit' || !tap.panel) return;
   const sheet = tapEl('[data-sheet]');
   if (sheet && !sheet.hidden) {
-    sheet.classList.toggle('float', tapMobile());
-    document.body.classList.toggle('sheetopen', tapMobile());
+    sheet.classList.toggle('float', tapSheetFull());
+    document.body.classList.toggle('sheetopen', tapSheetFull());
   }
   document.body.classList.toggle('sv-pick1', !!tap.picking && svMobileOn());
   if (tap.draft && tap.draft.x != null) tap.ctl.showPin(tap.draft.x, tap.draft.y);
