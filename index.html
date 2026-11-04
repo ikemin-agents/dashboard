@@ -2822,10 +2822,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/4 21:30';
+const BUILT_AT = '11/4 21:34';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = 'c474d4e4ce36';
+const BUILT_HASH = '2c3608983ff4';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -10435,9 +10435,9 @@ function drawSpark(){
      素材 … v_production_assets。ビューが無い・読めないときは「素材なし」を出して止まらない
    上に種類の札（1つだけ選ぶ・既定で1つ選んだ状態）、下に 見本の絵＋名前 のカード。カードを押すと中身の窓（#adlg）が開く */
 const ASSET_KINDS = ['材質', '部品', '景色', '動きの型', '見せ方', '効果音'];   // 並びは db/cli/commands/production_assets.ts の ASSET_KINDS と同じ
-/* 種類の札で選んだ種類。このブラウザに覚える（AKIND_ALL＝すべて・null＝まだ選んでいない） */
-const AKIND_ALL = '*', AKIND_KEY = 'dash.assetKind';
-let assetKindPick = (() => { try { return localStorage.getItem(AKIND_KEY); } catch (_) { return null; } })();
+/* 種類の札で選んだ種類（AKIND_ALL＝すべて）。開いたときは AKIND_DEF。画面を開いている間だけ覚える */
+const AKIND_ALL = '*', AKIND_DEF = '見せ方';
+let assetKindPick = AKIND_DEF;
 const chName = slug => store.chNames[slug] || slug;
 /* 番組の短い呼び名と並び順（登録簿の順。無い番組は後ろ） */
 const chShort = slug => CH_SHORT[slug] || chName(slug);
@@ -10657,7 +10657,7 @@ function assetKinds(){
   const s = new Set(assetsInScope().map(r => r.kind || ''));
   return [...ASSET_KINDS.filter(k => s.has(k)), ...[...s].filter(k => !ASSET_KINDS.includes(k))];
 }
-/* いま選んでいる種類。覚えた種類が札に無い（まだ選んでいない・その種類の行が無くなった）ときは並びの最初 */
+/* いま選んでいる種類。選んだ種類が札に無い（その種類の行が無い）ときは並びの最初 */
 function assetKindNow(){
   const ks = assetKinds();
   return assetKindPick === AKIND_ALL || ks.includes(assetKindPick) ? assetKindPick : (ks.length ? ks[0] : AKIND_ALL);
@@ -10670,10 +10670,9 @@ function assetHits(){
   const k = assetKindNow();
   return assetsInScope().filter(r => assetKindOk(r, k) && assetHfOk(r));
 }
-/* 種類の札を押したとき。選んだ種類はこのブラウザに覚え、窓の値の一覧をその種類の中で作り直す */
+/* 種類の札を押したとき。窓の値の一覧をその種類の中で作り直す */
 function setAssetKind(k){
   assetKindPick = k;
-  try { localStorage.setItem(AKIND_KEY, k); } catch (_) {}
   buildAssetsOpts();
   paintAssets();
   [...document.querySelectorAll('#assetbar [data-akind]')].find(b => b.dataset.akind === k)?.focus({ preventScroll: true });
