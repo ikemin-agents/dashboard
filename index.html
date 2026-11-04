@@ -1459,7 +1459,7 @@ tr.dropped td{color:var(--muted)}
 .adlg{position:fixed; inset:0; z-index:75; background:rgba(11,11,11,.45); display:flex; align-items:center;
   justify-content:center; padding:var(--sp-4)}
 .adlg[hidden]{display:none}
-.adlg .adbox{width:760px; max-width:100%; max-height:calc(100dvh - 32px); overflow-y:auto; overscroll-behavior:contain;
+.adlg .adbox{width:900px; max-width:100%; max-height:calc(100dvh - 32px); overflow-y:auto; overscroll-behavior:contain;
   box-sizing:border-box; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
   box-shadow:var(--shadow-2); padding:16px 20px 20px; display:flex; flex-direction:column; gap:12px}
 .adlg .adbox>*{flex-shrink:0}
@@ -1469,21 +1469,20 @@ tr.dropped td{color:var(--muted)}
   background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-pill); min-height:36px; padding:0 14px}
 .adlg .adx:hover{background:var(--surface-3)}
 .adlg .adimg{border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; background:var(--surface-3)}
-.adlg .adimg img{display:block; width:100%; max-height:min(58dvh, 540px); object-fit:contain}
+.adlg .adimg img{display:block; width:100%; max-height:calc(100dvh - 140px); object-fit:contain}
 .adlg .adimg.none{display:grid; place-items:center; height:160px; background:var(--surface-2); color:var(--ink-2);
   font-size:var(--fs-sm)}
 /* 見せ方の見た目の違い（#1408）: 見た目ごとに同じ大きさの正方形の枠（切り抜かずに全体）・名前と「既定」の印・呼び方の1行 */
-.adlg .adlooks{display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:var(--sp-3); align-items:start}
+/* 見た目の数だけ列を並べる（3まで）。2つ以上のときは窓を広げて1枚ずつを大きく */
+.adlg .adbox.many{width:1320px}
+.adlg .adlooks{display:grid; grid-template-columns:repeat(var(--n, 1), minmax(0, 1fr)); gap:var(--sp-3); align-items:start}
 .adlg .adlook{margin:0; display:flex; flex-direction:column; gap:4px; min-width:0}
-.adlg .adlook img,.adlg .adlook .none{display:block; width:100%; aspect-ratio:1 / 1; object-fit:contain; box-sizing:border-box;
+.adlg .adlook img,.adlg .adlook .none{display:block; width:100%; aspect-ratio:1 / 1; max-height:calc(100dvh - 150px); object-fit:contain; box-sizing:border-box;
   border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-3)}
 .adlg .adlook .none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2); font-size:var(--fs-xs)}
 .adlg .adlook figcaption{font-size:var(--fs-sm); font-weight:700; line-height:1.35; overflow-wrap:anywhere}
 .adlg .adlook .tagk{margin-left:6px; vertical-align:1px}
-.adlg .adlook code{display:block; margin-top:2px; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-weight:400;
-  font-size:var(--fs-2xs); color:var(--ink); overflow-wrap:anywhere}
 .adlg .adtags{display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:var(--fs-xs); color:var(--ink-2)}
-.adlg .adds{margin:0; font-size:var(--fs-sm); color:var(--ink-2); line-height:1.55; overflow-wrap:anywhere}
 .kv{display:grid; grid-template-columns:8em minmax(0,1fr); gap:7px var(--sp-3); margin:0; font-size:var(--fs-sm)}
 .kv dt{color:var(--muted); font-size:var(--fs-xs); padding-top:1px}
 .kv dd{margin:0; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.55; min-width:0}
@@ -1510,7 +1509,7 @@ tr.dropped td{color:var(--muted)}
   .lsthead.sk .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
   .ahf{margin-left:0}
   .acards{grid-template-columns:repeat(2, minmax(0,1fr)); gap:var(--sp-2)}
-  .adlg .adlooks{grid-template-columns:repeat(2, minmax(0,1fr)); gap:var(--sp-2)}
+  .adlg .adlooks{grid-template-columns:repeat(var(--n2, 1), minmax(0,1fr)); gap:var(--sp-2)}
   .kv{grid-template-columns:1fr; gap:2px}
   .kv dd{margin-bottom:6px}
 }
@@ -2834,10 +2833,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/4 22:49';
+const BUILT_AT = '11/4 23:02';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '7245fe8ba9f8';
+const BUILT_HASH = '05cb0f00bf5e';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -10456,11 +10455,6 @@ const chShort = slug => CH_SHORT[slug] || chName(slug);
 const CH_RANK = Object.keys(CH_SHORT);
 const chRank = slug => { const i = CH_RANK.indexOf(slug); return i < 0 ? CH_RANK.length : i; };
 const byChRank = (a, b) => chRank(a) - chRank(b) || String(a).localeCompare(String(b));
-const KV_NONE = '<span class="none">なし</span>';
-/* 見出しと中身の並び（中身は HTML。空は「なし」） */
-const kvHTML = rows => `<dl class="kv">${rows.map(([k, v]) =>
-  `<dt>${esc(k)}</dt><dd>${v == null || v === '' ? KV_NONE : v}</dd>`).join('')}</dl>`;
-const kvText = s => (s == null || String(s).trim() === '') ? '' : esc(s);
 
 /* 押して絞り込む列（#572）。キーは state.assetsF のキー、値はボタンの言葉。種類の札の行の右に並べる。
    押すとその列の値の一覧がチェックつきの窓で出る（全部チェック＝絞らない）。種類は札で選ぶのでここには無い */
@@ -10672,13 +10666,12 @@ function assetNoText(r){
 }
 const assetTitle = r => [assetNoText(r), r.name_ja || String(r.asset_key || '')].filter(Boolean).join(' ');
 const assetCardName = r => assetTitle(r) + (r.kind === '見せ方' ? `（${assetLooks(r).length || 1}）` : '');
-/* 中身の窓の見た目の違いの並び: 見た目ごとに同じ大きさの枠の見本の絵・名前（既定には「既定」の印）・呼び方の1行 */
+/* 中身の窓の見た目の違いの並び: 見た目ごとに同じ大きさの枠の見本の絵と名前（既定には「既定」の印）。列は見た目の数（3まで） */
 function assetLooksHTML(looks, urls){
-  return `<div class="adlooks">${looks.map(l => {
+  return `<div class="adlooks" style="--n:${Math.min(looks.length, 3)}; --n2:${Math.min(looks.length, 2)}">${looks.map(l => {
     const u = l.image ? urls[l.image] : null, nm = String(l.name || '');
     return `<figure class="adlook">${u ? `<img src="${esc(u)}" alt="${esc(nm)}の見本">` : '<span class="none">素材なし</span>'}`
-      + `<figcaption>${esc(nm)}${l.default ? '<span class="tagk">既定</span>' : ''}${
-        l.how ? `<code>${esc(l.how)}</code>` : ''}</figcaption></figure>`;
+      + `<figcaption>${esc(nm)}${l.default ? '<span class="tagk">既定</span>' : ''}</figcaption></figure>`;
   }).join('')}</div>`;
 }
 /* 使った動画の番号（重なりなし・番号の順）と、その番組（番号の頭2文字から・登録簿の順） */
@@ -10716,58 +10709,6 @@ function setAssetKind(k){
   buildAssetsOpts();
   paintAssets();
   [...document.querySelectorAll('#assetbar [data-akind]')].find(b => b.dataset.akind === k)?.focus({ preventScroll: true });
-}
-/* 出典とライセンス（081 の source）。{made_from:{type, from, license}（切り出した元）,
-   external:[{name, page, license, authors[]}]（外から取ってきた物）, photos:[{title, url, license, author}]（見比べた写真）}
-   を1件1行に並べる。どれにも当たらない形はそのまま文字で出す。
-   オーナーが読む画面なので、フォルダのパス（/ を含む括弧）と、ライセンスの末尾の括弧書き
-   （「自作（リポジトリの中だけで使う）」→「自作」）は出さない。データはそのまま */
-const srcNoPath = t => String(t == null ? '' : t).replace(/\s*[（(][^（）()]*\/[^（）()]*[）)]/g, '').trim();
-const srcNoNote = t => String(t == null ? '' : t).replace(/\s*[（(][^（）()]*[）)]\s*$/, '').trim();
-function assetSource(s){
-  if (s == null || s === '') return '';
-  const list = (typeof s === 'object' && !Array.isArray(s) && ('made_from' in s || 'external' in s || 'photos' in s))
-    ? [].concat(s.made_from ? [s.made_from] : [], s.external || [],
-                (s.photos || []).map(p => Object.assign({ pre: '見比べた写真' }, p)))
-    : (Array.isArray(s) ? s : [s]);
-  return list.length ? `<ul class="exl">${list.map(x => {
-    if (!x || typeof x !== 'object') return `<li>${esc(x)}</li>`;
-    const from = srcNoPath(x.from || x.name || x.title || x.type || '');
-    const who = [].concat(x.authors || [], x.author ? [x.author] : []).join('・');
-    const lic = srcNoNote(x.license);
-    const url = String(x.url || x.page || '');
-    if (!from && !lic && !url) return `<li>${esc(JSON.stringify(x))}</li>`;
-    return `<li>${x.pre ? `<span class="exk">${esc(x.pre)}</span> ` : ''}${esc(from)}${
-      who ? `<span class="exn"> ・ ${esc(who)}</span>` : ''}${lic ? `<span class="exn"> ・ ${esc(lic)}</span>` : ''}${
-      /^https?:\/\//.test(url) ? ` <a href="${esc(url)}" target="_blank" rel="noopener noreferrer">出典 ↗</a>` : ''}</li>`;
-  }).join('')}</ul>` : '';
-}
-/* 使った動画とシーン。shots はシーンの番号（承認画面の目録の n と同じ）。空は動画全体で使った物 */
-function assetUsed(used){
-  return used.length ? `<ul class="exl">${used.map(u => `<li><b>${esc(u.seq)}</b> ${esc(u.title || '')}<div class="exn">${
-    (u.shots || []).length ? 'シーン ' + esc(u.shots.join('・')) : '動画全体'}</div></li>`).join('')}</ul>` : '';
-}
-/* 呼び方（081 の call）。{functions:[{function, signature, doc}]（最初が主に呼ぶもの）, …} の関数ごとに
-   呼び方の1行と説明を出す。それ以外の形はそのまま文字で出す */
-function assetCall(c){
-  if (c && typeof c === 'object' && !Array.isArray(c) && Array.isArray(c.functions)) c = c.functions;
-  const list = Array.isArray(c) ? c : (c == null || c === '') ? [] : [c];
-  return list.map(x => (x && typeof x === 'object' && (x.signature || x.function))
-    ? `<pre class="code">${esc(x.signature || x.function)}</pre>${x.doc ? `<div class="exn pre">${esc(x.doc)}</div>` : ''}`
-    : `<pre class="code">${esc(typeof x === 'string' ? x : JSON.stringify(x, null, 1))}</pre>`).join('');
-}
-/* 中身の窓で名前の下に出す説明（#572）。「呼び方」の下に出る説明文のうち、最初の関数（主に呼ぶもの）の説明の1行目。
-   最初の関数に説明が無ければ、説明のある次の関数の1行目。説明が次の行へ続くのに1行目が文の途中（「・」「、」など）で
-   終わるときは「…」を付ける。カードには出さない */
-function assetDesc(c){
-  if (c && typeof c === 'object' && !Array.isArray(c) && Array.isArray(c.functions)) c = c.functions;
-  for (const x of (Array.isArray(c) ? c : [])) {
-    const lines = String((x && typeof x === 'object' && x.doc) || '').split('\n').map(s => s.trim()).filter(Boolean);
-    if (!lines.length) continue;
-    const l = lines[0];
-    return lines.length > 1 && !/[。．.）)」』]$/.test(l) ? l.replace(/[・、,，:：\s]+$/, '') + '…' : l;
-  }
-  return '';
 }
 /* カードと窓の小さな1行: 番組の短い呼び名（「・」でつなぐ）と使った本数。withKind のときは先頭に種類（札が「すべて」のとき） */
 function assetMeta(r, withKind){
@@ -10835,22 +10776,15 @@ function openAdlg(key){
   const P = store.prodAssets || {}, r = (P.rows || []).find(x => String(x.asset_key || '') === key);
   const box = $('#adlg');
   if (!r || !box) return;
-  const name = assetTitle(r), retired = !!r.retired_at, used = usedOf(r), desc = assetDesc(r.call);
+  const name = assetTitle(r), retired = !!r.retired_at;
   const u = r.sample_image ? (P.urls || {})[r.sample_image] : null, looks = assetLooks(r);
-  /* 見せ方は大きな見本の絵の代わりに、見た目の違いごとの見本の絵を並べる */
-  box.innerHTML = `<div class="adbox" role="dialog" aria-modal="true" aria-labelledby="adlgttl">
+  /* 窓は見本の絵を大きく見せるだけ（説明・出典・使った動画・呼び方は出さない）。見せ方は見た目の違いを並べる */
+  box.innerHTML = `<div class="adbox${looks.length > 1 ? ' many' : ''}" role="dialog" aria-modal="true" aria-labelledby="adlgttl">
     <div class="adhead"><h2 id="adlgttl">${esc(name)}</h2><button type="button" class="adx" data-adlg-close>閉じる</button></div>
+    ${retired ? `<div class="adtags"><span class="tagk tagret">共用素材から外した</span><span>${
+      esc([fmtDate(r.retired_at), r.retired_reason].filter(Boolean).join(' ・ '))}</span></div>` : ''}
     ${looks.length ? assetLooksHTML(looks, P.urls || {})
-      : u ? `<div class="adimg"><img src="${esc(u)}" alt="${esc(name)}の見本"></div>` : '<div class="adimg none">素材なし</div>'}
-    <div class="adtags"><span class="tagk">${esc(r.kind || '—')}</span>${
-      retired ? '<span class="tagk tagret">共用素材から外した</span>' : ''}<span>${esc(assetMeta(r, false))}</span></div>
-    ${desc ? `<p class="adds">${esc(desc)}</p>` : ''}
-    ${kvHTML([
-      ...(retired ? [['共用素材から外した日と理由', kvText([fmtDate(r.retired_at), r.retired_reason].filter(Boolean).join(' ・ '))]] : []),
-      ['出典とライセンス', assetSource(r.source)],
-      ['使った動画', assetUsed(used)],
-      ['呼び方', assetCall(r.call)],
-      ['メモ', kvText(r.note)]])}</div>`;
+      : u ? `<div class="adimg"><img src="${esc(u)}" alt="${esc(name)}の見本"></div>` : '<div class="adimg none">素材なし</div>'}</div>`;
   box.hidden = false;
   box.scrollTop = 0;
   adlgKey = key;
