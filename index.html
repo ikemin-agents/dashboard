@@ -1383,35 +1383,18 @@ tr.dropped td{color:var(--muted)}
 }
 
 /* ═══ 共用素材の一覧（#574）═══════════════════════════════
-   1行＝1つ。見出しの行と同じ列の幅で並べる（位置を揃える）。行を押すと下に中身が開く */
-.lst{border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-1);
-  box-shadow:var(--shadow-1); overflow:hidden; min-width:0}
-.lsthead,.alrow{display:grid; gap:var(--sp-3); padding:9px 14px; min-width:0}
-.lsthead{font-size:var(--fs-2xs); font-weight:700; color:var(--muted); letter-spacing:.07em;
-  background:var(--surface-2); border-bottom:1px solid var(--border)}
-/* 列の幅は px で書く（見出しの行は字が小さいので、em だと列の位置がずれる） */
-/* 素材: 見本｜名前と説明｜種類｜番組｜使った動画（本数と番号）｜▸ */
-.alrow,.lsthead.al{grid-template-columns:64px minmax(0,1fr) 84px 84px 96px 14px; align-items:center}
-.lst details{border-bottom:1px solid var(--border-2)}
-.lst details:last-child{border-bottom:none}
-.lst summary{list-style:none; cursor:pointer}
-.lst summary::-webkit-details-marker{display:none}
-.lst summary:hover,.lst details[open]>summary{background:var(--surface-2)}
-.lst summary:focus-visible{outline:2px solid var(--s1); outline-offset:-2px}
-.lst .caret{color:var(--muted); font-size:11px; justify-self:end; transition:transform .15s}
-.lst details[open] .caret{transform:rotate(90deg)}
-.alrow .nm{font-weight:650; font-size:var(--fs-sm); overflow-wrap:anywhere}
-/* 素材の行の説明（#572・オーナー 2026-09-30 20:30「どういう内容なのかもう少し一覧側で」）。名前の下に、
-   開いたときに「呼び方」の下に出る説明文の1行目を2行まで（超えたら「…」）。
-   種類・番組・使った動画は .meta でまとめ、641px 以上は表の列に並べ（display:contents）、640px 以下は名前の下の1行にする */
-.alrow .nmc{display:flex; flex-direction:column; gap:2px; min-width:0}
-.alrow .ds{font-size:var(--fs-xs); color:var(--ink-2); line-height:var(--lh-tight); overflow-wrap:anywhere;
-  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden}
-.alrow .meta{display:contents}
-.alrow .ach{font-size:var(--fs-xs); color:var(--ink-2); line-height:var(--lh-tight); min-width:0}
-.alrow .ach span,.alrow .sq span{white-space:nowrap}
+   上の1行に種類の札（1つだけ選ぶ）と、番組・使った動画の絞り込みと件数。下に 見本の絵＋名前 のカードを並べ、
+   カードを押すと中身の窓（#adlg）が開く */
+/* 動画の一覧のスマホの札の行（.lsthead.sk・#637）の土台 */
+.lsthead{display:grid; gap:var(--sp-3); padding:9px 14px; min-width:0; font-size:var(--fs-2xs); font-weight:700;
+  color:var(--muted); letter-spacing:.07em; background:var(--surface-2); border-bottom:1px solid var(--border)}
+.abar{display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-3); margin:0 0 var(--sp-3)}
+.akinds{display:flex; flex-wrap:wrap; gap:6px; min-width:0}
+.akinds .rgbtn .n{font-size:var(--fs-2xs); font-variant-numeric:tabular-nums; opacity:.72}
+.ahf{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-left:auto}
+.ahf .hits{margin-left:var(--sp-2)}
 /* 見出しを押して絞り込む（#572）。▾ は押せる印、絞っている列は ● */
-/* 見出しの行は data-hf を持つ所（素材の .lsthead、動画の一覧の表の thead とスマホの一覧の先頭の札の行・#637） */
+/* 押せる見出しは data-hf を持つ所の中（素材の .ahf、動画の一覧の表の thead とスマホの一覧の先頭の札の行・#637） */
 [data-hf] .hf{font:inherit; letter-spacing:inherit; color:inherit; background:transparent; border:0; border-radius:var(--r-sm);
   padding:2px 4px; margin:-2px -4px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; white-space:nowrap}
 [data-hf] .hf .fm{font-size:10px; line-height:1}
@@ -1420,6 +1403,11 @@ tr.dropped td{color:var(--muted)}
 [data-hf] .hf.on .fm{color:var(--s1)}
 [data-hf] .hf[aria-expanded="true"],[data-hf] .hf[aria-expanded="true"] .fm{background:var(--ink); color:var(--page)}
 [data-hf] .hf:focus-visible{outline:2px solid var(--s1); outline-offset:1px}
+/* 素材の番組・使った動画は札の形（動画の一覧のスマホの札と同じ形） */
+.ahf .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
+  background:var(--surface-1); color:var(--ink-2); font-size:var(--fs-xs); letter-spacing:.02em}
+.ahf .hf.on{color:var(--ink); font-weight:750}
+.ahf .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
 /* 動画の一覧のタイトルの見出し（#637）: 左に「タイトル」（押すと並べ替え）、右端にジャンルの絞り込み（列が無いので） */
 .mtx th .thf{display:flex; justify-content:space-between; align-items:flex-end; gap:var(--sp-2); min-width:0}
 .mtx th .thf>span:first-child{min-width:0; overflow:hidden; text-overflow:ellipsis}
@@ -1441,38 +1429,50 @@ tr.dropped td{color:var(--muted)}
 /* 値の本数（動画の一覧の工程・ジャンル・#637）。右端にそろえ、字は小さく薄く */
 .rfpop .rfn{margin-left:auto; padding-left:var(--sp-3); font-size:var(--fs-2xs); color:var(--muted);
   font-variant-numeric:tabular-nums; white-space:nowrap}
-.al .vl{display:none}
-/* 表の罫線（900px 以上だけ・#572）。縦の線は 見本｜名前｜種類｜番組｜使った動画 の間の4本
-   （使った動画と ▸ の間には引かない）で、行の中の .vl（AL_VL）。横の線は外枠・見出しの行の下・各行の下・開いた行の中身の上。
-   開いた中身には縦の線を通さない（.vl は行の中だけ）。色は --rl-line（明るいテーマは --axis、暗いテーマは --axis だと
-   行の地の上で見えにくいので #4d4c47）。899px 以下は縦の線を出さず、横の線と外枠は --border / --border-2 */
-@media (min-width:900px){
-  /* 横の線（外枠・見出しの行の下・各行の下・開いた行の中身の上）を全幅で --rl-line に */
-  #assetlist{border-color:var(--rl-line)}
-  .lsthead.al{border-bottom-color:var(--rl-line)}
-  .lst details.al{border-bottom-color:var(--rl-line)}
-  .lst details.al[open]>summary{border-bottom:1px solid var(--rl-line)}
-  /* 列の間の縦の線。見出しの行と各行に4本ずつ置き、2列目から先の左端から隙間の半分だけ左（隙間の真ん中）に、
-     行の上下いっぱい（余白を含む）に引く。行の中に置くので、開いた中身には通らない */
-  .lsthead.al,.alrow{position:relative}
-  :is(.lsthead.al,.alrow)>.vl{display:block; position:absolute; top:0; bottom:0; left:0; width:1px;
-    margin-left:calc(var(--sp-3) / -2); background:var(--rl-line); pointer-events:none}
-  :is(.lsthead.al,.alrow)>.vl:nth-of-type(1){grid-column-start:2}
-  :is(.lsthead.al,.alrow)>.vl:nth-of-type(2){grid-column-start:3}
-  :is(.lsthead.al,.alrow)>.vl:nth-of-type(3){grid-column-start:4}
-  :is(.lsthead.al,.alrow)>.vl:nth-of-type(4){grid-column-start:5}
-}
-.alrow .cnt{font-size:var(--fs-sm); font-variant-numeric:tabular-nums; color:var(--ink-2);
-  display:flex; flex-direction:column; gap:1px; min-width:0}
-/* 使った動画の番号（KR0002 など）は本数の下に小さく。2本以上は「・」のあとで折り返す */
-.alrow .sq{font-size:var(--fs-2xs); line-height:var(--lh-tight); letter-spacing:.02em}
-.tagk{justify-self:start; font-size:var(--fs-2xs); white-space:nowrap; color:var(--ink-2);
+/* カードの並び。幅に入るだけ並べる（PC 1600px で8枚ほど・スマホは2列） */
+.acards{display:grid; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr)); gap:var(--sp-3); min-width:0}
+.acard{display:flex; flex-direction:column; min-width:0; padding:0; font:inherit; color:inherit; text-align:left; cursor:pointer;
+  background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden;
+  box-shadow:var(--shadow-1); transition:border-color .12s, box-shadow .12s}
+.acard:hover{border-color:var(--rl-line); box-shadow:var(--shadow-2)}
+.acard:focus-visible{outline:2px solid var(--s1); outline-offset:2px}
+/* 見本の絵は 4:3 の枠いっぱい。無いときも同じ大きさの「素材なし」の面を置く */
+.acard .aimg{display:block; width:100%; aspect-ratio:4 / 3; object-fit:cover; background:var(--surface-3);
+  border-bottom:1px solid var(--border-2)}
+.acard .aimg.none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2); font-size:var(--fs-xs)}
+.acard .abody{display:flex; flex-direction:column; gap:3px; padding:8px 10px 10px; min-width:0}
+.acard .anm{font-weight:650; font-size:var(--fs-sm); line-height:var(--lh-tight); overflow-wrap:anywhere;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden}
+.acard .ameta{font-size:var(--fs-2xs); color:var(--ink-2); line-height:var(--lh-tight);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.acards>.lstnone{grid-column:1 / -1; border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-1)}
+.tagk{justify-self:start; align-self:flex-start; font-size:var(--fs-2xs); white-space:nowrap; color:var(--ink-2);
   border:1px solid var(--border-2); border-radius:var(--r-sm); padding:1px 6px; background:var(--surface-2)}
-/* 共用素材から外した素材（#594）: 名前の横の言葉の札と、薄めた名前（札が言葉なので色だけで分けていない） */
-.tagk.tagret{font-weight:650; vertical-align:1px}
-.al.retired>summary .nm{color:var(--ink-2)}
-.lstbody{padding:6px 14px 14px}
+/* 共用素材から外した素材（#594）: 言葉の札と、薄めた絵と名前（札が言葉なので色だけで分けていない） */
+.tagk.tagret{font-weight:650}
+.acard.retired .aimg{opacity:.5}
+.acard.retired .anm{color:var(--ink-2)}
 .lstnone{padding:var(--sp-6); text-align:center; color:var(--ink-2); font-size:var(--fs-sm)}
+/* カードを押して開く中身の窓。PC は真ん中、スマホは下から出す（完成の承認の確認 .apv と同じ出し方）。
+   閉じるのは 閉じる・背景・Esc */
+.adlg{position:fixed; inset:0; z-index:75; background:rgba(11,11,11,.45); display:flex; align-items:center;
+  justify-content:center; padding:var(--sp-4)}
+.adlg[hidden]{display:none}
+.adlg .adbox{width:760px; max-width:100%; max-height:calc(100dvh - 32px); overflow-y:auto; overscroll-behavior:contain;
+  box-sizing:border-box; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-2); padding:16px 20px 20px; display:flex; flex-direction:column; gap:12px}
+.adlg .adbox>*{flex-shrink:0}
+.adlg .adhead{display:flex; align-items:flex-start; gap:var(--sp-3)}
+.adlg h2{margin:0; flex:1 1 auto; min-width:0; font-size:17px; font-weight:700; line-height:1.4; overflow-wrap:anywhere}
+.adlg .adx{flex:0 0 auto; font-family:inherit; font-size:var(--fs-sm); color:var(--ink); cursor:pointer;
+  background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-pill); min-height:36px; padding:0 14px}
+.adlg .adx:hover{background:var(--surface-3)}
+.adlg .adimg{border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; background:var(--surface-3)}
+.adlg .adimg img{display:block; width:100%; max-height:min(58dvh, 540px); object-fit:contain}
+.adlg .adimg.none{display:grid; place-items:center; height:160px; background:var(--surface-2); color:var(--ink-2);
+  font-size:var(--fs-sm)}
+.adlg .adtags{display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:var(--fs-xs); color:var(--ink-2)}
+.adlg .adds{margin:0; font-size:var(--fs-sm); color:var(--ink-2); line-height:1.55; overflow-wrap:anywhere}
 .kv{display:grid; grid-template-columns:8em minmax(0,1fr); gap:7px var(--sp-3); margin:0; font-size:var(--fs-sm)}
 .kv dt{color:var(--muted); font-size:var(--fs-xs); padding-top:1px}
 .kv dd{margin:0; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.55; min-width:0}
@@ -1484,30 +1484,21 @@ tr.dropped td{color:var(--muted)}
 .kv .pre{white-space:pre-wrap}
 .kv pre.code{margin:0 0 3px; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:var(--fs-2xs);
   white-space:pre-wrap; overflow-wrap:anywhere; background:var(--surface-2); border-radius:var(--r-sm); padding:5px 8px}
-/* 見本の絵。無いときも同じ大きさの「素材なし」の面を置く */
-.athumb{width:64px; height:64px; border-radius:var(--r-sm); border:1px solid var(--border); padding:0;
-  overflow:hidden; background:var(--surface-3); cursor:zoom-in; display:block}
-.athumb img{display:block; width:100%; height:100%; object-fit:cover}
-.athumb.none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2);
-  font-size:var(--fs-2xs); cursor:inherit; text-align:center}
+@media (max-width:899px){
+  .adlg{align-items:flex-end; padding:0}
+  .adlg .adbox{width:100%; max-height:92dvh; border-bottom:none; border-radius:var(--r-lg) var(--r-lg) 0 0;
+    padding:12px 16px calc(20px + env(safe-area-inset-bottom))}
+}
 @media (max-width:640px){
   .lsthead{display:none}
-  /* 素材・動画の一覧（.sk・#637）の見出しは列にそろえず、絞り込める見出しだけを横に並べる（押しやすい大きさの札にする） */
-  :is(.lsthead.al,.lsthead.sk){display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px}
-  .lsthead.al .hnf,.lsthead.al .hend{display:none}
-  :is(.lsthead.al,.lsthead.sk) .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
+  /* 動画の一覧（.sk・#637）の見出しは列にそろえず、絞り込める見出しだけを横に並べる（押しやすい大きさの札にする） */
+  .lsthead.sk{display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px}
+  .lsthead.sk .hf{margin:0; padding:5px 11px; min-height:30px; border:1px solid var(--border); border-radius:var(--r-pill);
     background:var(--surface-1); color:var(--ink-2); font-size:var(--fs-xs); letter-spacing:.02em}
-  :is(.lsthead.al,.lsthead.sk) .hf.on{color:var(--ink); font-weight:750}
-  :is(.lsthead.al,.lsthead.sk) .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
-  /* 素材の行は 見本｜名前と説明（その下に 種類・番組・使った動画 を1行）｜▸ */
-  .alrow{grid-template-columns:56px minmax(0,1fr) 14px; grid-template-rows:auto 1fr; row-gap:6px}
-  .alrow .athumb{grid-row:1 / span 2; align-self:start}
-  .alrow .nmc{grid-column:2; grid-row:1}
-  .alrow .meta{display:flex; grid-column:2; grid-row:2; align-self:start; flex-wrap:wrap; align-items:center;
-    gap:4px 10px; min-width:0}
-  .alrow .caret{grid-column:3; grid-row:1 / span 2}
-  .alrow .cnt{flex-direction:row; align-items:baseline; gap:6px; font-size:var(--fs-xs)}
-  .athumb{width:56px; height:56px}
+  .lsthead.sk .hf.on{color:var(--ink); font-weight:750}
+  .lsthead.sk .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
+  .ahf{margin-left:0}
+  .acards{grid-template-columns:repeat(2, minmax(0,1fr)); gap:var(--sp-2)}
   .kv{grid-template-columns:1fr; gap:2px}
   .kv dd{margin-bottom:6px}
 }
@@ -2702,12 +2693,8 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   <section class="view" id="view-analytics"></section>
   <section class="view" id="view-assets"></section>
   <section class="view" id="view-flow"></section>
-  <!-- 共用素材の一覧の見本の絵を大きく見る（見た目は承認画面の拡大表示と同じ） -->
-  <div class="sv-lbox" id="plbox" hidden>
-    <img id="plboximg" alt="">
-    <div class="lcap" id="plboxcap"></div>
-    <div class="lnav"><button type="button" data-plbox-close>閉じる</button></div>
-  </div>
+  <!-- 共用素材の一覧のカードを押して開く中身の窓（中身は openAdlg が描く） -->
+  <div class="adlg" id="adlg" hidden></div>
   <section class="view" id="view-detail"></section>
 </main>
 
@@ -2835,10 +2822,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/4 10:58';
+const BUILT_AT = '11/4 21:30';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '3da5d371bc8b';
+const BUILT_HASH = 'c474d4e4ce36';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2930,9 +2917,10 @@ const state = {
   busy:false, lastSync:null,
   /* 一覧の畳んでいるセクション（完了・ネタ案・没）の開閉。既定は全部閉じている */
   secOpen:{},
-  /* 共用素材の一覧の絞り込み（#574）。列は見出しの窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す）。
+  /* 共用素材の一覧の絞り込み（#574）。列は番組・使った動画の窓のチェック（#572・null＝絞らない・配列＝チェックの付いた値だけ残す）。
+     種類は札で選び、ここではなく assetKindPick に持つ。
      retired＝窓の「共用素材から外した物も見る」（#856・既定は外す＝共用素材から外した素材を出さない） */
-  assetsF:{kind:null, ch:null, seq:null, retired:false}
+  assetsF:{ch:null, seq:null, retired:false}
 };
 
 /* ── 開いていたタブ・チャンネルを覚える ──────────────────────────────
@@ -10445,14 +10433,11 @@ function drawSpark(){
    読むだけの画面。本文は DB のビューから**ログイン後にだけ**読む
    （公開ページには書かない）。絞り込みは画面の中でする（行は百件ほどで、全部取ってから絞る）。
      素材 … v_production_assets。ビューが無い・読めないときは「素材なし」を出して止まらない
-   行は <details> で、押すと中身が開く。開いている行は絞り込みを変えても開いたまま（下の assetsOpen） */
+   上に種類の札（1つだけ選ぶ・既定で1つ選んだ状態）、下に 見本の絵＋名前 のカード。カードを押すと中身の窓（#adlg）が開く */
 const ASSET_KINDS = ['材質', '部品', '景色', '動きの型', '見せ方', '効果音'];   // 並びは db/cli/commands/production_assets.ts の ASSET_KINDS と同じ
-const assetsOpen = new Set();
-document.addEventListener('toggle', e => {
-  const d = e.target;
-  if (!d || !d.dataset) return;
-  if (d.dataset.akey) (d.open ? assetsOpen.add(d.dataset.akey) : assetsOpen.delete(d.dataset.akey));
-}, true);
+/* 種類の札で選んだ種類。このブラウザに覚える（AKIND_ALL＝すべて・null＝まだ選んでいない） */
+const AKIND_ALL = '*', AKIND_KEY = 'dash.assetKind';
+let assetKindPick = (() => { try { return localStorage.getItem(AKIND_KEY); } catch (_) { return null; } })();
 const chName = slug => store.chNames[slug] || slug;
 /* 番組の短い呼び名と並び順（登録簿の順。無い番組は後ろ） */
 const chShort = slug => CH_SHORT[slug] || chName(slug);
@@ -10465,17 +10450,18 @@ const kvHTML = rows => `<dl class="kv">${rows.map(([k, v]) =>
   `<dt>${esc(k)}</dt><dd>${v == null || v === '' ? KV_NONE : v}</dd>`).join('')}</dl>`;
 const kvText = s => (s == null || String(s).trim() === '') ? '' : esc(s);
 
-/* 見出しを押して絞り込む列（#572）。キーは state.assetsF のキー、値は見出しの言葉。
-   押すとその列の値の一覧がチェックつきの窓で出る（全部チェック＝絞らない） */
-const AF_COLS = {kind:'種類', ch:'番組', seq:'使った動画'};
-let assetsOpts = {};  /* 素材の列ごとの値の一覧 {v, t}（renderAssets が行から作る） */
+/* 押して絞り込む列（#572）。キーは state.assetsF のキー、値はボタンの言葉。種類の札の行の右に並べる。
+   押すとその列の値の一覧がチェックつきの窓で出る（全部チェック＝絞らない）。種類は札で選ぶのでここには無い */
+const AF_COLS = {ch:'番組', seq:'使った動画'};
+let assetsOpts = {};  /* 素材の列ごとの値の一覧 {v, t}（buildAssetsOpts が、選んでいる種類の行から作る） */
 /* 見出しを押して絞る表（素材・動画の一覧で窓・印・閉じ方を共用）。view＝窓を置く画面（一覧の外）、list＝一覧、
    cols＝押せる列、f＝絞り込みの状態、opts＝列ごとの値の一覧、paint＝一覧の描き直し。見出しの行に data-hf＝表の名前を付ける。
    def＝列の既定の選び（null の状態でチェックが付く値）。無ければ全部の値（＝全部チェックで絞らない） */
 const HF_TABLES = {
   /* more＝どの列の窓にも値の一覧の下に出す、列に依らないチェック（key＝絞り込みの状態のキー、t＝言葉、reopts＝変えたあとに
      列ごとの値の一覧を作り直す）。素材は「共用素材から外した物も見る」（#856） */
-  assets: { view: '#view-assets', list: '#assetlist', cols: AF_COLS, f: () => state.assetsF, opts: () => assetsOpts, paint: () => paintAssets(),
+  /* 素材のボタンはカードの並びの上の札の行（#assetbar の .ahf）にあるので、list は画面全体 */
+  assets: { view: '#view-assets', list: '#view-assets', cols: AF_COLS, f: () => state.assetsF, opts: () => assetsOpts, paint: () => paintAssets(),
             more: { key: 'retired', t: '共用素材から外した物も見る', reopts: () => buildAssetsOpts() } },
   /* 動画の一覧（#637）。絞り込みは DB 側（listQuery）なので、描き直しは1ページ目から取り直す（件数とページ切りも DB の数）。
      工程の既定は没を除く全部（今までどおり没は既定では出さない）。没にチェックを足すと没も出る */
@@ -10661,17 +10647,36 @@ const seqCh = seq => { const p = String(seq || '').slice(0, 2).toUpperCase(); re
 const usedChs = r => [...new Set(usedSeqs(r).map(seqCh))].sort(byChRank);
 /* 絞り込みの列ごとの行の値。使った動画が無い素材は、番組・使った動画とも ''（窓では「なし」） */
 function assetVals(r, col){
-  if (col === 'kind') return [r.kind || ''];
   const v = col === 'ch' ? usedChs(r) : usedSeqs(r);
   return v.length ? v : [''];
 }
 /* 一覧に出しうる行。共用素材から外した素材は「共用素材から外した物も見る」を入れたときだけ（#856） */
 const assetsInScope = () => ((store.prodAssets || {}).rows || []).filter(r => state.assetsF.retired || !r.retired_at);
-/* チェックの付いた値のどれかに当てはまる行だけ（列の間は「かつ」）。チェックを全部外した列は1行も残さない */
+/* 札に並べる種類: 一覧に出しうる行に実際にある種類だけ（決まった並び → 並びに無い値）。最後に「すべて」を足すのは描く側 */
+function assetKinds(){
+  const s = new Set(assetsInScope().map(r => r.kind || ''));
+  return [...ASSET_KINDS.filter(k => s.has(k)), ...[...s].filter(k => !ASSET_KINDS.includes(k))];
+}
+/* いま選んでいる種類。覚えた種類が札に無い（まだ選んでいない・その種類の行が無くなった）ときは並びの最初 */
+function assetKindNow(){
+  const ks = assetKinds();
+  return assetKindPick === AKIND_ALL || ks.includes(assetKindPick) ? assetKindPick : (ks.length ? ks[0] : AKIND_ALL);
+}
+const assetKindOk = (r, k) => k === AKIND_ALL || (r.kind || '') === k;
+/* 番組・使った動画の窓でチェックの付いた値のどれかに当てはまるか（列の間は「かつ」）。チェックを全部外した列は1行も残さない */
+const assetHfOk = r => Object.keys(AF_COLS).every(col => !state.assetsF[col] || assetVals(r, col).some(v => state.assetsF[col].includes(v)));
+/* 出すカード: 選んでいる種類で、番組・使った動画の窓にも当てはまる行 */
 function assetHits(){
-  const f = state.assetsF;
-  return assetsInScope().filter(r =>
-    Object.keys(AF_COLS).every(col => !f[col] || assetVals(r, col).some(v => f[col].includes(v))));
+  const k = assetKindNow();
+  return assetsInScope().filter(r => assetKindOk(r, k) && assetHfOk(r));
+}
+/* 種類の札を押したとき。選んだ種類はこのブラウザに覚え、窓の値の一覧をその種類の中で作り直す */
+function setAssetKind(k){
+  assetKindPick = k;
+  try { localStorage.setItem(AKIND_KEY, k); } catch (_) {}
+  buildAssetsOpts();
+  paintAssets();
+  [...document.querySelectorAll('#assetbar [data-akind]')].find(b => b.dataset.akind === k)?.focus({ preventScroll: true });
 }
 /* 出典とライセンス（081 の source）。{made_from:{type, from, license}（切り出した元）,
    external:[{name, page, license, authors[]}]（外から取ってきた物）, photos:[{title, url, license, author}]（見比べた写真）}
@@ -10712,10 +10717,9 @@ function assetCall(c){
     ? `<pre class="code">${esc(x.signature || x.function)}</pre>${x.doc ? `<div class="exn pre">${esc(x.doc)}</div>` : ''}`
     : `<pre class="code">${esc(typeof x === 'string' ? x : JSON.stringify(x, null, 1))}</pre>`).join('');
 }
-/* 一覧の行に出す説明（#572・オーナー 2026-09-30 20:30「名前だけでなく、どういう内容なのかもう少し一覧側で」）。
-   開いたときに「呼び方」の下に出る説明文のうち、最初の関数（主に呼ぶもの）の説明の1行目。最初の関数に説明が無ければ、
-   説明のある次の関数の1行目。説明が次の行へ続くのに1行目が文の途中（「・」「、」など）で終わるときは「…」を付ける。
-   長さは CSS で2行に切る（超えたら「…」） */
+/* 中身の窓で名前の下に出す説明（#572）。「呼び方」の下に出る説明文のうち、最初の関数（主に呼ぶもの）の説明の1行目。
+   最初の関数に説明が無ければ、説明のある次の関数の1行目。説明が次の行へ続くのに1行目が文の途中（「・」「、」など）で
+   終わるときは「…」を付ける。カードには出さない */
 function assetDesc(c){
   if (c && typeof c === 'object' && !Array.isArray(c) && Array.isArray(c.functions)) c = c.functions;
   for (const x of (Array.isArray(c) ? c : [])) {
@@ -10726,84 +10730,98 @@ function assetDesc(c){
   }
   return '';
 }
-/* 列の間の縦の線（900px 以上・#572）。見出しの行と各行の末尾に4本（見本｜名前｜種類｜番組｜使った動画 の間）。
-   :nth-of-type で数えるので、見出しの行と行の中には、ほかに <i> を置かない */
-const AL_VL = '<i class="vl" aria-hidden="true"></i>'.repeat(4);
-function assetRowHTML(r, urls){
-  const key = String(r.asset_key || ''), name = r.name_ja || key, used = usedOf(r);
-  const seqs = usedSeqs(r), chs = usedChs(r), desc = assetDesc(r.call);
+/* カードと窓の小さな1行: 番組の短い呼び名（「・」でつなぐ）と使った本数。withKind のときは先頭に種類（札が「すべて」のとき） */
+function assetMeta(r, withKind){
+  const chs = usedChs(r);
+  return [withKind ? (r.kind || '—') : '', chs.length ? chs.map(chShort).join('・') : '', usedSeqs(r).length + '本']
+    .filter(Boolean).join(' ・ ');
+}
+/* カード1枚: 見本の絵（4:3。無ければ同じ大きさの「素材なし」）＋名前（2行まで）＋小さく番組と本数。
+   共用素材から外した素材（#594）は言葉の札を付けて薄く（色だけで分けない） */
+function assetCardHTML(r, urls, withKind){
+  const key = String(r.asset_key || ''), name = r.name_ja || key, retired = !!r.retired_at;
   const u = r.sample_image ? urls[r.sample_image] : null;
-  const thumb = u
-    ? `<button type="button" class="athumb" data-plbox="${esc(u)}" data-plcap="${esc(name)}" aria-label="${esc(name)}の見本を大きく見る"><img src="${esc(u)}" alt="" loading="lazy"></button>`
-    : `<span class="athumb none">素材なし</span>`;
-  /* 番組と動画の番号は名前の途中で折り返さず、「・」のあとで折り返す */
-  const joinNw = list => list.map(s => `<span>${esc(s)}</span>`).join('・<wbr>');
-  /* 共用素材から外した素材（#594）は名前の横に言葉の札（色だけで分けない）。開くと外した日と理由 */
-  const retired = !!r.retired_at;
-  return `<details class="al${retired ? ' retired' : ''}" data-akey="${esc(key)}"${assetsOpen.has(key) ? ' open' : ''}>
-    <summary class="alrow">${thumb}<span class="nmc"><span class="nm">${esc(name)}${
-        retired ? ' <span class="tagk tagret">共用素材から外した</span>' : ''}</span>${
-        desc ? `<span class="ds">${esc(desc)}</span>` : ''}</span>
-      <span class="meta"><span class="tagk">${esc(r.kind || '—')}</span>
-        <span class="ach">${chs.length ? joinNw(chs.map(chShort)) : '—'}</span>
-        <span class="cnt"><span>${used.length}本</span>${seqs.length ? `<span class="sq">${joinNw(seqs)}</span>` : ''}</span></span>
-      <span class="caret" aria-hidden="true">▸</span>${AL_VL}</summary>
-    <div class="lstbody">${kvHTML([
-      ...(retired ? [['共用素材から外した日と理由', kvText([fmtDate(r.retired_at), r.retired_reason].filter(Boolean).join(' ・ '))]] : []),
-      ['出典とライセンス', assetSource(r.source)],
-      ['使った動画', assetUsed(used)],
-      ['呼び方', assetCall(r.call)],
-      ['メモ', kvText(r.note)]])}</div></details>`;
+  return `<button type="button" class="acard${retired ? ' retired' : ''}" data-acard="${esc(key)}">${
+    u ? `<img class="aimg" src="${esc(u)}" alt="" loading="lazy">` : '<span class="aimg none">素材なし</span>'}<span class="abody">${
+    retired ? '<span class="tagk tagret">共用素材から外した</span>' : ''}<span class="anm">${esc(name)}</span><span class="ameta">${
+    esc(assetMeta(r, withKind))}</span></span></button>`;
 }
 async function renderAssets(){
   const el = $('#view-assets');
   if (rfPop && rfPop.tb === 'assets') closeRfPop();   /* 画面を作り直すと窓も消える */
+  closeAdlg();
   if (!store.prodAssets) el.innerHTML = loading();
   await loadProdAssets();
   buildAssetsOpts();
   el.innerHTML = `
     <div class="pagehead"><div class="eyebrow">共用素材</div><h1>🧱 素材DB</h1></div>
-    <div class="toolbar"><span class="hits" id="assetshits"></span></div>
-    <div class="lst" id="assetlist"></div>`;
+    <div class="abar" id="assetbar"></div>
+    <div class="acards" id="assetlist"></div>`;
   paintAssets();
 }
-/* 窓に並べるのは一覧に出しうる行（共用素材から外した素材は「共用素材から外した物も見る」のときだけ）に実際にある値だけ。種類は決まった並び→
-   並びに無い値、番組は登録簿の順、使った動画は番号の順（呼び名は番号と題）。使った動画が無い素材があるときだけ、番組と使った動画の
-   窓の最後に「なし」 */
+/* 窓に並べるのは、一覧に出しうる行（共用素材から外した素材は「共用素材から外した物も見る」のときだけ）のうち、札で選んでいる
+   種類の行に実際にある値だけ。番組は登録簿の順、使った動画は番号の順（呼び名は番号と題）。使った動画が無い素材があるときだけ、
+   番組と使った動画の窓の最後に「なし」 */
 function buildAssetsOpts(){
-  const rows = assetsInScope();
+  const k = assetKindNow(), rows = assetsInScope().filter(r => assetKindOk(r, k));
   const seen = col => { const s = new Set(); rows.forEach(r => assetVals(r, col).forEach(v => s.add(v))); return s; };
-  const kinds = seen('kind'), chs = seen('ch'), seqs = seen('seq'), titles = new Map();
+  const chs = seen('ch'), seqs = seen('seq'), titles = new Map();
   rows.forEach(r => usedOf(r).forEach(u => { if (!titles.has(String(u.seq))) titles.set(String(u.seq), u.title || ''); }));
   const withNone = (s, list) => s.has('') ? [...list, { v: '', t: 'なし' }] : list;
   assetsOpts = {
-    kind: [...ASSET_KINDS.filter(k => kinds.has(k)), ...[...kinds].filter(k => !ASSET_KINDS.includes(k))]
-      .map(v => ({ v, t: v || '—' })),
     ch: withNone(chs, [...chs].filter(Boolean).sort(byChRank).map(v => ({ v, t: chShort(v) }))),
     seq: withNone(seqs, [...seqs].filter(Boolean).sort((a, b) => a.localeCompare(b))
       .map(v => ({ v, t: titles.get(v) ? `${v} ${titles.get(v)}` : v })))
   };
 }
+/* 札の行（種類の札・番組と使った動画のボタン・件数）とカードの並びを描く。札の件数は、番組・使った動画の窓を当てた数 */
 function paintAssets(){
-  const box = $('#assetlist');
-  if (!box) return;
-  const hits = assetHits(), urls = (store.prodAssets || {}).urls || {};
-  $('#assetshits').textContent = hits.length + '件';
-  const hf = col => hfBtn('assets', col);
-  box.innerHTML = `<div class="lsthead al" data-hf="assets"><span class="hnf">見本</span><span class="hnf">名前</span>`
-    + `<span>${hf('kind')}</span><span>${hf('ch')}</span><span>${hf('seq')}</span><span class="hend"></span>${AL_VL}</div>`
-    + (hits.length ? hits.map(r => assetRowHTML(r, urls)).join('')
-       : `<div class="lstnone">${((store.prodAssets || {}).rows || []).length ? '当てはまる素材はありません' : '素材なし'}</div>`);
+  const box = $('#assetlist'), bar = $('#assetbar');
+  if (!box || !bar) return;
+  const k = assetKindNow(), hits = assetHits(), urls = (store.prodAssets || {}).urls || {};
+  const base = assetsInScope().filter(assetHfOk);
+  const pill = (v, t) => `<button type="button" class="rgbtn" data-akind="${esc(v)}" aria-pressed="${v === k}">${esc(t)}`
+    + `<span class="n">${nf(base.filter(r => assetKindOk(r, v)).length)}</span></button>`;
+  bar.innerHTML = `<div class="akinds" role="group" aria-label="種類">${
+    assetKinds().map(v => pill(v, v || '—')).join('')}${pill(AKIND_ALL, 'すべて')}</div>`
+    + `<div class="ahf" data-hf="assets">${Object.keys(AF_COLS).map(c => hfBtn('assets', c)).join('')}`
+    + `<span class="hits" id="assetshits">${hits.length}件</span></div>`;
+  box.innerHTML = hits.length ? hits.map(r => assetCardHTML(r, urls, k === AKIND_ALL)).join('')
+    : `<div class="lstnone">${((store.prodAssets || {}).rows || []).length ? '当てはまる素材はありません' : '素材なし'}</div>`;
 }
-/* 見本の絵を大きく見る（Esc・背景・閉じるで閉じる） */
-function openPlbox(src, cap){
-  $('#plboximg').src = src; $('#plboximg').alt = cap || '';
-  $('#plboxcap').textContent = cap || '';
-  $('#plbox').hidden = false;
-  $('#plbox [data-plbox-close]').focus({ preventScroll: true });
+/* カードを押して開く中身の窓（大きな見本の絵・名前・説明・外した日と理由・出典とライセンス・使った動画・呼び方・メモ）。
+   閉じるのは 閉じる・背景・Esc。閉じたら押したカードへ戻る */
+let adlgKey = null;
+function openAdlg(key){
+  const P = store.prodAssets || {}, r = (P.rows || []).find(x => String(x.asset_key || '') === key);
+  const box = $('#adlg');
+  if (!r || !box) return;
+  const name = r.name_ja || key, retired = !!r.retired_at, used = usedOf(r), desc = assetDesc(r.call);
+  const u = r.sample_image ? (P.urls || {})[r.sample_image] : null;
+  box.innerHTML = `<div class="adbox" role="dialog" aria-modal="true" aria-labelledby="adlgttl">
+    <div class="adhead"><h2 id="adlgttl">${esc(name)}</h2><button type="button" class="adx" data-adlg-close>閉じる</button></div>
+    ${u ? `<div class="adimg"><img src="${esc(u)}" alt="${esc(name)}の見本"></div>` : '<div class="adimg none">素材なし</div>'}
+    <div class="adtags"><span class="tagk">${esc(r.kind || '—')}</span>${
+      retired ? '<span class="tagk tagret">共用素材から外した</span>' : ''}<span>${esc(assetMeta(r, false))}</span></div>
+    ${desc ? `<p class="adds">${esc(desc)}</p>` : ''}
+    ${kvHTML([
+      ...(retired ? [['共用素材から外した日と理由', kvText([fmtDate(r.retired_at), r.retired_reason].filter(Boolean).join(' ・ '))]] : []),
+      ['出典とライセンス', assetSource(r.source)],
+      ['使った動画', assetUsed(used)],
+      ['呼び方', assetCall(r.call)],
+      ['メモ', kvText(r.note)]])}</div>`;
+  box.hidden = false;
+  box.scrollTop = 0;
+  adlgKey = key;
+  box.querySelector('[data-adlg-close]').focus({ preventScroll: true });
 }
-function closePlbox(){ $('#plbox').hidden = true; $('#plboximg').src = ''; }
-const plboxOpen = () => !$('#plbox').hidden;
+function closeAdlg(){
+  const box = $('#adlg'), key = adlgKey;
+  adlgKey = null;
+  if (!box || box.hidden) return;
+  box.hidden = true; box.innerHTML = '';
+  [...document.querySelectorAll('#assetlist [data-acard]')].find(b => b.dataset.acard === key)?.focus({ preventScroll: true });
+}
 
 /* ══ ツールチップ ═══════════════════════════════════════════════ */
 const tip = $('#tip');
@@ -11000,6 +11018,7 @@ function syncStickyOffsets(){
 }
 
 async function render(){
+  if (state.view !== 'assets') closeAdlg();   /* 素材の中身の窓は素材の画面の上だけ */
   renderShell();
   state.busy = true; renderShell();
   try {
@@ -11067,11 +11086,13 @@ document.addEventListener('click', e => {
   /* 詳細内の「戻る／閉じる」は履歴を戻す（popstate で一覧へ復帰・経路を一本化） */
   if (e.target.closest('[data-close]')) { history.back(); return; }
 
-  /* 共用素材の一覧: 見本の絵を押したら大きく見る（行の中にあるので、行の開閉は止める） */
-  const plb = e.target.closest('[data-plbox]');
-  if (plb) { e.preventDefault(); openPlbox(plb.dataset.plbox, plb.dataset.plcap); return; }
-  if (e.target.closest('[data-plbox-close]') || e.target.id === 'plbox') { closePlbox(); return; }
-  /* 素材・動画の一覧の絞り込みは見出しの窓（上の HF_TABLES の近く） */
+  /* 共用素材の一覧: 種類の札・カード（押すと中身の窓）・中身の窓を閉じる（閉じるのボタンか背景） */
+  const akd = e.target.closest('[data-akind]');
+  if (akd) { setAssetKind(akd.dataset.akind); return; }
+  const acd = e.target.closest('[data-acard]');
+  if (acd) { openAdlg(acd.dataset.acard); return; }
+  if (e.target.closest('[data-adlg-close]') || e.target.id === 'adlg') { closeAdlg(); return; }
+  /* 素材の番組・使った動画と動画の一覧の絞り込みは窓（上の HF_TABLES の近く） */
 
   /* チャンネル名そのものを押したときは、開閉ではなく切り替えとして扱う（2026-08-20） */
   const goBtn = e.target.closest('.chgo[data-ch]');
@@ -11194,8 +11215,8 @@ document.addEventListener('input', e => {
 document.addEventListener('keydown', e => {
   /* 完成の承認の確認を出しているあいだは Esc で閉じ、ほかの操作（動画の再生・詳細を閉じる）は効かせない */
   if (apv) { if (e.key === 'Escape') { apvClose(); e.preventDefault(); } return; }
-  /* 素材の見本を大きく見ているあいだは Esc で閉じる（ほかの操作より先に受ける） */
-  if (plboxOpen()) { if (e.key === 'Escape') { closePlbox(); e.preventDefault(); } return; }
+  /* 素材の中身の窓を開いているあいだは Esc で閉じる（ほかの操作より先に受ける） */
+  if (adlgKey) { if (e.key === 'Escape') { closeAdlg(); e.preventDefault(); } return; }
   /* Ctrl + Enter はコメント欄だけ。承認メモ（.ata）では発火させない（誤送信防止・#205） */
   if (e.target.classList && e.target.classList.contains('wta') && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     const box = e.target.closest('[data-wbox]');
