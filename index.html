@@ -1477,6 +1477,17 @@ tr.dropped td{color:var(--muted)}
 .adlg .adbox.many{width:1320px}
 .adlg .adlooks{display:grid; grid-template-columns:repeat(var(--n, 1), minmax(0, 1fr)); gap:var(--sp-3); align-items:start}
 .adlg .adlook{margin:0; display:flex; flex-direction:column; gap:4px; min-width:0}
+/* 窓の画は押すと画だけの拡大（#azoom） */
+.adlg [data-azoom]{cursor:zoom-in}
+.azoom{position:fixed; inset:0; z-index:80; background:rgba(0,0,0,.9); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:10px; padding:12px; cursor:zoom-out}
+.azoom[hidden]{display:none}
+.azoom img{display:block; max-width:100%; max-height:calc(100dvh - 72px); object-fit:contain}
+.azoom .azcap{color:#fff; font-size:var(--fs-sm); font-weight:700}
+.azoom .aznav{position:absolute; top:50%; transform:translateY(-50%); width:48px; height:72px; border:none;
+  border-radius:var(--r-md); background:rgba(255,255,255,.16); color:#fff; font-size:32px; line-height:1; cursor:pointer}
+.azoom .aznav:hover{background:rgba(255,255,255,.3)}
+.azoom .aznav.prev{left:12px} .azoom .aznav.next{right:12px}
 .adlg .adlook img,.adlg .adlook .none{display:block; width:100%; aspect-ratio:1 / 1; max-height:calc(100dvh - 150px); object-fit:contain; box-sizing:border-box;
   border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-3)}
 .adlg .adlook .none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2); font-size:var(--fs-xs)}
@@ -2706,6 +2717,8 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   <section class="view" id="view-flow"></section>
   <!-- 共用素材の一覧のカードを押して開く中身の窓（中身は openAdlg が描く） -->
   <div class="adlg" id="adlg" hidden></div>
+  <!-- 中身の窓の画を押して開く、画だけの拡大（中身は openAzoom が描く） -->
+  <div class="azoom" id="azoom" hidden></div>
   <section class="view" id="view-detail"></section>
 </main>
 
@@ -2833,10 +2846,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/4 23:02';
+const BUILT_AT = '11/4 23:12';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '05cb0f00bf5e';
+const BUILT_HASH = '76f945a55285';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -10670,7 +10683,7 @@ const assetCardName = r => assetTitle(r) + (r.kind === '見せ方' ? `（${asset
 function assetLooksHTML(looks, urls){
   return `<div class="adlooks" style="--n:${Math.min(looks.length, 3)}; --n2:${Math.min(looks.length, 2)}">${looks.map(l => {
     const u = l.image ? urls[l.image] : null, nm = String(l.name || '');
-    return `<figure class="adlook">${u ? `<img src="${esc(u)}" alt="${esc(nm)}の見本">` : '<span class="none">素材なし</span>'}`
+    return `<figure class="adlook">${u ? `<img src="${esc(u)}" alt="${esc(nm)}の見本" data-azoom>` : '<span class="none">素材なし</span>'}`
       + `<figcaption>${esc(nm)}${l.default ? '<span class="tagk">既定</span>' : ''}</figcaption></figure>`;
   }).join('')}</div>`;
 }
@@ -10784,13 +10797,35 @@ function openAdlg(key){
     ${retired ? `<div class="adtags"><span class="tagk tagret">共用素材から外した</span><span>${
       esc([fmtDate(r.retired_at), r.retired_reason].filter(Boolean).join(' ・ '))}</span></div>` : ''}
     ${looks.length ? assetLooksHTML(looks, P.urls || {})
-      : u ? `<div class="adimg"><img src="${esc(u)}" alt="${esc(name)}の見本"></div>` : '<div class="adimg none">素材なし</div>'}</div>`;
+      : u ? `<div class="adimg"><img src="${esc(u)}" alt="${esc(name)}の見本" data-azoom></div>` : '<div class="adimg none">素材なし</div>'}</div>`;
   box.hidden = false;
   box.scrollTop = 0;
   adlgKey = key;
   box.querySelector('[data-adlg-close]').focus({ preventScroll: true });
 }
+/* 画だけの拡大。中身の窓の画（data-azoom）を並びの順に持ち、左右のボタンと ← → で送る。
+   閉じるのは 画か背景を押す・Esc。閉じると中身の窓に戻る */
+let azoom = null;
+function showAzoom(){
+  const box = $('#azoom'), it = azoom.list[azoom.i], many = azoom.list.length > 1;
+  box.innerHTML = `${many ? '<button type="button" class="aznav prev" data-azoom-go="-1" aria-label="前の画">‹</button>' : ''}
+    <img src="${esc(it.src)}" alt="${esc(it.name)}"><div class="azcap">${esc(it.name)}</div>${
+    many ? '<button type="button" class="aznav next" data-azoom-go="1" aria-label="次の画">›</button>' : ''}`;
+}
+function openAzoom(img){
+  const imgs = [...document.querySelectorAll('#adlg [data-azoom]')];
+  azoom = { list: imgs.map(x => ({ src: x.currentSrc || x.src, name: String(x.alt || '').replace(/の見本$/, '') })),
+            i: Math.max(0, imgs.indexOf(img)) };
+  showAzoom();
+  $('#azoom').hidden = false;
+}
+function goAzoom(d){ azoom.i = (azoom.i + d + azoom.list.length) % azoom.list.length; showAzoom(); }
+function closeAzoom(){
+  azoom = null;
+  const box = $('#azoom'); box.hidden = true; box.innerHTML = '';
+}
 function closeAdlg(){
+  if (azoom) closeAzoom();
   const box = $('#adlg'), key = adlgKey;
   adlgKey = null;
   if (!box || box.hidden) return;
@@ -11024,6 +11059,10 @@ async function reloadAll(){
 /* ══ イベント ═══════════════════════════════════════════════════ */
 document.addEventListener('click', e => {
   if (apv && e.target.closest && e.target.closest('#apv')) return;   /* 完成の承認の確認は自分で受ける（apvInit） */
+  /* 素材の画だけの拡大: 開いているあいだは送るボタン以外を押すと閉じる。窓の画を押すと開く */
+  if (azoom) { const g = e.target.closest('[data-azoom-go]'); if (g) goAzoom(Number(g.dataset.azoomGo)); else closeAzoom(); return; }
+  const azi = adlgKey && e.target.closest('#adlg [data-azoom]');
+  if (azi) { openAzoom(azi); return; }
   /* 書き込み（コメント・承認）は他のハンドラより先に拾う */
   const wbtn = e.target.closest('[data-act]');
   if (wbtn) {
@@ -11191,6 +11230,12 @@ document.addEventListener('keydown', e => {
   /* 完成の承認の確認を出しているあいだは Esc で閉じ、ほかの操作（動画の再生・詳細を閉じる）は効かせない */
   if (apv) { if (e.key === 'Escape') { apvClose(); e.preventDefault(); } return; }
   /* 素材の中身の窓を開いているあいだは Esc で閉じる（ほかの操作より先に受ける） */
+  if (azoom) {
+    if (e.key === 'Escape') closeAzoom();
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { if (azoom.list.length > 1) goAzoom(e.key === 'ArrowLeft' ? -1 : 1); }
+    else return;
+    e.preventDefault(); return;
+  }
   if (adlgKey) { if (e.key === 'Escape') { closeAdlg(); e.preventDefault(); } return; }
   /* Ctrl + Enter はコメント欄だけ。承認メモ（.ata）では発火させない（誤送信防止・#205） */
   if (e.target.classList && e.target.classList.contains('wta') && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
