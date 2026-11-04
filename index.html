@@ -1436,8 +1436,9 @@ tr.dropped td{color:var(--muted)}
   box-shadow:var(--shadow-1); transition:border-color .12s, box-shadow .12s}
 .acard:hover{border-color:var(--rl-line); box-shadow:var(--shadow-2)}
 .acard:focus-visible{outline:2px solid var(--s1); outline-offset:2px}
-/* 見本の絵は 4:3 の枠いっぱい。無いときも同じ大きさの「素材なし」の面を置く */
-.acard .aimg{display:block; width:100%; aspect-ratio:4 / 3; object-fit:cover; background:var(--surface-3);
+/* 見本の絵は正方形の枠に切り抜かずに全体を収める（正方形の絵は枠いっぱい・横長の動きの型は上下に地が出る）。
+   無いときも同じ大きさの「素材なし」の面を置く */
+.acard .aimg{display:block; width:100%; aspect-ratio:1 / 1; object-fit:contain; background:var(--surface-3);
   border-bottom:1px solid var(--border-2)}
 .acard .aimg.none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2); font-size:var(--fs-xs)}
 .acard .abody{display:flex; flex-direction:column; gap:3px; padding:8px 10px 10px; min-width:0}
@@ -1471,6 +1472,16 @@ tr.dropped td{color:var(--muted)}
 .adlg .adimg img{display:block; width:100%; max-height:min(58dvh, 540px); object-fit:contain}
 .adlg .adimg.none{display:grid; place-items:center; height:160px; background:var(--surface-2); color:var(--ink-2);
   font-size:var(--fs-sm)}
+/* 見せ方の見た目の違い（#1408）: 見た目ごとに同じ大きさの正方形の枠（切り抜かずに全体）・名前と「既定」の印・呼び方の1行 */
+.adlg .adlooks{display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:var(--sp-3); align-items:start}
+.adlg .adlook{margin:0; display:flex; flex-direction:column; gap:4px; min-width:0}
+.adlg .adlook img,.adlg .adlook .none{display:block; width:100%; aspect-ratio:1 / 1; object-fit:contain; box-sizing:border-box;
+  border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface-3)}
+.adlg .adlook .none{display:grid; place-items:center; background:var(--surface-2); color:var(--ink-2); font-size:var(--fs-xs)}
+.adlg .adlook figcaption{font-size:var(--fs-sm); font-weight:700; line-height:1.35; overflow-wrap:anywhere}
+.adlg .adlook .tagk{margin-left:6px; vertical-align:1px}
+.adlg .adlook code{display:block; margin-top:2px; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-weight:400;
+  font-size:var(--fs-2xs); color:var(--ink); overflow-wrap:anywhere}
 .adlg .adtags{display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:var(--fs-xs); color:var(--ink-2)}
 .adlg .adds{margin:0; font-size:var(--fs-sm); color:var(--ink-2); line-height:1.55; overflow-wrap:anywhere}
 .kv{display:grid; grid-template-columns:8em minmax(0,1fr); gap:7px var(--sp-3); margin:0; font-size:var(--fs-sm)}
@@ -1499,6 +1510,7 @@ tr.dropped td{color:var(--muted)}
   .lsthead.sk .hf[aria-expanded="true"]{background:var(--ink); border-color:var(--ink); color:var(--page)}
   .ahf{margin-left:0}
   .acards{grid-template-columns:repeat(2, minmax(0,1fr)); gap:var(--sp-2)}
+  .adlg .adlooks{grid-template-columns:repeat(2, minmax(0,1fr)); gap:var(--sp-2)}
   .kv{grid-template-columns:1fr; gap:2px}
   .kv dd{margin-bottom:6px}
 }
@@ -2822,10 +2834,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/4 21:34';
+const BUILT_AT = '11/4 22:49';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '2c3608983ff4';
+const BUILT_HASH = '7245fe8ba9f8';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -10616,7 +10628,10 @@ document.addEventListener('scroll', () => { if (rfPop) placeRfPop(); }, { captur
 /* 素材の並び: 棚にある物 → 共用素材から外した物（下の方へ・#594）。その中で種類の並び → 名前 */
 function assetCmp(a, b){
   const ki = k => { const i = ASSET_KINDS.indexOf(k); return i < 0 ? 99 : i; };
+  /* 種類の中は通し番号の順（番号の無い行は後ろで名前の順） */
+  const no = r => assetNoOf(r) || Infinity;
   return (a.retired_at ? 1 : 0) - (b.retired_at ? 1 : 0) || ki(a.kind) - ki(b.kind)
+    || (no(a) === no(b) ? 0 : no(a) < no(b) ? -1 : 1)
     || String(a.name_ja || '').localeCompare(String(b.name_ja || ''), 'ja');
 }
 async function loadProdAssets(){
@@ -10630,17 +10645,42 @@ async function loadProdAssets(){
   }
   rows.sort(assetCmp);
   /* 見本の絵は非公開の置き場にあるので、まとめて署名URLにする（1時間で切れるのは他の素材と同じ） */
-  const urls = {}, paths = [...new Set(rows.map(r => r.sample_image).filter(Boolean))];
+  /* 見せ方の見た目の違いの絵（call.looks[].image）も同じ置き場にあるので一緒に署名する */
+  const urls = {}, paths = [...new Set(rows.flatMap(r => [r.sample_image, ...assetLooks(r).map(l => l && l.image)]).filter(Boolean))];
   if (paths.length) {
     try {
       const { data } = await sb.storage.from(ASSET_BUCKET).createSignedUrls(paths, ASSET_TTL);
       (data || []).forEach((r, i) => { if (r && r.signedUrl) urls[r.path || paths[i]] = r.signedUrl; });
     } catch (_) { /* 取れなければ「素材なし」の面になるだけ */ }
   }
-  store.prodAssets = { rows, urls, at: Date.now() };
+  /* 通し番号の桁: 種類ごとに、読んだ行（外した素材も）の番号の最大の桁 */
+  const noW = {};
+  rows.forEach(r => { const n = assetNoOf(r); if (n) noW[r.kind] = Math.max(noW[r.kind] || 1, String(n).length); });
+  store.prodAssets = { rows, urls, noW, at: Date.now() };
   return store.prodAssets;
 }
 const usedOf = r => (Array.isArray(r.used_in) ? r.used_in : []).filter(u => u && u.seq);
+/* 見せ方の見た目の違い（call.looks: [{name, default, how, image}]・既定が先）。見せ方のカードの名前には見た目の数を
+   全角括弧で付ける（見た目の違いが無いカードも（1））。使った本数はカード単位のまま */
+const assetLooks = r => (r && r.call && Array.isArray(r.call.looks) ? r.call.looks : []).filter(l => l && typeof l === 'object');
+/* 種類ごとの通し番号（call.no・一度振ったら変わらない）。名前の前に、種類の中の最大の桁に 0 でそろえて出す（「01 見出し」）。
+   番号の無い行（台帳から消して外した素材など）は番号を出さない */
+const assetNoOf = r => { const n = r && r.call && r.call.no; return Number.isInteger(n) && n > 0 ? n : null; };
+function assetNoText(r){
+  const n = assetNoOf(r);
+  return n ? String(n).padStart(((store.prodAssets || {}).noW || {})[r.kind] || 1, '0') : '';
+}
+const assetTitle = r => [assetNoText(r), r.name_ja || String(r.asset_key || '')].filter(Boolean).join(' ');
+const assetCardName = r => assetTitle(r) + (r.kind === '見せ方' ? `（${assetLooks(r).length || 1}）` : '');
+/* 中身の窓の見た目の違いの並び: 見た目ごとに同じ大きさの枠の見本の絵・名前（既定には「既定」の印）・呼び方の1行 */
+function assetLooksHTML(looks, urls){
+  return `<div class="adlooks">${looks.map(l => {
+    const u = l.image ? urls[l.image] : null, nm = String(l.name || '');
+    return `<figure class="adlook">${u ? `<img src="${esc(u)}" alt="${esc(nm)}の見本">` : '<span class="none">素材なし</span>'}`
+      + `<figcaption>${esc(nm)}${l.default ? '<span class="tagk">既定</span>' : ''}${
+        l.how ? `<code>${esc(l.how)}</code>` : ''}</figcaption></figure>`;
+  }).join('')}</div>`;
+}
 /* 使った動画の番号（重なりなし・番号の順）と、その番組（番号の頭2文字から・登録簿の順） */
 const usedSeqs = r => [...new Set(usedOf(r).map(u => String(u.seq)))].sort((a, b) => a.localeCompare(b));
 const seqCh = seq => { const p = String(seq || '').slice(0, 2).toUpperCase(); return SEQ_CH[p] || p; };
@@ -10735,10 +10775,10 @@ function assetMeta(r, withKind){
   return [withKind ? (r.kind || '—') : '', chs.length ? chs.map(chShort).join('・') : '', usedSeqs(r).length + '本']
     .filter(Boolean).join(' ・ ');
 }
-/* カード1枚: 見本の絵（4:3。無ければ同じ大きさの「素材なし」）＋名前（2行まで）＋小さく番組と本数。
-   共用素材から外した素材（#594）は言葉の札を付けて薄く（色だけで分けない） */
+/* カード1枚: 見本の絵（正方形の枠に全体。無ければ同じ大きさの「素材なし」）＋名前（2行まで・見せ方は見た目の数つき）＋
+   小さく番組と本数。共用素材から外した素材（#594）は言葉の札を付けて薄く（色だけで分けない） */
 function assetCardHTML(r, urls, withKind){
-  const key = String(r.asset_key || ''), name = r.name_ja || key, retired = !!r.retired_at;
+  const key = String(r.asset_key || ''), name = assetCardName(r), retired = !!r.retired_at;
   const u = r.sample_image ? urls[r.sample_image] : null;
   return `<button type="button" class="acard${retired ? ' retired' : ''}" data-acard="${esc(key)}">${
     u ? `<img class="aimg" src="${esc(u)}" alt="" loading="lazy">` : '<span class="aimg none">素材なし</span>'}<span class="abody">${
@@ -10788,18 +10828,20 @@ function paintAssets(){
   box.innerHTML = hits.length ? hits.map(r => assetCardHTML(r, urls, k === AKIND_ALL)).join('')
     : `<div class="lstnone">${((store.prodAssets || {}).rows || []).length ? '当てはまる素材はありません' : '素材なし'}</div>`;
 }
-/* カードを押して開く中身の窓（大きな見本の絵・名前・説明・外した日と理由・出典とライセンス・使った動画・呼び方・メモ）。
+/* カードを押して開く中身の窓（大きな見本の絵か見せ方の見た目の違いの並び・名前・説明・外した日と理由・出典とライセンス・使った動画・呼び方・メモ）。
    閉じるのは 閉じる・背景・Esc。閉じたら押したカードへ戻る */
 let adlgKey = null;
 function openAdlg(key){
   const P = store.prodAssets || {}, r = (P.rows || []).find(x => String(x.asset_key || '') === key);
   const box = $('#adlg');
   if (!r || !box) return;
-  const name = r.name_ja || key, retired = !!r.retired_at, used = usedOf(r), desc = assetDesc(r.call);
-  const u = r.sample_image ? (P.urls || {})[r.sample_image] : null;
+  const name = assetTitle(r), retired = !!r.retired_at, used = usedOf(r), desc = assetDesc(r.call);
+  const u = r.sample_image ? (P.urls || {})[r.sample_image] : null, looks = assetLooks(r);
+  /* 見せ方は大きな見本の絵の代わりに、見た目の違いごとの見本の絵を並べる */
   box.innerHTML = `<div class="adbox" role="dialog" aria-modal="true" aria-labelledby="adlgttl">
     <div class="adhead"><h2 id="adlgttl">${esc(name)}</h2><button type="button" class="adx" data-adlg-close>閉じる</button></div>
-    ${u ? `<div class="adimg"><img src="${esc(u)}" alt="${esc(name)}の見本"></div>` : '<div class="adimg none">素材なし</div>'}
+    ${looks.length ? assetLooksHTML(looks, P.urls || {})
+      : u ? `<div class="adimg"><img src="${esc(u)}" alt="${esc(name)}の見本"></div>` : '<div class="adimg none">素材なし</div>'}
     <div class="adtags"><span class="tagk">${esc(r.kind || '—')}</span>${
       retired ? '<span class="tagk tagret">共用素材から外した</span>' : ''}<span>${esc(assetMeta(r, false))}</span></div>
     ${desc ? `<p class="adds">${esc(desc)}</p>` : ''}
