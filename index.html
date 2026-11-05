@@ -1854,8 +1854,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* ═══ 完成の承認画面（シーン素材つき・#519 段2/段3）════════════════════════════
-   見た目と並びの正本は `dashboard/scene-mockup.html`（オーナー確定済みの見本）。ここは
-   その CSS を本体のヘッダー・下端バーの高さに合わせて写したもの。**すべて .sview の中だけ**
+   見た目と並びの元は `dashboard/scene-mockup.html`（オーナー確定済みの見本）。ここは
+   その CSS を本体のヘッダー・下端バーの高さに合わせて写したもの。ただし**幅1400px以上の①は
+   見本と並びが違う**（台本は細い欄・動画は欄の高さいっぱい・詳細は台本の行の ▸ で重ねて開く。
+   下の「1400px 以上: 動画と指摘が主役の並び」）。**すべて .sview の中だけ**
    に閉じてあるので、一覧・分析の見た目は変わらない。
    区画は3つ: ① 素材・作ったもの ② 私の指摘 ③ 経緯・履歴。
    広い画面ではページ全体を縦に動かさず、②の一覧・③の中・台本だけが内側でスクロールする。
@@ -2085,6 +2087,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-sline[aria-current="true"]{background:var(--act-soft); border-left-color:var(--act-line);
   color:var(--ink)}
 .sview .sv-sline[aria-current="true"] .sn{color:var(--sub-ink)}
+/* 短い番号（S3）と詳細を開く ▸ は、1400px 以上の細い台本の欄だけで出す（下の 1400px 以上の @media）。
+   詳細の ✕ も同じ */
+.sview .sv-sline .sns,.sview .sv-sline .sopen,.sview .sv-popx{display:none}
 /* 台本の中の「素材なし」（欄いっぱいの面にする＝枠は残る） */
 .sview .sv-scriptlist>.sv-nomat{flex:1 1 auto; align-self:stretch;
   border-radius:var(--r-sm); min-height:44px}
@@ -2285,22 +2290,6 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
      ①は grid-row 1 / span 2 のままなので動画と台本の大きさは変わらない */
   .sview .sv-wrap:has(.sv-sec.sb .decide>.dstate:only-child){grid-template-rows:auto minmax(0,1fr)}
 }
-/* ≧1700px: 台本・動画2本・素材の3列（上下端をそろえる） */
-@media (min-width:1700px){
-  /* 台本はサムネつきの行になったので少し広く取る（目安 420px 前後） */
-  .sview{--script-w:clamp(360px, 17vw, 460px); --mat-min:340px;
-    --pane-full:min(calc(100dvh - var(--sv-chrome) - 158px),
-      calc((100vw - var(--side-w) - var(--script-w) - var(--mat-min) - 136px) / 2 * 16 / 9 / .8));
-    --pane-h:calc(var(--pane-full) * .8);
-    --video-w:calc(var(--pane-h) * 9 / 16)}
-  /* 真ん中は「動画2本 → そのすぐ下に再生の操作」で上詰め。台本と素材は①の下端まで伸ばす */
-  .sview .sv-sec.sa .sv-stage{grid-template-columns:var(--script-w) auto minmax(0,1fr);
-    grid-template-rows:18px var(--pane-h) 56px minmax(0,1fr)}
-  .sview .sv-sec.sa .sv-script{grid-column:1; grid-row:1 / -1}
-  .sview .sv-sec.sa .sv-screens{grid-column:2; grid-row:1 / span 2}
-  .sview .sv-sec.sa .sv-matcol{grid-column:3; grid-row:1 / -1}
-  .sview .sv-sec.sa .sv-ctrls-slot{grid-column:2; grid-row:3}
-}
 /* 1200〜1399px: ②③は右に縦積み（ページの縦スクロールは許す） */
 @media (min-width:1200px) and (max-width:1399px){
   .sview{--side-w:400px}
@@ -2310,9 +2299,9 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-sec.sb{grid-column:2; grid-row:1}
   .sview .sv-sec.sc{grid-column:2; grid-row:2}
 }
-/* 1200〜1699px: 台本と素材は同じ場所をタブで入れ替える（3列だと動画が小さくなりすぎる）。
-   1200px 未満は下のスマホと iPad の横向きの1画面 */
-@media (min-width:1200px) and (max-width:1699px){
+/* 1200〜1399px: 台本と素材は同じ場所をタブで入れ替える（3列だと動画が小さくなりすぎる）。
+   1400px 以上は下の「動画と指摘が主役の並び」、1200px 未満は下のスマホと iPad の横向きの1画面 */
+@media (min-width:1200px) and (max-width:1399px){
   .sview{--script-w:clamp(300px, 26vw, 420px);
     --pane-full:min(calc(100dvh - var(--sv-chrome) - 162px), 720px,
       calc((100vw - var(--side-w) - var(--script-w) - 120px) / 2 * 16 / 9 / .8));
@@ -2341,6 +2330,68 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
     --slot-h:calc((var(--pane-full) - 176px) / 2 * .8)}
   .sview .sv-ctrls-slot{align-self:start}
   .sview .sv-viewswitch{display:none}
+}
+/* ── 1400px 以上: 動画と指摘が主役の並び（#1427・オーナーが確認用の見本で選んだ並び）──────────
+   ①は「台本の細い欄（行＝サムネ・番号・時刻・指摘の数・▸）｜完成動画と参照動画」の2列。動画は欄の高さいっぱい。
+   ナレーション全文・開始／終了フレーム・使った素材は、行の ▸ で台本の欄の右に重ねて開く詳細に出す。
+   詳細の中身は「いまのシーンの素材」の欄（.sv-matcol）そのもので、重ねて出すだけ（開閉は svSetPop）。
+   「台本／素材」のタブと素材の列は出さない。①の幅は中身（台本＋動画2本）で決め、残りの幅は全部②③の列へ回す。
+   動画の高さ＝①の高さ − ①の枠の余白と線（34）− 動画の上の見出し（18＋間 8）− 再生の操作の行（間 8＋56）
+   − 最後の行の間（8）− ①の見出しの行（--sv-hd。1700px 以上で外したときは 0）。
+   幅で決まるときは ②③の列に --side-min を残す（118 ＝ ページの左右の余白 40・①と②③の間 16・①の枠 34・
+   台本と動画の間 16・動画どうしの間 12） */
+@media (min-width:1400px){
+  .sview{--script-w:170px; --pop-w:460px; --side-min:420px; --sv-hd:40px;
+    --pane-full:min(calc(100dvh - var(--sv-chrome) - var(--sv-hd) - 132px),
+      calc((100vw - var(--side-min) - var(--script-w) - 118px) / 2 * 16 / 9));
+    --pane-h:var(--pane-full);
+    --video-w:calc(var(--pane-h) * 9 / 16)}
+  .sview .sv-wrap{grid-template-columns:calc(var(--script-w) + var(--video-w) * 2 + 62px) minmax(0,1fr)}
+  .sview .sv-sec.sa .sv-stage{position:relative; grid-template-columns:var(--script-w) auto;
+    grid-template-rows:18px var(--pane-h) 56px minmax(0,1fr)}
+  .sview .sv-sec.sa .sv-script{grid-column:1; grid-row:1 / -1}
+  .sview .sv-sec.sa .sv-screens{grid-column:2; grid-row:1 / span 2}
+  .sview .sv-sec.sa .sv-ctrls-slot{grid-column:2; grid-row:3}
+  .sview .sv-sec.sa .sv-mattabs{display:none}
+  .sview .sv-script>.shd .n{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  /* 台本の1行 = 開始フレームのサムネ ｜ 短い番号・時刻・指摘の数 ｜ ▸（ナレーションは詳細へ） */
+  .sview .sv-sline{--sth:64px; grid-template-columns:calc(var(--sth) * 9 / 16) minmax(0,1fr) 26px;
+    align-items:center; gap:6px; padding:6px 4px 6px 5px; min-height:0}
+  .sview .sv-sline .snar,.sview .sv-sline .sn{display:none}
+  .sview .sv-sline .sns{display:block; font-size:var(--fs-sm); font-weight:700; color:var(--ink-2);
+    font-variant-numeric:tabular-nums}
+  .sview .sv-sline[aria-current="true"] .sns{color:var(--sub-ink)}
+  .sview .sv-sline .sopen{display:grid; place-items:center; width:26px; height:26px; font-size:var(--fs-lg); line-height:1;
+    color:var(--ink-2); background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-sm)}
+  .sview .sv-sline .sopen:hover{background:var(--act-soft); border-color:var(--act-line)}
+  .sview .sv-sline .sopen[aria-expanded="true"]{background:var(--act-soft); border-color:var(--act-line);
+    color:var(--sub-ink); box-shadow:inset 0 0 0 1px var(--act-line)}
+  /* 詳細（▸ で開く）。台本の欄の右に、動画の上端から下端まで重ねる（再生の操作は隠さない） */
+  .sview .sv-sec.sa .sv-matcol{display:none}
+  .sview .sv-sec.sa .sv-stage[data-pop="1"] .sv-matcol{display:flex; position:absolute; z-index:6;
+    left:calc(var(--script-w) + 8px); top:26px; height:var(--pane-h);
+    width:min(var(--pop-w), calc(100% - var(--script-w) - 8px));
+    padding:var(--sp-3) var(--sp-4) var(--sp-4); background:var(--surface-1);
+    border:1px solid var(--act-line); border-radius:var(--r-lg); box-shadow:var(--shadow-2)}
+  .sview .sv-stage[data-pop="1"] .sv-matcol>.sv-colhd{height:30px; line-height:30px; flex:0 0 auto}
+  .sview .sv-stage[data-pop="1"] .sv-popx{display:inline-flex; align-items:center; margin-left:auto;
+    height:30px; padding:0 12px; font-family:inherit; font-size:var(--fs-xs); font-weight:650; letter-spacing:0;
+    color:var(--ink-2); background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md);
+    cursor:pointer}
+  .sview .sv-stage[data-pop="1"] .sv-popx:hover{background:var(--surface-3)}
+  .sview .sv-stage[data-pop="1"] .sv-now{--slot-h:min(300px, calc(var(--pane-h) * .42))}
+  .sview .sv-stage[data-pop="1"] .sv-refbox{--ref-h:min(220px, calc(var(--pane-h) * .3))}
+  .sview .sv-stage[data-pop="1"] .sv-now .nar{font-size:var(--fs-md); line-height:1.6}
+}
+/* 1700px 以上: 動画名の行（一覧に戻る・番号・題・版）と工程の帯を1行にまとめ（帯は svFlowPlace が行の中へ移す）、
+   「素材・作ったもの」の見出しの行を外す。同じ検証の案のタブがある動画だけは、タブの行として残す */
+@media (min-width:1700px){
+  .sview{--sv-hd:0px}
+  .sview:has(.sv-sec.sa>.sv-sechd>.sv-vtabs:not([hidden])){--sv-hd:40px}
+  .sview .sv-sec.sa>.sv-sechd:not(:has(>.sv-vtabs:not([hidden]))){display:none}
+  .sview .dtop>.sv-flow{position:static; flex:1 1 0; min-width:0; height:100%; margin:0;
+    padding:0 var(--sp-2); background:transparent; border:none; border-radius:0}
+  .sview .dtop:has(>.sv-flow) .ttl{flex:0 1 auto; max-width:300px}
 }
 /* ── スマホと iPad の横向き（1200px 未満）: スクロールしない1画面（#552・形は見本 dashboard/review-mockup.html のスマホ）──
    スマホでするのは「動画を見て、気になる場所に指摘を書く」だけ。上から「上の帯・動画（操作は動画の下端に重ねる）・
@@ -2846,10 +2897,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/5 00:13';
+const BUILT_AT = '11/5 14:47';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '76f945a55285';
+const BUILT_HASH = '2b1ad66ada65';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -6126,6 +6177,8 @@ function tapPickOn(){
   if (tap.items.length >= NOTE_LIM.items) { toast(`指摘は1回に${NOTE_LIM.items}件までです`); return; }
   tap.ctl.video.pause();
   tap.picking = true;
+  /* 1400px 以上の承認画面で詳細を開いていたら閉じる（詳細は動画に重なっていて、指す場所を隠す・#1427） */
+  if (svPopOpen()) svSetPop(false);
   tapSyncPick();
   /* スマホは入口のボタンが動画より下にある。動画が画面の外だと「どこをタップするのか」が
      見えないので、動画が見える位置まで送る（1画面の作り・#552 では常に見えているので送らない） */
@@ -6494,7 +6547,8 @@ async function submitTapChanges(box, key){
 /* ══ 完成の承認画面（シーン素材つき・#519 段2/段3）═══════════════════════════════
    「完成」で mp4 を見ているときだけ、詳細画面を見本（dashboard/scene-mockup.html）の
    3区画の並びに差し替える。台本・絵コンテのゲート、mp4 が無い完成、ネタの仕分けは
-   これまでの画面のまま。
+   これまでの画面のまま。幅1400px以上の①は見本と並びが違う（台本は細い欄・動画は欄の高さいっぱい・
+   いまのシーンの素材は台本の行の ▸ で重ねて開く詳細。CSS の「1400px 以上: 動画と指摘が主役の並び」）。
      ① 素材・作ったもの … 台本（行の左に開始フレームのサムネ）／完成動画・参照動画／
                           いまのシーンの素材／再生の操作
      ② 私の指摘        … 入口の2ボタン／指摘の一覧／全体へのメモ（承認待ちでなければ現状の1行）
@@ -7074,8 +7128,10 @@ function sceneDetailHTML(it, plan){
                 </div></div>
             </div>
           </div>
+          <!-- 1400px 以上では、この欄が台本の行の ▸ で開く詳細になる（台本の欄の右に重ねて出す・✕ と Esc で閉じる） -->
           <div class="sv-matcol">
-            <div class="sv-colhd"><span data-sv-colhd>いまのシーンの素材</span></div>
+            <div class="sv-colhd"><span data-sv-colhd>いまのシーンの素材</span>
+              <button class="sv-popx" type="button" data-svact="pop-close">✕ 閉じる</button></div>
             <div class="sv-now" data-sv-now></div>
           </div>
           <div class="sv-ctrls-slot" data-sv-ctrls></div>
@@ -7130,10 +7186,13 @@ function svRelayout(opts){
   const root = document.querySelector('#view-detail .sview');
   svMobileLayout();
   if (!root) { document.body.classList.remove('sv-lock'); return; }
+  svFlowPlace(root);
   const h = el => (el ? el.offsetHeight : 0);
-  /* 帯の下の「いまの工程」の1行（#637）も高さに入れる（無ければ 0） */
+  /* 帯の下の「いまの工程」の1行（#637）も高さに入れる（無ければ 0）。帯を動画名の行の中へ移した幅では
+     帯の高さは動画名の行に入っているので数えない */
+  const flow = root.querySelector(':scope > .sv-flow');
   const chrome = h(document.querySelector('.topbar')) + h(root.querySelector('.dtop'))
-    + h(root.querySelector('.sv-flow')) + h(root.querySelector('.sv-worknow')) + h(root.querySelector('.dbar')) + 40;
+    + h(flow) + h(root.querySelector('.sv-worknow')) + h(root.querySelector('.dbar')) + 40;
   if (root.style.getPropertyValue('--sv-chrome') !== chrome + 'px') root.style.setProperty('--sv-chrome', chrome + 'px');
   document.body.classList.toggle('sv-lock', window.innerWidth >= 1400);
   if (o.fit !== false) {
@@ -7146,6 +7205,28 @@ function svRelayout(opts){
     }
   }
   if (sv && o.repaint !== false) { svPaintNow(); svPaintRefFace(); }
+}
+/* 1700px 以上では工程の帯を動画名の行（.dtop）の中、題名のすぐ右へ移して1行にまとめる（#1427）。
+   それより狭い幅では元の場所（動画名の行のすぐ下）へ返す。帯の中身は作り直さず移すだけ
+   （描き直し svPatchFlow は帯をその場で差し替えるので、どちらの場所でも動く） */
+function svFlowPlace(root){
+  const flow = root && root.querySelector('.sv-flow'), dtop = root && root.querySelector(':scope > .dtop');
+  if (!flow || !dtop) return;
+  if (window.innerWidth >= 1700) {
+    const ttl = dtop.querySelector(':scope > .ttl');
+    if (ttl && flow.previousElementSibling !== ttl) ttl.after(flow);
+  } else if (flow.parentNode !== root) dtop.after(flow);
+}
+/* 1400px 以上の詳細（台本の行の ▸ で開く・#1427）。中身は「いまのシーンの素材」の欄で、CSS が台本の欄の右に
+   重ねて出す。開いている間に行を押すとそのシーンへ飛ぶ＝中身もそのシーンに替わる（svPaintNow が描き直す） */
+const SV_POP_MIN = 1400;
+const svPopOpen = () => !!(sv && window.innerWidth >= SV_POP_MIN
+  && sv.q('[data-sv-stage]')?.dataset.pop === '1');
+function svSetPop(on){
+  const st = sv && sv.q('[data-sv-stage]');
+  if (!st) return;
+  if (on) st.dataset.pop = '1'; else delete st.dataset.pop;
+  svPaintScript();
 }
 /* 工程の帯を1行の幅に収める（#604 E1。1400px でも全部の工程で 1500px 前後かそれ以上になり、横に送られて頭の
    「ネタ案」「台本」が隠れ、端の文字が切れていた）。縮めるのは2行目（作るもの・道具／状態）だけで、
@@ -7388,8 +7469,10 @@ function svBuildScript(){
     meta.className = 'smeta';
     /* 単位の呼び名は目録の unit に従う（「ショット3」／「シーン3」・README の約束） */
     const n = document.createElement('span'); n.className = 'sn'; n.textContent = svUnitN(s.n);
+    /* 1400px 以上の細い欄では短い番号（S3）を出す（全部の呼び名は行のツールチップ） */
+    const ns = document.createElement('span'); ns.className = 'sns'; ns.textContent = 'S' + s.n;
     const t = document.createElement('span'); t.className = 'stm'; t.textContent = fmtT(s.start);
-    meta.append(n, t);
+    meta.append(n, ns, t);
     if (byScene[s.n]) {
       const k = document.createElement('span');
       k.className = 'nmark'; k.textContent = '指摘' + byScene[s.n];
@@ -7398,13 +7481,28 @@ function svBuildScript(){
     }
     const x = document.createElement('span');
     if (sv.mat) {
+      x.className = 'snar';
       x.textContent = s.narration || '（ナレーションなし）';
     } else {
-      x.className = 'snone';
+      x.className = 'snar snone';
       x.textContent = (s.title ? s.title + ' ・ ' : '') + '素材なし';
     }
-    b.append(meta, x);
-    b.addEventListener('click', () => svGoScene(s.n));
+    /* 詳細を開く ▸（1400px 以上だけ出る・#1427）。行そのものがボタンなので、中の ▸ は押す先の印だけにして
+       行の click で見分ける。▸ を押すと詳細を開き、そのシーンへ飛ぶ。開いているいまのシーンの ▸ は閉じる。
+       行の本体を押したときは今までどおりそのシーンへ飛ぶだけ（開いていれば中身がそのシーンに替わる） */
+    const op = document.createElement('span');
+    op.className = 'sopen'; op.textContent = '▸';
+    op.title = 'この' + svUnit() + 'の詳細（ナレーション・開始と終了・' + svRefWord() + '）';
+    op.setAttribute('aria-hidden', 'true');
+    b.append(meta, x, op);
+    b.addEventListener('click', e => {
+      if (e.target.closest('.sopen')) {
+        if (svPopOpen() && s.n === sv.curN) { svSetPop(false); return; }
+        svSetPop(true);
+        if (s.n === sv.curN) return;     /* いまのシーンなら動画の位置は動かさない */
+      }
+      svGoScene(s.n);
+    });
     box.appendChild(b);
     sv.scriptRows.push(b);
   }
@@ -7416,7 +7514,12 @@ const SV_SCRIPT_HOLD = 4000;
 function svPaintScript(){
   if (!sv.scriptRows || !sv.scriptRows.length) return;
   const rows = svScenes();
-  rows.forEach((s, i) => sv.scriptRows[i].setAttribute('aria-current', s.n === sv.curN ? 'true' : 'false'));
+  /* ▸ は詳細が開いていて、いまのシーンの行だけ押した見た目（1400px 以上・#1427） */
+  const pop = sv.q('[data-sv-stage]')?.dataset.pop === '1';
+  rows.forEach((s, i) => {
+    sv.scriptRows[i].setAttribute('aria-current', s.n === sv.curN ? 'true' : 'false');
+    sv.scriptRows[i].querySelector('.sopen')?.setAttribute('aria-expanded', String(pop && s.n === sv.curN));
+  });
   const idx = rows.findIndex(s => s.n === sv.curN);
   const row = sv.scriptRows[idx], box = sv.q('[data-sv-scriptlist]');
   if (!row || !box || (Date.now() - sv.scriptHold) < SV_SCRIPT_HOLD) return;
@@ -8495,6 +8598,7 @@ async function armScene(node, files, pre){
     else if (a === 'lbox-prev')  { e.stopPropagation(); svStepLbox(-1); }
     else if (a === 'lbox-next')  { e.stopPropagation(); svStepLbox(1); }
     else if (a === 'lbox-close') { e.stopPropagation(); svCloseLbox(); }
+    else if (a === 'pop-close')  { svSetPop(false); }     /* 1400px 以上の詳細の ✕（#1427） */
     /* 台本の畳みはスマホだけ（広い画面では見出しを押しても何も起きない）。
        ⚠️ details を使わないのは、ブラウザが中身を1枚の箱で包むため——欄の高さが決まっていても
        中の一覧が縮まず、台本が①の下端をはみ出す（2026-09-21 実測） */
@@ -11258,8 +11362,10 @@ document.addEventListener('keydown', e => {
     const v = $('#view-detail [data-tapvid] video, #view-detail .sv-screen.final video');
     if (v) { e.preventDefault(); if (v.paused) v.play().catch(() => {}); else v.pause(); return; }
   }
-  /* Esc は近いものから閉じる: 入力シート → 場所を指すモード → 詳細（一覧へ戻る） */
+  /* Esc は近いものから閉じる: 台本の行の ▸ で開いた詳細（1400px 以上・#1427）→ 入力シート → 場所を指すモード
+     → 詳細画面（一覧へ戻る） */
   if (e.key === 'Escape' && state.detail) {
+    if (svPopOpen())        { svSetPop(false); return; }
     if (tap && tap.draft)   { tapCloseSheet(); return; }
     if (tapPicking())       { tapPickOff();    return; }
     history.back(); return;
