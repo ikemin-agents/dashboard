@@ -228,7 +228,7 @@ body{background:var(--page); color:var(--ink); font-size:15px; line-height:var(-
 .chtab[aria-selected="true"]{background:var(--surface-2); color:var(--ink); font-weight:650;
   border-color:var(--border-2); box-shadow:inset 0 2px 0 0 var(--chac)}
 /* チャンネル共通の画面（分析・素材DB・制作フロー）を見ている間は「いまチャンネルは効いていない」
-   ことを薄さで示す。ただし押せなくはしない（2026-08-20 オーナー指摘: グレーアウトして
+   ことを薄さで示す。ただし押せなくはしない（オーナー指摘: グレーアウトして
    元に戻れない）。押したらそのチャンネルの制作へ戻る＝ここが戻り道になる。 */
 /* ── チャンネル切替（スマホ）──────────────────────────────────────────
    いま見ているチャンネルだけを出し、押すと他が下に開く。広い画面では横並びのタブ
@@ -378,7 +378,7 @@ td.dim{color:var(--muted)}
 .legend2 .exs{display:none}          /* スマホ用の短い説明。PC は .ex を出す */
 .legend2 b{color:var(--ink); font-weight:680; letter-spacing:.04em}
 
-/* ── 列幅は中身に左右させない（オーナー差し戻し 2026-09-03）────────────────
+/* ── 列幅は中身に左右させない（オーナー差し戻し）────────────────
    区画（あなたの番／AI作業中／完了…）が変わっても列の縦位置がずれないよう、
    表は必ず1つ・列見出しも1つにし、幅は table-layout:fixed で先に決める。
    幅の出どころは ①各列の col の style（JS 側 MCOL の w。タイトルは幅を書かず、残りを全部取る）
@@ -460,7 +460,7 @@ td.dim{color:var(--muted)}
 /* ── 一覧のセクション見出し（在庫・レビュー統合）────────────────────────
    表の中では colspan で1行まるごと使う帯、スマホでは同じ体裁の見出しブロック。
    畳めるもの（完了・ネタ案・没）は ▸ が付き、行ごと押すと開閉する。
-   ⚠️ 区画ごとに表を分けない（オーナー差し戻し 2026-09-03）。分けると区画のあいだで
+   ⚠️ 区画ごとに表を分けない（オーナー差し戻し）。分けると区画のあいだで
       列幅が揃わず、状態・版・指摘の縦位置がずれる。 */
 .mtx tbody tr.secrow{cursor:default; background:var(--surface-2)}
 .mtx tbody tr.secrow.foldable{cursor:pointer}
@@ -507,25 +507,25 @@ td.dim{color:var(--muted)}
    在庫の表／在庫カード／レビュー一覧／詳細で同じ .sbadge を使う。状態は「tint 背景＋文字色」
    だけで表し、枠線・リングは使わない（枠線あり/なしが混ざると同じ行で大きさが揃わないため）。
    寸法は全種類共通: fs-sm / padding 4px 13px / 角丸ピル / gap 5px。 */
-/* 一覧の行から直接承認するボタン（オーナー要望 2026-08-20）。行のどこを押しても詳細が
+/* 一覧の行から直接承認するボタン（オーナー要望）。行のどこを押しても詳細が
    開く作りなので、押し間違えないよう独立したボタンにして色でも分ける */
 .okbtn{font-family:inherit; font-size:var(--fs-2xs); font-weight:700; cursor:pointer;
   border:none; border-radius:var(--r-pill); padding:4px 13px; white-space:nowrap;
   background:var(--s1); color:#fff}
 .okbtn:hover{filter:brightness(1.07)}
 .okbtn:disabled{background:var(--done-tint); color:var(--done); cursor:default}
-/* 表では右端の専用列に、カードではバッジ行の右端に置く（オーナー指定 2026-08-20） */
+/* 表では右端の専用列に、カードではバッジ行の右端に置く（オーナー指定） */
 /* 幅は「承認」と押したあとの「承認済み」が折り返さずに収まる値（#604 中2 で測り直し）。
    ボタンの字が列の幅を超えると列からはみ出し、右端が押せない（#536 中4・#604 中2）。
    ⚠️ 幅の正本は --okcol-w 1つ（colgroup の inline style も同じ変数を見る） */
 .mtx td.okcol,.mtx th.okcol{width:var(--okcol-w); white-space:nowrap; text-align:center}
-/* 表が横スクロールになる幅でも承認ボタンが切れないよう、右端に貼り付ける（オーナー指摘 2026-09-19）。
+/* 表が横スクロールになる幅でも承認ボタンが切れないよう、右端に貼り付ける（オーナー指摘）。
    左端の番号列と同じ作り */
 .mtx td.okcol,.mtx th.okcol{position:sticky; right:0; z-index:1;
   background:var(--surface-1); box-shadow:-1px 0 0 var(--border-2)}
 .mtx thead th.okcol{background:var(--surface-2); z-index:3}
 .mtx tbody tr:hover td.okcol{background:var(--surface-2)}
-/* 状態・版・指摘は独立した列にする（オーナー要望 2026-09-03）。タイトルと同じマスに
+/* 状態・版・指摘は独立した列にする（オーナー要望）。タイトルと同じマスに
    流し込むとタイトルの長さでバッジの位置がずれて読めない、という困りごとへの答え。
    幅は列側で固定してあるので、行が変わってもワッペンの左端と縦位置が必ず揃う。 */
 .mtx td.bcol{white-space:nowrap}
@@ -548,7 +548,7 @@ td.ttl .flags{margin-left:8px}
 .sbadge.work,.sbadge.rc,.sbadge.open{background:var(--fix-tint); color:var(--fix-ink)}
 /* AI審査だけが起点の作り直し（M051）。オーナーの指摘の直しより一段落ち着かせる */
 .sbadge.rcai{background:var(--surface-3); color:var(--ink-2)}
-/* 「この版は何の作り直しか」の札（オーナー要望 2026-09-02）。色の役割は上の2つと同じで、
+/* 「この版は何の作り直しか」の札（オーナー要望）。色の役割は上の2つと同じで、
    あなたの指摘の直しはオレンジ、AI が見つけた不備の直しは無彩色に落とす */
 .sbadge.rwh{background:var(--fix-tint); color:var(--fix-ink)}
 .sbadge.rwai{background:var(--surface-3); color:var(--ink-2)}
@@ -568,9 +568,9 @@ td.ttl .flags{margin-left:8px}
 /* 列が12本になって表の最小幅が 1060px → 1280px に上がったので、横スクロールへ切り替える
    幅もそこへ合わせる（sticky の列見出しはスクロール容器の中では効かないので、
    表が収まらない幅でだけ譲る）。 */
-/* 2026-09-19（#506 中5）: 横スクロール容器の中では sticky の基準が容器になるので、ページ用の
+/* #506 中5: 横スクロール容器の中では sticky の基準が容器になるので、ページ用の
    --stickytop を足したままだと列見出しが容器の中で下がって先頭行を覆い、1本目が押せなくなる。
-   容器になる幅では top を 0 起点に戻す。画面を横いっぱいに使うようにしたので（同日）、
+   容器になる幅では top を 0 起点に戻す。画面を横いっぱいに使うので、
    表（min 1186px）が収まらなくなる幅は 1246 未満だけになった。
    工程を12列にし、版・直した指摘・指摘の3列を外して（#637）表の最小幅が 1188px になったので、収まらなくなる幅は 1247 未満
    （1188＋main の左右の余白 40＋縦のスクロールバー 17＋表の容器の左右の枠線 2）。
@@ -690,7 +690,7 @@ td.ttl .flags{margin-left:8px}
     border-top:1px solid var(--border)}
 }
 
-/* ═══ 詳細ビュー（レビュー画面・#200 → 2026-09-20 に並びを組み替え・#509 段1）══════
+/* ═══ 詳細ビュー（レビュー画面・#200・#509 段1）══════
    見本（dashboard/review-mockup.html）と同じ並びにする。
      ・上に細いヘッダ1行（← 一覧／番号／タイトル／札）。戻る手段は左上の1つだけ
      ・PC（900px 以上）は2列: 左＝レビュー素材（動画は画面の高さいっぱい）・
@@ -711,7 +711,7 @@ td.ttl .flags{margin-left:8px}
   background:var(--surface-1); border:1px solid var(--border); border-radius:var(--r-md);
   height:var(--dhdr-h); display:flex; align-items:center; gap:var(--sp-2);
   padding:0 var(--sp-2) 0 var(--sp-1); overflow:hidden; margin-bottom:var(--sp-3)}
-/* ボタンと分かる形にする（枠・地・太字）。文字だけだと押せると気づかれなかった（オーナー指摘 2026-09-20） */
+/* ボタンと分かる形にする（枠・地・太字）。文字だけだと押せると気づかれなかった（オーナー指摘） */
 .dback{font-family:inherit; font-size:var(--fs-sm); font-weight:650; color:var(--ink); background:var(--surface-2);
   border:1px solid var(--border); cursor:pointer; padding:6px 14px; border-radius:var(--r-md); flex:0 0 auto;
   min-height:38px; white-space:nowrap; box-shadow:var(--shadow-1)}
@@ -950,7 +950,7 @@ tr.dropped td{color:var(--muted)}
 .reason{font-size:var(--fs-2xs); color:var(--muted); margin-left:auto}
 
 /* ═══ レビュー ══════════════════════════════════════════════════ */
-/* レビュー専用の一覧（.rvlist / .rvitem / .rvhead）は在庫と統合したので廃止（2026-08-19）。
+/* レビュー専用の一覧（.rvlist / .rvitem / .rvhead）は在庫と統合したので廃止。
    一覧は進捗マトリクスの行＋セクション見出しに一本化した。 */
 .chip{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-2xs); border-radius:var(--r-pill);
   padding:2px 9px; border:1px solid var(--border); white-space:nowrap}
@@ -1004,7 +1004,7 @@ tr.dropped td{color:var(--muted)}
 .oldver[open]>.dsum::before{transform:rotate(90deg)}
 .thread{display:grid; gap:var(--sp-2)}
 /* 吹き出しは1件＝1ブロック（アバター列は作らない）＝本文が横幅を全部使える（#266）。
-   2026-09-06 から中身は「あなたの指摘」だけ（AI の発言は1件1行の畳みへ移した）ので、
+   中身は「あなたの指摘」だけ（AI の発言は1件1行の畳みへ移した）ので、
    名前・発言の種類・対応結果の印は出さない。頭の行は日時と版だけ。 */
 .cmt{display:block}
 .cmt .bub{background:var(--surface-2); border:1px solid var(--border-2); border-radius:var(--r-md);
@@ -1020,7 +1020,7 @@ tr.dropped td{color:var(--muted)}
   font-size:var(--fs-md); line-height:1.75; word-break:break-word}
 .cmt .ctxt .mdh{margin:.9em 0 .35em}
 .cmt .ctxt>*:first-child{margin-top:0}
-/* ── AI の記録（既定は閉じる・オーナー要望 2026-09-02）────────────────────
+/* ── AI の記録（既定は閉じる・オーナー要望）────────────────────
    履歴の大半は AI どうしのやり取りで、人が読む必要はほとんど無い。1件1行に要約して畳む。 */
 .aifold{border:1px solid var(--border-2); border-radius:var(--r-md);
   background:var(--surface-2); padding:9px 12px}
@@ -1033,7 +1033,7 @@ tr.dropped td{color:var(--muted)}
 .ailog>.ailine:first-child{border-top:none; padding-top:0}
 .ailine .d{flex:0 0 auto; color:var(--muted); font-variant-numeric:tabular-nums}
 .ailine .t{min-width:0; word-break:break-word}
-/* ── いま決めること（オーナー決定 2026-09-06 → 2026-09-20 に並びを見本へ・#509 段1）──
+/* ── いま決めること（オーナー決定・#509 段1）──
    右列の先頭に置く。中身は「何を決めるのか（ゲート名＋版）」「その版で何を変えたのか
    （1点1行）」「メモ」「修正を依頼するときの入力欄」。定型の呼びかけ・番号・置き場は出さない。
    3つのボタン（没・修正を依頼・承認）は下端の固定バー（.dbar）へ移した。
@@ -1073,7 +1073,7 @@ tr.dropped td{color:var(--muted)}
   background:var(--good-tint); color:var(--ink)}
 .wmsg.err{background:var(--crit-tint)}
 
-/* 承認の枠（オーナー決定 2026-09-06 で「いま決めること」の中へ移した）。以前は画面下端に
+/* 承認の枠。以前は画面下端に
    貼り付けていたが、決める材料（何が変わったか）と操作が離れて読みにくかったので、
    詳細の先頭の枠に同居させる。 */
 .abox{border:1px solid var(--border); border-radius:var(--r-md);
@@ -1183,7 +1183,7 @@ tr.dropped td{color:var(--muted)}
   min-height:280px; aspect-ratio:9/16}
 .vidbox video{display:block; width:100%; height:100%; object-fit:contain; background:#000}
 /* 動画の上の層。ふだんは押すと再生／一時停止（ふつうの動画と同じ）。「場所を指すモード」の
-   あいだだけ十字カーソルにして、押した場所にピンを置く（オーナー指示 2026-09-20） */
+   あいだだけ十字カーソルにして、押した場所にピンを置く（オーナー指示） */
 .hitlayer{position:absolute; inset:0; touch-action:manipulation; cursor:pointer}
 .hitlayer.on{cursor:crosshair}
 /* 場所を指すモードのあいだだけ動画の上に出る帯。ふだんは案内文を出さない（オーナー指示） */
@@ -1306,7 +1306,7 @@ tr.dropped td{color:var(--muted)}
 .sheet{background:var(--surface-1); border:1px solid var(--s1); border-radius:var(--r-lg);
   box-shadow:var(--shadow-2); padding:var(--sp-3) var(--sp-3) var(--sp-3)}
 .sheet .at{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:var(--sp-3)}
-/* スマホの完成レビューでだけシートの中に出すフレーム送りの行（オーナー指摘 2026-09-22）。
+/* スマホの完成レビューでだけシートの中に出すフレーム送りの行（オーナー指摘）。
    広い画面では動画の下の操作バーに −0.5s／+0.5s があるので、ここは出さない */
 .sheet .atnudge{display:none}
 /* スマホの承認画面（#552）の入力画面だけで使う部品。ほかの画面・パソコン幅では出さない
@@ -1547,7 +1547,7 @@ tr.dropped td{color:var(--muted)}
 .minitbl{display:none; margin-top:10px; max-width:300px}
 .minitbl.show{display:block}
 
-/* ── 凡例（チャンネルの色＝押すと表示のオン／オフ・2026-09-04）────────
+/* ── 凡例（チャンネルの色＝押すと表示のオン／オフ）────────
    色はチャンネル専用にしてあるので、押していない状態は色を抜いた白抜きで表す。 */
 .chlegend{display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2); margin:0 0 var(--sp-3)}
 .chchip{display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-family:inherit;
@@ -1599,7 +1599,7 @@ tr.dropped td{color:var(--muted)}
 .monetch + .monetch{margin-top:var(--sp-5); padding-top:var(--sp-4); border-top:1px solid var(--border-2)}
 .monethd{font-size:var(--fs-sm); font-weight:680; display:flex; align-items:center; gap:2px}
 
-/* ── 分析タブのレイアウト（2026-09-03 作り直し / 09-04 横断化）──────
+/* ── 分析タブのレイアウト（チャンネル横断）──────
    PC は2列。表・分布・全件テーブルなど横幅の要るものは .span2 で2列ぶんを使う。 */
 .anagrid{display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-4); margin-top:var(--sp-3)}
 .anagrid>*{min-width:0}
@@ -1614,7 +1614,7 @@ tr.dropped td{color:var(--muted)}
 .chartwrap svg{display:block; width:100%; height:auto; overflow:visible}
 /* 軸の説明と指標の1行定義。グラフの上に必ず置く */
 .axnote{font-size:var(--fs-2xs); color:var(--muted); margin:0 0 4px; line-height:1.6}
-/* 軸の説明をタイトルの横に置く（縦の場所をグラフに回す・2026-09-04）。.hint は全画面で隠す約束なので別クラス */
+/* 軸の説明をタイトルの横に置く（縦の場所をグラフに回す）。.hint は全画面で隠す約束なので別クラス */
 .sectionhead .axh{font-size:var(--fs-2xs); color:var(--muted); line-height:1.5; flex:1 1 320px; min-width:0}
 .defline{font-size:var(--fs-xs); color:var(--ink-2); margin:0 0 4px; line-height:1.6}
 /* 視聴の質（4つの分布） */
@@ -1755,10 +1755,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .nav-in{padding:0}
   .brand{font-size:var(--fs-md); line-height:1.15}
   .chrow{margin-top:var(--sp-2); gap:var(--sp-1)}
-  /* チャンネルは「いま見ているものだけ」を出し、押して切り替える（オーナー要望 2026-08-20） */
+  /* チャンネルは「いま見ているものだけ」を出し、押して切り替える（オーナー要望） */
   .chtabs{display:none}
   .chpickwrap{display:block}
-  /* 狭い画面でも共通画面（分析・素材DB・制作フロー）はチャンネルタブの右に置く（オーナー指定 2026-08-20）。
+  /* 狭い画面でも共通画面（分析・素材DB・制作フロー）はチャンネルタブの右に置く（オーナー指定）。
      チャンネル名の場所を残すため、この2つは記号だけにして文字を畳む（読み上げと長押しの
      ためのラベルは title / aria-label に残す）。チャンネル側は詰めて横スクロールで逃がす */
   .chtab{padding:8px 10px; gap:5px}
@@ -1810,7 +1810,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .legend2 .mark{width:15px; height:15px; line-height:15px; font-size:10px}
 }
 /* ═══ スマホ: 説明バナー（.note）は囲みを外して画面端まで（#205）。運営タブ（実行記録の
-   .runs/.run）は 2026-09-29 に外した（#574）。.note の行は詳細の指摘の一覧にも効いているので残す ═══ */
+   .runs/.run）は無い（#574）。.note の行は詳細の指摘の一覧にも効いているので残す ═══ */
 @media (max-width:640px){
   .note{margin-left:calc(-1 * var(--sp-3)); margin-right:calc(-1 * var(--sp-3));
     border-radius:0; border-width:0 0 1px 0; box-shadow:none; margin-bottom:0}
@@ -1818,10 +1818,10 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 /* ═══ スマホの詳細まわりの微調整（#207 / #266 / #509 段1）══════════════════
    ⚠️ .dsec-history / .cmt .bub の基本定義はスタイルシートの前方にあり詳細度も同じなので、
       上書きは必ずここ＝基本定義より後ろに置く。
-   2026-09-20 に詳細を1枚の器（.dview に --dpad の余白）へ組み替えたので、囲みごとに
-   左右の枠線を落とす「端まで1枚」の指定は不要になった（余白は器が持つ）。 ═══ */
+   詳細は1枚の器（.dview に --dpad の余白）なので、囲みごとに
+   左右の枠線を落とす「端まで1枚」の指定は要らない（余白は器が持つ）。 ═══ */
 @media (max-width:640px){
-  /* ── 入力欄をタップしたときに画面が動くのを止める（オーナー要望 2026-08-20）──────
+  /* ── 入力欄をタップしたときに画面が動くのを止める（オーナー要望）──────
      iPhone は「文字が16pxより小さい入力欄」に合わせて自動で拡大する。これが
      タップした瞬間に画面がグイッと動く正体なので、スマホでは入力欄だけ16pxにする
      （拡大が起きなければ、戻るときの揺れも起きない）。 */
@@ -1839,7 +1839,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   html{font-size:17px}
   body{font-size:16px}
 }
-/* 広い画面ではもう一段上げる（#203・2026-08-11 オーナー要望）。--sp-* は px なので
+/* 広い画面ではもう一段上げる（#203・オーナー要望）。--sp-* は px なので
    余白は変わらず文字だけがスケールする */
 @media (min-width:1240px){
   html{font-size:18px}
@@ -1862,7 +1862,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
    --sv-chrome（ヘッダー＋「いまの工程」の1行＋下端バーの実高さ）は JS が測って入れる。 ═══ */
 .sview{--sv-chrome:200px; --side-w:0px;
   --script-w:420px; --mat-min:340px;
-  /* --pane-full = 欄そのものの高さ。動画はその 80%（2026-09-21 オーナー指摘・参照画像の
+  /* --pane-full = 欄そのものの高さ。動画はその 80%（オーナー指摘・参照画像の
      枚数が増える見込みなので、縮めたぶんの幅を素材の欄へ回す） */
   --pane-full:min(calc(100dvh - var(--sv-chrome) - 158px), 720px);
   --pane-h:calc(var(--pane-full) * .8);
@@ -1895,7 +1895,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-mattabs button[aria-pressed="true"]{background:var(--act-soft); color:var(--sub-ink);
   border-color:var(--act-line); font-weight:680}
 
-/* ── 同じ検証の複数の案のタブ（#523・置き場所と見た目はオーナー決定 2026-09-29 案A）──────
+/* ── 同じ検証の複数の案のタブ（#523・置き場所と見た目はオーナー決定 案A）──────
    ①「素材・作ったもの」の見出し行の中（見出しの文字の右・facts の左）に置く下線型のタブ。
    押すと映像と素材と時刻表が入れ替わる（指摘の一覧は共通のまま）。
    見出し行と同じ 32px に収める（行を高くしない＝動画が縮まない）。案が無い動画ではタブ帯は
@@ -1928,12 +1928,12 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 /* ── 動画のかたまり ── */
 .sview .sv-screens{display:grid; grid-template-columns:repeat(2, minmax(0, var(--video-w)));
   justify-content:start; gap:var(--sp-3); min-width:0}
-/* ⚠️ 参照動画の列は**常に出す**（オーナー指摘 2026-09-21）。番組や動画によって列が消えると
+/* ⚠️ 参照動画の列は**常に出す**（オーナー指摘）。番組や動画によって列が消えると
    並びが揃わないので、1本も無い動画でも同じ大きさの枠を置いて中に「素材なし」と書く */
 .sview .sv-screen{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
 /* 主画面に出せる動画がまだ無く、目録の「参照動画（全フレーム）」を借りている回だけ、
    借りた全フレームの動画を**参照動画の列の位置**へ、本来の動画の位置（左）を「素材なし」の面へ入れ替える
-   （オーナー決定 2026-09-21）。入れ替えるのは見た目の位置と見出しだけで、連動の親・指摘に付く
+   （オーナー決定）。入れ替えるのは見た目の位置と見出しだけで、連動の親・指摘に付く
    ファイル名・尺の照合は主画面の動画のまま。ショットごとの参照動画がある回は入れ替えない。
    どの幅でも .sv-screens は「左右2つ」なので、order だけで足りる（縦に積む状態は無い） */
 .sview .sv-stage[data-borrow="1"] .sv-screen.final{order:2}
@@ -1958,7 +1958,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .seek .tpmark{background:var(--mark)}
 /* 止めている間も動画の上に大きな再生ボタンは出さない（絵が隠れて邪魔・オーナー指摘）。
    再生中か止めているかは、下の操作バーの ▶／❚❚ で分かる */
-/* ── 「素材なし」の見た目は1種類だけ（オーナー指摘 2026-09-21）────────────────
+/* ── 「素材なし」の見た目は1種類だけ（オーナー指摘）────────────────
    **枠は必ず作り、中に「素材なし」と書く**（欄そのものを消さない＝歯抜けにしない）。
    破線は「欠けている」ように見えるので使わず、薄い無彩色の面＋小さな文字に統一する。 */
 .sview .sv-refempty,.sview .sv-nomat{display:grid; place-content:center; align-content:center;
@@ -1980,7 +1980,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   touch-action:none; min-width:60px; order:0}
 
 /* ── 欄の見出し・台本 ──
-   ⚠️ シーンの帯（再生の操作の下のサムネの列）は 2026-09-21 に廃止した（オーナー指摘）。
+   ⚠️ シーンの帯（再生の操作の下のサムネの列）は置かない（オーナー指摘）。
    開始フレームのサムネは**台本の各行の左**に付いている。空いた高さは動画・台本・素材へ回した。 */
 .sview .sv-colhd{font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em; color:var(--muted);
   padding:0 2px; display:flex; align-items:center; gap:var(--sp-2); height:18px; line-height:18px}
@@ -2041,7 +2041,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-now .nar{font-size:var(--fs-sm); color:var(--ink-2); line-height:var(--lh-tight);
   margin-bottom:var(--sp-2); overflow-wrap:anywhere}
 .sview .sv-shelf{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
-/* 参照画像が増えたら**横スクロールではなく折り返して複数行**に並べる（オーナー指摘 2026-09-21）。
+/* 参照画像が増えたら**横スクロールではなく折り返して複数行**に並べる（オーナー指摘）。
    入りきらないぶんは素材の欄（.sv-now）の中だけを縦にスクロールする */
 .sview .sv-shelfrow{display:flex; flex-wrap:wrap; gap:var(--sp-2); padding-bottom:4px;
   align-items:flex-start; min-width:0}
@@ -2152,7 +2152,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview .sv-sec.sb.sheeton .wbox{overflow-y:auto; scrollbar-width:thin}
 }
 
-/* ── ③ 前回までの私の指摘（2026-09-21 に「経緯・履歴」から作り替え・オーナー指摘）──
+/* ── ③ 前回までの私の指摘（オーナー指摘）──
    出すのは**オーナー自身の指摘だけ**。AI の記録・工程の履歴・フックと、詳細への切り替えは
    この画面から外した（対応の記録は②の先頭の「変更」に出ている）。 */
 .sview .sv-prevlist{flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin;
@@ -2483,7 +2483,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
     text-overflow:ellipsis; white-space:nowrap}
   .sview .sv-mmemo .btn{flex:0 0 auto}
 
-  /* ── 指摘を足す 段1「場所を選ぶ」（#552 の続き・オーナー指摘 2026-09-25）──────────
+  /* ── 指摘を足す 段1「場所を選ぶ」（#552 の続き・オーナー指摘）──────────
      動画は止まったまま大きく残し、タブと下の帯の代わりに案内の1行とボタン2つを出す。
      絵を触るとそこに印が付いて段2へ。動画の上の帯（パソコン用の案内）はスマホでは出さない */
   .sview .pickband{display:none!important}
@@ -2681,7 +2681,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
          別の入れ物にしてあるのは、チャンネル横断の画面を開いている間 .chtabs は
          「選べない（＝関係ない）」ものとして沈むため。同じ入れ物だと自分自身も押せなくなる。 -->
     <div class="chrow">
-      <!-- スマホは「いま見ているチャンネル」だけを出し、押すと他の選択肢が開く（2026-08-20）。
+      <!-- スマホは「いま見ているチャンネル」だけを出し、押すと他の選択肢が開く。
            広い画面では下の .chtabs（横並びのタブ）に切り替わる（CSS で出し分け） -->
       <div class="chpickwrap" id="chpick"></div>
       <div class="chtabs" id="chtabs" role="tablist" aria-label="チャンネル"></div>
@@ -2717,7 +2717,7 @@ const SUPABASE_URL = 'https://myavyqrzipfrofljmvkp.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_kt1UwIe3IUrpojqMcspieQ_zOopvk_C';
 /* ページを閉じる・再読み込みする・裏に回す間際に送る書き込みは keepalive を付ける。
    付けないと、承認の猶予を確定した直後にページが消えて送信が途中で切られる
-   （BZ0052: 事前確認の OPTIONS だけ届き本体の POST が来なかった・2026-09-23） */
+   （BZ0052: 事前確認の OPTIONS だけ届き本体の POST が来なかった） */
 let leaving = false;
 const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
@@ -2755,14 +2755,14 @@ const isPilotSeq = seq => {
 };
 /* ── 進行係を通らない動画（検証用と storage_only の番組・#569）─────────────────
    手元の提出の入口（submit_for_review.py）から出す動画。雑学・歯科も進行係の制作から外したので入る（#1036）。
-   この動画だけ次の3つが違う（オーナー決定 2026-09-29「置き場は動画ごとに1つ」）:
+   この動画だけ次の3つが違う（オーナー決定「置き場は動画ごとに1つ」）:
      ・レビュー素材の置き場が承認ポイントに依らず1つ（ONE_DIR）。Blender仮組みは参照動画の欄に、
        完成動画が出来たら主画面の欄に出る。旧い置き場（storyboard/）は新しい置き場が空のときだけ読む
      ・仮組み＋静止画（storyboard）の承認待ちが、そのあとの完成の動きに追い越されたら数えない
      ・承認ポイントの呼び名（storyboard は「仮組み＋静止画」） */
 const offDispatcherItem = it => !!it && (isPilotSeq(it.seq) || STORAGE_ONLY_CH.has(it.channel));
 const ONE_DIR = 'final';
-/* 読みに行く順番（Storage のフォルダ名）。**全番組で同じ**（オーナー決定 2026-09-29 15:07）——
+/* 読みに行く順番（Storage のフォルダ名）。**全番組で同じ**（オーナー決定）——
    動画の置き場1つ → 空なら旧い置き場。台本の承認ポイントだけは文章なので script/ のまま。
    02・03 はもともと final/ にしか出していないので、見え方は変わらない */
 const assetDirsOf = (it, gate) => gate === 'script' ? ['script'] : [ONE_DIR, 'storyboard'];
@@ -2827,10 +2827,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/11 08:37';
+const BUILT_AT = '11/11 08:54';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '533e6b2a335b';
+const BUILT_HASH = '7c245e8a0918';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -2881,7 +2881,7 @@ function fmtMD(iso){
   const p = partsOf(d, {month:'numeric', day:'numeric'});
   return `${p.month}/${p.day}`;
 }
-/* 分析のグラフの横軸・ツールチップ用: 08/04(火) の形（オーナー指定 2026-09-03） */
+/* 分析のグラフの横軸・ツールチップ用: 08/04(火) の形（オーナー指定） */
 function fmtMDW(iso){
   if (!iso) return '';
   const d = new Date(iso); if (isNaN(d)) return '';
@@ -2929,7 +2929,7 @@ const state = {
 };
 
 /* ── 開いていたタブ・チャンネルを覚える ──────────────────────────────
-   リロードすると必ず先頭のタブに戻るのを止める（オーナー要望 2026-08-19）。
+   リロードすると必ず先頭のタブに戻るのを止める（オーナー要望）。
    localStorage に置くだけで、権限が変わっていたら起動時の照合ではじく。
    詳細（#detail/…）は従来どおり URL のハッシュが担当する（共有・再読込に強い）。 */
 const UI_KEY = 'ikemin-dashboard-ui';
@@ -2967,14 +2967,14 @@ const clearVideoCaches = () => {
 const resetStockFilters = () => {
   state.stockQ=''; state.stockF={stage:null, genre:null}; state.stockSort=null; state.stockPage=0;
 };
-/* 在庫とレビューは1つのタブ（制作）に統合した（オーナー要望 2026-08-19）。
+/* 在庫とレビューは1つのタブ（制作）に統合した（オーナー要望）。
    承認した動画がレビュー一覧から消えて「どこへ行ったのか分からない」状態を無くすため、
    同じ画面の中で「あなたの番 →【AI】作業中 → 完了」とセクションで見せる。
    バッジは従来のレビュータブと同じ「承認待ちの件数」。 */
 const VIEWS = [
   /* バッジ＝「あなたが動く番」の総数（承認待ち ＋ ネタの仕分け待ち・#314） */
   {key:'stock',     icon:'🗂', label:'制作', badge:() => pendingCount(state.ch) + triageCount(state.ch)},
-  /* 分析はチャンネル横断の1画面（2026-09-04）。見えるチャンネルを色で重ねて出すので、
+  /* 分析はチャンネル横断の1画面。見えるチャンネルを色で重ねて出すので、
      チャンネルタブの右の共通タブに置く。 */
   {key:'analytics', icon:'📈', label:'分析', chIndep:true},
   /* 共用素材の一覧。読むだけ。
@@ -3250,11 +3250,11 @@ async function loadPending(ch, force){
 }
 const pendingList = ch => ((store.pending[ch] || {}).rv) || [];
 const triageCount = ch => ((store.pending[ch] || {}).triage) || 0;
-/* 承認待ちの「動画の本数」（#552 の続き・オーナー承認 2026-09-25）。rv は動画×承認ポイントで
+/* 承認待ちの「動画の本数」（#552 の続き・オーナー承認）。rv は動画×承認ポイントで
    展開してあるので、1本の動画が2か所で承認待ちだと2行になる（RW9004 で検証タブが3・表は2行）。
    件数（タブ・下ナビのバッジ）は動画の id の重複を除いて数える。表に出す行は rv のまま。 */
 const pendingCount = ch => new Set(pendingList(ch).map(r => r.item && r.item.id)).size;
-/* 全チャンネルタブのバッジ用（オーナー要望 2026-09-23）。いま見ている番組の表を描き終えた
+/* 全チャンネルタブのバッジ用（オーナー要望）。いま見ている番組の表を描き終えた
    あとに裏で呼ぶ——他の番組ぶんは表を待たせない。番組ごとに2本（状態を持つ行＋仕分けの
    件数）なので、番組4つで最大8本。取り終えたらタブだけ描き直す。失敗しても表には
    影響しないので握りつぶす（バッジが出ないだけ）。
@@ -3335,7 +3335,7 @@ const evNewer = (a, b) => {
 };
 /* video×gate ごとの現在の状態。引数は「その動画のレビュー記録」（#215 Phase 2 で
    全件配列から動画単位に縮小した。一覧側の状態はビュー M027 が同じ規則で計算する）。
-   **配列の並び順に依存しない**（#215 Phase 1・2026-08-12）: 以前は頭から舐めて
+   **配列の並び順に依存しない**（#215 Phase 1）: 以前は頭から舐めて
    「最後に出てきたイベント」を現在の状態としていたため、取得クエリの .order() が
    唯一の順序保証になっていた。そこを触ると *エラーを出さずに古い状態を表示し続ける* という
    気づきにくい壊れ方をするので、created_at の比較で最新を選ぶ方式に変えた。 */
@@ -3368,7 +3368,7 @@ function gateStateMap(events, curRev){
    置き場が動画ごとに1つになり、どちらの承認ポイントを開いても同じ画面・同じ素材が出る。
    そのため「仮組み＋静止画」の提出のあとに**完成が動いた**（提出・修正の依頼・承認・没の
    どれかが後から付いた）動画では、手前の承認待ちを表に残さない——残すと、承認済みの完成より
-   前の段階として一覧の「承認待ち」に並び続ける（RW9004 で実発生・2026-09-29）。
+   前の段階として一覧の「承認待ち」に並び続ける（RW9004 で実発生）。
    ⚠️ DB（一覧のビュー）は変えていない。ビューの rv_gate / storyboard_state は今までどおり
    storyboard を返すので、**画面の側で読み替える**。並び順（ビューの sort_rank）だけは承認待ちの
    位置に残る。02・03 は対象外（何も変えない）。 */
@@ -3417,7 +3417,7 @@ const AI_ROLE_JA = {
 };
 const aiRoleOf = a => AI_ROLE_JA[String(a || '').replace(/^ai:/, '')] || null;
 
-/* ── この版は何の作り直しか（オーナー要望 2026-09-02）────────────────────────
+/* ── この版は何の作り直しか（オーナー要望）────────────────────────
    一覧で「自分の指摘を直した版」と「そうでない版」の区別が付かない、という困りごとへの答え。
    現行版の提出（最新の request_review）の前に片付いた差し戻しの出どころで決める。
    ⚠️ 提出の1つ前で切ってはいけない——同じ版を何度も出し直した記録が実在するので、
@@ -3623,7 +3623,7 @@ async function fetchAssetText(rec){
     const t = await blob.text();
     /* 切るのは人が読むテキストだけ。json は画面が中身を解釈する表（素材の目録・時刻表・
        案の索引）なので切らない——切ると JSON として読めず、素材が1つも出なくなる
-       （ショット41本の目録が上限を超えて実発生・2026-09-21） */
+       （ショット41本の目録が上限を超えて実発生） */
     rec.text = (t.length > ASSET_MAX_TEXT && !/\.json$/i.test(rec.name)) ? t.slice(0, ASSET_MAX_TEXT) + '\n\n…（以降は省略。別タブで全文を開けます）' : t;
     rec.err = null;
   } catch (_) { rec.err = 'テキストを読み込めませんでした'; }
@@ -3749,8 +3749,7 @@ async function loadAnalytics(ch){
   } catch (_) {}
   const primaryPubs = pubs.filter(p => p.is_primary);
   /* 1回の問い合わせで返るのは 1,000行まで（サーバー側の上限。limit を大きく書いても増えない）。
-     日付の古い順に取るので、行が 1,000 を超えると**新しい日が欠けて推移が途中で止まる**
-     （世界のバズ雑学は 2,589行あり 09/04 で止まっていた・オーナー指摘 2026-09-29）。
+     日付の古い順に取るので、行が 1,000 を超えると**新しい日が欠けて推移が途中で止まる**。
      1,000行ずつ最後まで取る。並びを一意にするため動画の id も並べ替えに入れる */
   let daily = [];
   if (primaryPubs.length) {
@@ -3766,7 +3765,7 @@ async function loadAnalytics(ch){
   store.analytics[ch] = { kpi, pubs: primaryPubs, daily, mediaKey: primary ? primary.kpi_media_key : null };
   return store.analytics[ch];
 }
-/* 分析タブは見えるチャンネル全部を1画面に重ねる（2026-09-04）。チャンネルごとの取得を
+/* 分析タブは見えるチャンネル全部を1画面に重ねる。チャンネルごとの取得を
    並列で回して束ねるだけ（1本ぶんの取得と結果はまったく同じもの）。束ねたものは
    ANA_ALL のキーで持つ（チャンネルごとのキャッシュもそのまま残る）。 */
 const ANA_ALL = '__all__';
@@ -3795,7 +3794,7 @@ function renderShell(){
   const indepNow = !!(views.find(x => x.key === state.view) || {}).chIndep;
   /* 下ナビを隠すとき（残るのが「制作」1つだけのとき）は、「あなたの番」の件数を
      チャンネルタブ側へ移す。数え方は下ナビのバッジとまったく同じ。
-     ⚠️ 選んでいるタブだけでなく**全部のチャンネルタブ**に出す（オーナー要望 2026-09-23）——
+     ⚠️ 選んでいるタブだけでなく**全部のチャンネルタブ**に出す（オーナー要望）——
      他の番組の承認待ちはタブを切り替えないと見えなかった。件数は loadPendingAll が
      裏で番組ごとに取ってくる（取れる前は空＝バッジなし。取れたら描き直される）。 */
   const stockV = views.find(x => x.key === 'stock');
@@ -3816,7 +3815,7 @@ function renderShell(){
       <span class="cdot" style="background:${m.accent}"></span>${m.icon} ${esc(c.name)}${chBadge(c.slug)}</button>`;
   }).join('') || `<span class="chtab" aria-hidden="true">チャンネルなし</span>`;
 
-  /* スマホ用: いま見ているチャンネルだけを出し、押すと他が開く（オーナー要望 2026-08-20）。
+  /* スマホ用: いま見ているチャンネルだけを出し、押すと他が開く（オーナー要望）。
      開閉は details/summary に任せる（JS を持たない＝選ぶと再描画で自然に閉じる）。 */
   const curCh = chList.find(c => c.slug === state.ch);
   const others = chList.filter(c => c.slug !== state.ch);
@@ -3835,7 +3834,7 @@ function renderShell(){
       }).join('')}</div>` : ''}</details>`;
   })();
 
-  /* チャンネルに依存しない画面（分析・素材DB・制作フロー）はチャンネルタブの右へ（オーナー要望 2026-08-19）。
+  /* チャンネルに依存しない画面（分析・素材DB・制作フロー）はチャンネルタブの右へ（オーナー要望）。
      下のナビはそのチャンネルの中の画面（制作・分析）だけにして、2つの軸を混ぜない。
      ⚠️ スマホだけは逆にする: 画面が狭いとチャンネル名が読めなくなるので、共通画面は
      従来どおり下の固定タブバーに置く。両方に描いて CSS で出し分ける（画面幅の判定を
@@ -3963,7 +3962,7 @@ const badgeHTML = b => b ? `<span class="sbadge ${b.cls}"${b.tip ? ` title="${es
 const rcAiOnly = it => it._rcSrc === 'ai';
 const rcText  = it => rcAiOnly(it) ? `別AIの点検で${gateName(it._rc, it)}作り直し中`
                                    : `${AI_TAG}${gateName(it._rc, it)}修正対応中`;
-/* 列に出す短い文言（オーナー要望 2026-09-03）。長い説明は tip（ツールチップ）に回す */
+/* 列に出す短い文言（オーナー要望）。長い説明は tip（ツールチップ）に回す */
 const rcShort = it => rcAiOnly(it) ? '作り直し中' : 'AI修正中';
 const rcCls   = it => rcAiOnly(it) ? 'rcai' : 'rc';
 /* 未対応の指摘の内訳（M051）。b=true なら件数を太字にする（吹き出し用）、
@@ -3980,7 +3979,7 @@ const stateBadgeOf = it =>
   : it._rc ? {cls:rcCls(it), gl:'↺', text:rcShort(it), tip:rcText(it)} : null;
 const openBadgeHTML = it => it._open
   ? `<span class="sbadge open" title="未対応の指摘 ${esc(openSplit(it, false) || it._open + '件')}">💬 ${it._open}</span>` : '';
-/* 「この版は何の作り直しか」の札（オーナー要望 2026-09-02）。承認するかどうかを決める場面
+/* 「この版は何の作り直しか」の札（オーナー要望）。承認するかどうかを決める場面
    でしか意味が無いので、承認待ちの動画にだけ出す。初回の提出は札なし。 */
 const REWORK_BADGE = {
   human: {cls:'rwh',  gl:'↻', text:'あなたの指摘', tip:'あなたの指摘を直して出し直した版'},
@@ -3989,11 +3988,11 @@ const REWORK_BADGE = {
 /* 差し戻しが1件も無い＝初回の提出。表の「版」列だけは空欄にせず「初版」と書く
    （空欄だと「取れなかった」のか「初版」なのか読めない）。
    版の番号（v1・v2…）は、承認待ちの提出物の版（loadRework が覚えた rvRev＝承認のとき DB へ渡すのと
-   同じ値）を頭に付ける（オーナー要望 2026-09-19）。版はあなたの指摘でも AI の自己修正でも1つ進む。
+   同じ値）を頭に付ける（オーナー要望）。版はあなたの指摘でも AI の自己修正でも1つ進む。
    番号が取れない古い記録は由来だけを出す。 */
 const FIRST_BADGE = {cls:'idea', gl:'', text:'初回', tip:'差し戻しのない最初の提出'};
 const reworkBadgeHTML = it => it._rv ? badgeHTML(REWORK_BADGE[reworkOf(it)]) : '';
-/* 承認待ちの行の3つ（オーナー要望 2026-09-19）。直すのは毎回 AI なので「AIが修正」では何も
+/* 承認待ちの行の3つ（オーナー要望）。直すのは毎回 AI なので「AIが修正」では何も
    伝わらない。①版の番号 ②今回**誰の指摘**を直した版か ③**あなたが見るのは何回目**か。
    一覧に出すのは ③ だけ（あなたが見た回数の列・#637）。①② の列の定義（MCOL の rev・src）は残してある */
 const revNumHTML = it => {
@@ -4018,9 +4017,9 @@ function flagsHTML(it){
   const h = badgeHTML(stateBadgeOf(it)) + reworkBadgeHTML(it) + openBadgeHTML(it);
   return h ? `<span class="flags">${h}</span>` : '';
 }
-/* 承認待ちの行には、その場で通せるボタンを出す（オーナー要望 2026-08-20）。
+/* 承認待ちの行には、その場で通せるボタンを出す（オーナー要望）。
    コメント無しの承認が普通なので、1タップで承認まで行く（数秒だけ取り消せる）。
-   ボタンの字は全番組・検証用とも「承認」（2026-09-29 オーナー決定で検証用の言葉も本編にそろえた）。
+   ボタンの字は全番組・検証用とも「承認」（オーナー決定で検証用の言葉も本編にそろえた）。
    承認ポイントの名前つき（「完成を承認」）はツールチップに出す。以前は検証用だけ actWords の
    approve を承認ポイントの名前なしで呼んでいて、「undefinedを承認」と出ていた（#604 中2） */
 const quickOkHTML = it => {
@@ -4111,7 +4110,7 @@ function stockFacetOpts(facets){
   };
 }
 
-/* 既定の並び順（#203・2026-08-11 オーナー指定 / #205 で【AI】修正中を追加）
+/* 既定の並び順（#203・オーナー指定 / #205 で【AI】修正中を追加）
    ① 承認待ち（あなたが動く番）→ ② 【AI】修正中（あなたの指摘をAIが対応中）→ ③ 進行中
    → ④ 投稿済み・予約中 → ⑤ ネタ案
    ネタ案は着手前で見るものが無いので最後に沈める。グループ内は ④ だけ「投稿日時の新しい順」
@@ -4121,12 +4120,12 @@ function stockFacetOpts(facets){
       承認待ちの動画が2ページ目に隠れて見逃す。列見出しクリックの並べ替えも同じ理由で
       DB へ渡している（listOrder / SORT_DB）。 */
 
-/* ── 一覧のセクション（在庫とレビューの統合・オーナー要望 2026-08-19）────────────
+/* ── 一覧のセクション（在庫とレビューの統合・オーナー要望）────────────
    「あなたの番 →【AI】作業中 → 承認済み・投稿まで → 完了 → ネタ案 → 没」の順に見出しを立てて並べる。
    承認した動画が一覧から消えず【AI】作業中に残り続けるのが主目的（承認＝レビュー一覧から
    消える、だとどこへ行ったのか分からない）。完了・ネタ案・没は既定で畳み、件数だけ見せる。
    「承認済み・投稿まで」は投稿待ち（承認は済み・予約はまだ）と予約済み（YouTube に登録済み・公開
-   時刻待ち）。以前は「完了」に投稿済みと混ざっていた（オーナー要望 2026-09-30「予約済みと投稿待ちは
+   時刻待ち）。以前は「完了」に投稿済みと混ざっていた（オーナー要望「予約済みと投稿待ちは
    違うので、投稿されるまでは完了ではなく別のまとまりに」）。どの番組の動画も、検証用の動画も
    同じここに入る。
    並びは DB 側の sort_rank（承認待ち→修正中→進行中→投稿済み→ネタ案）のまま見出しを差し込む。
@@ -4136,7 +4135,7 @@ function stockFacetOpts(facets){
    同じ扱い（記録がある行を【AI】作業中の位置に並べる）で、**二重に持っている**——どちらかを変えたら両方直す。
    承認待ちの件数（loadPending）も記録がある動画を数えない */
 const SECTIONS = [
-  /* 検証のタブも本編と同じ言葉（2026-09-29 オーナー決定・ACT_WORDS と同じ） */
+  /* 検証のタブも本編と同じ言葉（オーナー決定・ACT_WORDS と同じ） */
   {key:'rv',   label:'あなたの番 — 承認待ち',      hint:'動画と画像を見て、承認するか修正を依頼してください'},
   /* ネタの仕分け（#314）。台本の型カタログの3型に乗らずAIが起草を見送った案。
      AI は没にしないので、ここに溜まったものはオーナーが必ず1回見る */
@@ -4173,7 +4172,7 @@ function sectionOf(it){
   if (it.stage === 'idea') return 'idea';
   return 'ai';
 }
-/* 「承認済み・投稿まで」の並び（オーナー要望 2026-09-30）: 予約済みを公開の予定時刻の早い順、
+/* 「承認済み・投稿まで」の並び（オーナー要望）: 予約済みを公開の予定時刻の早い順、
    そのあとに投稿待ちを承認の古い順。承認の時刻が無い行（記録の無い古い動画）は工程が変わった時刻で代える。
    時刻が読めない行は後ろへ。同じ値どうしは DB が付けた並びのまま（Array#sort は安定） */
 const tsOf = iso => { const t = Date.parse(iso || ''); return isNaN(t) ? Infinity : t; };
@@ -4188,7 +4187,7 @@ const secOpen = s => !s.fold || !!state.secOpen[s.key];
 function groupSections(rows){
   const g = {};
   rows.forEach(it => { const k = sectionOf(it); (g[k] = g[k] || []).push(it); });
-  /* 承認待ちの中だけ「あなたの指摘を直した版」を先頭へ寄せる（オーナー要望 2026-09-02）。
+  /* 承認待ちの中だけ「あなたの指摘を直した版」を先頭へ寄せる（オーナー要望）。
      Array#sort は安定なので、札が同じもの同士は DB が付けた並び（滞留の長い順）のまま。 */
   if (g.rv) g.rv.sort((a, b) => (reworkOf(b) === 'human') - (reworkOf(a) === 'human'));
   if (g.wait) g.wait.sort(waitCmp);
@@ -4211,7 +4210,7 @@ function secHeadInner(s){
 const secAttrs = s => s.fold
   ? ` data-secfold="${s.key}" tabindex="0" role="button" aria-expanded="${secOpen(s)}"` : '';
 
-/* ── 進捗マトリクスの列（オーナー要望 2026-09-03 / 同日の差し戻しを反映）────────
+/* ── 進捗マトリクスの列（オーナー要望と差し戻しを反映）────────
    状態・版・指摘をタイトルのマスから出して独立した列にした。ワッペンをタイトルの
    後ろに流し込むと、タイトルの長さでワッペンの位置がずれて読めない、が理由。
    w＝その列の固定幅。table-layout:fixed なので、ここに書いた幅がそのまま列幅になる
@@ -4258,11 +4257,11 @@ const MCOL = {
           td: it => `<td class="num">${it.subs == null ? '' : (it.subs > 0 ? '+' : '') + it.subs}</td>`},
   ok:    {label:'承認', thx:' okcol', td: it => `<td class="okcol">${quickOkHTML(it)}</td>`}
 };
-/* 列は全区画で共通の1セット（オーナー差し戻し 2026-09-03）。区画ごとに列を変えると
+/* 列は全区画で共通の1セット（オーナー差し戻し）。区画ごとに列を変えると
    表を分けることになり、区画のあいだで列幅が揃わずワッペンの縦位置がずれる。
    値が無いマスは「—」を並べず空欄にする（読むものが減るほうが速い）。 */
-/* ジャンルの列は外した（オーナー指示 2026-09-19・承認の判断に使わない。絞り込みのジャンル選択は残す） */
-/* 投稿日時・再生数・登録者増も外した（同日・数字は分析タブで見る） */
+/* ジャンルの列は外した（オーナー指示・承認の判断に使わない。絞り込みのジャンル選択は残す） */
+/* 投稿日時・再生数・登録者増も外した（数字は分析タブで見る） */
 /* 版・直した指摘・指摘も外した（#637・オーナー指摘「4列がごちゃごちゃして分かりにくい」）。承認待ちの行に残すのは
    「あなたが何回目に見るか」のあなたが見た回数の1列だけ。外した3列の幅はタイトルの列に回る。詳細画面の札はそのまま */
 /* 並びは左から ステータス・あなたが見た回数・投稿日・滞留 → 工程 → 承認（あなたが見た回数は工程より左・オーナー指定） */
@@ -4323,7 +4322,7 @@ function matrixTable(core, err){
   const rows = err ? [] : core.items;   /* 絞り込み・並べ替え・ページ切りは DB 側で済んでいる */
   const N = colCount(MCOLS);
   /* 区画の見出しは表の中の帯行（全列 colspan）。表も列見出しも必ず1つに保つ
-     ＝どの区画の行でも列の縦位置が揃う（オーナー差し戻し 2026-09-03）。
+     ＝どの区画の行でも列の縦位置が揃う（オーナー差し戻し）。
      右端の承認の列だけは別のマス（.okcol）にして、表が横に送れる幅で行と一緒に右に貼り付ける
      （1つのマスだと、工程の欄の地が承認の列の上まで見えて行と右端がずれる・#637） */
   const ok = okLast(MCOLS);
@@ -4349,7 +4348,7 @@ function stageBadge(it){
   if (it.stage === 'dropped') return {cls:'idea', gl:'○', text:'没'};
   /* ネタの仕分け待ち（#314）＝あなたが動く番なので承認待ちと同じ色（rv） */
   if (it.stage === 'triage')  return {cls:'rv',   gl:'●', text:'仕分け待ち'};
-  /* 予約済みは「投稿済」と分ける（オーナー要望 2026-09-30）。言葉は工程の印のツールチップと同じ。
+  /* 予約済みは「投稿済」と分ける（オーナー要望）。言葉は工程の印のツールチップと同じ。
      予定時刻は投稿日の列（stDateHTML。スマホのカードは札の左）とツールチップに出す */
   /* 予約の時刻を過ぎたら「公開済み（記録の更新待ち）」（resvPast）。表の状態の列は幅が足りないので「公開済み」まで、
      スマホのカードは全部（long）。色は予約済みと同じ */
@@ -4533,7 +4532,7 @@ const MARK_LEGEND = `<div class="legend2">
 
 /* ゲートが「いまの版で」承認済みか。approved_*_at は初回承認の時刻で版を知らない（差し戻しで
    版が進んでも残る）ので、そのゲートが承認待ち（*_state === 'review'）なら承認済みとは見せない
-   （BZ0051 で第2版の承認が第4版の「✓完成」に見えていた・2026-09-18） */
+   （BZ0051 で第2版の承認が第4版の「✓完成」に見えていた） */
 function gateApproved(it, g){
   return !!it[GATE_COLUMN_FIELD[g]] && it[g + '_state'] !== 'review';
 }
@@ -4721,7 +4720,7 @@ function detailHTML(it){
      02・03 の台本の承認などの見え方は変えない */
   const flow = it._work ? `<div class="sv-worknow dnow" data-sv-worknow>${nowLineHTML(it)}</div>` : '';
 
-  /* 履歴は2つに分ける（オーナー決定 2026-09-06）。「あなたの指摘」は全文のまま右列に出し、
+  /* 履歴は2つに分ける（オーナー決定）。「あなたの指摘」は全文のまま右列に出し、
      「AI の記録」は1件1行に畳んで下の畳みへ回す。時系列には混ぜない。
      ゲートが1つしか無い動画（02の完成だけ）では毎行に同じ札を出しても読み分けに使えない */
   const showGate = new Set(evs.map(e => e.gate)).size > 1;
@@ -4788,7 +4787,7 @@ function detailHTML(it){
       <button class="dback" data-close="1" aria-label="一覧に戻る">← 一覧<span class="dback-l">に戻る</span></button>
       <span class="seqn">${esc(it.seq)}</span>
       <span class="ttl">${esc(it.title)}</span>
-      <!-- 番組の札は出さない（番号の頭2文字で分かる・オーナー決定 2026-09-29）。この画面には工程の並びが
+      <!-- 番組の札は出さない（番号の頭2文字で分かる・オーナー決定）。この画面には工程の並びが
            無いので、工程と状態の札は残す -->
       <span class="tags">
         <span class="gbadge"><i style="background:${it._work ? 'var(--fix)' : it._rv ? 'var(--s1)'
@@ -5418,8 +5417,8 @@ const mountAllAssets = root =>
      ・レビュー節に出ているゲートはここへ出さない（同じ素材を2か所に並べない）
      ・その工程に到達した動画にだけ出す（到達前は Storage にまだ何も無い）
      ・中身は開いたときに初めて読みに行く（畳んだままなら通信しない）
-   絵コンテの畳みは 2026-09-21 に外した（#525）——PDF を組む工程をやめ、開始フレームは
-   完成のレビュー画面で見るようにしたので、開いても中身が無い。 */
+   絵コンテの畳みは置かない（#525）——PDF を組む工程が無く、開始フレームは
+   完成のレビュー画面で見るので、開いても中身が無い。 */
 const MATERIAL_FOLDS = [
   { gate:'final',      label:'完成した動画を見る' }
 ];
@@ -5465,7 +5464,7 @@ function armLazyAssets(root){
 
 /* 定型の言葉。2組をここ1か所に置く（画面の組み立てに直接書かない）。
    入口は「動画をタップして場所を指す」（picture）と「いまの画面にコメント」（whole）の2つだけ
-   （オーナー決定 2026-09-20）。**音・ナレーションの入口は廃止**——絵の話も音の話も同じ
+   （オーナー決定）。**音・ナレーションの入口は廃止**——絵の話も音の話も同じ
    「いまの画面」に書けるよう、whole の言葉に音のぶんを混ぜてある。 */
 const NOTE_TAGS = {
   picture: ['文字が読めない', '動きが不自然', 'ナレーションとずれ', 'つなぎ目が変', '絵が弱い'],
@@ -5552,7 +5551,7 @@ function armVideoBar(el){
   play.addEventListener('click', toggle);
   v.addEventListener('play', syncPlay);
   v.addEventListener('pause', syncPlay);
-  /* **動画の上を押したら再生／一時停止**（ふつうの動画と同じ・オーナー指示 2026-09-20）。
+  /* **動画の上を押したら再生／一時停止**（ふつうの動画と同じ・オーナー指示）。
      場所を指す指摘は入口のボタンから始める——受け手（armTap）が true を返した回だけ、
      その押しは「ピンを置く」ものとして使われ、再生には回さない */
   const hitEl = $$('[data-hit]');
@@ -5809,7 +5808,7 @@ function tapPanelHTML(it, shown){
       <div class="at"><span class="sv-mmemolbl">全体へのメモ</span><span class="t" data-stime>0:00</span>
         <span class="sc" data-sscene></span>
         <span class="gbadge fix" data-smode hidden>直しています</span></div>
-      <!-- スマホでだけ出るフレーム送りの行（オーナー指摘 2026-09-22）。広い画面は動画の下の
+      <!-- スマホでだけ出るフレーム送りの行（オーナー指摘）。広い画面は動画の下の
            操作バーに同じものがあるので CSS で隠す -->
       <div class="atnudge">
         <button class="btn sm" type="button" data-tapact="nudge-back" aria-label="0.5秒もどる">−0.5s</button>
@@ -5822,7 +5821,7 @@ function tapPanelHTML(it, shown){
         <button class="btn" type="button" data-tapact="memo-toggle" aria-pressed="false">全体へのメモとして書く</button>
         <span class="hint" data-smhint></span></div>
       <div class="tagrow" data-tagrow></div>
-      <!-- 複数行で書ける（Enter で改行・オーナー要望 2026-09-23）。説明の薄字は出さない -->
+      <!-- 複数行で書ける（Enter で改行・オーナー要望）。説明の薄字は出さない -->
       <textarea class="noteinput" data-snote rows="2" maxlength="${NOTE_LIM.note}" aria-label="指摘の一言"></textarea>
       <div class="sacts">
         <button class="btn primary" type="button" data-tapact="add">この指摘を足す</button>
@@ -5855,7 +5854,7 @@ function tapSplit(v){
   for (const name of NOTE_TAGS_ALL) {
     if (rest.indexOf(name) >= 0) { tags.push(name); rest = rest.replace(name, ''); }
   }
-  /* 改行は残す（複数行で書けるようにした・2026-09-23）。詰めるのは横の空白の連続だけ */
+  /* 改行は残す（複数行で書けるようにした）。詰めるのは横の空白の連続だけ */
   rest = rest.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').replace(/^[\s、。・,.]+/, '').trim();
   return { tag: tags.length ? tags.join('・') : null, note: rest };
 }
@@ -6017,7 +6016,7 @@ function tapOpenSheet(){
   }
   else if (!tapMobile()) input.focus({ preventScroll: true });
   /* スマホはシートが下からせり上がるので、動画が画面の外だと何を見て書いているのか分からない。
-     シートを開いたら動画を画面の中へ入れる（オーナー指摘 2026-09-22） */
+     シートを開いたら動画を画面の中へ入れる（オーナー指摘） */
   /* 1画面の作り（#552）では動画は常に見えているので送らない（画面ごとずれる） */
   else if (!svMobileOn()) { try { tap.ctl.box.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {} }
   svPaintBar();
@@ -6045,7 +6044,7 @@ function tapCloseSheet(){
   svPaintBar();
 }
 
-/* シートの中の −0.5s／+0.5s（スマホの完成レビュー・オーナー指摘 2026-09-22）。
+/* シートの中の −0.5s／+0.5s（スマホの完成レビュー・オーナー指摘）。
    動画をその分だけ動かし、**足す指摘の時刻もいっしょに動かす**（表示は 0:47.0 の形）。
    直している最中（keep あり）は元の指摘の時刻を保つので、動くのは動画だけ */
 function tapNudge(d){
@@ -6064,7 +6063,7 @@ function tapNudge(d){
     tapWhere(normKind(tap.draft.kind), tap.draft.t, sc ? sc.n : null, sc ? sc.title : null);
 }
 
-/* ── 場所を指すモード（オーナー指示 2026-09-20）──────────────────────────
+/* ── 場所を指すモード（オーナー指示）──────────────────────────
    ふだん動画の上を押すと再生／一時停止なので、場所つきの指摘は**入口のボタンから始める**。
    押すと動画を止めてこのモードに入り、動画の上に帯を出す（ふだんは案内文を出さない）。
    次のタップ1回でその場所にピンが立ち、入力シートが開く。「足す」「やめる」「Esc」で降りる。 */
@@ -6469,7 +6468,7 @@ async function submitTapChanges(box, key){
 
 /* 動画と同じフォルダに置かれるシーンの素材表。内部ファイルなので素材の一覧には出さない */
 const RE_MATERIALS = /^materials_v(\d+)\.json$/i;
-/* 工程の並び（#570・オーナー決定 2026-09-29）。**全番組で同じ13個**を同じ順に並べ、使わない工程は
+/* 工程の並び（#570・オーナー決定）。**全番組で同じ13個**を同じ順に並べ、使わない工程は
    一覧の印で斜線にする（並びは崩さない）。制作フロー図（dashboard/tools/build_flow.py）も承認ポイントの名前をここから読む。
      name    … 工程の名前（用語集にある言葉は正式名で書く）
      gate    … 承認ポイント（◆ を付ける）
@@ -6791,7 +6790,7 @@ function svStepState(it, i, cur, skipNote){
       return { cls:'ok', st:`✓ 承認済み ${fmtMD(at)} ${fmtTime(at)}` };
     }
     /* 承認ポイントを承認の記録なしで通り過ぎた（その承認ポイントへは出していない）。済みの色に
-       すると承認済みに見えるので、色を付けずに言葉で書く（オーナー指摘 2026-09-29 16:27） */
+       すると承認済みに見えるので、色を付けずに言葉で書く（オーナー指摘） */
     if (s.gate) return { cls:'nogate', st:'承認の記録なし' };
     return { cls:'done', st:'' };
   }
@@ -6814,7 +6813,7 @@ function svPaintMethod(){
   svPaintBar();
 }
 
-/* ── ③ 前回までの私の指摘（2026-09-21 に作り替え・オーナー指摘）────────────────
+/* ── ③ 前回までの私の指摘（オーナー指摘）────────────────
    **オーナー自身の指摘だけ**を新しい順にそのまま出す（AI の記録・工程の履歴・フックと、
    詳細への切り替えはこの画面から外した）。絞り込みは「あなたの指摘」（youHTML）と同じで、
    人の author（AI の印が付いていないもの）の修正依頼とコメント。
@@ -6893,8 +6892,7 @@ function sceneDetailHTML(it, plan){
       <span class="sv-watchbar" data-sv-watchbar></span><b data-sv-watchpct>0%</b></span>
     <span class="bf next" data-sv-next></span></div>`;
   const decide = it._rv === gate
-    /* 「変更」の欄はこの画面には出さない（内部の言葉が並んで意味が取れない・オーナー指摘
-       2026-09-21）。`changeLines` と旧画面（台本・絵コンテ）はそのまま */
+    /* 「変更」の欄はこの画面には出さない（内部の言葉が並んで意味が取れない・オーナー指摘）。`changeLines` と旧画面（台本・絵コンテ）はそのまま */
     ? decideHTML(it, gate, [], barFacts, true, true)   /* タップ入力の欄は最初から出す（#637） */
     : `<div class="decide">${it._rc
         ? (rcAiOnly(it)
@@ -6909,7 +6907,7 @@ function sceneDetailHTML(it, plan){
       <span class="seqn">${esc(it.seq)}</span>
       <span class="ttl">${esc(it.title)}</span>
       ${ver ? `<span class="sv-mver sv-m-only">${esc(ver)}</span>` : ''}
-      <!-- 右上は「ほかの場所に出ていないもの」だけ（オーナー決定 2026-09-29）: 版と、付いたときだけの札
+      <!-- 右上は「ほかの場所に出ていないもの」だけ（オーナー決定）: 版と、付いたときだけの札
            （何の作り直しか・未対応の指摘の数）。番組は番号の頭2文字、状態（承認待ち・修正中）は
            ②の枠と下端のバー、配信時刻は最下部に出ているので、ここには出さない -->
       <span class="tags">
@@ -6922,9 +6920,9 @@ function sceneDetailHTML(it, plan){
     <div class="sv-wrap">
       <section class="sv-sec sa" aria-label="素材・作ったもの">
         <!-- 案のタブ（#523）は①の見出し行の中（見出しの文字の右・facts の左）に置く（オーナー決定
-             2026-09-29 案A）。見出し行はもともと 32px あるので、タブを入れても行は増えず動画も縮まない。
-             以前は完成の動画の見出し行の右端に 18px で置いていた——動画の上に1段足すと、隣の参照動画と
-             高さがずれ、動画の下端が再生の操作に重なったため（RW0004 版3 で実測 2026-09-27）。
+             案A）。見出し行はもともと 32px あるので、タブを入れても行は増えず動画も縮まない。
+             完成の動画の見出し行の右端や動画の上に1段足す形にすると、隣の参照動画と
+             高さがずれ、動画の下端が再生の操作に重なる（RW0004 版3 で実測）。
              案が無い動画では hidden のまま＝見出し行は今までと同じ見た目。スマホは svMobileLayout が上の帯へ移す -->
         <div class="sv-sechd"><span class="sttl">素材・作ったもの</span>
           <div class="sv-vtabs" data-sv-vtabs hidden role="tablist" aria-label="案"></div>
@@ -7041,7 +7039,7 @@ function svSetPop(on){
   if (on) st.dataset.pop = '1'; else delete st.dataset.pop;
   svPaintScript();
 }
-/* ── スマホの1画面（#552・オーナー確定 2026-09-25）─────────────────────────────
+/* ── スマホの1画面（#552・オーナー確定）─────────────────────────────
    並べ方は CSS（@media max-width:899px の .sview）。ここは CSS だけでは置けない4つを
    スマホのときだけ移し、広い画面に戻ったら元の場所へ返す（行き来しても何度呼んでも同じ結果）:
      参照動画の枠 → 素材のタブの中 ／ 案のタブ → 上の帯 ／ 前回までの指摘 → 指摘のタブの中
@@ -7089,7 +7087,7 @@ function svMobileLayout(){
     svFitVidW(root);
   } else {
     if (ref && screens && ref.parentNode !== screens) screens.appendChild(ref);
-    /* 案のタブの広い画面での置き場所は①の見出し行の中・facts の左（オーナー決定 2026-09-29 案A） */
+    /* 案のタブの広い画面での置き場所は①の見出し行の中・facts の左（オーナー決定 案A） */
     if (vt && shd && vt.parentNode !== shd) shd.insertBefore(vt, shd.querySelector(':scope > .facts'));
     if (sc && wrap && sc.parentNode !== wrap) wrap.appendChild(sc);
     /* 広い画面では②の状態の1行のすぐ下（③を広げる CSS は「状態の1行だけ」かどうかで決まる） */
@@ -7193,7 +7191,7 @@ function svNoMat(sub){
   return e;
 }
 /* 台本の1行 = 開始フレームのサムネ ｜ シーン番号・時刻・指摘の数 ｜ ナレーション。
-   シーンの帯（再生の操作の下のサムネの列）は廃止し、サムネはここに付ける（オーナー指摘 2026-09-21）。 */
+   シーンの帯（再生の操作の下のサムネの列）は廃止し、サムネはここに付ける（オーナー指摘）。 */
 function svBuildScript(){
   const box = sv.q('[data-sv-scriptlist]');
   box.textContent = '';
@@ -7308,7 +7306,7 @@ function svRefNo(n){
   return '(' + n + ')';
 }
 const svRefLabel = lb => String(lb || '').replace(/^[①-⑳㉑-㉟㊱-㊿]\s*/, '').trim();
-/* 参照画像の番号は**動画全体の通し番号**（オーナー要望 2026-09-26）。シーンの中の並び順で
+/* 参照画像の番号は**動画全体の通し番号**（オーナー要望）。シーンの中の並び順で
    振っていた頃は「S14 の参照②」とシーンまで書かないと特定できなかった。シーン順・並び順に
    1から振り、**同じ画像はどのシーンに出ても同じ番号**（目録は同じ画像を同じ img で指す）。
    目録ごとに1回だけ作って覚える */
@@ -7427,7 +7425,7 @@ function svPaintNow(){
        「参照①」＋label。画面は言葉を足さない——label は提出側が具体的な名前で書く（例
        「アクアラインを横から見た断面図（形の見本）」）。オーナーが「S14 の参照②」と番号で
        指摘できるように、**番号は画面が並び順で振る**（目録の形は変えない・全番組共通・#549
-       オーナー指示 2026-09-25）。label の頭に提出側の番号（旧「①閉じた列」）が付いていたら外す */
+       オーナー指示）。label の頭に提出側の番号（旧「①閉じた列」）が付いていたら外す */
     const nos = svRefNos(sv.mat);
     refs.forEach((r, i) => {
       const no = svRefNo(nos.get(r.img || r.label || '') || (i + 1));
@@ -7480,7 +7478,7 @@ function svStepLbox(d){
    参照のほうが短ければ末尾で止めて知らせ、長ければシーンが変わった時点で次の参照へ替わる。
    速度は変えない。 */
 /* 参照動画の候補。そのシーンに参照動画が無く、主画面が本物の映像（借りていない）で、目録に
-   参照動画（全フレーム）（ref_video_full）があるなら、全フレームの動画を候補にする（オーナー指摘 2026-09-23:
+   参照動画（全フレーム）（ref_video_full）があるなら、全フレームの動画を候補にする（オーナー指摘:
    H3 の映像が入った途端に右のモックが消えた）。全フレームの動画は主画面と同じ時間軸なので `full:true` を付け、
    同期の起点をシーンの頭ではなく 0 秒にする */
 const svRefList = () => {
@@ -7494,7 +7492,7 @@ function svPaintRefFace(){
   const vids = svRefList();
   let msg = null, sub = '';
   if (!vids.length) {
-    /* 列は常に出す（オーナー指摘 2026-09-21）。動画ぜんたいに1本も無いのか、
+    /* 列は常に出す（オーナー指摘）。動画ぜんたいに1本も無いのか、
        このシーンに無いだけなのかで言葉を分ける。
        借りている状態では、この枠は**本来の動画の位置**なので言葉もそちらに合わせる */
     msg = '素材なし';
@@ -7995,7 +7993,7 @@ function afterVideo(v, fn){
 }
 
 /* 主画面に出せる動画（{承認ポイント}_v{NN}.mp4）がまだ無く、目録の「参照動画（全フレーム）」を
-   主画面に借りている状態か（オーナー決定 2026-09-21）。借りているときは**見た目の位置だけ**
+   主画面に借りている状態か（オーナー決定）。借りているときは**見た目の位置だけ**
    入れ替えて、借りた全フレームの動画を「参照動画」の列に、左（本来の動画の位置）を「素材なし」の面にする。
    ⚠️ ショットごとの参照動画がある回は入れ替えない——右の列はそちらが使うので潰さない。
    `hasRefVideo` が決まるのは尺の照合のあと（apply）なので、決まるまでは今までどおりの並び。 */
@@ -8010,13 +8008,13 @@ function svPaintMainHead(){
   if (!sv) return;
   const label = sv.mainLabel || svMainTitle(sv.it, sv.gate);
   const borrow = svBorrowed();
-  /* 借りているときの左の見出し。「絵コンテの動画」は意味が取れない（オーナー指摘 2026-09-22）——
+  /* 借りているときの左の見出し。「絵コンテの動画」は意味が取れない（オーナー指摘）——
      ここに入るのは、これから作る映像なので「映像」と書く */
   const emptyTtl = '映像';
   const stage = sv.q('[data-sv-stage]');
   if (stage) { if (borrow) stage.dataset.borrow = '1'; else delete stage.dataset.borrow; }
   /* 左の見出し: 借りているときは「参照動画」、主画面の動画がありBlender仮組み（全フレーム）を右に出す回は「映像」
-     （「絵コンテの動画」は意味が取れない・オーナー指摘 2026-09-22/23）。02・03 の完成は今までどおり */
+     （「絵コンテの動画」は意味が取れない・オーナー指摘）。02・03 の完成は今までどおり */
   const mainTtl = borrow ? '参照動画' : ((sv.mat && sv.mat.ref_video_full) ? emptyTtl : label);
   /* 字が変わるときだけ書き換える（組み立てと長さが届いたときに同じ字を書き直さない・#637） */
   setText(sv.q('[data-sv-mainttl]'), mainTtl);
@@ -8371,7 +8369,7 @@ async function armScene(node, files, pre){
     else if (a === 'pop-close')  { svSetPop(false); }     /* 1400px 以上の詳細の ✕（#1427） */
     /* 台本の畳みはスマホだけ（広い画面では見出しを押しても何も起きない）。
        ⚠️ details を使わないのは、ブラウザが中身を1枚の箱で包むため——欄の高さが決まっていても
-       中の一覧が縮まず、台本が①の下端をはみ出す（2026-09-21 実測） */
+       中の一覧が縮まず、台本が①の下端をはみ出す（実測） */
     else if (a === 'script-toggle' && window.innerWidth < 900) {
       q('.sv-script').classList.toggle('closed');
     }
@@ -8393,7 +8391,7 @@ function svTapOff(root){
   if (p) p.hidden = true;
 }
 
-/* ── いま決めること（オーナー決定 2026-09-06 → 並びは 2026-09-20 に見本へ・#509 段1）──────
+/* ── いま決めること（オーナー決定・#509 段1）──────
    右列の先頭に置く枠。中身は**ゲート名＋版**／**この版で変えたこと**／メモ／
    **修正を依頼するときの入力欄（自由記述）**。「承認をお願いします」「決めてほしいこと」
    「そのほか」といった定型文と、動画の番号・素材の置き場は画面に出さない。
@@ -8401,11 +8399,11 @@ function svTapOff(root){
    誤タップ防止（#205）:
      ・没は2段階（バーのボタンで理由の欄が開き、理由が空のあいだ確定ボタンを押せない）
      ・修正の依頼は「入力欄に書いてから押す」（空のまま押しても送らず、入力欄に案内を出す）
-     ・承認は1タップだが、押したあと数秒は「取り消す」で無かったことにできる（2026-08-20）
+     ・承認は1タップだが、押したあと数秒は「取り消す」で無かったことにできる
    ⚠️ この4つ（.abox / .wbox / .rjbox / .dbar）は必ず同じ .decide の直下に置く——
    バーのボタンは自分の外にある囲みを .decide 経由で引き当てる（actBox / writeGroup）。 */
 /* ── 下端のボタンの言葉（#523）──────────────────────────────────────
-   **呼ぶ DB の関数は本編とまったく同じ**。言葉も本編と同じにそろえた（オーナー決定 2026-09-29
+   **呼ぶ DB の関数は本編とまったく同じ**。言葉も本編と同じにそろえた（オーナー決定
    「承認、とかの同じ文言にしてほしい」。#523 で検証用だけ「この方向でOK／指摘を送る／この案はやめる」に
    替えていたのをやめた）。検証用の動画で変わるのは、進む先の注意書きを出さないことだけ。 */
 const isPilotItem = it => !!(it && isPilotSeq(it.seq));
@@ -8768,7 +8766,7 @@ async function submitComment(box, key){
 }
 
 /* 承認の2段階目（確定）。パネルが開いていないときは絶対に実行しない＝1タップでは通らない */
-/* ── 1クリック承認（オーナー要望 2026-08-20）─────────────────────────────
+/* ── 1クリック承認（オーナー要望）─────────────────────────────
    一覧の行からも詳細のボタンからも、押した1回で承認まで通す。押した瞬間は DB へ
    書かず、数秒の猶予をおいてから書く（その間は「取り消す」で無かったことにできる）。
    詳細でメモを開いて書いてあれば、その内容を添えて承認する。 */
@@ -8793,7 +8791,7 @@ async function approveNow(vid, gate, note, rev, publishAt, info){
     if (error.code === 'P0003') await refreshAfterWrite(false);
     return;
   }
-  /* ⚠️ ここで画面を作り直さない（オーナー指定 2026-08-20）。一覧を描き直すと
+  /* ⚠️ ここで画面を作り直さない（オーナー指定）。一覧を描き直すと
      スクロールが先頭へ戻ってしまい、続けて承認するときに毎回探し直しになるため。
      代わりに「押した行のボタンだけ」を承認済みに変え、手元の記憶（キャッシュ）を捨てて
      次にこの画面を描き直すとき（タブ切替・再読み込み・⟳）に新しい状態で出るようにする。 */
@@ -8804,7 +8802,7 @@ async function approveNow(vid, gate, note, rev, publishAt, info){
      ⚠️ **記録されなかった承認では減らさない**（#572）。同じ版に人の承認が既にあると、DB の関数は何も
      記録せず already_approved を返す。そのあと同じ版で出し直された動画は、一覧のビューでは
      承認待ちのまま残る——手元だけ減らすと DB と食い違い、タブの数字が消えた（KR0001・KR0002 で
-     「身近なからくり」の数字が消えた・2026-09-30 09:02）。どちらの場合も、最後に全番組の件数を
+     「身近なからくり」の数字が消えた）。どちらの場合も、最後に全番組の件数を
      DB から取り直してタブを描き直す（一覧は触らない＝スクロールは戻らない） */
   const p = store.pending[state.ch];
   if (!(data && data.already_approved) && p && Array.isArray(p.rv)) {
@@ -9176,7 +9174,7 @@ async function submitReject(box, key){
   toast(already ? 'この動画はすでに没になっています' : '没にしました');
 }
 
-/* ── コメント本文の1行要約（#266 / 2026-09-06）─────────────────────────
+/* ── コメント本文の1行要約（#266 ）─────────────────────────
    AI の記録は1件1行に畳むので、Markdown の記法（見出し・箇条書き・太字）を落として
    地の文にしてから切り詰める。人の指摘は畳まず全文をそのまま出す。 */
 function cmtPreview(src, n){
@@ -9189,7 +9187,7 @@ function cmtPreview(src, n){
   return t.length > n ? t.slice(0, n) + '…' : t;
 }
 
-/* ── AI の記録の1行要約（オーナー要望 2026-09-02）────────────────────────────
+/* ── AI の記録の1行要約（オーナー要望）────────────────────────────
    AI の指摘は JSON で保存されている。**そのまま画面に出さない**——出どころ・直す内容の
    先頭1件・件数・対応結果だけを1行にたたむ。読めない JSON はその旨だけ出す。 */
 const AI_UNREADABLE = '（内容を読めない記録）';
@@ -9240,7 +9238,7 @@ function aiSummaryLine(e, it){
 }
 
 /* 提出コメントの「## 前回からの変更」節だけを抜く（見出しから次の見出しの手前まで）。
-   何が変わった版なのかは畳みの外に出す＝開かなくても読める（オーナー要望 2026-09-02） */
+   何が変わった版なのかは畳みの外に出す＝開かなくても読める（オーナー要望） */
 const secRe = name => new RegExp(`(?:^|\\n)[ \\t]*#{1,6}[ \\t]*${name}[ \\t]*\\n([\\s\\S]*?)(?=\\n[ \\t]*#{1,6}[ \\t]|$)`);
 const CHG_RE = secRe('前回からの変更');
 const MEAS_RE = secRe('基準未満のまま提出したもの');
@@ -9253,7 +9251,7 @@ const changeNote = body => bodySection(body, CHG_RE);
    ためのものなので、承認の枠の中で注意書きとして先に読ませる（畳みの中に埋めない） */
 const measureNote = body => bodySection(body, MEAS_RE).split('\n')
   .map(s => s.replace(/^\s*[-*・]\s*/, '').trim()).filter(Boolean);
-/* ── この版で変えたこと（オーナー決定 2026-09-06）──────────────────────────
+/* ── この版で変えたこと（オーナー決定）──────────────────────────
    承認の画面でオーナーが読むのは「前の版から何が変わったか」だけ。指摘の引用も
    「→ 対応:」の前置きも要らない、と決まった（引用は下の「あなたの指摘」に全文があるため）。
 
@@ -9324,7 +9322,7 @@ function changeLines(events){
   return lines.length ? lines : chgFromBody(sub.body);
 }
 
-/* ── 履歴は2節に分ける（オーナー決定 2026-09-06）──────────────────────────
+/* ── 履歴は2節に分ける（オーナー決定）──────────────────────────
    「あなたの指摘」は人が書いたものだけを新しい順・全文のまま（要約しない・対応結果の箱は
    出さない）。「AI の記録」は審査・機械測定・提出をまとめて1件1行に畳む（既定は閉じる）。
    時系列に混ぜない——混ぜると自分の指摘が AI の記録に埋もれて「消えた」ように見えていた。 */
@@ -9383,9 +9381,9 @@ function aiLogHTML(evs, it){
     </details>`;
 }
 /* ⚠️ この2つは detailHTML が別々に置く——「あなたの指摘」は右列にそのまま、
-   「AI の記録」は下の畳んだ項目へ。まとめて返す historyHTML は 2026-09-20 に廃止（#509 段1）。 */
+   「AI の記録」は下の畳んだ項目へ。まとめて返す関数は持たない（#509 段1）。 */
 
-/* ══ ③ 分析（チャンネル横断・2026-09-04）══════════════════════════
+/* ══ ③ 分析（チャンネル横断）══════════════════════════
    見えるチャンネルを1つの画面に重ねて出す。1チャンネルしか見えない人も同じコードが動く
    （色が1色になるだけ）。
    ・色＝チャンネル（chMeta(ch).accent）。最上部の凡例チップで表示のオン／オフ
@@ -9405,14 +9403,14 @@ const ANA_DEF = {
 };
 /* 目安（到達の向き付き）。dir:1 = 大きいほど良い / dir:-1 = 小さいほど良い。
    ⚠️ 画面のどこにも 70 や 1.8 を直接書かない。線・色分け・赤字・説明文はすべてここを読む
-   （2026-09-06 に散らばっていたリテラルを集約した）。 */
+   （値はここに集める）。 */
 const ANA_GOAL = {
   rate: {thr:70,   step:10,  dir:1,  unit:'%', fmt:v => String(Math.round(v))},
   hook: {thr:1.75, step:0.25, dir:1, unit:'',  fmt:v => v.toFixed(2)},
   end:  {thr:0.75, step:0.1, dir:1,  unit:'',  fmt:v => v.toFixed(2)}
 };
 /* 目安の線を持たない指標の、表示だけの設定（区分の幅と書式）。
-   序盤の離脱は 2026-09-22（#505）に単独の目安 25% を廃止した——63本で通過31.7%・的中60%で、
+   序盤の離脱は単独の目安を持たない（#505）——単独の目安 25% では63本で通過31.7%・的中60%で、
    勝ち群18本のうち6本を「フックが弱い」と誤診断していた。良し悪しは
    「序盤29%以下 かつ 中盤減衰38%以下」の組み合わせで見る（正本 scene-taxonomy.md §2-1b）。
    ここに残すのは分布のグラフを描くための幅と書式だけで、線も到達／未達の色分けも出さない。 */
@@ -9475,7 +9473,7 @@ function tickTextW(s, px){
   } catch (_) { tickTextW.ctx = null; }
   return [...String(s)].reduce((w, c) => w + px * (c.charCodeAt(0) > 0xff ? 1 : /\d/.test(c) ? 0.6 : 0.4), 0);
 }
-/* 横軸（日付）: 毎日に目盛りを打つ（オーナー指定 2026-09-03）。ラベルは MM/DD(曜)。
+/* 横軸（日付）: 毎日に目盛りを打つ（オーナー指定）。ラベルは MM/DD(曜)。
    1日あたりの幅で出し方を変える: 広ければ横書きで毎日 → 狭ければ斜め45°で毎日 →
    さらに狭ければ斜めのまま間引く（目盛りの線は間引かない）。右端の日は必ずラベルを付ける。
    返り値 { ticks:[{v,lb}], rot:斜めか, pb:横軸に要する下余白 } */
@@ -9484,7 +9482,7 @@ function dateTicks(rows, plotW){
   if (!n) return { ticks:[], rot:false, pb:26 };
   const d0 = rows[0].d, d1 = rows[n - 1].d, span = Math.max(1, d1 - d0);
   const per = plotW / span;                 /* 1日あたりの幅(px) */
-  /* 日付の文字は**横書きのまま間引く**（オーナー指摘 2026-09-29「細かすぎる・5日単位に」）。
+  /* 日付の文字は**横書きのまま間引く**（オーナー指摘「細かすぎる・5日単位に」）。
      毎日が並ばない幅なら 5日 → 10日 → 15日 → 30日 → 60日 → 90日 → 180日 → 365日おき。数えるのは右端（いちばん新しい日）から。
      間隔は日付の文字の幅を測って決める（隣の日付と DATE_TICK_GAP 以上あける。66px より詰めない）。
      30日おきで止めると、スマホの幅で期間が長いときに日付どうしが重なるため。目盛りの線は毎日のまま */
@@ -9573,11 +9571,11 @@ function lineChart(series, W, opt){
   let d0 = Math.min(...ds), d1 = Math.max(...ds);
   if (d1 === d0) { d0 -= 1; d1 += 1; }
   const xt = spanTicks(d0, d1, plotW);
-  /* 縦は大きめに取り、目盛りは8本ほど。横に伸びるだけで傾きが読めない、との指摘（2026-09-04） */
+  /* 縦は大きめに取り、目盛りは8本ほど。横に伸びるだけで傾きが読めない、との指摘 */
   const PB = xt.pb, H = (opt.H || (W < 420 ? 260 : 380)) + (PB - 26);
   const plotH = Math.max(20, H - PT - PB);
   /* 縦軸の範囲は「軸を合わせる」チャンネル（opt.axis）の値だけから決める。他のチャンネルは
-     薄い線で残し、範囲の外に出た部分は描画領域で切る（案②・2026-09-04）。軸の指定が無ければ全体 */
+     薄い線で残し、範囲の外に出た部分は描画領域で切る（案②）。軸の指定が無ければ全体 */
   const main = series.find(x => x.ch === opt.axis) || null;
   const vs = (main ? main.rows : all).map(r => r.v);
   const yr = niceTicks(opt.yFrom0 ? 0 : Math.min(...vs), Math.max(...vs), W < 420 ? 6 : 8);
@@ -9639,7 +9637,7 @@ function playsChart(series, W, opt){
   const hBot = Math.max(20, H - PT - GAP - PB - hTop);
   const yTop = PT, yBot = PT + hTop + GAP;
   const X = d => PL + plotW * ((d - d0) / (d1 - d0));
-  /* 縦軸の範囲は「軸を合わせる」チャンネル（opt.axis）の値だけから決める（案②・2026-09-04） */
+  /* 縦軸の範囲は「軸を合わせる」チャンネル（opt.axis）の値だけから決める（案②） */
   const main = series.find(x => x.ch === opt.axis) || null;
   const base = main ? main.rows : all;
   const incs = base.map(r => r.inc).filter(v => v != null);
@@ -9938,7 +9936,7 @@ async function renderAnalytics(){
 
   /* ── ① チャンネルの現在地 ───────────────────────────────────
      行＝指標（大分類ごとに見出し行）・列＝チャンネル の縦持ち。横持ちは列が15本になり
-     PC でも 1,955px で収まらなかった（2026-09-04）。各行に「いつからいつまで」「目安」を明記する。
+     PC でも 1,955px で収まらなかった。各行に「いつからいつまで」「目安」を明記する。
      期間の札は**表示中のチャンネルすべて**の記録から出す（#538）。開設日が違えば記録の
      長さも違うので、先頭の1本だけを見ると、他のチャンネルの増え方を別の期間のものとして
      読んでしまう。 */
@@ -10003,7 +10001,7 @@ async function renderAnalytics(){
       { lb:'広告収益', note:'登録者 1,000 と再生 1,000万・低い方', cell: st => mnOf(st, MONETIZE[1]) }
     ]}
   ];
-  /* 大分類ごとに小さな表を1つずつ作り、横に並べる（幅いっぱいに使って縦を短く・2026-09-04）。
+  /* 大分類ごとに小さな表を1つずつ作り、横に並べる（幅いっぱいに使って縦を短く）。
      各表: 見出し帯＝大分類名＋チャンネルの色チップ、行＝指標（名前の下に期間・目安）、列＝チャンネル */
   const nowBlocks = sers.length ? GROUPS.map(g => `<div class="nowblk"><table>
       <thead><tr><th class="gn">${g.nm.split('|').map(esc).join('<wbr>')}</th>${sers.map(s => `<th class="num" title="${esc(s.name)}"><span class="chcell">${chSw(s.color)}${s.icon}</span></th>`).join('')}</tr></thead>
@@ -10021,9 +10019,9 @@ async function renderAnalytics(){
   const ranges = [{v:30, lb:'30日'}, {v:90, lb:'90日'}, {v:0, lb:'全部'}];
   const rangeBtns = `<div class="chips rangebtns">${ranges.map(r =>
     `<button class="rgbtn" data-anarange="${r.v}" aria-pressed="${state.anaRange === r.v}">${r.lb}</button>`).join('')}</div>`;
-  /* 縦軸を合わせるチャンネル（案②・オーナー決定 2026-09-04）。表示中のチャンネルから選ぶ。
+  /* 縦軸を合わせるチャンネル（案②・オーナー決定）。表示中のチャンネルから選ぶ。
      選んだものが消えていたら先頭に戻す。1チャンネルならボタンは出さない */
-  /* 縦軸は**表示中でいちばん数が大きいチャンネル**に自動で合わせる（オーナー決定 2026-09-29 16:58）。
+  /* 縦軸は**表示中でいちばん数が大きいチャンネル**に自動で合わせる（オーナー決定）。
      合わせる先を選ぶチップの段はなくした——小さいチャンネルを見たいときは、大きいチャンネルを
      凡例のチップで消せば縦軸がそちらに合う。グラフごとに決める（登録者と再生数で大小が違いうる） */
   const axisOf = (list, key) => {
@@ -10765,9 +10763,9 @@ function toast(msg){
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3000);
 }
 
-/* ── 1クリック承認（オーナー要望 2026-08-20 → 2026-09-23 に猶予を廃止）──────────────
+/* ── 1クリック承認（オーナー要望・猶予なし）──────────────
    承認は押した瞬間に DB へ書く。以前は6秒の「取り消す」猶予を置いていたが、その間に
-   再読み込みすると承認が記録されない（BZ0052）ので、猶予ごとやめた（オーナー決定 2026-09-23）。
+   再読み込みすると承認が記録されない（BZ0052）ので、猶予ごとやめた（オーナー決定）。
    ページが消える間際に送った分は keepalive で届け、届かなかった分は承認の控え（下）が
    次に開いたとき送り直す */
 window.addEventListener('pagehide', () => { leaving = true; });
@@ -10982,14 +10980,14 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-adlg-close]') || e.target.id === 'adlg') { closeAdlg(); return; }
   /* 素材の番組・使った動画と動画の一覧の絞り込みは窓（上の HF_TABLES の近く） */
 
-  /* チャンネル名そのものを押したときは、開閉ではなく切り替えとして扱う（2026-08-20） */
+  /* チャンネル名そのものを押したときは、開閉ではなく切り替えとして扱う */
   const goBtn = e.target.closest('.chgo[data-ch]');
   if (goBtn) e.preventDefault();
   const chBtn = e.target.closest('.chtab[data-ch], .chitem[data-ch], .chgo[data-ch]');
   if (chBtn) {
     state.ch = chBtn.dataset.ch; state.open = null; closeDetail(); resetStockFilters();
     /* チャンネル共通の画面（分析・素材DB・制作フロー）から押したときは、そのチャンネルの制作へ戻す。
-       戻り道が無いと「押しても何も起きない」ように見える（2026-08-20 オーナー指摘） */
+       戻り道が無いと「押しても何も起きない」ように見える（オーナー指摘） */
     const cur = VIEWS.find(v => v.key === state.view);
     if (cur && cur.chIndep) state.view = 'stock';
     saveUI(); render(); return;
