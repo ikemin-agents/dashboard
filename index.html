@@ -1559,7 +1559,7 @@ tr.dropped td{color:var(--muted)}
 .chchip[aria-pressed="false"]{color:var(--muted); background:transparent; border-style:dashed}
 .chchip[aria-pressed="false"] i{background:transparent}
 .chlegend .hint{font-size:var(--fs-2xs); color:var(--muted); font-weight:400}
-/* チャンネルの現在地: 大分類ごとの小さな表を横に並べる。指標名の下に期間・目安を薄字で、
+/* チャンネルの現在地: 大分類ごとの小さな表を横に並べる。指標名の下に期間を薄字で、
    数字の下の補足（計測済 N 本など）は .sub で1行。幅が足りなければ表が次の段に折り返す。
    表が箱より広くなったとき（数字の桁が増えた・段の幅が狭い）は、右端の番組の列を切らずに箱の中で横に送る
    （overflow-x:auto。hidden だと右端の番組の列が見えなくなる）。大分類の名前は折り返してよい所（GROUPS の nm の |）
@@ -1622,7 +1622,6 @@ tr.dropped td{color:var(--muted)}
 .qgrid>*{min-width:0}
 .qblk h3{font-size:var(--fs-sm); font-weight:680; margin:0 0 3px; display:flex; align-items:baseline;
   gap:8px; flex-wrap:wrap}
-.qblk h3 .goal{font-size:var(--fs-2xs); font-weight:600; color:var(--muted)}
 /* 収益化の到達見込み */
 .meterblk .pace{font-size:var(--fs-2xs); color:var(--ink-2); line-height:1.6; max-width:560px}
 /* 公開後7日の初速（横棒）。SVG ではなく素の要素なので幅にそのまま追従する */
@@ -1636,11 +1635,10 @@ tr.dropped td{color:var(--muted)}
 .hbar .hfill{display:block; height:100%; border-radius:var(--r-pill)}
 .hbar .hval{font-variant-numeric:tabular-nums; font-weight:680; text-align:right; min-width:56px}
 .hbar .hval.dim{font-weight:500; color:var(--muted)}
-/* 動画別の成績: 並べ替えできる列見出しと、目安を割った値 */
+/* 動画別の成績: 並べ替えできる列見出し */
 th.sortable{cursor:pointer; user-select:none}
 th.sortable:hover{color:var(--ink)}
 th.sortable.on{color:var(--ink)}
-td.num.under{color:var(--crit)}
 .perftbl td.wrap, .guide td.wrap{white-space:normal; min-width:220px; line-height:1.5}
 /* 指標の読み方（既定で閉じる） */
 details.guide{padding:var(--sp-4) var(--sp-5)}
@@ -2827,10 +2825,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/11 09:46';
+const BUILT_AT = '11/11 10:02';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '07c4c6b32c1f';
+const BUILT_HASH = '4e3a9e919843';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -3739,14 +3737,6 @@ async function loadAnalytics(ch){
   const pubs = await q(sb.from('v_publications')
     .select('id,seq,effective_title,status,views,likes,avg_view_rate_pct,subscribers_gained,hook_awr,end_awr,early_loss_pct,engaged_rate_pct,published_at,scheduled_at,url,platform,is_primary,channel')
     .eq('channel', ch).eq('platform', 'youtube'));
-  /* ジャンルは v_publications に無いので一覧のビューから引く（目安を当てる範囲の判定だけに
-     使う）。読めなくても分析は出る＝ジャンル無しとして扱う */
-  try {
-    const gm = {};
-    (await q(sb.from('v_dashboard_list').select('seq,genre').eq('channel', ch)) || [])
-      .forEach(r => { gm[r.seq] = r.genre; });
-    pubs.forEach(p => { p.genre = gm[p.seq] || null; });
-  } catch (_) {}
   const primaryPubs = pubs.filter(p => p.is_primary);
   /* 1回の問い合わせで返るのは 1,000行まで（サーバー側の上限。limit を大きく書いても増えない）。
      日付の古い順に取るので、行が 1,000 を超えると**新しい日が欠けて推移が途中で止まる**。
@@ -9387,8 +9377,6 @@ function aiLogHTML(evs, it){
    見えるチャンネルを1つの画面に重ねて出す。1チャンネルしか見えない人も同じコードが動く
    （色が1色になるだけ）。
    ・色＝チャンネル（chMeta(ch).accent）。最上部の凡例チップで表示のオン／オフ
-   ・「目安に到達／未達」は色ではなく 塗りつぶし／白抜き で表す（色はチャンネル専用にする）
-   ・var(--crit) は目安の破線と文字にしか使わない
    グラフは「幅が決まってから描く」。renderAnalytics が chartReg に build 関数を積み、
    drawSpark() が実寸の幅で描き直す（初回描画と画面リサイズの両方が同じ道を通る）。 */
 let chartReg = [];
@@ -9397,41 +9385,17 @@ const ANA_DEF = {
   rate: '動画の長さに対して平均で何%まで見られたか。ループ再生があると100%を超える',
   hook: '全再生に対して、動画の1%地点が見られた回数の割合。見直しなどで1を超えることがある',
   end:  '全再生に対して、動画の最後が見られた回数の割合。見直しなどで1を超えることがある',
-  loss: '冒頭から15%地点までに去った人の割合。単独では良し悪しを言えないので、組み合わせで見る（序盤29%以下 かつ 中盤減衰38%以下）',
+  loss: '冒頭から15%地点までに去った人の割合',
   eng:  '再生数のうち、スワイプせず実際に見た割合',
   spk:  '1,000回見られて何人が登録したか'
 };
-/* 目安（到達の向き付き）。dir:1 = 大きいほど良い / dir:-1 = 小さいほど良い。
-   ⚠️ 画面のどこにも 70 や 1.8 を直接書かない。線・色分け・赤字・説明文はすべてここを読む
-   （値はここに集める）。 */
-const ANA_GOAL = {
-  rate: {thr:70,   step:10,  dir:1,  unit:'%', fmt:v => String(Math.round(v))},
-  hook: {thr:1.75, step:0.25, dir:1, unit:'',  fmt:v => v.toFixed(2)},
-  end:  {thr:0.75, step:0.1, dir:1,  unit:'',  fmt:v => v.toFixed(2)}
-};
-/* 目安の線を持たない指標の、表示だけの設定（区分の幅と書式）。
-   序盤の離脱は単独の目安を持たない（#505）——単独の目安 25% では63本で通過31.7%・的中60%で、
-   勝ち群18本のうち6本を「フックが弱い」と誤診断していた。良し悪しは
-   「序盤29%以下 かつ 中盤減衰38%以下」の組み合わせで見る（正本 scene-taxonomy.md §2-1b）。
-   ここに残すのは分布のグラフを描くための幅と書式だけで、線も到達／未達の色分けも出さない。 */
+/* 分布のグラフを描くための、指標ごとの区分の幅と書式（表示だけの設定） */
 const ANA_SCALE = {
-  loss: {step:5, dir:-1, unit:'%', fmt:v => String(Math.round(v))}
+  rate: {step:10,   unit:'%', fmt:v => String(Math.round(v))},
+  hook: {step:0.25, unit:'',  fmt:v => v.toFixed(2)},
+  end:  {step:0.1,  unit:'',  fmt:v => v.toFixed(2)},
+  loss: {step:5,    unit:'%', fmt:v => String(Math.round(v))}
 };
-/* 目安は**全チャンネルに当てる**。値は世界のバズ雑学のデータから出した仮の値で、番組ごとの分析で
-   線を決めたら置き換える。使うのは評価の表示（線・到達／未達の塗り分け・赤字）だけ。
-   当てるチャンネルを名指しで並べない（足すたびに直し忘れる・#506 中8）。
-   正本: .claude/skills/youtube-produce/rules/scene-taxonomy.md §2-1b */
-/* 世界のバズ雑学の E系（試作フォーマット）だけは、動画1本ごとの判定から外す（正本 §2-1b）。
-   名指しするのは外す側（02 の事情）だけなので、チャンネルを足してもここは直さなくてよい */
-const ANA_GOAL_NG_CHANNEL = 'buzz-zatsugaku';
-const ANA_GOAL_NG_GENRE = /E系/;
-const goalVid = p => !(p.channel === ANA_GOAL_NG_CHANNEL && ANA_GOAL_NG_GENRE.test(p.genre || ''));
-/* 目安の値を文にするときの共通表記（例: 70% / 1.75 / 0.75） */
-const goalTxt = k => `${ANA_GOAL[k].fmt(ANA_GOAL[k].thr)}${ANA_GOAL[k].unit}`;
-/* グラフの下・表の下に添える1行（線が仮の値であることの説明）。ここでもチャンネルを名指しで並べない */
-const ANA_GOAL_SCOPE = '目安の線は世界のバズ雑学のデータから出した仮の値で、全チャンネルに当てています（チャンネルごとの分析で線を決めたら置き換えます）';
-/* 判定から外している回の説明（ANA_GOAL_NG_GENRE と対） */
-const ANA_GOAL_NG_TXT = '世界のバズ雑学の試作の形式の回は、目安の判定から外しています';
 
 /* いま凡例でオンにしているチャンネル（色と名前つき）。並びは常にチャンネルの並び順で固定
    ＝オフにしても残ったチャンネルの色は変わらない */
@@ -9686,11 +9650,9 @@ function playsChart(series, W, opt){
 }
 
 /* ── 公開順に見る平均視聴率（横軸＝公開日の実日付・縦軸＝%）─────────
-   点の色＝チャンネル、目安に到達＝塗りつぶし／未達＝白抜き。
-   ⚠️ 目安を当てない動画（items[].goal が false・02 の E系）は点を塗りつぶしにし、
-      その動画しか映っていないときは破線も描かず、縦軸の範囲にも閾値を混ぜない。
-   items = [{d, at, v, seq, title, name, color, goal}] */
-function scatterChart(items, W, opt){
+   点の色＝チャンネル。
+   items = [{d, at, v, seq, title, name, color}] */
+function scatterChart(items, W){
   const PL = 46, PR = 14, PT = 21;
   const plotW = Math.max(20, W - PL - PR);
   const ds = items.map(i => i.d);
@@ -9701,26 +9663,15 @@ function scatterChart(items, W, opt){
   const PB = xt.pb, H = (W < 420 ? 250 : 320) + (PB - 26);
   const plotH = Math.max(20, H - PT - PB);
   const vs = items.map(i => i.v);
-  const useThr = items.some(i => i.goal);        /* 1本でも対象の動画があれば線を出す */
-  const ext = useThr ? [opt.thr] : [];
-  const yr = niceTicks(Math.min(...ext, ...vs), Math.max(...ext, ...vs), W < 420 ? 5 : 7);
+  const yr = niceTicks(Math.min(...vs), Math.max(...vs), W < 420 ? 5 : 7);
   const X = d => PL + plotW * ((d - d0) / (d1 - d0));
   const Y = v => PT + plotH - plotH * ((v - yr.lo) / ((yr.hi - yr.lo) || 1));
   const g = { x0:PL, y0:PT, plotW, plotH, X, Y, yTicks:yr.ticks, xTicks:xt.ticks, xRot:xt.rot, yFmt:v => String(Math.round(v)) };
-  const ty = Y(opt.thr);
-  const thr = !useThr ? '' : `<line x1="${PL}" y1="${ty.toFixed(1)}" x2="${(PL + plotW).toFixed(1)}" y2="${ty.toFixed(1)}"
-      stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" style="stroke:var(--crit)"/>
-    <text x="${(PL + plotW).toFixed(1)}" y="${(ty - 5).toFixed(1)}" text-anchor="end" font-size="9.5" font-weight="700"
-      font-family="system-ui,sans-serif" style="fill:var(--crit)">目安 ${opt.thr}%</text>`;
-  const dots = items.map(i => {
-    const hit = i.goal ? i.v >= opt.thr : true;   /* 対象外は白抜きにしない（判定していない） */
-    return `<circle cx="${X(i.d).toFixed(1)}" cy="${Y(i.v).toFixed(1)}" r="4.5" stroke-width="2"
-      vector-effect="non-scaling-stroke"
-      style="fill:${hit ? i.color : 'var(--surface-1)'};stroke:${hit ? 'var(--surface-1)' : i.color}"/>`;
-  }).join('');
+  const dots = items.map(i => `<circle cx="${X(i.d).toFixed(1)}" cy="${Y(i.v).toFixed(1)}" r="4.5" stroke-width="2"
+      vector-effect="non-scaling-stroke" style="fill:${i.color};stroke:var(--surface-1)"/>`).join('');
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
-      aria-label="公開順に見る平均視聴率。${items.length}本。${useThr ? `目安${opt.thr}%。` : ''}">
-    ${axesSvg(g)}${unitSvg(2, PT - 9, '%')}${thr}${dots}
+      aria-label="公開順に見る平均視聴率。${items.length}本。">
+    ${axesSvg(g)}${unitSvg(2, PT - 9, '%')}${dots}
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent" style="cursor:crosshair"/>
   </svg>`;
   const pts = items.map(i => ({ x:X(i.d), y:Y(i.v),
@@ -9729,20 +9680,14 @@ function scatterChart(items, W, opt){
 }
 
 /* ── ヒストグラム（チャンネルごとに同じ区分で横並び・積み上げない）─────
-   棒の色＝チャンネル。目安に到達した区分は塗りつぶし、未達は白抜き（輪郭だけ）。
-   ⚠️ groups[].goal が false の系列は棒を全部塗りつぶしにし、全部が false なら破線も描かず、
-      横軸の範囲にも閾値を混ぜない。目安は全チャンネルに当てるので、false になるのは
-      **目安を持たない指標（序盤の離脱・ANA_SCALE 側）と、判定する値が1本も無い系列（02 の E系だけ）**。
-      凡例の「塗りつぶし＝到達」は目安のある指標だけに出すこと（#505）。
-      塗り分けは区分（棒）の位置で決まるので、判定する値と外す値が同じ系列に混ざると、外す値も入った区分の塗りになる。
-   groups = [{ch, name, color, values, goal}]（values は欠測を除いてある） */
+   棒の色＝チャンネル。
+   groups = [{ch, name, color, values}]（values は欠測を除いてある） */
 function histogram(groups, cfg, W, H){
-  const { thr, step, dir, fmt, unit } = cfg;
+  const { step, fmt, unit } = cfg;
   const all = groups.reduce((s, g) => s.concat(g.values), []);
-  const useThr = groups.some(g => g.goal);
   const dmin = Math.min(...all), dmax = Math.max(...all);
-  const lo = Math.min(...(useThr ? [thr] : []), Math.floor(dmin / step + 1e-9) * step);
-  const hi = Math.max(...(useThr ? [thr] : []), Math.ceil(dmax / step - 1e-9) * step);
+  const lo = Math.floor(dmin / step + 1e-9) * step;
+  const hi = Math.ceil(dmax / step - 1e-9) * step;
   const nb = Math.max(1, Math.round((hi - lo) / step));
   const binsOf = vals => {
     const b = new Array(nb).fill(0);
@@ -9766,16 +9711,14 @@ function histogram(groups, cfg, W, H){
   let bars = '';
   for (let i = 0; i < nb; i++){
     const binLo = lo + step * i, binHi = binLo + step;
-    const inGoal = dir > 0 ? binLo >= thr - 1e-9 : binHi <= thr + 1e-9;
     groups.forEach((grp, k) => {
-      const hit = grp.goal ? inGoal : true;      /* 対象外は白抜きにしない（判定していない） */
       const c = gb[k][i];
       if (!c) return;
       const bx = PL + slot * i + 1.5 + k * (bw + 1.5);
       const by = Y(c), bh = Math.max(3, baseY - by);
       bars += `<g><path d="${barPath(bx, baseY - bh, bw, bh, 3)}" stroke-width="1.5"
           vector-effect="non-scaling-stroke"
-          style="fill:${hit ? grp.color : 'var(--surface-1)'};opacity:${hit ? '.9' : '1'};stroke:${hit ? 'none' : grp.color}">
+          style="fill:${grp.color};opacity:.9;stroke:none">
           <title>${esc(grp.name)} ${fmt(binLo)}〜${fmt(binHi)}${unit}: ${c}本</title></path>`
         + (showNum ? `<text x="${(bx + bw / 2).toFixed(1)}" y="${(baseY - bh - 5).toFixed(1)}" text-anchor="middle"
           font-size="10" font-weight="700" font-family="system-ui,sans-serif" style="fill:var(--ink-2)">${c}</text>` : '')
@@ -9792,14 +9735,9 @@ function histogram(groups, cfg, W, H){
       ticks += `<text x="${tx.toFixed(1)}" y="${baseY + 15}" text-anchor="middle" font-size="9.5"
         font-family="system-ui,sans-serif" style="fill:var(--muted)">${fmt(edge)}</text>`;
   }
-  const txr = X(thr);
-  const thrLine = !useThr ? '' : `<line x1="${txr.toFixed(1)}" y1="${PT - 9}" x2="${txr.toFixed(1)}" y2="${baseY}"
-      stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" style="stroke:var(--crit)"/>
-    <text x="${txr.toFixed(1)}" y="${PT - 12}" text-anchor="middle" font-size="9.5" font-weight="700"
-      font-family="system-ui,sans-serif" style="fill:var(--crit)">目安 ${fmt(thr)}${unit}</text>`;
   const html = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
-      aria-label="分布。${useThr ? `目安 ${fmt(thr)}${unit}。` : ''}${all.length}本。">
-    ${axesSvg(g)}${unitSvg(1, PT - 8, '本')}${bars}${ticks}${thrLine}
+      aria-label="分布。${all.length}本。">
+    ${axesSvg(g)}${unitSvg(1, PT - 8, '本')}${bars}${ticks}
   </svg>`;
   return { html, pts:[] };
 }
@@ -9873,9 +9811,6 @@ function anaStats(a){
   const posted = a.pubs.filter(p => p.status === '投稿済');
   const totalViews = posted.reduce((s, p) => s + (Number(p.views) || 0), 0);
   const vals = k => posted.map(p => numOrNull(p[k])).filter(v => v != null);
-  /* 目安の対象になる動画だけ（02 の E系を除く）。到達本数の分母・分子はこちらで数える */
-  const goalPosted = posted.filter(goalVid);
-  const gvals = k => goalPosted.map(p => numOrNull(p[k])).filter(v => v != null);
   const rates = vals('avg_view_rate_pct');
   /* 直近7日＝今日を含む暦の7日間（公開日は日本時間の日付で数える） */
   const wkFrom = jstDateStr(-6), wkTo = jstDateStr(0);
@@ -9899,10 +9834,7 @@ function anaStats(a){
     viewsDelta: (latestCum != null && c7) ? latestCum - c7.cum : null,
     viewsGain30: (latestCum != null && c30) ? latestCum - c30.cum : null,
     rates, hooks: vals('hook_awr'), ends: vals('end_awr'), losses: vals('early_loss_pct'),
-    gRates: gvals('avg_view_rate_pct'), gHooks: gvals('hook_awr'),
-    gEnds: gvals('end_awr'), gLosses: gvals('early_loss_pct'),
     avgRate: mean(rates), hookAvg: mean(vals('hook_awr')),
-    rateHit: gvals('avg_view_rate_pct').filter(v => v >= ANA_GOAL.rate.thr).length,
     subsLatestT: subsAll.length ? subsAll[subsAll.length - 1].t : null, s7t: s7 ? s7.t : null, s30t: s30 ? s30.t : null,
     cumLatestT: latestCum != null ? cumAll[cumAll.length - 1].t : null, c7t: c7 ? c7.t : null, c30t: c30 ? c30.t : null,
     wkFrom, wkTo,
@@ -9936,7 +9868,7 @@ async function renderAnalytics(){
 
   /* ── ① チャンネルの現在地 ───────────────────────────────────
      行＝指標（大分類ごとに見出し行）・列＝チャンネル の縦持ち。横持ちは列が15本になり
-     PC でも 1,955px で収まらなかった。各行に「いつからいつまで」「目安」を明記する。
+     PC でも 1,955px で収まらなかった。各行に「いつからいつまで」を明記する。
      期間の札は**表示中のチャンネルすべて**の記録から出す（#538）。開設日が違えば記録の
      長さも違うので、先頭の1本だけを見ると、他のチャンネルの増え方を別の期間のものとして
      読んでしまう。 */
@@ -9985,10 +9917,8 @@ async function renderAnalytics(){
         note: span(st => st.c30t, st => st.cumLatestT), cell: st => delta(st.viewsGain30, '回') }
     ]},
     { nm:'視聴の質', rows:[
-      { lb:'平均視聴率', note:`計測できた動画の平均・目安 ${goalTxt('rate')}（仮の値）`, cell: st => st.avgRate == null ? '—' : `${st.avgRate.toFixed(1)}%<span class="sub">計測済 ${st.rates.length}/${st.posted.length} 本</span>` },
-      { lb:`${goalTxt('rate')}に到達`, note:'平均視聴率が目安を超えた本数（仮の値）',
-        cell: st => st.gRates.length ? `${st.rateHit} 本<span class="sub">${Math.round(st.rateHit / st.gRates.length * 100)}%</span>` : '—' },
-      { lb:'冒頭の維持', note:`計測できた動画の平均・目安 ${goalTxt('hook')}（仮の値）`, cell: st => st.hookAvg == null ? '—' : st.hookAvg.toFixed(2) }
+      { lb:'平均視聴率', note:'計測できた動画の平均', cell: st => st.avgRate == null ? '—' : `${st.avgRate.toFixed(1)}%<span class="sub">計測済 ${st.rates.length}/${st.posted.length} 本</span>` },
+      { lb:'冒頭の維持', note:'計測できた動画の平均', cell: st => st.hookAvg == null ? '—' : st.hookAvg.toFixed(2) }
     ]},
     { nm:'投稿', rows:[
       { lb:'直近7日', note: st0 ? `${md(st0.wkFrom)} 〜 ${md(st0.wkTo)}（今日を含む7日間）` : '—', cell: st => `${st.weekPosts} 本` },
@@ -10002,7 +9932,7 @@ async function renderAnalytics(){
     ]}
   ];
   /* 大分類ごとに小さな表を1つずつ作り、横に並べる（幅いっぱいに使って縦を短く）。
-     各表: 見出し帯＝大分類名＋チャンネルの色チップ、行＝指標（名前の下に期間・目安）、列＝チャンネル */
+     各表: 見出し帯＝大分類名＋チャンネルの色チップ、行＝指標（名前の下に期間）、列＝チャンネル */
   const nowBlocks = sers.length ? GROUPS.map(g => `<div class="nowblk"><table>
       <thead><tr><th class="gn">${g.nm.split('|').map(esc).join('<wbr>')}</th>${sers.map(s => `<th class="num" title="${esc(s.name)}"><span class="chcell">${chSw(s.color)}${s.icon}</span></th>`).join('')}</tr></thead>
       <tbody>${g.rows.map(r => `<tr><th class="lb">${r.lb.split('|').map(esc).join('<wbr>')}<span class="subm">${esc(r.note)}</span></th>${
@@ -10099,20 +10029,16 @@ async function renderAnalytics(){
     ST[s.ch].posted.filter(p => p.published_at && numOrNull(p.avg_view_rate_pct) != null)
       .map(p => ({ d: Math.round(new Date(p.published_at).getTime() / DAY), at:p.published_at,
                    v:Number(p.avg_view_rate_pct), seq:p.seq, name:s.name, color:s.color,
-                   goal:goalVid(p), title:(p.effective_title || '').slice(0, 40) }))), [])
+                   title:(p.effective_title || '').slice(0, 40) }))), [])
     .sort((x, y) => x.d - y.d);
   let scatCard;
   if (scat.length) {
-    chartReg.push({ sel:'#c-scatter', build: W => scatterChart(scat, W, {thr:ANA_GOAL.rate.thr}) });
+    chartReg.push({ sel:'#c-scatter', build: W => scatterChart(scat, W) });
     scatCard = `<div class="card span2">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>公開順に見る平均視聴率</h2>
         <span class="axh">${esc(ANA_DEF.rate)}。横軸＝公開日・縦軸＝平均視聴率（%）。1つの点が動画1本。点にふれるとチャンネル名・番号・タイトルが出ます</span></div>
       <div class="chartwrap" id="c-scatter"></div>
-      <div class="distlegend">${sers.map(s => `<span>${chSw(s.color)}${esc(s.name)}</span>`).join('')}
-        ${scat.some(i => i.goal) ? `<span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝${goalTxt('rate')}に到達</span>
-        <span><i class="sw" style="background:transparent;box-shadow:inset 0 0 0 2px var(--ink-2)"></i>白抜き＝未達</span>
-        <span style="color:var(--crit)">┈ ${goalTxt('rate')}の線</span>` : ''}</div>
-      <p class="axnote">${esc(ANA_GOAL_SCOPE)}。${esc(ANA_GOAL_NG_TXT)}（点は塗りつぶしで出しています）</p>
+      <div class="distlegend">${sers.map(s => `<span>${chSw(s.color)}${esc(s.name)}</span>`).join('')}</div>
     </div>`;
   } else {
     scatCard = `<div class="card span2">
@@ -10121,49 +10047,32 @@ async function renderAnalytics(){
   }
 
   /* ── ④ 視聴の質（4つの分布・チャンネルごとに同じ区分で横並び）───── */
-  const qBlock = (id, title, key, pick, gpick, big) => {
-    /* 目安を持たない指標（序盤の離脱）は ANA_SCALE の表示設定だけで描く */
-    const hasGoal = !!ANA_GOAL[key];
-    const cfg = ANA_GOAL[key] || ANA_SCALE[key];
-    /* values＝棒に積む全部の値 / gvalues＝目安に照らして数える値（02 の E系を除く）。
-       判定する値が1本も無い系列（02 の E系だけ）は goal を立てない＝線も軸への閾値も白抜きも出さない */
-    const groups = sers.map(s => ({ ...s, values: pick(ST[s.ch]), gvalues: gpick(ST[s.ch]) }))
-      .map(g => ({ ...g, goal: hasGoal && g.gvalues.length > 0 }))
-      .filter(g => g.values.length);
-    const goalTxt = !hasGoal ? '' : (cfg.dir > 0 ? `${cfg.fmt(cfg.thr)}${cfg.unit}以上` : `${cfg.fmt(cfg.thr)}${cfg.unit}以下`);
-    const head = `<h3>${esc(title)}${hasGoal ? `<span class="goal">目安 ${goalTxt}</span>` : ''}</h3>
+  const qBlock = (id, title, key, pick, big) => {
+    const cfg = ANA_SCALE[key];
+    const groups = sers.map(s => ({ ...s, values: pick(ST[s.ch]) })).filter(g => g.values.length);
+    const head = `<h3>${esc(title)}</h3>
       <p class="defline">${esc(ANA_DEF[key])}</p>`;
     if (!groups.length) return `<div class="qblk${big ? ' big' : ''}">${head}
       <div class="noitem">計測できた動画がまだありません</div></div>`;
     chartReg.push({ sel:'#' + id, build: W => histogram(groups, cfg, W, big ? 190 : 158) });
-    const tbl = `<table class="qtbl"><thead><tr><th>チャンネル</th><th>平均</th><th>目安に到達</th><th>計測済</th></tr></thead><tbody>${
-      groups.map(g => {
-        const hit = g.gvalues.filter(v => cfg.dir > 0 ? v >= cfg.thr : v <= cfg.thr).length;
-        return `<tr><td>${chSw(g.color)}${esc(g.name)}</td>
+    const tbl = `<table class="qtbl"><thead><tr><th>チャンネル</th><th>平均</th><th>計測済</th></tr></thead><tbody>${
+      groups.map(g => `<tr><td>${chSw(g.color)}${esc(g.name)}</td>
           <td>${cfg.fmt(mean(g.values))}${cfg.unit}</td>
-          <td>${(g.goal && g.gvalues.length) ? `${hit} 本（${Math.round(hit / g.gvalues.length * 100)}%）` : '—'}</td>
-          <td>${g.values.length} / ${ST[g.ch].posted.length} 本</td></tr>`;
-      }).join('')}</tbody></table>`;
+          <td>${g.values.length} / ${ST[g.ch].posted.length} 本</td></tr>`).join('')}</tbody></table>`;
     return `<div class="qblk${big ? ' big' : ''}">${head}
       <p class="axnote">横軸＝${esc(title)}の区分（幅${cfg.fmt(cfg.step)}${cfg.unit}）・縦軸＝その区分に入る動画の本数</p>
       ${tbl}
       <div class="chartwrap" id="${id}"></div>
-      ${groups.some(g => g.goal) ? `<div class="distlegend"><span><i class="sw" style="background:var(--ink-2)"></i>塗りつぶし＝目安に到達</span>
-        <span><i class="sw" style="background:transparent;box-shadow:inset 0 0 0 2px var(--ink-2)"></i>白抜き＝未達</span>
-        <span style="color:var(--crit)">┊ 目安の線</span></div>
-      <p class="axnote">${esc(ANA_GOAL_SCOPE)}</p>`
-      : hasGoal ? `<p class="axnote">${esc(ANA_GOAL_SCOPE)}。${esc(ANA_GOAL_NG_TXT)}（映っているのがその回だけなので、線を引かず塗りつぶしで出しています）</p>`
-      : `<p class="axnote">この指標には目安の線を置いていません（単独では良し悪しを言えないため）</p>`}
     </div>`;
   };
   const qualCard = `<div class="card span2">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>視聴の質</h2></div>
       <p class="axnote">棒の色＝チャンネル。同じ区分の棒は横に並べています（積み上げていません）</p>
       <div class="qgrid">
-        ${qBlock('c-h-rate', '平均視聴率', 'rate', st => st.rates, st => st.gRates, true)}
-        ${qBlock('c-h-hook', '冒頭の維持', 'hook', st => st.hooks, st => st.gHooks, true)}
-        ${qBlock('c-h-end', '末尾の維持', 'end', st => st.ends, st => st.gEnds, false)}
-        ${qBlock('c-h-loss', '序盤の離脱', 'loss', st => st.losses, st => st.gLosses, false)}
+        ${qBlock('c-h-rate', '平均視聴率', 'rate', st => st.rates, true)}
+        ${qBlock('c-h-hook', '冒頭の維持', 'hook', st => st.hooks, true)}
+        ${qBlock('c-h-end', '末尾の維持', 'end', st => st.ends, false)}
+        ${qBlock('c-h-loss', '序盤の離脱', 'loss', st => st.losses, false)}
       </div>
     </div>`;
 
@@ -10233,10 +10142,7 @@ async function renderAnalytics(){
     if (typeof a1 === 'string') return sk.dir * a1.localeCompare(b1, 'ja');
     return sk.dir * (a1 - b1);
   });
-  /* 赤字（目安を割った値）は全チャンネルに付ける（02 の E系を除く）。序盤の離脱は単独では良し悪しを
-     言えない指標なので、どのチャンネルでも色を付けない（正本 scene-taxonomy.md §2-1b） */
-  const bad = (v, k, p) => v != null && goalVid(p) && v < ANA_GOAL[k].thr;
-  const cell = (v, k, fmt, p) => `<td class="num${bad(v, k, p) ? ' under' : ''}">${v == null ? '—' : fmt(v)}</td>`;
+  const cell = (v, fmt) => `<td class="num">${v == null ? '—' : fmt(v)}</td>`;
   const rows = perf.length ? perf.map(p => {
     const spk = subsPerK(p);
     return `<tr>
@@ -10244,9 +10150,9 @@ async function renderAnalytics(){
       <td class="seq">${esc(p.seq)}</td><td class="ttl">${esc(p.effective_title)}</td>
       <td class="dim">${esc(fmtDate(p.published_at) || '—')}</td>
       <td class="num">${p.views == null ? '—' : nf(p.views)}</td>
-      ${cell(numOrNull(p.avg_view_rate_pct), 'rate', v => v.toFixed(1) + '%', p)}
-      ${cell(numOrNull(p.hook_awr), 'hook', v => v.toFixed(2), p)}
-      ${cell(numOrNull(p.end_awr), 'end', v => v.toFixed(2), p)}
+      ${cell(numOrNull(p.avg_view_rate_pct), v => v.toFixed(1) + '%')}
+      ${cell(numOrNull(p.hook_awr), v => v.toFixed(2))}
+      ${cell(numOrNull(p.end_awr), v => v.toFixed(2))}
       <td class="num">${p.early_loss_pct == null ? '—' : Number(p.early_loss_pct).toFixed(1) + '%'}</td>
       <td class="num">${p.engaged_rate_pct == null ? '—' : Number(p.engaged_rate_pct).toFixed(1) + '%'}</td>
       <td class="num">${p.subscribers_gained == null ? '—' : (p.subscribers_gained > 0 ? '+' : '') + p.subscribers_gained}</td>
@@ -10259,7 +10165,7 @@ async function renderAnalytics(){
   }).join('');
   const perfCard = `<div class="card span2">
       <div class="sectionhead" style="margin:0 0 var(--sp-2)"><h2>動画別の成績</h2></div>
-      <p class="axnote">上の凡例でチャンネルを絞り込めます。列の名前を押すと並べ替わります。赤い字は目安を割った値（平均視聴率 ${goalTxt('rate')}未満・冒頭の維持 ${goalTxt('hook')}未満・末尾の維持 ${goalTxt('end')}未満）です。${esc(ANA_GOAL_SCOPE)}。${esc(ANA_GOAL_NG_TXT)}（赤い字も付けません）。序盤の離脱は単独では良し悪しを言えないので色を付けません。値がないものは —</p>
+      <p class="axnote">上の凡例でチャンネルを絞り込めます。列の名前を押すと並べ替わります。値がないものは —</p>
       <div class="tblwrap perftbl xscroll"><table>
         <thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
@@ -10268,18 +10174,17 @@ async function renderAnalytics(){
   const guide = `<details class="card span2 guide">
       <summary>指標の読み方</summary>
       <div class="tblwrap"><table>
-        <thead><tr><th>言葉</th><th>意味</th><th>目安</th></tr></thead><tbody>
-        <tr><td>平均視聴率</td><td class="wrap">${esc(ANA_DEF.rate)}</td><td>${goalTxt('rate')}以上</td></tr>
-        <tr><td>冒頭の維持</td><td class="wrap">${esc(ANA_DEF.hook)}</td><td>${goalTxt('hook')}以上</td></tr>
-        <tr><td>末尾の維持</td><td class="wrap">${esc(ANA_DEF.end)}</td><td>${goalTxt('end')}以上</td></tr>
-        <tr><td>序盤の離脱</td><td class="wrap">${esc(ANA_DEF.loss)}</td><td>—（単独の目安は置かない・診断用）</td></tr>
-        <tr><td>エンゲージ率</td><td class="wrap">${esc(ANA_DEF.eng)}</td><td>高いほど良い</td></tr>
-        <tr><td>千再生あたり登録</td><td class="wrap">${esc(ANA_DEF.spk)}</td><td>高いほど良い</td></tr>
-        <tr><td>登録者数</td><td class="wrap">チャンネル登録者の実数</td><td>—</td></tr>
-        <tr><td>再生数</td><td class="wrap">動画が再生された回数。累計はそれまでの合計</td><td>—</td></tr>
+        <thead><tr><th>言葉</th><th>意味</th></tr></thead><tbody>
+        <tr><td>平均視聴率</td><td class="wrap">${esc(ANA_DEF.rate)}</td></tr>
+        <tr><td>冒頭の維持</td><td class="wrap">${esc(ANA_DEF.hook)}</td></tr>
+        <tr><td>末尾の維持</td><td class="wrap">${esc(ANA_DEF.end)}</td></tr>
+        <tr><td>序盤の離脱</td><td class="wrap">${esc(ANA_DEF.loss)}</td></tr>
+        <tr><td>エンゲージ率</td><td class="wrap">${esc(ANA_DEF.eng)}</td></tr>
+        <tr><td>千再生あたり登録</td><td class="wrap">${esc(ANA_DEF.spk)}</td></tr>
+        <tr><td>登録者数</td><td class="wrap">チャンネル登録者の実数</td></tr>
+        <tr><td>再生数</td><td class="wrap">動画が再生された回数。累計はそれまでの合計</td></tr>
         </tbody></table></div>
-      <p class="axnote">数字はすべて毎朝6時に更新しています。計測できた動画だけを集計に入れています。色はチャンネルを表し、<b>目安のある指標では</b>塗りつぶし／白抜きが目安に到達したかどうかを表します（目安を置いていない序盤の離脱は全部塗りつぶし）</p>
-      <p class="axnote">${esc(ANA_GOAL_SCOPE)}。${esc(ANA_GOAL_NG_TXT)}</p>
+      <p class="axnote">数字はすべて毎朝6時に更新しています。計測できた動画だけを集計に入れています。色はチャンネルを表します</p>
     </details>`;
 
   el.innerHTML = `
