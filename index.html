@@ -317,7 +317,7 @@ main{max-width:none; margin:0 auto; padding:var(--sp-6) var(--sp-5) 88px; min-wi
 /* 横に続きがあることの手がかり（#440 低14）。背景の4枚重ねで作る:
    端の「ふた」2枚は中身と一緒に流れ（local）、影2枚は枠に貼り付く（scroll）ので、
    左端／右端まで来た側の影はふたに隠れて自然に消える。JS もイベントも要らない。 */
-.tblwrap.xscroll{
+.tblwrap.xscroll, .nowblk{
   background-image:
     linear-gradient(to right, var(--surface-1), rgba(255,255,255,0)),
     linear-gradient(to left,  var(--surface-1), rgba(255,255,255,0)),
@@ -1566,7 +1566,7 @@ tr.dropped td{color:var(--muted)}
    でだけ2行にする（keep-all＋<wbr>。1行のままだと 1400px で収益化の表が箱より広くなる）。指標の名前（th.lb）も
    語の途中で折らない（「早期アクセ／ス」にしない）。長い名前は | の所で折る（gainLb）。薄字の補足（.subm）はどこで折ってもよい */
 .nowgrid{display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:var(--sp-3)}
-.nowblk{border:1px solid var(--border); border-radius:var(--r-md); overflow-x:auto; background:var(--surface-1); min-width:0}
+.nowblk{border:1px solid var(--border); border-radius:var(--r-md); overflow-x:auto; background-color:var(--surface-1); min-width:0}
 .nowblk thead th.gn{white-space:normal; word-break:keep-all}
 .nowblk table{width:100%; table-layout:auto}
 .nowblk th, .nowblk td{padding:7px 10px}
@@ -1730,7 +1730,7 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .fl-b{display:inline-block; font-size:var(--fs-2xs); font-weight:700; line-height:1.6; padding:0 8px; margin:0 3px 0 2px;
   border-radius:var(--r-pill); white-space:nowrap; vertical-align:1px}
 .fl-ln .fl-b:first-child{margin-left:0}
-.fl-b.opus{background:var(--s1-tint); color:var(--s1-ink)}
+.fl-b.fable, .fl-b.opus{background:var(--s1-tint); color:var(--s1-ink)}
 .fl-b.sonnet{background:var(--good-tint); color:var(--good-text)}
 .fl-b.human{background:var(--attn); color:var(--attn-ink)}
 .fl-b.main{background:var(--act-soft); color:var(--sub-ink)}
@@ -2825,10 +2825,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/11 10:14';
+const BUILT_AT = '11/12 02:50';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '4e3a9e919843';
+const BUILT_HASH = 'eae29bd2a390';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5459,7 +5459,7 @@ function armLazyAssets(root){
 const NOTE_TAGS = {
   picture: ['文字が読めない', '動きが不自然', 'ナレーションとずれ', 'つなぎ目が変', '絵が弱い'],
   whole:   ['絵が弱い', 'テンポが遅い', 'つなぎ目が変', '話が分かりにくい',
-            '読み間違い', '声が不自然', '間が長い', 'BGM・効果音', 'この場面は作り直し']
+            '読み間違い', '声が不自然', '間が長い', 'BGM・効果音', 'このシーンは作り直し']
 };
 const NOTE_TAGS_ALL = [...new Set([...NOTE_TAGS.picture, ...NOTE_TAGS.whole])];
 const NOTE_KIND_LABEL = {picture:'', whole:'▣ いまの画面 ・ '};
@@ -10717,7 +10717,7 @@ async function replayApproveOutbox(){
    「制作フローの札」。flows の1つ＝札1つ。1マス＝行の並び、1行＝文字のかけら（k: name 太字・id 識別子・note 薄字・
    label 見出し・badge 札）。字の中の `…` は等幅 */
 const FLOW_URL = 'flow.json';
-const FLOW_TONES = ['opus', 'sonnet', 'main', 'human', 'tool'];
+const FLOW_TONES = ['fable', 'opus', 'sonnet', 'main', 'human', 'tool'];
 let flowKey = null;   /* 選んでいる札（flows の key）。無ければ最初の札 */
 async function loadFlow(){
   if (store.flow) return store.flow;
