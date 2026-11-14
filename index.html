@@ -1927,7 +1927,8 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
 .sview .sv-screens{display:grid; grid-template-columns:repeat(2, minmax(0, var(--video-w)));
   justify-content:start; gap:var(--sp-3); min-width:0}
 /* ⚠️ 参照動画の列は**常に出す**（オーナー指摘）。番組や動画によって列が消えると
-   並びが揃わないので、1本も無い動画でも同じ大きさの枠を置いて中に「素材なし」と書く */
+   並びが揃わないので、1本も無い動画でも同じ大きさの枠を置いて中に「素材なし」と書く。
+   横長の動画だけは例外で、参照動画がある動画だけ出す（下の「横長の動画」・#1624） */
 .sview .sv-screen{display:flex; flex-direction:column; gap:var(--sp-2); min-width:0}
 /* 主画面に出せる動画がまだ無く、目録の「参照動画（全フレーム）」を借りている回だけ、
    借りた全フレームの動画を**参照動画の列の位置**へ、本来の動画の位置（左）を「素材なし」の面へ入れ替える
@@ -2321,6 +2322,86 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
   .sview:has(.sv-sec.sa>.sv-sechd>.sv-vtabs:not([hidden])){--sv-hd:40px}
   .sview .sv-sec.sa>.sv-sechd:not(:has(>.sv-vtabs:not([hidden]))){display:none}
 }
+/* ── 横長の動画（#1624・videos.format が long。動画の実寸と食い違えば実寸に従う＝svFitOrient）────────────
+   どの幅でも: 台本は映像の下の横の帯（横長の縮み絵のタイルを横に並べ、多いときは帯の中で横にスクロール）、
+   素材の枠は 16:9、Shorts の重ねと「Shorts」のボタンは出さない。縦の動画の画面は変えない（どれも [data-orient="land"] の下だけ） */
+.sview[data-orient="land"] .vidbox .ytui{display:none!important}
+.sview[data-orient="land"] [data-cbtn="ytui"]{display:none}
+.sview[data-orient="land"] .sv-sline{flex:0 0 auto; width:calc(var(--tth, 72px) * 16 / 9 + 14px);
+  display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:var(--tth, 72px) auto;
+  grid-template-areas:"th th" "meta op"; align-items:center; gap:6px; padding:6px; min-height:0;
+  border:1px solid var(--border-2); border-radius:var(--r-md)}
+.sview[data-orient="land"] .sv-sline:last-child{border-bottom:1px solid var(--border-2)}
+.sview[data-orient="land"] .sv-sline[aria-current="true"]{border-color:var(--act-line);
+  box-shadow:inset 0 0 0 1px var(--act-line)}
+.sview[data-orient="land"] .sv-sline :is(.sth,.sthnone){grid-area:th; width:100%; height:100%}
+.sview[data-orient="land"] .sv-sline .smeta{grid-area:meta; flex-direction:row; align-items:center; gap:8px}
+.sview[data-orient="land"] .sv-sline :is(.sn,.snar){display:none}
+.sview[data-orient="land"] .sv-sline .sns{display:block; font-size:var(--fs-sm); font-weight:700; color:var(--ink-2);
+  font-variant-numeric:tabular-nums}
+.sview[data-orient="land"] .sv-sline[aria-current="true"] .sns{color:var(--sub-ink)}
+.sview[data-orient="land"] .sv-sline .nmark{align-self:center}
+.sview[data-orient="land"] .sv-sline .sopen{grid-area:op}
+.sview[data-orient="land"] .sv-slot{width:calc(var(--slot-h) * 16 / 9)}
+.sview[data-orient="land"] .sv-refbox .sv-slot{width:calc(var(--ref-h) * 16 / 9)}
+/* 1200px 以上: ①を「映像（16:9・①の幅いっぱい）／再生の操作／台本の帯＋参照動画」の縦積みにする。②③の右の列は縦の動画と同じ。
+   参照動画の列は参照動画がある動画（.sv-hasref）だけ、帯の右に幅 260px。▸ の詳細は映像の上に重ねて開く（1200px から）。
+   映像の幅 = min(①の中の幅, 使える高さ × 16/9)。①の中の幅 = 画面 − 右の列 − 90（ページの左右の余白 40・①と②③の間 16・①の枠 34）。
+   使える高さ = 画面 − 上下の帯（--sv-chrome）− ①の見出し（--sv-hd）− 140（①の枠 34・映像の上の見出し 18＋間 8・
+   再生の操作 間 8＋56・帯の上の間 8・余り 8）− 台本の帯（--strip-h） */
+@media (min-width:1200px){
+  .sview[data-orient="land"]{--tth:96px; --strip-h:182px;
+    --land-w:calc(100vw - var(--side-min, var(--side-w)) - 90px);
+    --land-vw:min(var(--land-w),
+      calc((100dvh - var(--sv-chrome) - var(--sv-hd, 40px) - 140px - var(--strip-h)) * 16 / 9))}
+  .sview[data-orient="land"] .sv-sec.sa .sv-stage{position:relative;
+    grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto 56px auto minmax(0,1fr);
+    grid-template-areas:"final final" "ctrls ctrls" "script ref" ". ."}
+  .sview[data-orient="land"] .sv-sec.sa .sv-mattabs{display:none}
+  .sview[data-orient="land"] .sv-screens{display:contents}
+  .sview[data-orient="land"] .sv-sec.sa .sv-screen.final{grid-area:final}
+  .sview[data-orient="land"] .sv-sec.sa .sv-screen.final>.vidbox{width:min(100%, var(--land-vw)); height:auto;
+    aspect-ratio:16 / 9; min-height:0}
+  .sview[data-orient="land"] .sv-sec.sa .sv-ctrls-slot{grid-area:ctrls}
+  .sview[data-orient="land"] .sv-sec.sa .sv-stage .sv-script{grid-area:script; display:flex; min-height:0}
+  .sview[data-orient="land"] .sv-sec.sa .sv-script>.shd{display:flex}
+  .sview[data-orient="land"] .sv-sec.sa .sv-scriptlist{flex:0 0 auto; flex-direction:row; gap:12px;
+    overflow-x:auto; overflow-y:hidden; max-height:none; height:auto; padding-bottom:2px}
+  .sview[data-orient="land"] .sv-sec.sa .sv-screen.ref{grid-area:ref; align-self:start; width:260px;
+    padding-left:16px; border-left:1px solid var(--border)}
+  .sview[data-orient="land"] .sv-sec.sa .sv-screen.ref>.vidbox{width:100%; height:auto; aspect-ratio:16 / 9; min-height:0}
+  .sview[data-orient="land"]:not(.sv-hasref) .sv-sec.sa .sv-screen.ref{display:none}
+  .sview[data-orient="land"]:not(.sv-hasref) .sv-sec.sa .sv-script{grid-column:1 / -1}
+  /* ▸（タイルの右下）と、▸ で開く詳細。詳細は映像と同じ高さで映像の左に重ねる（再生の操作と帯は隠さない）。
+     contain:size で中身の高さが映像の行を押し広げないようにし、行いっぱいに伸ばす */
+  .sview[data-orient="land"] .sv-sline .sopen{display:grid; place-items:center; width:26px; height:26px;
+    font-size:var(--fs-lg); line-height:1; color:var(--ink-2); background:var(--surface-1);
+    border:1px solid var(--border); border-radius:var(--r-sm)}
+  .sview[data-orient="land"] .sv-sline .sopen:hover{background:var(--act-soft); border-color:var(--act-line)}
+  .sview[data-orient="land"] .sv-sline .sopen[aria-expanded="true"]{background:var(--act-soft);
+    border-color:var(--act-line); color:var(--sub-ink); box-shadow:inset 0 0 0 1px var(--act-line)}
+  .sview[data-orient="land"] .sv-sec.sa .sv-matcol{display:none}
+  .sview[data-orient="land"] .sv-sec.sa .sv-stage[data-pop="1"] .sv-matcol{display:flex; grid-area:final;
+    position:relative; z-index:6; left:auto; top:auto; height:auto; margin-top:26px;
+    align-self:stretch; justify-self:start; width:min(var(--pop-w, 460px), 100%); contain:size; overflow:hidden;
+    padding:var(--sp-3) var(--sp-4) var(--sp-4); background:var(--surface-1);
+    border:1px solid var(--act-line); border-radius:var(--r-lg); box-shadow:var(--shadow-2)}
+  .sview[data-orient="land"] .sv-sec.sa .sv-stage[data-pop="1"] .sv-matcol>.sv-colhd{display:flex;
+    height:30px; line-height:30px; flex:0 0 auto}
+  .sview[data-orient="land"] .sv-stage[data-pop="1"] .sv-popx{display:inline-flex; align-items:center; margin-left:auto;
+    height:30px; padding:0 12px; font-family:inherit; font-size:var(--fs-xs); font-weight:650; letter-spacing:0;
+    color:var(--ink-2); background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md);
+    cursor:pointer}
+  .sview[data-orient="land"] .sv-stage[data-pop="1"] .sv-popx:hover{background:var(--surface-3)}
+  .sview[data-orient="land"] .sv-stage[data-pop="1"] .sv-now{--slot-h:108px}
+  .sview[data-orient="land"] .sv-stage[data-pop="1"] .sv-refbox{--ref-h:72px}
+  .sview[data-orient="land"] .sv-stage[data-pop="1"] .sv-now .nar{font-size:var(--fs-md); line-height:1.6}
+}
+/* 1400px 以上: ①の幅は映像の幅で決め、残りは全部②③へ（幅で決まるときは②③に 420px が残る）。
+   1200〜1399px は縦の動画と同じ「①は残り全部・②③は 400px」（ページが縦に動くので 100vw に縦のスクロールバーが入る） */
+@media (min-width:1400px){
+  .sview[data-orient="land"] .sv-wrap{grid-template-columns:calc(var(--land-vw) + 34px) minmax(0,1fr)}
+}
 /* ── スマホと iPad の横向き（1200px 未満）: スクロールしない1画面（#552・形は見本 dashboard/review-mockup.html のスマホ）──
    スマホでするのは「動画を見て、気になる場所に指摘を書く」だけ。上から「上の帯・動画（操作は動画の下端に重ねる）・
    （開いた中身）・下の帯」を画面の高さぴったりに並べる。動画は幅いっぱいで、高さは 9:16 の高さと画面の残りの低いほう。
@@ -2635,6 +2716,55 @@ footer{max-width:none; margin:0 auto; padding:var(--sp-3) var(--sp-5) var(--sp-4
     grid-template-areas:"at" "nudge" "tog" "in" "acts"; padding:12px 12px calc(10px + env(safe-area-inset-bottom)) 0}
   .sview .sheet .sv-mthumb{display:none}
 }
+/* ── 横長の動画の1画面（1200px 未満・#1624）──────────────────────────────
+   映像は 16:9 で低いので、再生の操作は映像に重ねず映像のすぐ下に置き（重ねると絵が隠れる）、その下に台本の帯を出す。
+   台本は帯に出ているので、タブと「…」の中の「台本」は出さない。素材の枠は 16:9 の小さい枠 */
+@media (max-width:1199px){
+  .sview[data-orient="land"] .sv-ctrls-slot{grid-area:ctrls; align-self:stretch; z-index:auto;
+    background:var(--surface-1); color:var(--ink); border-bottom:1px solid var(--border-2)}
+  .sview[data-orient="land"] .sv-ctrls-slot .cbtn{background:var(--surface-2); color:var(--ink); border-color:var(--border)}
+  .sview[data-orient="land"] .sv-ctrls-slot .cbtn:hover{background:var(--surface-3)}
+  .sview[data-orient="land"] .sv-ctrls-slot .seek .tptrack{background:var(--surface-3)}
+  .sview[data-orient="land"] .sv-ctrls-slot .seek .knob{border-color:var(--surface-1)}
+  .sview[data-orient="land"] .sv-ctrls-slot .ctime{display:block; margin-left:4px}
+  .sview[data-orient="land"] .sv-script{grid-area:script; display:flex; flex-direction:column; gap:6px;
+    overflow:hidden; min-height:0; padding:8px 10px 4px}
+  .sview[data-orient="land"] .sv-script>.shd{display:flex}
+  .sview[data-orient="land"] .sv-scriptlist,.sview[data-orient="land"] .sv-script.closed>.sv-scriptlist{display:flex;
+    flex-direction:row; gap:8px; flex:0 0 auto; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain}
+  .sview[data-orient="land"] [data-svact="mtab"][data-mtab="script"]{display:none}
+  .sview[data-orient="land"] .sv-now{--slot-h:88px}
+  .sview[data-orient="land"] .sv-refbox{--ref-h:60px}
+  .sview[data-orient="land"] .sv-matcol .sv-screen.ref .vidbox{width:100%; max-width:420px; height:auto;
+    aspect-ratio:16 / 9}
+}
+/* スマホ（900px 未満）: 上から「上の帯・映像（幅いっぱいの 16:9）・再生の操作・台本の帯・（開いた中身の頭）・中身・下の帯」。
+   何も開いていないときは、中身の場所に指摘の一覧（今回の指摘・全体へのメモ・前回までの指摘）を出す（縦の動画では
+   「指摘 N」から開いていた中身を、開かずに見られる）。「…」の素材を開くと、そこが素材に替わる */
+@media (max-width:899px){
+  .sview[data-orient="land"]{--tth:68px;
+    --sv-vidh:calc((100vw - env(safe-area-inset-left) - env(safe-area-inset-right)) * 9 / 16);
+    grid-template-rows:auto auto minmax(0,var(--sv-vidh)) auto auto auto minmax(0,1fr) 0px auto auto;
+    grid-template-areas:"top" "now" "video" "ctrls" "script" "tabs" "panel" "fill" "msg" "bar"}
+  body.sv-pick1 .sview.sview[data-orient="land"]{
+    grid-template-rows:auto auto minmax(0,var(--sv-vidh)) auto auto auto minmax(0,1fr) 0px auto auto}
+  .sview[data-orient="land"]:has(.rjpanel:not([hidden])){
+    grid-template-rows:auto auto minmax(0,var(--sv-vidh)) auto auto auto auto minmax(0,1fr) auto auto}
+  body.sheetopen .sview.sview[data-orient="land"]{grid-template-rows:0px 0px 0px 0px 0px 0px minmax(0,1fr) 0px auto 0px}
+  .sview[data-orient="land"]:not([data-mtab="mat"]) :where(.tapbox,.sv-sec.sc){display:flex; flex-direction:column}
+}
+/* iPad の横向き（900〜1199px）: PC の並びを縮めた形。左に「映像（16:9）・再生の操作・台本の帯」、右に素材・指摘のタブの欄
+   （右の欄の幅は 340〜420px）。映像の高さ = 左の列の幅 × 9/16（右の欄のタブの行 56px とその下に分けて取る） */
+@media (min-width:900px) and (max-width:1199px){
+  body .sview.sview.sview[data-orient="land"]{--tth:76px; --sv-rw:clamp(340px, 36vw, 420px);
+    --sv-vidh:calc((100vw - var(--sv-rw) - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)) * 9 / 16);
+    grid-template-columns:minmax(0,1fr) var(--sv-rw);
+    grid-template-rows:auto auto 56px minmax(0, calc(var(--sv-vidh) - 56px)) auto auto minmax(0,1fr) auto auto;
+    grid-template-areas:"top top" "now now" "video tabs" "video panel" "ctrls panel" "script panel" "fill panel" "msg msg" "bar bar"}
+  .sview.sview[data-orient="land"] .rjpanel:not([hidden]){grid-area:3 / 2 / 8 / 3}
+  body.sheetopen .sview.sview[data-orient="land"] .tapbox{grid-area:3 / 2 / 8 / 3}
+  .sview[data-orient="land"] .sv-script{padding:8px 0 8px 12px}
+}
 </style>
 </head>
 <body>
@@ -2825,10 +2955,10 @@ const stageWorkTip = (s, it) => (s && s.key === 'queue') ? stageWork(s, it) : AI
    印を**全部**置き換えるので、「未置換かどうか」を比べる相手に印を書くと、その相手まで時刻に
    化けて判定が常に成立してしまう（公開後にお知らせも公開時刻も出なくなっていた）。
    比べる側は下の builtLocal を通す——印を組み立てて作るので置換の対象にならない。 */
-const BUILT_AT = '11/15 00:43';
+const BUILT_AT = '11/15 00:47';
 /* 画面ファイルの中身の印（#205 → 係の定義だけの直しで帯が出ないように）。公開のスクリプトが、置換する前の
    index.html の中身から作って埋め込む。新版検知はこちらを比べる（時刻は見せるだけ）。印を書くのはこの1行だけ */
-const BUILT_HASH = '865652258df9';
+const BUILT_HASH = '3ddc68a12ef5';
 const BUILT_RAW = '__' + 'BUILT' + '_AT__';
 /* 手元で開いた未公開の版か（置換されていれば「1/5 09:30」の形なので、先頭が下線にならない） */
 const builtLocal = v => !v || v === BUILT_RAW || String(v).startsWith('__');
@@ -5678,14 +5808,19 @@ function armVideoBar(el){
     if (!ytProg || yt.hidden) return;
     ytProg.style.setProperty('--p', String(dur() ? Math.min(1, v.currentTime / dur()) : 0));
   };
+  /* 横長の動画（#1624）では Shorts の重ねを出さない（ボタンも CSS で隠す）。端末に覚えた出し入れは書き換えない */
+  const ytLand = () => !!el.closest('.sview[data-orient="land"]');
   const paintYt = () => {
     if (!yt || !ytBtn) return;
-    yt.hidden = !ytOn;
-    ytBtn.setAttribute('aria-pressed', String(ytOn));
+    const on = ytOn && !ytLand();
+    yt.hidden = !on;
+    ytBtn.setAttribute('aria-pressed', String(on));
     placeYt(); progYt();
   };
+  ctl.paintYt = paintYt;
   v.addEventListener('timeupdate', progYt);
   if (ytBtn) ytBtn.addEventListener('click', () => {
+    if (ytLand()) return;
     ytOn = !ytOn;
     try { localStorage.setItem('dash.ytui', ytOn ? '1' : '0'); } catch (_) {}
     paintYt();
@@ -5961,6 +6096,10 @@ const tapMobile = () => window.innerWidth < 900;
    iPad の横向きは並びだけが違う（真ん中が「動画｜右の欄」の2列・CSS の 900〜1199px の @media） */
 const svOneScreen = () => window.innerWidth < 1200;
 const svLand = () => window.innerWidth >= 900 && window.innerWidth < 1200;
+/* 横長の動画（#1624）。骨組みの並びは動画の行の format（videos.format が long）で決め、開いた直後から横長の並びで出す。
+   動画の実寸が分かって向きが食い違えば実寸に従う（svFitOrient）。印は .sview の data-orient="land" 1つで、並びは CSS だけが変える */
+const svLongItem = it => !!(it && it.format === 'long');
+const svLongNow = () => !!(sv && sv.root && sv.root.dataset.orient === 'land');
 /* シーン素材つきの承認画面を1画面の作りで開いているか */
 const svMobileOn = () => svOneScreen() && !!document.querySelector('#view-detail .sview');
 /* 入力シートをその場でなく、スマホの出し方（せり上がり・1画面では段2の入力画面）で出すか */
@@ -6890,7 +7029,7 @@ function sceneDetailHTML(it, plan){
             : `<div class="dstate rc">↺ あなたの指摘にAIが対応中です（${esc(gateName(it._rc, it))}）。直り次第、新しい版で出し直します。</div>`)
         : `<div class="dstate">● いまは「${esc(curName)}」の工程です。ここは見るだけの画面です。</div>`}${apvPubBox(it)}${liveBox}</div>`;
 
-  return `<div class="dview sview${it._rv === gate ? ' hasbar' : ''}" role="region"
+  return `<div class="dview sview${it._rv === gate ? ' hasbar' : ''}"${svLongItem(it) ? ' data-orient="land"' : ''} role="region"
       aria-label="${esc(it.title)} の詳細">
     <div class="dtop">
       <button class="dback" data-close="1" aria-label="一覧に戻る">← 一覧<span class="dback-l">に戻る</span></button>
@@ -7021,13 +7160,32 @@ function svRelayout(opts){
 /* 1400px 以上の詳細（台本の行の ▸ で開く・#1427）。中身は「いまのシーンの素材」の欄で、CSS が台本の欄の右に
    重ねて出す。開いている間に行を押すとそのシーンへ飛ぶ＝中身もそのシーンに替わる（svPaintNow が描き直す） */
 const SV_POP_MIN = 1400;
-const svPopOpen = () => !!(sv && window.innerWidth >= SV_POP_MIN
+/* 横長の動画は 1200px 以上で同じ並び（動画の上に重ねて開く・#1624） */
+const SV_POP_MIN_LONG = 1200;
+const svPopOpen = () => !!(sv && window.innerWidth >= (svLongNow() ? SV_POP_MIN_LONG : SV_POP_MIN)
   && sv.q('[data-sv-stage]')?.dataset.pop === '1');
 function svSetPop(on){
   const st = sv && sv.q('[data-sv-stage]');
   if (!st) return;
   if (on) st.dataset.pop = '1'; else delete st.dataset.pop;
   svPaintScript();
+}
+/* 参照動画の枠に出すものがある動画か（ショットごとの参照動画か、主画面に本物の映像があるときの参照動画（全フレーム）） */
+const svHasRef = () => !!(sv && (sv.hasRefVideo || (sv.mat && sv.mat.ref_video_full && !sv.mainLabel)));
+/* 動画の実寸の向きが骨組みの印（format から付けた data-orient）と食い違えば、実寸に従って付け替える（#1624 の保険）。
+   並びは CSS だけが変えるので描き直しは要らない。詳細の重ね・台本のタブ・Shorts の重ねと高さだけ合わせ直す */
+function svFitOrient(){
+  if (!sv || !sv.ctl || !sv.root.isConnected) return;
+  const v = sv.ctl.video, w = v.videoWidth || 0, h = v.videoHeight || 0;
+  if (!w || !h || w === h) return;
+  const land = w > h;
+  if (land === svLongNow()) return;
+  if (land) sv.root.dataset.orient = 'land'; else delete sv.root.dataset.orient;
+  if (sv.q('[data-sv-stage]')?.dataset.pop === '1') svSetPop(false);
+  /* 横長では台本は帯に出ていて、台本のタブは出さない */
+  if (land && sv.root.dataset.mtab === 'script') svSetTab(svLand() ? 'notes' : '');
+  if (sv.ctl.paintYt) sv.ctl.paintYt();
+  svRelayout();
 }
 /* ── スマホの1画面（#552・オーナー確定）─────────────────────────────
    並べ方は CSS（@media max-width:899px の .sview）。ここは CSS だけでは置けない4つを
@@ -7040,6 +7198,8 @@ function svMobileLayout(){
   const mob = !!root && svOneScreen();
   document.body.classList.toggle('sv-mobile', mob);
   if (!root) return;
+  /* 参照動画を出す回か（横長の動画は、参照動画がある動画だけ列を出す・#1624。縦の動画の CSS はこの印を見ない） */
+  if (sv && sv.root === root) root.classList.toggle('sv-hasref', svHasRef());
   const q = s => root.querySelector(s);
   const ref = q('.sv-screen.ref'), mat = q('.sv-matcol'), screens = q('.sv-screens');
   const vt = q('[data-sv-vtabs]'), dtop = q('.dtop'), shd = q('.sv-sec.sa>.sv-sechd');
@@ -7059,7 +7219,7 @@ function svMobileLayout(){
       if (cau.length) tb.prepend(...cau);
     }
     svSyncVV(root);
-    if (sv) root.classList.toggle('sv-noref', !(sv.hasRefVideo || (sv.mat && sv.mat.ref_video_full && !sv.mainLabel)));
+    if (sv) root.classList.toggle('sv-noref', !svHasRef());
     /* iPad の横向きは右の欄を常に出す（既定は指摘のタブ）。動画の列の幅は動画の枠の高さから決める */
     const fin = q('.sv-screen.final');
     if (svLand()) {
@@ -7281,6 +7441,16 @@ function svPaintScript(){
   const idx = rows.findIndex(s => s.n === sv.curN);
   const row = sv.scriptRows[idx], box = sv.q('[data-sv-scriptlist]');
   if (!row || !box || (Date.now() - sv.scriptHold) < SV_SCRIPT_HOLD) return;
+  /* 横長の動画は台本が横の帯（#1624）。いまのシーンが帯の外なら横に送る */
+  if (svLongNow()) {
+    const left = row.offsetLeft - box.offsetLeft, w = box.clientWidth;
+    if (left < box.scrollLeft || left + row.offsetWidth > box.scrollLeft + w) {
+      sv.scriptAuto = true;
+      box.scrollLeft = Math.max(0, left - w / 3);
+      setTimeout(() => { sv.scriptAuto = false; }, 150);
+    }
+    return;
+  }
   const top = row.offsetTop - box.offsetTop, h = box.clientHeight;
   if (top < box.scrollTop || top + row.offsetHeight > box.scrollTop + h) {
     sv.scriptAuto = true;
@@ -8171,6 +8341,12 @@ async function armScene(node, files, pre){
          watched: [], booted: false };
   sv.watchedBy[sv.variant || ''] = sv.watched;   /* 見た範囲は案ごと（#523 のレビュー指摘7） */
   if (tap) tap.variant = sv.variant;
+  /* 横長かどうかの保険: 動画の実寸が分かったら（案を切り替えて読み直したときも）向きを照らす（#1624） */
+  {
+    const mine = sv;
+    ctl.video.addEventListener('loadedmetadata', () => { if (sv === mine) svFitOrient(); });
+    if (ctl.video.readyState >= 1) svFitOrient();
+  }
   {
     const nt = svSplitNotes(sv.it, svPrevNotes(sv.it, threadOf(sv.it.id), gate), gate);
     sv.prev = nt.prev;
@@ -8218,7 +8394,7 @@ async function armScene(node, files, pre){
     /* 指摘に添えるシーン名も同じ表から引く（素材表があればそちらを使う）。尺を照合できてから（長さが届く前に足した
        指摘に、あとで使わないと決めた目録のシーンが残らないように・#637 の Codex レビュー指摘2） */
     if (tap && ctl.video.readyState >= 1) tap.tl = sv.mat ? { duration: sv.mat.duration, scenes: sv.mat.scenes } : sv.tl;
-    /* 参照動画の列は常に出す。「この動画に1本でもあるか」は面の言葉を分けるためだけに使う */
+    /* 参照動画の列は常に出す。「この動画に1本でもあるか」は面の言葉を分けるためと、横長の動画で列を出すかに使う（svHasRef） */
     sv.hasRefVideo = sv.scenes.some(s => (s.ref_videos || []).length);
     /* 借りている状態かが決まるのはここ（ショットごとの参照動画の有無を見てから）。
        見出しと並びをここでもう一度描き直す */
